@@ -277,17 +277,8 @@
         // Alignés sur workspace-hub / gouvernance-repo / dora-workspace / repo-analyzer.
         // ══════════════════════════════════════════════════════════════════
         async function fetchGitLab(endpoint, init = {}) {
-            const url = `${GITLAB_URL}/api/v4${endpoint}`;
-            const headers = { 'PRIVATE-TOKEN': token, ...(init.headers || {}) };
             try {
-                let r = await fetch(url, { ...init, headers });
-                if (r.status === 429) {
-                    const retryAfter = parseInt(r.headers.get('Retry-After')) || 2;
-                    console.warn(`[fetchGitLab] 429 sur ${endpoint}, retry dans ${retryAfter}s`);
-                    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                    r = await fetch(url, { ...init, headers });
-                }
-                return r;
+                return await window.Salsifi.gitlabFetch(GITLAB_URL, token, endpoint, init);
             } catch (e) {
                 console.error(`[fetchGitLab] erreur sur ${endpoint}:`, e);
                 throw e;

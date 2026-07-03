@@ -108,19 +108,11 @@ async function init() {
 }
 
 async function fetchGitLab(endpoint) {
-    try {
-        let r = await fetch(`${GITLAB_URL}/api/v4${endpoint}`, { headers: { 'PRIVATE-TOKEN': token } });
-        // Retry simple sur rate-limit 429, aligné sur workspace-hub / gouvernance-repo.
-        if (r.status === 429) {
-            const retryAfter = parseInt(r.headers.get('Retry-After')) || 2;
-            console.warn(`[fetchGitLab] 429 sur ${endpoint}, retry dans ${retryAfter}s`);
-            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-            r = await fetch(`${GITLAB_URL}/api/v4${endpoint}`, { headers: { 'PRIVATE-TOKEN': token } });
+            try {
+                const r = await window.Salsifi.gitlabFetch(GITLAB_URL, token, endpoint);
+                return r.ok ? r.json() : null;
+            } catch { return null; }
         }
-        if (!r.ok) return null;
-        return r.json();
-    } catch { return null; }
-}
 
 async function fetchAll(endpoint) {
     let all = [], page = 1;

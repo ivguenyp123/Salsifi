@@ -375,18 +375,7 @@
 
         // ───── fetch avec retry 429 ────────────────────────────────────────
         async function fetchGitLab(endpoint, init = {}) {
-            const url = endpoint.startsWith('http') ? endpoint : `${auth.gitlabUrl}/api/v4${endpoint}`;
-            const opts = {
-                ...init,
-                headers: { 'PRIVATE-TOKEN': auth.token, ...(init.headers || {}) }
-            };
-            let r = await fetch(url, opts);
-            if (r.status === 429) {
-                const retryAfter = parseInt(r.headers.get('Retry-After') || '2', 10);
-                await new Promise(res => setTimeout(res, retryAfter * 1000));
-                r = await fetch(url, opts);
-            }
-            return r;
+            return window.Salsifi.gitlabFetch(auth.gitlabUrl, auth.token, endpoint, init);
         }
 
         // ───── Guard d'auth ────────────────────────────────────────────────

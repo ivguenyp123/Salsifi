@@ -26,16 +26,7 @@
         // ══════════════════════════════════════════════════════════════════
 
         async function fetchGitLab(endpoint, init = {}) {
-            const url = `${gitlabBaseUrl}/api/v4${endpoint}`;
-            const headers = { 'PRIVATE-TOKEN': token, ...(init.headers || {}) };
-            let r = await fetch(url, { ...init, headers });
-            if (r.status === 429) {
-                const retryAfter = parseInt(r.headers.get('Retry-After')) || 2;
-                console.warn(`[fetchGitLab] 429 sur ${endpoint}, retry dans ${retryAfter}s`);
-                await new Promise(res => setTimeout(res, retryAfter * 1000));
-                r = await fetch(url, { ...init, headers });
-            }
-            return r;
+            return window.Salsifi.gitlabFetch(gitlabBaseUrl, token, endpoint, init);
         }
 
         function runWithConcurrency(tasks, limit) { return window.Salsifi.runWithConcurrency(tasks, limit); }

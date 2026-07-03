@@ -737,17 +737,8 @@ const FETCH_CONCURRENCY = 8;
 // ============================================
 
 async function fetchGitLab(endpoint, init = {}) {
-    const url = `${GITLAB_URL}/api/v4${endpoint}`;
-    const headers = { 'PRIVATE-TOKEN': GITLAB_TOKEN, ...(init.headers || {}) };
-    let r = await fetch(url, { ...init, headers });
-    if (r.status === 429) {
-        const retryAfter = parseInt(r.headers.get('Retry-After')) || 2;
-        console.warn(`[fetchGitLab] 429 sur ${endpoint}, retry dans ${retryAfter}s`);
-        await new Promise(res => setTimeout(res, retryAfter * 1000));
-        r = await fetch(url, { ...init, headers });
-    }
-    return r;
-}
+            return window.Salsifi.gitlabFetch(GITLAB_URL, GITLAB_TOKEN, endpoint, init);
+        }
 
 function runWithConcurrency(tasks, limit) { return window.Salsifi.runWithConcurrency(tasks, limit); }
 
