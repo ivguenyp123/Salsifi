@@ -175,6 +175,11 @@
             // "Pour aller plus loin" — calculé en live (contextuel + classiques)
             renderDeeperSection(key);
 
+            // Ateliers recommandés — pilotés par les axes faibles + référentiel
+            try {
+                renderRecommendedWorkshops(currentRepo ? readSynCache(currentRepo.id) : null);
+            } catch (e) { /* section absente ou synthèse indisponible : on ignore */ }
+
             // Scroll en haut quand on ouvre
             overlay.scrollTop = 0;
             requestAnimationFrame(() => overlay.classList.add('active'));
@@ -2069,6 +2074,70 @@
         };
 
         const DEEPER_VISIBLE_MAX = 5;
+
+        // ╔══════════════════════════════════════════════════════════════════╗
+        // ║  ATELIERS RECOMMANDÉS — pilotés par les axes faibles + référentiel║
+        // ╚══════════════════════════════════════════════════════════════════╝
+        // Les 8 axes de la synthèse (par nom) correspondent au préfixe des
+        // codes du référentiel : Culture→C, Delivery→D, etc. Le score de l'axe
+        // donne le niveau. On surface les vrais ateliers (avec lien Confluence)
+        // des axes les plus faibles de la squad.
+        const WS_AXIS_PREFIX = {
+            'Culture': 'C', 'Delivery': 'D', 'Hygiène': 'H', 'Pratiques': 'P',
+            'Qualité': 'Q', 'Résilience': 'R', 'Stabilité': 'S', 'Sécurité': 'X'
+        };
+        const WS_RECO_MAX = 6;
+
+        function wsLevelFromScore(score) {
+            return score < 33 ? 1 : score < 66 ? 2 : 3;
+        }
+
+        function recommendedWorkshops(syn) {
+            const W = window.Salsifi && window.Salsifi.workshops;
+            if (!W || !syn || !syn.maturity || !syn.maturity.axes) return [];
+            const axes = Object.entries(syn.maturity.axes)
+                .filter(([, v]) => v != null)
+                .sort((a, b) => a[1] - b[1]);   // du plus faible au plus fort
+            const recos = [];
+            for (const [name, score] of axes) {
+                if (score >= 66) break;          // on ne recommande que les axes non "Formalisé"
+                const prefix = WS_AXIS_PREFIX[name];
+                if (!prefix) continue;
+                const level = String(wsLevelFromScore(score));
+                Object.keys(W.byAxis).filter(c => c[0] === prefix).forEach(code => {
+                    (W.byAxis[code][level] || []).forEach(num => {
+                        const a = W.actions[num];
+                        if (a) recos.push({ ...a, axeName: name });
+                    });
+                });
+                if (recos.length >= WS_RECO_MAX * 2) break;
+            }
+            // liens d'abord (pages écrites), puis cap
+            recos.sort((a, b) => (b.lien ? 1 : 0) - (a.lien ? 1 : 0));
+            return recos.slice(0, WS_RECO_MAX);
+        }
+
+        function renderRecommendedWorkshops(syn) {
+            const section = document.getElementById('dd-workshops-section');
+            const list = document.getElementById('dd-workshops');
+            if (!section || !list) return;
+            const recos = recommendedWorkshops(syn);
+            if (!recos.length) { section.style.display = 'none'; return; }
+            section.style.display = '';
+            const esc = window.escapeHtml || (s => s);
+            list.innerHTML = recos.map(w => {
+                const label = esc(w.action || w.titre || '');
+                const badge = `<span class="dd-deeper-badge">${esc(w.axeName)}</span>`;
+                if (w.lien) {
+                    return `<li class="ws-reco" data-lien="${esc(w.lien)}">
+                        <a href="${esc(w.lien)}" target="_blank" rel="noopener" class="dd-deeper-text" style="text-decoration:none;color:inherit;">${label}</a>
+                        ${badge}<span class="arrow">↗</span></li>`;
+                }
+                return `<li class="ws-reco is-soon">
+                    <span class="dd-deeper-text" style="opacity:0.55;">${label}</span>
+                    ${badge}<span class="dd-deeper-badge" style="opacity:0.6;">bientôt</span></li>`;
+            }).join('');
+        }
 
         // ───── État courant du deeper pour gérer "Voir plus" ───────────────
         let currentDeeperEntries = [];   // toutes les entrées triées
