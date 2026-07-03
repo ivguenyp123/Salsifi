@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚌 Bus Factor — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚌</text></svg>">
+    <link rel="stylesheet" href="css/bus-factor.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <a href="hub-mockup-v2_1.html" class="back-btn" aria-label="Retour au hub">← Retour au Hub</a>
+            <div class="logo">
+                <div class="logo-icon">🚌</div>
+                <div class="logo-text">Bus <span>Factor</span></div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="project-badge">
+                <span>📦</span>
+                <span id="projectName">Chargement...</span>
+            </div>
+            <button class="refresh-btn" id="refreshBtn" data-action="refresh">
+                🔄 Actualiser
+            </button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <h1 class="page-title">🚌 Bus Factor</h1>
+        <p class="page-subtitle">Analyse de la distribution des connaissances par zone de code</p>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="loading-spinner">🚌</div>
+            <div class="loading-text">Analyse des contributions en cours...</div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" style="display: none;">
+            <!-- Score Global -->
+            <div class="global-score">
+                <div class="score-left">
+                    <div class="score-icon" id="scoreIcon">🚌</div>
+                    <div class="score-info">
+                        <h2>Score Bus Factor Global</h2>
+                        <div class="score-value">
+                            <span id="globalScore">-</span> <span>/ 5</span>
+                        </div>
+                        <div class="score-label" id="scoreLabel">Calcul...</div>
+                    </div>
+                </div>
+                <div class="score-right">
+                    <div class="score-stat">
+                        <div class="score-stat-value critical" id="statCritical">0</div>
+                        <div class="score-stat-label">Zones critiques</div>
+                    </div>
+                    <div class="score-stat">
+                        <div class="score-stat-value warning" id="statWarning">0</div>
+                        <div class="score-stat-label">Zones à risque</div>
+                    </div>
+                    <div class="score-stat">
+                        <div class="score-stat-value good" id="statGood">0</div>
+                        <div class="score-stat-label">Zones saines</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zones à risque -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        🚨 Zones à risque
+                        <span class="badge badge-critical" id="zonesBadge">0</span>
+                    </div>
+                </div>
+                <div class="risk-zones" id="riskZones">
+                    <!-- Zones générées dynamiquement -->
+                </div>
+                <div class="empty-state" id="zonesEmpty" style="display: none;">
+                    <div class="empty-icon">✅</div>
+                    <div class="empty-title">Aucune zone à risque</div>
+                    <div class="empty-subtitle">La distribution des connaissances est saine</div>
+                </div>
+            </div>
+
+            <!-- Branch Activity -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">👥 Activité par contributeur</div>
+                </div>
+                <div class="branches-grid" id="branchesGrid">
+                    <!-- Branch cards générées dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Recommandations -->
+            <div class="section" id="recoSection" style="display: none;">
+                <div class="section-header">
+                    <div class="section-title">💡 Recommandations</div>
+                </div>
+                <div class="recommendations" id="recommendations">
+                    <!-- Recommandations générées dynamiquement -->
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <div class="info-box-icon">💡</div>
+                <div class="info-box-content">
+                    <h4>C'est quoi le Bus Factor ?</h4>
+                    <p>
+                        Le <strong>Bus Factor</strong> est le nombre minimum de personnes qui doivent 
+                        quitter l'équipe avant que le projet soit bloqué.<br><br>
+                        <strong>Bus Factor = 1</strong> : Une seule personne connaît le code → 🔴 Risque critique<br>
+                        <strong>Bus Factor = 2</strong> : Deux personnes → 🟡 Risque moyen<br>
+                        <strong>Bus Factor ≥ 3</strong> : Trois personnes ou plus → 🟢 Risque faible
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bus-factor.js"></script>
+</body>
+</html>

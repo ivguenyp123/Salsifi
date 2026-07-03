@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Auto Retro - DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/autoretro.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>← Retour au Hub</a>
+            <div class="page-title">
+                <h1>🎭 Auto Retro <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-left: 10px; font-family: -apple-system, sans-serif;">V2</span></h1>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="config-panel">
+            <div class="config-header"><h2>⚙️ Configuration</h2></div>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>📅 Période d'analyse</label>
+                    <div class="period-buttons">
+                        <button class="period-btn" data-days="7">1 sem</button>
+                        <button class="period-btn" data-days="14">2 sem</button>
+                        <button class="period-btn active" data-days="21">3 sem</button>
+                        <button class="period-btn" data-days="30">1 mois</button>
+                    </div>
+                </div>
+                <div class="config-item">
+                    <label>🎯 Milestone</label>
+                    <select id="milestoneSelect"><option value="">Tous les sprints</option></select>
+                </div>
+                <div class="config-item">
+                    <label>🎨 Style du rapport</label>
+                    <select id="styleSelect">
+                        <option value="fun">🎉 Fun & Coloré</option>
+                        <option value="pro">💼 Professionnel</option>
+                    </select>
+                </div>
+            </div>
+            <button class="generate-btn" id="generateBtn" data-action="generate-retro">🚀 Scanner & Générer la Rétro</button>
+        </div>
+        <div class="scanning-overlay" id="scanningOverlay">
+            <div class="scanning-animation">
+                <div class="scanning-circle"></div>
+                <div class="scanning-circle"></div>
+                <div class="scanning-circle"></div>
+                <div class="scanning-icon">🔍</div>
+            </div>
+            <div class="scanning-text" id="scanningText">Analyse en cours...</div>
+            <div class="scanning-details" id="scanningDetails">Récupération des données GitLab</div>
+            <div class="scanning-progress"><div class="scanning-progress-bar" id="scanningProgress"></div></div>
+        </div>
+        <div class="results-section" id="resultsSection">
+            <div class="stats-grid" id="statsGrid"></div>
+            
+            <!-- DORA Metrics Section -->
+            <div class="section-card" id="doraSection" style="background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(124,92,255,0.12)); border: 1px solid rgba(124,92,255,0.35);">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📊 Métriques DORA</span>
+                    <span id="doraBadge" style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; background: linear-gradient(135deg, #fbbf24, #d97706); color:#0f0a1f;">MEDIUM</span>
+                </div>
+                <div class="section-body">
+                    <div id="doraMetrics" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;"></div>
+                </div>
+            </div>
+            
+            <!-- Alerts Section -->
+            <div class="section-card" id="alertsSection" style="border-left: 4px solid #f87171;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>🚨 Alertes Détectées</span>
+                    <span id="alertsCount" style="background: #f87171; color:#0f0a1f; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">0</span>
+                </div>
+                <div class="section-body"><div id="alertsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;"></div></div>
+            </div>
+            
+            <div class="section-card"><div class="section-header"><span>🚀</span> Déploiements par Environnement</div><div class="section-body"><div class="deployments-pipeline" id="deploymentsPipeline"></div></div></div>
+            <div class="section-card"><div class="section-header"><span>🌟</span> Ce qui a bien marché</div><div class="section-body"><div class="highlight-list" id="wentWellList"></div></div></div>
+            <div class="section-card"><div class="section-header"><span>🔥</span> Points de friction</div><div class="section-body"><div class="highlight-list" id="painPointsList"></div></div></div>
+            
+            <!-- User Stories Section -->
+            <div class="section-card" id="usSection" style="border-left: 4px solid #a5b4fc;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📋 User Stories Jira Générées</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button data-action="export-all-us-teams" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: linear-gradient(135deg, #5b5fc7, #4b4faf); color: white;">📋 Teams</button>
+                        <button data-action="export-all-us-jira" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: linear-gradient(135deg, #0052cc, #0747a6); color: white;">📥 Jira CSV</button>
+                    </div>
+                </div>
+                <div class="section-body"><div id="usList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px;"></div></div>
+            </div>
+            
+            <div class="section-card"><div class="section-header"><span>🏆</span> Top Contributeurs</div><div class="section-body"><div class="contributors-grid" id="contributorsGrid"></div></div></div>
+            <div class="section-card"><div class="section-header"><span>🎯</span> Actions suggérées</div><div class="section-body"><div class="actions-list" id="actionsList"></div></div></div>
+            <div class="export-actions">
+                <button class="export-btn secondary" data-action="regenerate">🔄 Régénérer</button>
+                <button class="export-btn secondary" data-action="export-teams">📋 Copier Teams</button>
+                <button class="export-btn secondary" data-action="download-html">💾 HTML</button>
+                <button class="export-btn primary" data-action="open-full-report">📄 Rapport complet</button>
+            </div>
+        </div>
+    </main>
+    <script src="js/autoretro.js"></script>
+</body>
+</html>

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Report — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="stylesheet" href="css/daily-report.css">
+</head>
+<body>
+    <div class="container" id="reportContainer">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <a href="hub-mockup-v2_1.html" class="back-btn" aria-label="Retour au hub">←</a>
+                <h1>📋 Daily Report</h1>
+            </div>
+            <div class="header-right">
+                <div class="date-nav">
+                    <button class="date-nav-btn" id="btn-prev" data-action="prev-date">←</button>
+                    <div class="date-display" id="report-date">Chargement...</div>
+                    <button class="date-nav-btn" id="btn-next" data-action="next-date">→</button>
+                </div>
+                <button class="btn btn-secondary" data-action="go-today">Aujourd'hui</button>
+                <button class="btn btn-secondary" data-action="week-report">📊 Semaine</button>
+                <button class="btn btn-secondary" data-action="month-report">📊 Mois</button>
+                <button class="btn btn-primary" id="btn-refresh" data-action="load-report">🔄 Actualiser</button>
+            </div>
+        </div>
+
+        <!-- INTRO -->
+        <div class="intro-card">
+            <div class="intro-icon">📊</div>
+            <div class="intro-content">
+                <h2 id="intro-title">Rapport d'activité</h2>
+                <p id="intro-desc">Ce rapport résume l'activité GitLab de la journée : MRs, pipelines, déploiements. Pratique pour le daily standup ou pour garder un œil sur ce qui se passe.</p>
+            </div>
+        </div>
+
+        <!-- STATS GLOBALES -->
+        <div class="stats-row" id="stats-row">
+            <div class="stat-card loading">
+                <div class="stat-help" title="Merge Requests mergées ce jour">?</div>
+                <div class="stat-value" style="color: #34d399;" id="stat-mrs">-</div>
+                <div class="stat-label">MRs mergées</div>
+                <div class="stat-trend" id="stat-mrs-trend"></div>
+            </div>
+            <div class="stat-card loading">
+                <div class="stat-help" title="Pipelines lancés ce jour">?</div>
+                <div class="stat-value" style="color: #60a5fa;" id="stat-pipelines">-</div>
+                <div class="stat-label">Pipelines</div>
+                <div class="stat-trend" id="stat-pipelines-trend"></div>
+            </div>
+            <div class="stat-card loading">
+                <div class="stat-help" title="Pipelines en échec">?</div>
+                <div class="stat-value" style="color: #f87171;" id="stat-failed">-</div>
+                <div class="stat-label">Échecs</div>
+                <div class="stat-trend" id="stat-failed-trend"></div>
+            </div>
+            <div class="stat-card loading">
+                <div class="stat-help" title="Déploiements (tags créés)">?</div>
+                <div class="stat-value" style="color: #a78bfa;" id="stat-deploys">-</div>
+                <div class="stat-label">Déploiements</div>
+                <div class="stat-trend" id="stat-deploys-trend"></div>
+            </div>
+            <div class="stat-card loading">
+                <div class="stat-help" title="Taux de succès des pipelines">?</div>
+                <div class="stat-value" style="color: #fbbf24;" id="stat-success-rate">-</div>
+                <div class="stat-label">Taux succès</div>
+                <div class="stat-bar">
+                    <div class="stat-bar-success" id="stat-bar-success" style="width: 0%;"></div>
+                    <div class="stat-bar-failed" id="stat-bar-failed" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div class="stat-card loading">
+                <div class="stat-help" title="Commits poussés ce jour">?</div>
+                <div class="stat-value" style="color: #fb923c;" id="stat-commits">-</div>
+                <div class="stat-label">Commits</div>
+                <div class="stat-trend" id="stat-commits-trend"></div>
+            </div>
+        </div>
+
+        <!-- 💡 CONSEILS DU JOUR -->
+        <div class="section" id="section-daily-tips">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">💡</span>
+                    <h3>Conseils du jour</h3>
+                </div>
+                <span class="section-count" id="count-daily-tips">-</span>
+            </div>
+            <div class="section-desc">
+                Analyse automatique de l'activité du jour. Des conseils personnalisés pour l'équipe.
+            </div>
+            <div class="section-body" id="body-daily-tips">
+                <div class="tips-list" id="tips-list">
+                    <div class="tip-loading">🔍 Analyse en cours...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔴 PIPELINES EN ÉCHEC -->
+        <div class="section" id="section-failed-pipelines">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🔴</span>
+                    <h3>Pipelines en échec</h3>
+                </div>
+                <span class="section-count" id="count-failed-pipelines">0</span>
+            </div>
+            <div class="section-desc">
+                Pipelines terminés en erreur. Ça arrive, l'important c'est de comprendre pourquoi et de débloquer la situation.
+            </div>
+            <div class="section-body" id="body-failed-pipelines">
+                <div class="empty-state">
+                    <div class="icon">✨</div>
+                    <p>Aucun pipeline en échec - belle journée !</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🚀 DÉPLOIEMENTS + 🏷️ TAGS -->
+        <div class="grid-2">
+            <div class="section" id="section-deploys">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">🚀</span>
+                        <h3>Déploiements</h3>
+                    </div>
+                    <span class="section-count" id="count-deploys">0</span>
+                </div>
+                <div class="section-desc">
+                    Déploiements effectués (basé sur les environnements GitLab).
+                </div>
+                <div class="section-body" id="body-deploys">
+                    <div class="empty-state">
+                        <div class="icon">📦</div>
+                        <p>Pas de déploiement ce jour</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="section-tags">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">🏷️</span>
+                        <h3>Tags / Releases</h3>
+                    </div>
+                    <span class="section-count" id="count-tags">0</span>
+                </div>
+                <div class="section-desc">
+                    Versions taggées ce jour. Chaque tag représente une version potentiellement déployable.
+                </div>
+                <div class="section-body" id="body-tags">
+                    <div class="empty-state">
+                        <div class="icon">🏷️</div>
+                        <p>Pas de tag créé ce jour</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ MRs MERGÉES + ⏳ MRs EN ATTENTE -->
+        <div class="grid-2">
+            <div class="section" id="section-mrs-merged">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">✅</span>
+                        <h3>MRs mergées</h3>
+                    </div>
+                    <span class="section-count" id="count-mrs-merged">0</span>
+                </div>
+                <div class="section-desc">
+                    Merge Requests intégrées ce jour. Chaque MR = du travail livré.
+                </div>
+                <div class="section-body" id="body-mrs-merged">
+                    <div class="empty-state">
+                        <div class="icon">📝</div>
+                        <p>Pas de MR mergée ce jour</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="section-mrs-open">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">⏳</span>
+                        <h3>MRs en attente</h3>
+                    </div>
+                    <span class="section-count" id="count-mrs-open">0</span>
+                </div>
+                <div class="section-desc">
+                    MRs ouvertes en attente de review ou d'action. Si ça traîne, un petit rappel peut aider.
+                </div>
+                <div class="section-body" id="body-mrs-open">
+                    <div class="empty-state">
+                        <div class="icon">🎉</div>
+                        <p>Pas de MR en attente</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="section-mrs-closed">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">❌</span>
+                        <h3>MRs refusées / fermées</h3>
+                    </div>
+                    <span class="section-count" id="count-mrs-closed">0</span>
+                </div>
+                <div class="section-desc">
+                    MRs fermées sans être mergées. Peut indiquer un changement de direction ou une MR abandonnée.
+                </div>
+                <div class="section-body" id="body-mrs-closed">
+                    <div class="empty-state">
+                        <div class="icon">👍</div>
+                        <p>Aucune MR refusée ce jour</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🌿 BRANCHES + 📌 ISSUES -->
+        <div class="grid-2">
+            <div class="section" id="section-branches">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">🌿</span>
+                        <h3>Branches</h3>
+                    </div>
+                    <span class="section-count" id="count-branches">-</span>
+                </div>
+                <div class="section-desc">
+                    État actuel des branches du repo. Les branches stale (> 30j sans commit) peuvent être nettoyées.
+                </div>
+                <div class="section-body" id="body-branches">
+                    <div class="summary-boxes">
+                        <div class="summary-box green">
+                            <div class="value" id="branches-active">-</div>
+                            <div class="label">actives</div>
+                        </div>
+                        <div class="summary-box yellow">
+                            <div class="value" id="branches-stale">-</div>
+                            <div class="label">stale (> 30j)</div>
+                        </div>
+                        <div class="summary-box red">
+                            <div class="value" id="branches-merged">-</div>
+                            <div class="label">merged non supprimées</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="section-issues">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="icon">📌</span>
+                        <h3>Issues</h3>
+                    </div>
+                    <span class="section-count" id="count-issues">-</span>
+                </div>
+                <div class="section-desc">
+                    Issues ouvertes et fermées ce jour.
+                </div>
+                <div class="section-body" id="body-issues">
+                    <div class="summary-boxes">
+                        <div class="summary-box green">
+                            <div class="value" id="issues-closed">-</div>
+                            <div class="label">fermées</div>
+                        </div>
+                        <div class="summary-box yellow">
+                            <div class="value" id="issues-opened">-</div>
+                            <div class="label">ouvertes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🕐 PIPELINES LONGUE DURÉE -->
+        <div class="section" id="section-long-pipelines">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🕐</span>
+                    <h3>Pipelines de longue durée</h3>
+                </div>
+                <span class="section-count" id="count-long-pipelines">0</span>
+            </div>
+            <div class="section-desc">
+                Pipelines qui prennent plus de 15 minutes. Peut-être des optimisations possibles ?
+            </div>
+            <div class="section-body" id="body-long-pipelines">
+                <div class="empty-state">
+                    <div class="icon">⚡</div>
+                    <p>Tous les pipelines sont rapides</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⚠️ BRANCHES À RISQUE -->
+        <div class="section" id="section-risky-branches">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">⚠️</span>
+                    <h3>Branches à surveiller</h3>
+                </div>
+                <span class="section-count" id="count-risky-branches">0</span>
+            </div>
+            <div class="section-desc">
+                Branches anciennes (>30j) ou avec beaucoup de commits d'écart. Penser à les merger ou nettoyer.
+            </div>
+            <div class="section-body" id="body-risky-branches">
+                <div class="empty-state">
+                    <div class="icon">✨</div>
+                    <p>Toutes les branches sont à jour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔁 REVERTS DÉTECTÉS -->
+        <div class="section" id="section-reverts">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🔁</span>
+                    <h3>Reverts détectés</h3>
+                </div>
+                <span class="section-count" id="count-reverts">0</span>
+            </div>
+            <div class="section-desc">
+                Commits ou MRs qui annulent des changements précédents. Normal parfois, mais à surveiller si fréquent.
+            </div>
+            <div class="section-body" id="body-reverts">
+                <div class="empty-state">
+                    <div class="icon">👍</div>
+                    <p>Aucun revert ce jour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📊 COUVERTURE DE CODE -->
+        <div class="section" id="section-coverage">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">📊</span>
+                    <h3>Couverture de code</h3>
+                </div>
+            </div>
+            <div class="section-desc">
+                Évolution de la couverture de tests sur les derniers pipelines.
+            </div>
+            <div class="section-body" id="body-coverage">
+                <div class="empty-state">
+                    <div class="icon">🔍</div>
+                    <p>Pas de données de couverture disponibles</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🐛 BUGS -->
+        <div class="section" id="section-bugs">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🐛</span>
+                    <h3>Bugs</h3>
+                </div>
+                <span class="section-count" id="count-bugs">0</span>
+            </div>
+            <div class="section-desc">
+                Issues labellisées bug et commits de correction (fix, hotfix, bugfix).
+            </div>
+            <div class="section-body" id="body-bugs">
+                <div class="empty-state">
+                    <div class="icon">✨</div>
+                    <p>Aucun bug signalé ce jour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⚠️ QUALITÉ CODE -->
+        <div class="section" id="section-code-quality">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">⚠️</span>
+                    <h3>Qualité code</h3>
+                </div>
+                <span class="section-count" id="count-code-quality">0</span>
+            </div>
+            <div class="section-desc">
+                TODO/FIXME détectés dans les commits et gros changements à risque.
+            </div>
+            <div class="section-body" id="body-code-quality">
+                <div class="empty-state">
+                    <div class="icon">👍</div>
+                    <p>Aucun point d'attention détecté</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🧪 TESTS -->
+        <div class="section" id="section-tests">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🧪</span>
+                    <h3>Tests</h3>
+                </div>
+                <span class="section-count" id="count-tests">0</span>
+            </div>
+            <div class="section-desc">
+                Statut des jobs de test et résumé des exécutions.
+            </div>
+            <div class="section-body" id="body-tests">
+                <div class="empty-state">
+                    <div class="icon">🔬</div>
+                    <p>Aucun job de test détecté</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔒 SÉCURITÉ -->
+        <div class="section" id="section-security">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">🔒</span>
+                    <h3>Sécurité</h3>
+                </div>
+                <span class="section-count" id="count-security">0</span>
+            </div>
+            <div class="section-desc">
+                Alertes de sécurité et vulnérabilités détectées par les scans.
+            </div>
+            <div class="section-body" id="body-security">
+                <div class="empty-state">
+                    <div class="icon">🛡️</div>
+                    <p>Aucune alerte de sécurité</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 💬 ACTIVITÉ REVIEW -->
+        <div class="section" id="section-reviews">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">💬</span>
+                    <h3>Activité review</h3>
+                </div>
+                <span class="section-count" id="count-reviews">0</span>
+            </div>
+            <div class="section-desc">
+                Commentaires et discussions sur les MRs. Indicateur de la collaboration dans l'équipe.
+            </div>
+            <div class="section-body" id="body-reviews">
+                <div class="empty-state">
+                    <div class="icon">💤</div>
+                    <p>Pas de commentaires ce jour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📈 TENDANCES -->
+        <div class="section" id="section-trends">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">📈</span>
+                    <h3>Tendances</h3>
+                </div>
+            </div>
+            <div class="section-desc">
+                Comparaison avec les jours précédents pour voir l'évolution de l'activité.
+            </div>
+            <div class="section-body" id="body-trends">
+                <div class="trends-grid">
+                    <div class="trend-card">
+                        <div class="trend-label">vs Hier</div>
+                        <div class="trend-value" id="trend-yesterday">-</div>
+                    </div>
+                    <div class="trend-card">
+                        <div class="trend-label">vs Semaine dernière</div>
+                        <div class="trend-value" id="trend-week">-</div>
+                    </div>
+                    <div class="trend-card">
+                        <div class="trend-label">Moyenne 7j</div>
+                        <div class="trend-value" id="trend-avg">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⏰ TIMELINE -->
+        <div class="section" id="section-timeline">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="icon">⏰</span>
+                    <h3>Timeline</h3>
+                </div>
+            </div>
+            <div class="section-desc">
+                Chronologie des événements de la journée. Permet de voir l'enchaînement des actions.
+            </div>
+            <div class="timeline" id="body-timeline">
+                <div class="empty-state">
+                    <div class="icon">📅</div>
+                    <p>Pas d'activité ce jour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>Données issues de l'API GitLab</p>
+            <p id="last-refresh">Dernière actualisation : -</p>
+        </div>
+    </div>
+
+    <script src="js/daily-report.js"></script>
+</body>
+</html>

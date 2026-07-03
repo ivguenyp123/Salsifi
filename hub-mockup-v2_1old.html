@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCL DevOps Hub — Maquette V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/hub.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-mark"></div>
+                DevOps Hub
+                <span class="breadcrumb-sep">/</span>
+                <div class="repo-picker" id="repoPicker">
+                    <button class="repo-picker-button" id="repoPickerBtn" disabled>
+                        <span class="repo-icon">📦</span>
+                        <span class="repo-name" id="repoPickerLabel">Chargement…</span>
+                        <span class="chevron">▼</span>
+                    </button>
+                    <div class="repo-picker-dropdown" id="repoPickerDropdown">
+                        <div class="repo-search" id="repoSearchWrap" style="display:none;">
+                            <input type="text" id="repoSearchInput" placeholder="Chercher un projet…" autocomplete="off">
+                        </div>
+                        <div class="repo-list" id="repoList">
+                            <div class="repo-list-skeleton">
+                                <div class="repo-skeleton-item"></div>
+                                <div class="repo-skeleton-item"></div>
+                                <div class="repo-skeleton-item"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- AJOUT WORKSPACE : breadcrumb visible en vue workspace uniquement -->
+                <div class="ws-breadcrumb" id="wsBreadcrumb">
+                    <span class="ws-bc-icon">🗂️</span>
+                    <span id="wsBreadcrumbName">Workspace</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn">📚 Documentation</button>
+                <!-- AJOUT WORKSPACE : pill + dropdown -->
+                <div style="position: relative;" id="wsPillWrap">
+                    <div class="ws-pill" id="wsPill" onclick="wsToggleDropdown(event)">
+                        <div class="ws-pill-icon">🗂️</div>
+                        <span>Workspaces</span>
+                        <span class="ws-pill-caret">▾</span>
+                    </div>
+                    <div class="ws-dropdown" id="wsDropdown">
+                        <div class="ws-dropdown-label">Mes workspaces</div>
+                        <div id="wsDropdownList">
+                            <div class="ws-dropdown-empty">Chargement…</div>
+                        </div>
+                        <div class="ws-dropdown-sep"></div>
+                        <div class="ws-manage" onclick="wsOpenModal('create')">
+                            <span>➕ Créer un workspace</span>
+                            <span class="ws-manage-hint">nom + repos</span>
+                        </div>
+                        <div class="ws-manage" onclick="wsTriggerImport()">
+                            <span>📥 Importer depuis JSON</span>
+                            <span class="ws-manage-hint">.json</span>
+                        </div>
+                        <input type="file" id="wsImportInput" accept="application/json,.json" style="display:none;" onchange="wsHandleImport(event)">
+                    </div>
+                </div>
+                <div class="user-pill">
+                    <div class="user-avatar" id="userAvatar">?</div>
+                    <span id="userName">…</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ═══════════ AJOUT WORKSPACE : vue workspace cachée par défaut ═══════════ -->
+        <section class="view-workspace" id="viewWorkspace">
+            <button class="ws-back" onclick="wsCloseView()">← Retour au Hub</button>
+
+            <div class="ws-header">
+                <div class="ws-eyebrow">
+                    <span class="ws-eyebrow-dot"></span>
+                    Workspace · Vue agrégée
+                </div>
+                <h1 class="ws-title" id="wsViewTitle">—</h1>
+                <p class="ws-tagline" id="wsViewTagline">—</p>
+            </div>
+
+            <!-- Stats agrégées (cosmétique pour ce patch — câblage data dans un patch séparé) -->
+            <div class="ws-stats">
+                <div class="ws-stat">
+                    <div class="ws-stat-label">DORA agrégé</div>
+                    <div class="ws-stat-value is-pending">—</div>
+                    <div class="ws-stat-meta">Câblage data à venir</div>
+                </div>
+                <div class="ws-stat">
+                    <div class="ws-stat-label">Conformité gouvernance</div>
+                    <div class="ws-stat-value is-pending">—</div>
+                    <div class="ws-stat-meta">Câblage data à venir</div>
+                </div>
+                <div class="ws-stat">
+                    <div class="ws-stat-label">Repos surveillés</div>
+                    <div class="ws-stat-value" id="wsStatRepoCount">0</div>
+                    <div class="ws-stat-meta">Issus du workspace</div>
+                </div>
+                <div class="ws-stat">
+                    <div class="ws-stat-label">Alertes ouvertes</div>
+                    <div class="ws-stat-value is-pending">—</div>
+                    <div class="ws-stat-meta">Câblage data à venir</div>
+                </div>
+            </div>
+
+            <div class="ws-modules">
+                <div class="ws-module m-dora" onclick="wsOpenModule('dora')">
+                    <div class="ws-module-head">
+                        <div class="ws-module-icon">📊</div>
+                        <div class="ws-module-origin">Mesurer & Progresser</div>
+                    </div>
+                    <div class="ws-module-name">DORA Workspace</div>
+                    <div class="ws-module-desc">
+                        Vue DORA agrégée sur l'ensemble des repos du workspace. Identifie les escouades en difficulté et compare aux benchmarks Elite.
+                    </div>
+                    <div class="ws-module-cta">Ouvrir DORA Workspace <span class="arrow">→</span></div>
+                </div>
+
+                <div class="ws-module m-gouvernance" onclick="wsOpenModule('gouvernance')">
+                    <div class="ws-module-head">
+                        <div class="ws-module-icon">🛡️</div>
+                        <div class="ws-module-origin">Inspecter & Sécuriser</div>
+                    </div>
+                    <div class="ws-module-name">Gouvernance Workspace</div>
+                    <div class="ws-module-desc">
+                        Conformité CIS, secrets, branches, MR ouvertes — agrégé sur tout le workspace. Classement par squad, drill-down repo par repo.
+                    </div>
+                    <div class="ws-module-cta">Ouvrir Gouvernance Workspace <span class="arrow">→</span></div>
+                </div>
+            </div>
+
+            <div class="ws-repos">
+                <div class="ws-repos-head">
+                    <div class="ws-repos-title">
+                        📦 Repos du workspace
+                        <span class="ws-repos-count" id="wsReposCount"></span>
+                    </div>
+                    <button class="ws-repos-add" onclick="wsOpenModal('edit')">➕ Ajouter / Modifier les repos</button>
+                </div>
+                <div id="wsReposList"></div>
+            </div>
+        </section>
+        <!-- ═══════════ FIN AJOUT WORKSPACE ═══════════ -->
+
+        <!-- ═══════════ MODAL UNIQUE : créer / éditer workspace ═══════════ -->
+        <div class="ws-modal-overlay" id="wsModal" style="display:none;" onclick="if(event.target === this) wsCloseModal()">
+            <div class="ws-modal">
+                <div class="ws-modal-head">
+                    <div class="ws-modal-title" id="wsModalTitle">Nouveau workspace</div>
+                    <button class="ws-modal-close" onclick="wsCloseModal()">✕</button>
+                </div>
+                <div style="padding: 18px 28px 14px; border-bottom: 1px solid var(--border-subtle);">
+                    <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-bottom:8px;">Nom du workspace</label>
+                    <input type="text" id="wsModalName" placeholder="ex. BPI Core" autocomplete="off"
+                        style="width:100%; padding:10px 14px; background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); font-family:var(--font-body); font-size:14px; outline:none;"
+                        oninput="_wsUpdateSaveBtn()">
+                </div>
+                <div class="ws-modal-search">
+                    <input type="text" id="wsModalSearch" placeholder="Filtrer les repos…" oninput="wsRenderModalRepos()" autocomplete="off">
+                </div>
+                <div class="ws-modal-list" id="wsModalList">
+                    <div class="ws-modal-loading">Chargement…</div>
+                </div>
+                <div class="ws-modal-foot">
+                    <div class="ws-modal-count" id="wsModalCount">Aucun repo sélectionné</div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="ws-modal-btn" onclick="wsCloseModal()">Annuler</button>
+                        <button class="ws-modal-btn is-primary" id="wsModalSaveBtn" onclick="wsSaveModal()" disabled>Sauver</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ═══════════ FIN MODAL ═══════════ -->
+
+        <!-- ═══════════ MODAL DÉMARRER : sélection repo → Project Scaffolder ═══════════ -->
+        <div class="ws-modal-overlay" id="startModal" style="display:none;" onclick="if(event.target === this) closeStartModal()">
+            <div class="ws-modal">
+                <div class="ws-modal-head">
+                    <div class="ws-modal-title">🚀 Démarrer un projet</div>
+                    <button class="ws-modal-close" onclick="closeStartModal()">✕</button>
+                </div>
+                <div style="padding:14px 28px; font-size:13px; color:var(--text-secondary); border-bottom:1px solid var(--border-subtle);">
+                    Sélectionne le <strong>repo (vide)</strong> à initialiser. Le Scaffolder y créera la structure et ouvrira une MR.
+                </div>
+                <div class="ws-modal-search">
+                    <input type="text" id="startModalSearch" placeholder="Filtrer les repos…" oninput="renderStartModalRepos()" autocomplete="off">
+                </div>
+                <div class="ws-modal-list" id="startModalList">
+                    <div class="ws-modal-loading">Chargement…</div>
+                </div>
+                <div class="ws-modal-foot">
+                    <div class="ws-modal-count" id="startModalHint">Clique un repo pour lancer le Scaffolder</div>
+                    <button class="ws-modal-btn" onclick="closeStartModal()">Annuler</button>
+                </div>
+            </div>
+        </div>
+        <!-- ═══════════ FIN MODAL DÉMARRER ═══════════ -->
+
+        <section class="greeting">
+            <h1 id="greetingTitle">Bonjour <span class="wave">👋</span></h1>
+            <div class="subtitle">Que veux-tu accomplir aujourd'hui ?</div>
+        </section>
+
+        <!-- ═══════════ DÉMARRER : porte d'entrée jour-zéro (≠ des 4 chemins) ═══════════ -->
+        <section class="start-cta" onclick="openStartModal()" role="button" tabindex="0">
+            <div class="start-cta-icon">🚀</div>
+            <div class="start-cta-body">
+                <div class="start-cta-title">Démarrer un projet</div>
+                <div class="start-cta-sub">Initialise un repo vide : workflow Git, stack et pipeline prêt pour la prod, en une seule MR.</div>
+            </div>
+            <span class="start-cta-action">Démarrer <span class="arrow">→</span></span>
+        </section>
+        <!-- ═══════════ FIN DÉMARRER ═══════════ -->
+
+        <section class="synthesis">
+            <div class="syn-card" style="--accent: var(--measure)" id="synDoraCard">
+                <div class="syn-label">DORA</div>
+                <div class="syn-value" id="synDoraValue"><span class="syn-skeleton"></span></div>
+                <div class="syn-meta" id="synDoraMeta">&nbsp;</div>
+            </div>
+            <div class="syn-card" style="--accent: var(--deliver)" id="synDeployCard">
+                <div class="syn-label">Deploys / jour</div>
+                <div class="syn-value" id="synDeployValue"><span class="syn-skeleton"></span></div>
+                <div class="syn-meta" id="synDeployMeta">&nbsp;</div>
+            </div>
+            <div class="syn-card" style="--accent: var(--inspect)" id="synMatuCard">
+                <div class="syn-label">Maturité</div>
+                <div class="syn-value" id="synMatuValue"><span class="syn-skeleton"></span></div>
+                <div class="syn-meta" id="synMatuMeta">&nbsp;</div>
+            </div>
+            <div class="syn-card" style="--accent: var(--collab)" id="synBusCard">
+                <div class="syn-label">Bus factor</div>
+                <div class="syn-value" id="synBusValue"><span class="syn-skeleton"></span></div>
+                <div class="syn-meta" id="synBusMeta">&nbsp;</div>
+            </div>
+        </section>
+
+        <h2 class="section-title">Les 4 chemins du Hub</h2>
+
+        <section class="directions">
+            <div class="direction-card card-measure" onclick="openDrilldown('measure')">
+                <div class="direction-icon">🎯</div>
+                <div class="direction-name">Mesurer & Progresser</div>
+                <div class="direction-tagline">Où on en est. Où on va.</div>
+                <div class="direction-modules">
+                    <span class="module-chip">DORA Insights</span>
+                    <span class="module-chip">Maturité 8 axes</span>
+                    <span class="module-chip">Achievements</span>
+                    <span class="module-chip">Bus Factor</span>
+                    <span class="module-chip">Daily Report</span>
+                </div>
+                <div class="direction-cta">Voir mes métriques <span class="arrow">→</span></div>
+            </div>
+
+            <div class="direction-card card-deliver" onclick="openDrilldown('deliver')">
+                <div class="direction-icon">🚀</div>
+                <div class="direction-name">Livrer & Déployer</div>
+                <div class="direction-tagline">Du code en prod, sans friction.</div>
+                <div class="direction-modules">
+                    <span class="module-chip">Pipeline Generator</span>
+                    <span class="module-chip">Feature Flags</span>
+                    <span class="module-chip">Release Notes</span>
+                </div>
+                <div class="direction-cta">Lancer un déploiement <span class="arrow">→</span></div>
+            </div>
+
+            <div class="direction-card card-inspect" onclick="openDrilldown('inspect')">
+                <div class="direction-icon">🔍</div>
+                <div class="direction-name">Inspecter & Sécuriser</div>
+                <div class="direction-tagline">Garder ses repos sains.</div>
+                <div class="direction-modules">
+                    <span class="module-chip">Repo Analyzer</span>
+                    <span class="module-chip">Security Scanner</span>
+                    <span class="module-chip">Repo Diet</span>
+                    <span class="module-chip">Branch Monitor</span>
+                </div>
+                <div class="direction-cta">Auditer mon repo <span class="arrow">→</span></div>
+            </div>
+
+            <div class="direction-card card-collab" onclick="openDrilldown('collab')">
+                <div class="direction-icon">🤝</div>
+                <div class="direction-name">Collaborer & Améliorer</div>
+                <div class="direction-tagline">Travailler ensemble, mieux.</div>
+                <div class="direction-modules">
+                    <span class="module-chip">MR Reviewer AI</span>
+                    <span class="module-chip">Auto Retro</span>
+                    <span class="module-chip">Smart Estimate</span>
+                </div>
+                <div class="direction-cta">Améliorer l'équipe <span class="arrow">→</span></div>
+            </div>
+        </section>
+
+        <h2 class="section-title">Suggestions du jour</h2>
+
+        <section class="suggestions" id="suggestionsContainer">
+            <div class="sugg-card sugg-skeleton"><div class="sugg-skel-tag"></div><div class="sugg-skel-text"></div><div class="sugg-skel-cta"></div></div>
+            <div class="sugg-card sugg-skeleton"><div class="sugg-skel-tag"></div><div class="sugg-skel-text"></div><div class="sugg-skel-cta"></div></div>
+            <div class="sugg-card sugg-skeleton"><div class="sugg-skel-tag"></div><div class="sugg-skel-text"></div><div class="sugg-skel-cta"></div></div>
+        </section>
+
+        <div class="expert-footer">
+            <span class="expert-link" onclick="alert('TODO : ouvrir la grille des 16 modules')">⚙ Mode expert : voir tous les modules</span>
+        </div>
+    </div>
+
+    <!-- ============ DRILLDOWN OVERLAY ============ -->
+    <div class="drilldown" id="drilldown">
+        <div class="dd-ornament" id="dd-ornament"></div>
+        <div class="drilldown-inner">
+            <button class="dd-back" onclick="closeDrilldown()">← Retour aux chemins</button>
+            <header class="dd-header">
+                <span class="dd-eyebrow" id="dd-eyebrow">CHEMIN</span>
+                <h1 class="dd-title" id="dd-title">Mesurer & Progresser</h1>
+                <div class="dd-tagline" id="dd-tagline">Où on en est. Où on va.</div>
+            </header>
+
+            <section class="dd-stats" id="dd-stats">
+                <!-- Rempli en JS -->
+            </section>
+
+            <h2 class="section-title" id="dd-modules-title">Tes outils</h2>
+            <section class="dd-modules-grid" id="dd-modules">
+                <!-- Rempli en JS -->
+            </section>
+
+            <section class="dd-deeper">
+                <div class="dd-deeper-title" id="dd-deeper-title">💡 Pour aller plus loin</div>
+                <ul class="dd-deeper-list" id="dd-deeper">
+                    <!-- Rempli en JS -->
+                </ul>
+                <div class="dd-deeper-more" id="dd-deeper-more" style="display:none;">
+                    <button id="dd-deeper-more-btn">Voir plus de pistes</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="js/hub.js"></script>
+</body>
+</html>

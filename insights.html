@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DORA Insights — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/insights.css">
+</head>
+<body>
+<div class="container">
+
+    <header class="header">
+        <div class="header-left">
+            <a href="hub-mockup-v2_1.html" class="back-btn" aria-label="Retour au hub">←</a>
+            <h1>
+                <span>📊</span>
+                DORA Insights
+            </h1>
+        </div>
+        <div class="header-right">
+            <button class="export-btn" id="exportBtn" style="display:none">
+                📄 Exporter le rapport
+            </button>
+            <div class="project-badge">
+                <span>📦</span>
+                <span id="projectName">Chargement…</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="errorContainer"></div>
+
+    <div class="loading" id="loadingContainer">
+        <div class="loading-spinner"></div>
+        <div>Calcul des métriques DORA en cours…</div>
+    </div>
+
+    <div id="dashboardContent" style="display:none">
+
+        <!-- ── 4 DORA cards ── -->
+        <div class="section-header">
+            <h2 class="section-title">Les 4 métriques DORA</h2>
+            <p class="section-description">Calculées sur les 30 derniers jours depuis tes données GitLab — vélocité et stabilité de ta livraison.</p>
+        </div>
+
+        <div class="dora-grid">
+            <!-- Deployment Frequency -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background:linear-gradient(135deg,#7c5cff,#a78bfa)">🚀</div>
+                    <div>
+                        <div class="metric-title">Fréquence de déploiement</div>
+                        <div class="metric-purpose">Pipelines success en production / semaine</div>
+                    </div>
+                </div>
+                <div class="metric-value" id="deployFrequency">-</div>
+                <div class="metric-subtitle">déploiements / semaine</div>
+                <div id="deployFrequency-badge"></div>
+                <div class="elite-progress" id="deployFrequency-progress"></div>
+                <a class="metric-action" id="deployFrequency-action" href="#quickwins">💡 Voir les actions</a>
+            </div>
+
+            <!-- Lead Time -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background:linear-gradient(135deg,#2dd4bf,#5eead4)">⚡</div>
+                    <div>
+                        <div class="metric-title">Lead Time for Changes</div>
+                        <div class="metric-purpose">Premier commit → merge en production</div>
+                    </div>
+                </div>
+                <div class="metric-value" id="leadTime">-</div>
+                <div class="metric-subtitle">temps moyen premier commit → merge</div>
+                <div id="leadTime-badge"></div>
+                <div class="elite-progress" id="leadTime-progress"></div>
+                <a class="metric-action" id="leadTime-action" href="#quickwins">💡 Voir les actions</a>
+            </div>
+
+            <!-- Change Failure Rate -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background:linear-gradient(135deg,#fb7185,#f43f5e)">🔧</div>
+                    <div>
+                        <div class="metric-title">Change Failure Rate</div>
+                        <div class="metric-purpose">% des pipelines prod en échec</div>
+                    </div>
+                </div>
+                <div class="metric-value" id="failureRate">-</div>
+                <div class="metric-subtitle">CFR pondéré sur 30j — récent prioritaire</div>
+                <div id="failureRate-badge"></div>
+                <div class="elite-progress" id="failureRate-progress"></div>
+                <a class="metric-action" id="failureRate-action" href="#quickwins">💡 Voir les actions</a>
+            </div>
+
+            <!-- MTTR -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">⏱️</div>
+                    <div>
+                        <div class="metric-title">Time to Restore Service</div>
+                        <div class="metric-purpose">Temps de récupération après incident</div>
+                    </div>
+                </div>
+                <div class="metric-value" id="restoreTime">N/A</div>
+                <div class="metric-subtitle">temps médian pipeline failed → success</div>
+                <div id="restoreTime-badge"></div>
+                <div class="elite-progress" id="restoreTime-progress"></div>
+                <a class="metric-action" id="restoreTime-action" href="#quickwins">💡 Voir les actions</a>
+            </div>
+        </div>
+
+        <!-- ── Score global + Évolution ── -->
+        <div class="score-section">
+            <div class="global-score-card" id="globalScoreCard">
+                <div class="score-circle" id="scoreCircle">
+                    <span id="scoreValue">—</span>
+                    <span class="score-label">/ 100</span>
+                </div>
+                <div class="score-level-title" id="scoreLevelTitle">—</div>
+                <div class="score-desc" id="scoreDesc">Calcul en cours…</div>
+                <div class="score-breakdown" id="scoreBreakdown"></div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">📈 Évolution 30 jours — DF & Lead Time</div>
+                <div class="chart-body">
+                    <canvas id="evolutionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Quick Wins ── -->
+        <div class="qw-section" id="quickwins">
+            <div class="qw-title">💡 Actions — branchées sur tes résultats</div>
+            <div class="qw-grid" id="qwGrid"></div>
+            <div class="qw-cross-section" id="qwCross"></div>
+        </div>
+
+    </div><!-- /dashboardContent -->
+
+    <div class="footer">DevOps Hub</div>
+</div>
+
+<script src="js/insights.js"></script>
+</body>
+</html>

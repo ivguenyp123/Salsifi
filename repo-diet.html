@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repo Diet - LCL DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/repo-diet.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>←</a>
+                <h1>🏋️ Repo Diet</h1>
+            </div>
+            <div class="project-badge">
+                <span>📁</span>
+                <span id="projectName">Chargement...</span>
+            </div>
+            <button class="refresh-btn" data-action="analyze">🔄 Ré-analyser</button>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card info">
+                <div class="stat-value" id="totalSize">--</div>
+                <div class="stat-label">Taille repo</div>
+                <div class="stat-detail" id="totalSizeDetail"></div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value" id="historySize">--</div>
+                <div class="stat-label">Historique Git</div>
+                <div class="stat-detail" id="historySizeDetail"></div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value" id="totalFiles">--</div>
+                <div class="stat-label">Fichiers</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-value" id="suspectFiles">--</div>
+                <div class="stat-label">Fichiers suspects</div>
+            </div>
+            <div class="stat-card" id="lfsCard">
+                <div class="stat-value" id="lfsStatus">--</div>
+                <div class="stat-label">Git LFS</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value" id="potentialSavings">--</div>
+                <div class="stat-label">Économie potentielle</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">🔴 Fichiers suspects détectés</div>
+                    <button class="action-btn small" id="selectAllSuspects" data-action="toggle-select-all">☑️ Tout sélectionner</button>
+                </div>
+                <div class="file-list" id="bigFilesList">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <div>Analyse en cours...</div>
+                    </div>
+                </div>
+                <div class="panel-actions" id="suspectActions" style="display:none;">
+                    <button class="action-btn danger" data-action="show-delete-commands">🗑️ Générer commandes suppression</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">⚠️ Patterns problématiques</div>
+                <div class="pattern-list" id="patternsList">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">📊 Répartition par type</div>
+                <div class="chart-container" id="chartContainer">
+                    <div class="loading-state"><div class="loading-spinner"></div></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">💡 Recommandations</div>
+                <div class="recommendations" id="recommendationsList">
+                    <div class="loading-state"><div class="loading-spinner"></div></div>
+                </div>
+            </div>
+
+            <div class="panel full-panel">
+                <div class="panel-header">
+                    <div class="panel-title">📝 .gitignore suggéré</div>
+                    <div class="panel-header-actions">
+                        <button class="action-btn" data-action="copy-gitignore">📋 Copier</button>
+                        <button class="action-btn primary" data-action="create-gitignore">✨ Créer dans le repo</button>
+                    </div>
+                </div>
+                <div class="gitignore-box" id="gitignoreContent">
+                    # Chargement...
+                </div>
+                <div class="gitignore-status" id="gitignoreStatus"></div>
+            </div>
+
+            <!-- Nouvelle section: Commandes Git -->
+            <div class="panel full-panel" id="commandsPanel" style="display:none;">
+                <div class="panel-header">
+                    <div class="panel-title">🛠️ Commandes Git à exécuter</div>
+                    <button class="action-btn" data-action="copy-commands">📋 Copier tout</button>
+                </div>
+                <div class="commands-box" id="commandsContent"></div>
+                <div class="commands-warning">
+                    ⚠️ Exécutez ces commandes dans votre terminal local. Faites un backup avant !
+                </div>
+            </div>
+
+            <!-- Nouvelle section: Nettoyage historique -->
+            <div class="panel full-panel" id="historyPanel">
+                <div class="panel-header">
+                    <div class="panel-title">🧹 Nettoyage de l'historique</div>
+                </div>
+                <div class="history-info">
+                    <p>Si votre historique Git est lourd (fichiers supprimés mais encore présents), vous pouvez le nettoyer avec <code>git filter-repo</code> ou BFG Repo-Cleaner.</p>
+                    <div class="history-stats" id="historyStats">
+                        <div class="history-stat">
+                            <span class="history-stat-label">Ratio historique/repo</span>
+                            <span class="history-stat-value" id="historyRatio">--</span>
+                        </div>
+                        <div class="history-stat">
+                            <span class="history-stat-label">Diagnostic</span>
+                            <span class="history-stat-value" id="historyDiag">--</span>
+                        </div>
+                    </div>
+                    <button class="action-btn" data-action="show-history-commands">🔍 Voir commandes nettoyage</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour les commandes -->
+        <div class="modal-overlay" id="modalOverlay" data-action="modal-overlay-click">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Commandes</h3>
+                    <button class="modal-close" data-action="close-modal">×</button>
+                </div>
+                <div class="modal-body" id="modalBody"></div>
+                <div class="modal-footer">
+                    <button class="action-btn" data-action="copy-modal">📋 Copier</button>
+                    <button class="action-btn secondary" data-action="close-modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/repo-diet.js"></script>
+</body>
+</html>

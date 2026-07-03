@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Achievements — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+    <link rel="stylesheet" href="css/gaming.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <a href="hub-mockup-v2_1.html" class="back-btn" aria-label="Retour au hub">←</a>
+            <h1>🏆 DevOps Achievements</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Summary Header -->
+        <div class="summary-header">
+            <div class="summary-top">
+                <div class="summary-title">
+                    <h2>🏆 Achievements DevOps</h2>
+                    <p>Progression basée sur tes pratiques GitLab réelles</p>
+                </div>
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="totalXP">0</div>
+                        <div class="summary-stat-label">XP Total</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="badgesRatio">0/0</div>
+                        <div class="summary-stat-label">Badges</div>
+                    </div>
+                    <div class="summary-stat lost" id="lostStatBox" style="display: none;">
+                        <div class="summary-stat-value" id="badgesLost">0</div>
+                        <div class="summary-stat-label">Perdus</div>
+                    </div>
+                </div>
+            </div>
+            <div class="summary-progress">
+                <div class="summary-progress-header">
+                    <span>Progression globale</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="summary-progress-bar">
+                    <div class="summary-progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">Tous (<span id="filterAll">0</span>)</button>
+            <button class="filter-btn" data-filter="unlocked">✅ Débloqués (<span id="filterUnlocked">0</span>)</button>
+            <button class="filter-btn" data-filter="locked">🔒 Verrouillés (<span id="filterLocked">0</span>)</button>
+            <button class="filter-btn lost-filter" data-filter="lost">📉 Perdus (<span id="filterLost">0</span>)</button>
+        </div>
+
+        <!-- Badges Container -->
+        <div id="badgesContainer">
+            <div class="loading">⏳ Chargement des badges...</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="page-footer">
+            <span id="lastUpdate">Dernière analyse : --</span> • Données basées sur les 30 derniers jours
+        </div>
+    </div>
+
+    <script src="js/gaming.js"></script>
+</body>
+</html>

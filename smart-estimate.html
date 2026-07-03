@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Estimate - LCL DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/smart-estimate.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>←</a>
+                <h1>🎯 Smart Estimate</h1>
+            </div>
+            <div class="project-badge" id="projectBadge">
+                <span>📦</span>
+                <span id="projectName">Chargement...</span>
+            </div>
+        </header>
+
+        <!-- Config Section -->
+        <section class="config-section" id="configSection">
+            <div class="config-header">
+                <div>
+                    <h2>📊 Nouvelle estimation</h2>
+                    <p>Décrivez votre feature et obtenez une estimation basée sur l'historique réel du projet</p>
+                </div>
+            </div>
+
+            <div class="period-section">
+                <div class="period-label">Période d'analyse de l'historique</div>
+                <div class="period-buttons">
+                    <button class="period-btn" data-value="90">3 mois</button>
+                    <button class="period-btn active" data-value="180">6 mois</button>
+                    <button class="period-btn" data-value="365">12 mois</button>
+                </div>
+            </div>
+
+            <div class="description-section">
+                <div class="description-label">Description de la feature à estimer</div>
+                <textarea class="description-textarea" id="featureDescription" placeholder="Décrivez la feature en détail...
+
+Exemples :
+• API REST pour gérer les préférences utilisateur avec CRUD complet
+• Formulaire de création de compte avec validation email
+• Batch de synchronisation nocturne des données clients
+• Correction du bug de calcul des intérêts sur compte épargne"></textarea>
+            </div>
+
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeFeature()">
+                🔍 Analyser et estimer
+            </button>
+        </section>
+
+        <!-- Loading -->
+        <section class="loading-section" id="loadingSection">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Analyse en cours...</div>
+            <div class="loading-step" id="loadingStep">Récupération des MRs...</div>
+        </section>
+
+        <!-- Results -->
+        <section class="results-section" id="resultsSection">
+            <!-- Main Estimate -->
+            <div class="estimate-card">
+                <div class="estimate-main">
+                    <div class="estimate-label">Estimation basée sur <span id="sampleSize">0</span> MRs</div>
+                    <div class="estimate-value" id="mainEstimate">-</div>
+                    <div class="estimate-unit">jours ouvrés</div>
+                    <div class="estimate-range">
+                        Intervalle : <strong id="rangeMin">-</strong> à <strong id="rangeMax">-</strong> jours
+                    </div>
+                </div>
+                <div class="confidence-circle confidence-high" id="confidenceCircle">
+                    <div class="confidence-value" id="confidenceValue">-</div>
+                    <div class="confidence-label" id="confidenceLabel">Confiance</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Warnings -->
+            <div class="analysis-card warnings-card" id="warningsCard">
+                <div class="card-header">
+                    <div class="card-title">⚠️ Points d'attention</div>
+                </div>
+                <div id="warningsList"></div>
+            </div>
+
+            <!-- Analysis Grid -->
+            <div class="analysis-grid">
+                <!-- Similar MRs -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-title">🔗 MRs similaires</div>
+                        <span class="card-badge badge-good" id="similarCount">0</span>
+                    </div>
+                    <table class="similar-table">
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>MR</th>
+                                <th>Fichiers</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody id="similarTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-title">📋 Décomposition</div>
+                    </div>
+                    <div class="breakdown-list" id="breakdownList"></div>
+                </div>
+
+                <!-- Chart -->
+                <div class="analysis-card chart-card">
+                    <div class="card-header">
+                        <div class="card-title">📈 Distribution historique</div>
+                    </div>
+                    <div class="history-chart" id="historyChart"></div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="analysis-card reco-card">
+                    <div class="card-header">
+                        <div class="card-title">💡 Recommandations</div>
+                    </div>
+                    <div class="reco-list" id="recoList"></div>
+                </div>
+            </div>
+
+            <!-- Export -->
+            <div class="export-section">
+                <button class="export-btn" onclick="exportToJira()">📋 Export Jira</button>
+                <button class="export-btn" onclick="exportToMarkdown()">📝 Copier Markdown</button>
+                <button class="export-btn" onclick="shareEstimate()">🔗 Partager</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/smart-estimate.js"></script>
+</body>
+</html>

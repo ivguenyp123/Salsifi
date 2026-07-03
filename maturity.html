@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Maturité DevOps — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/maturity.css">
+</head>
+<body>
+
+<div class="header">
+    <a class="back-btn" href="hub-mockup-v2_1.html" aria-label="Retour au hub">←</a>
+    <div class="header-title">🎯 Maturité DevOps <span>Assessment hybride</span></div>
+    <div class="header-step" id="headerStep">Étape 1/4</div>
+</div>
+
+<!-- SCREEN 1 — ACCUEIL -->
+<div class="screen active" id="s-welcome">
+    <div class="welcome">
+        <div class="welcome-icon">🎯</div>
+        <h1>Évaluation de Maturité DevOps</h1>
+        <p class="sub">Évalue ta squad sur 8 axes. Tes réponses déclaratives seront confrontées aux données réelles GitLab pour une vision objective.</p>
+        <div class="info-grid">
+            <div class="info-card"><div class="ic-num">38</div><div class="ic-label">Questions</div></div>
+            <div class="info-card"><div class="ic-num">8</div><div class="ic-label">Axes</div></div>
+            <div class="info-card"><div class="ic-num">~15</div><div class="ic-label">Minutes</div></div>
+        </div>
+        <div class="axes-preview">
+            <h3>📋 Les 8 axes d'évaluation</h3>
+            <div class="axes-row">
+                <div class="axe-chip culture">👥 Culture & Orga <span class="ac-count">10</span> <span class="ac-tag">déclaratif</span></div>
+                <div class="axe-chip">🚀 Delivery <span class="ac-count">5</span></div>
+                <div class="axe-chip">🔒 Qualité <span class="ac-count">5</span></div>
+                <div class="axe-chip">⚙️ Stabilité <span class="ac-count">4</span></div>
+                <div class="axe-chip">🧹 Hygiène <span class="ac-count">5</span></div>
+                <div class="axe-chip">🛡️ Résilience <span class="ac-count">4</span></div>
+                <div class="axe-chip">⚡ Pratiques <span class="ac-count">5</span></div>
+                <div class="axe-chip" style="border-color:rgba(244,63,94,0.4)">🔐 Sécurité <span class="ac-count">5</span> <span class="ac-tag" style="background:rgba(244,63,94,0.3);color:#fda4af">data gouv.</span></div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>🎯 Nom de la Squad</label><input type="text" id="inSquad" placeholder="Ex: Team Phoenix"></div>
+            <div class="form-group"><label>🏛️ Tribu</label><input type="text" id="inTribu" placeholder="Ex: Tribe Engineering"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>📅 Date</label><input type="date" id="inDate"></div>
+            <div class="form-group"><label>💡 Réponds en équipe pour une évaluation plus représentative</label></div>
+        </div>
+        <button class="btn-go" onclick="startQuiz()">🎮 Commencer l'évaluation</button>
+        <div class="import-row">
+            <span class="import-sep">ou</span>
+            <button class="btn-import" onclick="document.getElementById('importFile').click()">📂 Reprendre une évaluation (JSON)</button>
+            <input type="file" id="importFile" accept="application/json,.json" hidden onchange="importMaturityState(event)">
+        </div>
+    </div>
+</div>
+
+<!-- SCREEN 2 — QUESTIONNAIRE -->
+<div class="screen" id="s-quiz">
+    <div class="quiz-container">
+        <div class="quiz-progress">
+            <div class="qp-bar"><div class="qp-fill" id="qpFill"></div></div>
+            <div class="qp-text" id="qpText">0 / 38</div>
+            <button class="btn-save" onclick="exportMaturityState()" title="Sauvegarder l'évaluation en JSON">💾 Sauvegarder</button>
+        </div>
+        <div id="categoryHeader"></div>
+        <div id="questionList"></div>
+        <div class="quiz-nav" id="quizNav"></div>
+    </div>
+</div>
+
+<!-- SCREEN 3 — LOADING -->
+<div class="screen" id="s-loading">
+    <div class="loading-container">
+        <div class="loading-icon">⚙️</div>
+        <div class="loading-title">Analyse GitLab en cours</div>
+        <div class="loading-sub">Confrontation déclaratif vs données réelles</div>
+        <div class="ld-bar"><div class="ld-fill" id="ldFill"></div></div>
+        <div class="ld-steps" id="ldSteps"></div>
+    </div>
+</div>
+
+<!-- SCREEN 4 — RAPPORT -->
+<div class="screen" id="s-report">
+    <div class="report">
+        <div class="report-header">
+            <div class="rh-score">
+                <div class="big" id="rhScore">--</div>
+                <div class="max">/ 100</div>
+                <div class="level" id="rhLevel">--</div>
+                <div class="rh-meta" id="rhMeta"></div>
+            </div>
+            <div class="rh-chart"><canvas id="radarChart"></canvas></div>
+        </div>
+        <div class="confront-title">Mise en perspective — Déclaratif vs Données GitLab</div>
+        <div class="confront-grid" id="confrontGrid"></div>
+        <div style="text-align:center; margin-top:12px;">
+            <button class="btn-next btn-nav" onclick="goActions()">📋 Générer le plan d'accompagnement →</button>
+        </div>
+    </div>
+</div>
+
+<!-- SCREEN 5 — PLAN D'ACTION -->
+<div class="screen" id="s-actions">
+    <div class="actions">
+        <div class="actions-header">
+            <h2>📋 Plan d'accompagnement</h2>
+            <p>Basé sur les écarts identifiés entre ta perception et les données GitLab</p>
+        </div>
+        <div class="actions-stats" id="actionsStats"></div>
+        <div id="actionsList"></div>
+        <div class="actions-footer">
+            <button class="btn-prev btn-nav" onclick="showScreen('s-report')">← Retour au rapport</button>
+            <button class="btn-export" onclick="exportActionPlan()">📥 Exporter le plan</button>
+        </div>
+    </div>
+</div>
+
+<div class="cf-overlay" id="cfOverlay" onclick="if(event.target===this)closeCfModal()">
+    <div class="cf-modal" id="cfModal"></div>
+</div>
+
+<script src="js/maturity.js"></script>
+</body>
+</html>

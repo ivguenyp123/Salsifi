@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Hub — Connexion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette Hub (synchronisée avec la maquette V2) */
+            --bg-deep:        #0f0a1f;
+            --bg-mid:         #1a1230;
+            --bg-card:        rgba(28, 20, 50, 0.6);
+            --bg-card-hover:  rgba(40, 28, 70, 0.75);
+            --border-subtle:  rgba(255, 255, 255, 0.08);
+            --border-strong:  rgba(255, 255, 255, 0.18);
+            --text-primary:   #f5f1ff;
+            --text-secondary: #b8aed8;
+            --text-muted:     #7a6fa3;
+
+            /* Couleurs des 4 chemins (entremêlées sur la home de connexion) */
+            --measure:        #7c5cff;
+            --deliver:        #2dd4bf;
+            --inspect:        #fb923c;
+            --collab:         #f472b6;
+
+            /* Feedback */
+            --color-error:    #fb7185;
+            --color-success:  #2dd4bf;
+
+            --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Halos colorés des 4 chemins, qui s'entremêlent en fond */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 700px 500px at 18% 25%, rgba(124, 92, 255, 0.22), transparent 60%),
+                radial-gradient(ellipse 600px 450px at 82% 30%, rgba(45, 212, 191, 0.16), transparent 60%),
+                radial-gradient(ellipse 700px 600px at 28% 88%, rgba(251, 146, 60, 0.14), transparent 60%),
+                radial-gradient(ellipse 600px 500px at 88% 78%, rgba(244, 114, 182, 0.16), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+            animation: haloDrift 18s ease-in-out infinite alternate;
+        }
+        @keyframes haloDrift {
+            from { transform: scale(1) translate(0, 0); }
+            to   { transform: scale(1.05) translate(-15px, 10px); }
+        }
+
+        /* Bruit subtil */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .logo-mark {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: conic-gradient(
+                from 180deg at 50% 50%,
+                var(--measure) 0deg,
+                var(--collab)  90deg,
+                var(--inspect) 180deg,
+                var(--deliver) 270deg,
+                var(--measure) 360deg
+            );
+            border-radius: 18px;
+            position: relative;
+            box-shadow:
+                0 12px 40px rgba(124, 92, 255, 0.35),
+                0 4px 12px rgba(244, 114, 182, 0.20);
+            animation: logoPulse 4s ease-in-out infinite;
+        }
+        .logo-mark::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            background: var(--bg-deep);
+            border-radius: 11px;
+        }
+        .logo-mark::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            background: conic-gradient(
+                from 0deg at 50% 50%,
+                var(--measure),
+                var(--collab),
+                var(--inspect),
+                var(--deliver),
+                var(--measure)
+            );
+            border-radius: 6px;
+        }
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 12px 40px rgba(124, 92, 255, 0.35), 0 4px 12px rgba(244, 114, 182, 0.20); }
+            50%      { transform: scale(1.04) rotate(180deg); box-shadow: 0 16px 50px rgba(45, 212, 191, 0.30), 0 4px 12px rgba(251, 146, 60, 0.25); }
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 42px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            min-height: 1.5em;
+        }
+
+        #rotatingText {
+            font-weight: 600;
+            background: linear-gradient(120deg, var(--measure), var(--collab), var(--inspect), var(--deliver));
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: opacity 0.3s ease;
+            display: inline-block;
+            animation: gradientSlide 8s linear infinite;
+        }
+        @keyframes gradientSlide {
+            from { background-position: 0% 50%; }
+            to   { background-position: 100% 50%; }
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 32px 80px -20px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease 0.15s forwards;
+        }
+
+        /* ===== FORM ===== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        select,
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            background: rgba(15, 10, 31, 0.6);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            outline: none;
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'><path d='M3 5l4 4 4-4' stroke='%23b8aed8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 44px;
+            cursor: pointer;
+        }
+        select option {
+            background: var(--bg-mid);
+            color: var(--text-primary);
+        }
+        input:focus,
+        select:focus {
+            border-color: var(--measure);
+            box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.18);
+        }
+        input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* ===== BUTTON ===== */
+        .btn {
+            width: 100%;
+            background: linear-gradient(120deg, var(--measure), var(--collab));
+            background-size: 200% 100%;
+            background-position: 0% 50%;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: background-position 0.4s, transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px -8px rgba(124, 92, 255, 0.5);
+            margin-top: 8px;
+        }
+        .btn:hover {
+            background-position: 100% 50%;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 32px -8px rgba(244, 114, 182, 0.55);
+        }
+        .btn:active { transform: translateY(0); }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn.loading .spinner { display: block; }
+        .btn.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== ALERTS ===== */
+        .alert {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            line-height: 1.4;
+        }
+        .alert.show { display: flex; animation: slideDown 0.3s ease; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .error {
+            background: rgba(251, 113, 133, 0.12);
+            border: 1px solid rgba(251, 113, 133, 0.35);
+            color: var(--color-error);
+        }
+        .success {
+            background: rgba(45, 212, 191, 0.12);
+            border: 1px solid rgba(45, 212, 191, 0.35);
+            color: var(--color-success);
+        }
+
+        /* ===== INFO BOX ===== */
+        .info {
+            background: rgba(124, 92, 255, 0.08);
+            border: 1px solid rgba(124, 92, 255, 0.20);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-top: 24px;
+        }
+        .info-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--measure);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .info p strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            margin-top: 28px;
+            color: var(--text-muted);
+            font-size: 13px;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease 0.30s forwards;
+        }
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+            border-bottom: 1px dashed transparent;
+        }
+        .footer a:hover {
+            color: var(--text-primary);
+            border-bottom-color: var(--border-strong);
+        }
+        .footer .sep {
+            margin: 0 10px;
+            opacity: 0.5;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            h1 { font-size: 34px; }
+            .card { padding: 24px; }
+            .header p { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-mark"></div>
+            <h1>DevOps Hub</h1>
+            <p>
+                Votre cockpit DevOps unifié pour
+                <span id="rotatingText">accélérer vos déploiements</span>
+            </p>
+        </header>
+
+        <div class="card">
+            <div class="alert error" id="error">
+                <span>⚠️</span>
+                <span id="errorText"></span>
+            </div>
+
+            <div class="alert success" id="success">
+                <span>✅</span>
+                <span id="successText"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="gitlabUrl">URL GitLab</label>
+                <select id="gitlabUrl">
+                    <option value="https://gitlab.com">https://gitlab.com</option>
+                    <option value="https://scm.saas.cagip.group.gca">https://scm.saas.cagip.group.gca</option>
+                    <option value="https://scm-premium.saas.cagip.group.gca">https://scm-premium.saas.cagip.group.gca</option>
+                </select>
+                <div class="hint">Sélectionne ton instance GitLab</div>
+            </div>
+
+            <div class="form-group">
+                <label for="token">Token d'accès multi-projets</label>
+                <input
+                    type="password"
+                    id="token"
+                    placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
+                    autocomplete="off"
+                >
+                <div class="hint">Personal Access Token avec accès à tous tes projets</div>
+            </div>
+
+            <button class="btn" id="btn" onclick="connect()">
+                <span class="spinner"></span>
+                <span class="btn-text">Se connecter</span>
+            </button>
+
+            <div class="info">
+                <div class="info-title">🎯 Accès direct à ton hub</div>
+                <p>
+                    Après connexion, tu accèderas directement à ton <strong>hub des 4 chemins</strong>.
+                    Tu pourras choisir ton repo et ton intention du moment depuis la page d'accueil.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="devops-hub-documentation.html">📚 Documentation</a>
+            <span class="sep">·</span>
+            <span>v2.0</span>
+        </div>
+    </div>
+
+    <script>
+        // ══════════════════════════════════════════════════════════════════
+        //  CONNEXION AVEC VÉRIFICATION DU TOKEN
+        // ══════════════════════════════════════════════════════════════════
+
+        async function connect() {
+            const gitlabUrl = document.getElementById('gitlabUrl').value.trim().replace(/\/+$/, '');
+            const token = document.getElementById('token').value.trim();
+            const btn = document.getElementById('btn');
+
+            hideMessages();
+
+            // Validation des champs
+            if (!gitlabUrl || !token) {
+                showError('Veuillez remplir tous les champs');
+                return;
+            }
+
+            // Validation URL
+            if (!gitlabUrl.startsWith('http://') && !gitlabUrl.startsWith('https://')) {
+                showError('URL GitLab invalide. Doit commencer par http:// ou https://');
+                return;
+            }
+
+            // Validation du token
+            const isGlpatToken = token.startsWith('glpat-');
+            const isCEToken = /^[a-zA-Z0-9_-]{20,}$/.test(token) && !token.startsWith('glpat-');
+
+            if (!isGlpatToken && !isCEToken) {
+                showError('Token invalide. Formats acceptés : glpat-xxx (Premium) ou token classique (20+ caractères).');
+                return;
+            }
+
+            // Loading
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                // ══════════════════════════════════════════════════════════════════
+                //  VÉRIFICATION : Le token fonctionne-t-il ?
+                // ══════════════════════════════════════════════════════════════════
+
+                console.log('Vérification du token...');
+
+                const response = await fetch(`${gitlabUrl}/api/v4/user`, {
+                    headers: { 'PRIVATE-TOKEN': token }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Token invalide ou accès refusé (${response.status})`);
+                }
+
+                const user = await response.json();
+                console.log('✅ Token valide, utilisateur:', user.username);
+
+                // ══════════════════════════════════════════════════════════════════
+                //  STOCKAGE DES CREDENTIALS ET REDIRECTION
+                // ══════════════════════════════════════════════════════════════════
+
+                // Charger ou créer la structure multi-workspaces
+                let workspacesData = localStorage.getItem('devops_hub_workspaces');
+                if (!workspacesData) {
+                    // Première connexion : créer la structure
+                    workspacesData = {
+                        gitlabUrl: gitlabUrl,
+                        token: token,
+                        username: user.username,
+                        workspaces: [],
+                        activeWorkspaceId: null,
+                        lastLogin: new Date().toISOString()
+                    };
+                } else {
+                    // Mettre à jour les credentials
+                    workspacesData = JSON.parse(workspacesData);
+                    workspacesData.gitlabUrl = gitlabUrl;
+                    workspacesData.token = token;
+                    workspacesData.username = user.username;
+                    workspacesData.lastLogin = new Date().toISOString();
+                }
+
+                // Sauvegarder
+                localStorage.setItem('devops_hub_workspaces', JSON.stringify(workspacesData));
+                sessionStorage.setItem('session_start', Date.now().toString());
+
+                // Succès
+                showSuccess('Connexion réussie ! Redirection...');
+
+                setTimeout(() => {
+                    window.location.href = 'hub-mockup-v2_1.html';
+                }, 800);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('error').classList.add('show');
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('successText').textContent = msg;
+            document.getElementById('success').classList.add('show');
+        }
+
+        function hideMessages() {
+            document.getElementById('error').classList.remove('show');
+            document.getElementById('success').classList.remove('show');
+        }
+
+        // Enter = submit
+        document.getElementById('token').addEventListener('keypress', e => {
+            if (e.key === 'Enter') connect();
+        });
+
+        // Si déjà connecté, proposer de continuer
+        window.addEventListener('DOMContentLoaded', () => {
+            const workspacesData = localStorage.getItem('devops_hub_workspaces');
+            if (workspacesData) {
+                const data = JSON.parse(workspacesData);
+                if (data.workspaces && data.workspaces.length > 0) {
+                    // Pré-remplir l'URL
+                    document.getElementById('gitlabUrl').value = data.gitlabUrl || '';
+                }
+            }
+
+            // Animation du slogan rotatif
+            const phrases = [
+                'accélérer vos déploiements',
+                'optimiser vos workflows',
+                'acculturer vos équipes',
+                "cultiver l'amélioration continue",
+                'collaborer efficacement',
+                'piloter votre transformation DevOps'
+            ];
+            let currentIndex = 0;
+            const rotatingTextElement = document.getElementById('rotatingText');
+
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % phrases.length;
+                rotatingTextElement.style.opacity = '0';
+
+                setTimeout(() => {
+                    rotatingTextElement.textContent = phrases[currentIndex];
+                    rotatingTextElement.style.opacity = '1';
+                }, 300);
+            }, 2800);
+        });
+    </script>
+</body>
+</html>

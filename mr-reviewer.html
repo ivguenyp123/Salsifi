@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MR Reviewer AI | LCL DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/mr-reviewer.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>←</a>
+            <h1>🤖 MR Reviewer AI</h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="api-status" id="apiStatus" data-action="show-api-config">
+                <span class="api-status-dot"></span>
+                <span class="api-status-text">Vérification...</span>
+            </div>
+            <div class="project-badge">
+                <span>📦</span>
+                <span id="projectName">Chargement...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Panel Gauche : Liste des MR -->
+        <div class="mr-panel">
+            <div class="panel-header">
+                <span>📋 Merge Requests</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="mr-count" id="mrCount">...</span>
+                    <button class="refresh-btn" id="refreshBtn" data-action="load-mrs" title="Rafraîchir">🔄</button>
+                </div>
+            </div>
+            <div class="mr-list" id="mrList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔄</div>
+                    <div class="empty-state-text">Chargement...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Central : Analyse -->
+        <div class="analysis-panel">
+            <div class="analysis-header">
+                <div class="analysis-title">
+                    <span>🔍</span>
+                    <span id="analysisTitle">Sélectionnez une MR</span>
+                </div>
+                <div class="analysis-tabs" id="analysisTabs" style="display: none;">
+                    <button class="analysis-tab active" data-tab="preview">📄 Preview</button>
+                    <button class="analysis-tab" data-tab="analysis">🤖 Analyse IA</button>
+                </div>
+                <button class="analyze-btn" id="analyzeBtn" data-action="start-analysis" disabled>
+                    <span>🤖</span>
+                    <span>Analyser avec IA</span>
+                </button>
+            </div>
+            <div class="analysis-content" id="analysisContent">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">🔍</div>
+                    <div class="empty-state-title">Prêt pour l'analyse</div>
+                    <div class="empty-state-text">Sélectionnez une MR pour voir le diff</div>
+                </div>
+                <div id="previewPanel" style="display: none;"></div>
+                <div id="analysisResults" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Panel Droit : Actions -->
+        <div class="actions-panel" id="actionsPanel">
+            <div class="actions-section">
+                <div class="actions-section-title">🎯 Actions MR</div>
+                <button class="action-btn approve" id="btnApprove" data-action="show-approve" disabled>
+                    ✅ Approuver
+                </button>
+                <button class="action-btn merge" id="btnMerge" data-action="show-merge" disabled>
+                    🔀 Merger
+                </button>
+                <button class="action-btn comment" id="btnComment" data-action="show-comment" disabled>
+                    💬 Commenter
+                </button>
+                <button class="action-btn changes" id="btnChanges" data-action="show-changes" disabled>
+                    📝 Demander changements
+                </button>
+                <button class="action-btn close" id="btnClose" data-action="show-close" disabled>
+                    🚫 Fermer la MR
+                </button>
+            </div>
+
+            <div class="actions-section">
+                <div class="actions-section-title">ℹ️ Informations</div>
+                <div id="mrInfoContainer">
+                    <div class="empty-state" style="padding: 20px;">
+                        <div class="empty-state-text">Sélectionnez une MR</div>
+                    </div>
+                </div>
+            </div>
+
+            <!--
+                Sections "Labels" et "Assignees" masquées : les modals "Fonctionnalité
+                à venir" pour l'ajout/modif ne sont pas câblées. On les réactivera
+                quand on aura l'API GitLab branchée pour add/remove label et add/remove
+                assignee. La lecture seule (affichage des labels/assignees existants)
+                reste disponible dans le bloc "Informations" + bouton "Voir sur GitLab".
+            -->
+
+            <div class="actions-section" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <div class="actions-section-title">📁 Fichiers modifiés</div>
+                <div class="files-section" id="filesContainer">
+                    <div class="empty-state" style="padding: 20px;">
+                        <div class="empty-state-text">Aucun fichier</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-section">
+                <button class="export-btn" id="exportBtn" data-action="export-analysis" disabled>
+                    📤 Exporter l'analyse
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal" data-action="modal-overlay-click">
+        <div class="modal">
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script src="js/mr-reviewer.js"></script>
+</body>
+</html>

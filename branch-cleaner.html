@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branch Cleaner - LCL DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧹</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/branch-cleaner.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>←</a>
+                <h1>🧹 Branch Cleaner</h1>
+            </div>
+            <div class="project-badge">
+                <span>📦</span>
+                <span id="projectName">Chargement...</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="totalBranches">--</div>
+                <div class="stat-label">Branches candidates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value red" id="criticalBranches">--</div>
+                <div class="stat-label">> 90 jours</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value orange" id="staleBranches">--</div>
+                <div class="stat-label">30-90 jours</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="recentBranches">--</div>
+                <div class="stat-label">< 30 jours</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>📅 Âge minimum :</label>
+                <select class="filter-select" id="ageFilter">
+                    <option value="0">Toutes</option>
+                    <option value="30">+ de 30 jours</option>
+                    <option value="60">+ de 60 jours</option>
+                    <option value="90" selected>+ de 90 jours</option>
+                    <option value="180">+ de 180 jours</option>
+                    <option value="365">+ de 1 an</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🔀 Statut :</label>
+                <select class="filter-select" id="statusFilter">
+                    <option value="all">Toutes</option>
+                    <option value="merged">Mergées uniquement</option>
+                    <option value="unmerged">Non mergées</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🔍</label>
+                <input type="text" class="filter-input" id="searchFilter" placeholder="Rechercher une branche...">
+            </div>
+            <button class="btn btn-secondary" data-action="load-branches">🔄 Rafraîchir</button>
+        </div>
+
+        <!-- Branch List -->
+        <div class="branch-list-container">
+            <div class="branch-list-header">
+                <div class="select-all-container">
+                    <div class="checkbox-custom" id="selectAllCheckbox" data-action="toggle-select-all"></div>
+                    <span id="selectAllLabel">Sélectionner tout (<span id="filteredCount">0</span> branches)</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" data-action="select-merged">✅ Sélectionner mergées</button>
+                </div>
+            </div>
+
+            <div id="branchListContent">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Chargement des branches...</div>
+                </div>
+            </div>
+
+            <div id="pagination" class="pagination" style="display: none;">
+                <button class="pagination-btn" id="prevBtn" data-action="prev-page">← Précédent</button>
+                <span class="pagination-info" id="pageInfo">Page 1/1</span>
+                <button class="pagination-btn" id="nextBtn" data-action="next-page">Suivant →</button>
+            </div>
+
+            <div class="actions-bar">
+                <div class="selection-info">
+                    <span><strong id="selectedCount">0</strong> branches sélectionnées</span>
+                    <span class="warning-badge" id="unmergedWarning" style="display: none;">
+                        ⚠️ <span id="unmergedCount">0</span> non mergées
+                    </span>
+                </div>
+                <button class="btn btn-primary" id="deleteBtn" disabled data-action="show-delete-modal">
+                    🗑️ Supprimer les sélectionnées
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h2>⚠️ Confirmation</h2>
+            <p id="deleteModalText">Êtes-vous sûr de vouloir supprimer X branches ?</p>
+            <div id="deleteProgress" style="display: none;">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0 / 0 branches supprimées</div>
+                </div>
+            </div>
+            <div class="modal-actions" id="deleteModalActions">
+                <button class="btn btn-secondary" data-action="hide-delete-modal">Annuler</button>
+                <button class="btn btn-primary" data-action="delete-branches">🗑️ Confirmer la suppression</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/branch-cleaner.js"></script>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Flag Manager - LCL DevOps Hub</title>
+    <link rel="stylesheet" href="css/feature-flag-manager.css">
+    <style>
+        /* Contrôles de regroupement par famille */
+        .family-select {
+            background: rgba(255,255,255,0.06);
+            color: #e6e6f0;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: border-color .15s, background .15s;
+            max-width: 240px;
+        }
+        .family-select:hover { border-color: rgba(124,92,252,0.6); }
+        .family-select:focus { border-color: #7c5cfc; background: rgba(124,92,252,0.12); }
+        .family-select option { background: #1a1a2e; color: #e6e6f0; }
+
+        .grouped-toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer;
+            user-select: none;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.04);
+            transition: border-color .15s, background .15s;
+        }
+        .grouped-toggle-label:hover { border-color: rgba(124,92,252,0.5); }
+        .grouped-toggle-label input { accent-color: #7c5cfc; cursor: pointer; }
+
+        .family-header-row td { user-select: none; }
+        .family-header-row:hover td { background: rgba(124,92,252,0.16) !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <a href="hub-mockup-v2_1.html" class="back-btn">←</a>
+                <h1>🚩 Feature Flag <span class="accent">Manager</span></h1>
+            </div>
+            <div class="header-actions">
+                <div class="sync-indicator"><span class="sync-dot"></span>Sync auto</div>
+                <div class="project-badge" id="projectName">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <!--
+            Les onglets "Approbations" et "Permissions" sont masqués pour le bac à sable LCL :
+            le RBAC et le système d'approbations ne sont pas câblés sur l'authentification réelle
+            (currentUserRole hardcodé, demandes d'approbation stockées en localStorage uniquement).
+            À réactiver quand JWT/session porteront un vrai rôle utilisateur.
+        -->
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="flags">🏳 Flags <span id="flags-badge" class="badge" style="background:rgba(124,92,252,0.6);">—</span></button>
+            <button class="tab" data-tab="create">➕ Créer</button>
+            <button class="tab" data-tab="cleanup">🧹 Nettoyer</button>
+            <button class="tab" data-tab="doc">📚 Documentation</button>
+            <button class="tab" data-tab="history">📜 Historique</button>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div class="panel active" id="panel-dashboard">
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi k-blue">
+                    <div class="kpi-value" style="color:var(--blue);" id="kpi-total">—</div>
+                    <div class="kpi-label">Feature Flags</div>
+                    <div class="kpi-sub" id="kpi-total-sub">max 10</div>
+                </div>
+                <div class="kpi k-purple">
+                    <div class="kpi-value" style="color:var(--purple);" id="kpi-rollout">—</div>
+                    <div class="kpi-label">En rollout</div>
+                    <div class="kpi-sub" style="color:var(--text3);">5%→25%→50%→100%</div>
+                </div>
+                <div class="kpi k-yellow">
+                    <div class="kpi-value" style="color:var(--yellow);" id="kpi-dette">—</div>
+                    <div class="kpi-label">Dette technique</div>
+                    <div class="kpi-sub" id="kpi-dette-sub" style="color:var(--text3);">+30 jours</div>
+                </div>
+                <div class="kpi k-red">
+                    <div class="kpi-value" style="color:var(--red);" id="kpi-critique">—</div>
+                    <div class="kpi-label">Critiques</div>
+                    <div class="kpi-sub" id="kpi-critique-sub" style="color:var(--text3);">+60 jours</div>
+                </div>
+                <div class="kpi k-green">
+                    <div class="kpi-value" style="color:var(--green);" id="kpi-health">—</div>
+                    <div class="kpi-label">Score santé</div>
+                    <div class="kpi-sub" style="color:var(--text3);">/ 100</div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alerts-container"></div>
+
+            <!-- Charts row -->
+            <div class="dash-grid-top">
+
+                <!-- Donut distribution -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--purple);"></div>Distribution</div>
+                    <div class="donut-wrap">
+                        <div style="flex-shrink:0;" id="donut-svg-wrap">
+                            <svg width="100" height="100" viewBox="0 0 100 100" id="donut-svg">
+                                <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="13"/>
+                            </svg>
+                        </div>
+                        <div class="donut-legend" id="donut-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Health score -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--green);"></div>Score santé</div>
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                        <div style="flex-shrink:0;">
+                            <svg width="72" height="72" viewBox="0 0 80 80" id="health-svg">
+                                <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9"/>
+                                <circle cx="40" cy="40" r="30" fill="none" stroke="var(--yellow)" stroke-width="9" stroke-dasharray="0 189" stroke-dashoffset="47" stroke-linecap="round" id="health-ring"/>
+                                <text x="40" y="45" text-anchor="middle" fill="white" font-size="17" font-weight="800" id="health-score-text">-</text>
+                            </svg>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Tendance 7 jours</div>
+                            <div id="health-trend" style="margin-bottom:8px;"><span style="color:var(--text3);font-size:11px;">—</span></div>
+                            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">30 jours</div>
+                            <canvas id="health-sparkline" height="44" style="width:100%;display:block;border-radius:6px;"></canvas>
+                        </div>
+                    </div>
+                    <div class="health-items" id="health-items"></div>
+                </div>
+
+                <!-- Timeline chart -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--blue);"></div>Créations vs suppressions (8 sem.)</div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div id="timeline-legend" style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text3);flex-wrap:wrap;">
+                        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:rgba(124,92,252,0.75);display:inline-block;"></span>Créations</span>
+                        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:rgba(110,231,183,0.65);display:inline-block;"></span>Suppressions</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="dash-grid-bottom">
+
+                <!-- Age bar chart -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--orange);"></div>Âge des flags actifs</div>
+                    <div class="age-chart" id="age-chart-container"></div>
+                </div>
+
+            </div>
+
+
+            <!-- CTA flags shortcut -->
+            <div id="dashboard-flags-cta" style="display:none;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:13px;"></div>
+
+        </div>
+
+        <!-- CREATE -->
+        
+        <!-- ══ TAB: FLAGS ══ -->
+        <div class="panel" id="panel-flags">
+            <div class="flags-toolbar">
+                <input class="search-input" id="flagSearch" placeholder="🔍  Rechercher..."/>
+                <div class="filter-chip active" data-status="">Tous</div>
+                <div class="filter-chip" data-status="ROLLOUT">Rollout</div>
+                <div class="filter-chip" data-status="STABILISATION">Stabilisation</div>
+                <div class="filter-chip" data-status="CLEANUP">Cleanup</div>
+                <div class="filter-chip" data-status="DETTE">Dette</div>
+                <div class="filter-chip" data-status="CRITIQUE">Critique</div>
+                <div class="filter-chip" data-status="OPS">Ops</div>
+                <select id="family-filter" class="family-select" title="Filtrer par famille de flags">
+                    <option value="">Toutes les familles</option>
+                </select>
+                <label class="grouped-toggle-label" title="Regrouper les flags par famille">
+                    <input type="checkbox" id="grouped-view-toggle"/>
+                    <span>Vue groupée</span>
+                </label>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <table class="flags-table" id="flags-main-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable-th" data-col="name" style="cursor:pointer;">
+                                Flag <span class="sort-icon" id="sort-icon-name">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="status" style="cursor:pointer;">
+                                Statut <span class="sort-icon" id="sort-icon-status">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="rollout" style="cursor:pointer;">
+                                Rollout <span class="sort-icon" id="sort-icon-rollout">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="age" style="cursor:pointer;">
+                                Âge <span class="sort-icon" id="sort-icon-age">↕</span>
+                            </th>
+                            <th>Envs</th>
+                            <th style="text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flagsTableBody">
+                        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">
+                            <div class="loading-spinner" style="margin:0 auto 12px;"></div>Chargement...
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:10px;text-align:right;" id="flags-count-info"></div>
+        </div>
+
+<div class="panel" id="panel-create">
+            <div class="wizard-step active" id="wizard-step-1">
+                <div class="wizard-progress">
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div class="wizard-question">🤔 Quel est ton besoin ?</div>
+                <div class="wizard-options">
+                    <div class="wizard-option" data-value="new-feature" data-result="flag">
+                        <div class="wizard-option-title">🆕 Nouvelle feature métier</div>
+                        <div class="wizard-option-desc">Nouveau parcours, refonte UI, nouvelle fonctionnalité utilisateur</div>
+                    </div>
+                    <div class="wizard-option" data-value="kill-switch" data-result="ops">
+                        <div class="wizard-option-title">🔴 Kill switch (Ops Flag)</div>
+                        <div class="wizard-option-desc">Désactiver rapidement un service externe en cas de problème</div>
+                    </div>
+                    <div class="wizard-option" data-value="config" data-result="no-env">
+                        <div class="wizard-option-title">⚙️ Configuration technique</div>
+                        <div class="wizard-option-desc">Cache Redis, URL base de données, paramètres techniques</div>
+                    </div>
+                    <div class="wizard-option" data-value="permission" data-result="no-iam">
+                        <div class="wizard-option-title">🔐 Permission utilisateur</div>
+                        <div class="wizard-option-desc">Qui peut exporter, supprimer, accéder à une feature</div>
+                    </div>
+                    <div class="wizard-option" data-value="business" data-result="no-db">
+                        <div class="wizard-option-title">💼 Règle métier / Contenu</div>
+                        <div class="wizard-option-desc">Bannière promo, plafonds, tarifs, thème saisonnier</div>
+                    </div>
+                    <div class="wizard-option" data-value="ab-test" data-result="no-ab">
+                        <div class="wizard-option-title">🧪 A/B Testing</div>
+                        <div class="wizard-option-desc">Tester 2 versions pour mesurer les conversions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-2">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div id="wizard-result-container"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-continue-checklist" style="display:none;">Continuer vers la checklist →</button>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-3">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div class="wizard-question">✅ Checklist obligatoire avant création</div>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Tu dois répondre OUI à <strong>TOUTES</strong> ces questions. Un seul NON = pas de feature flag.</p>
+                <div class="checklist" id="creation-checklist">
+                    <div class="checklist-item" data-check="1"><div class="checklist-checkbox"></div><div class="checklist-text">C'est bien une <strong>feature complète</strong> (pas de la config technique) ?</div></div>
+                    <div class="checklist-item" data-check="2"><div class="checklist-checkbox"></div><div class="checklist-text">La feature sera terminée dans <strong>moins de 4 semaines</strong> ?</div></div>
+                    <div class="checklist-item" data-check="3"><div class="checklist-checkbox"></div><div class="checklist-text">Le comportement <strong>flag OFF fonctionne parfaitement</strong> ?</div></div>
+                    <div class="checklist-item" data-check="4"><div class="checklist-checkbox"></div><div class="checklist-text">J'ai prévu de <strong>supprimer ce flag après stabilisation</strong> ?</div></div>
+                    <div class="checklist-item" data-check="5"><div class="checklist-checkbox"></div><div class="checklist-text">Le nom du flag est <strong>clair et suit la convention</strong> (enable-xxx) ?</div></div>
+                    <div class="checklist-item" data-check="6"><div class="checklist-checkbox"></div><div class="checklist-text">J'ai <strong>documenté la raison du flag</strong> dans GitLab ?</div></div>
+                    <div class="checklist-item" data-check="7"><div class="checklist-checkbox"></div><div class="checklist-text">Les tests Cucumber couvrent <strong>flag ON ET flag OFF</strong> ?</div></div>
+                    <div class="checklist-item" data-check="8"><div class="checklist-checkbox"></div><div class="checklist-text">Le flag <strong>ne dépend pas d'autres flags</strong> (pas d'imbrication) ?</div></div>
+                </div>
+                <div class="checklist-status incomplete" id="checklist-status">❌ 0/8 critères validés - Complète la checklist</div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-to-form" disabled>Continuer →</button>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-4">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                </div>
+                <div class="wizard-question">📝 Informations du flag</div>
+                <div class="form-group">
+                    <label class="form-label">Nom du flag *</label>
+                    <input type="text" class="form-input" id="flag-name" placeholder="enable-nouvelle-feature">
+                    <div class="form-hint">Format: enable-xxx (kebab-case, anglais, 3-5 mots max)</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description *</label>
+                    <textarea class="form-textarea" id="flag-description" placeholder="Décris clairement ce que fait cette feature..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="flag-type">
+                        <option value="development">Feature Flag (développement)</option>
+                        <option value="ops">Ops Flag (kill switch)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner (email) *</label>
+                    <input type="email" class="form-input" id="flag-owner" placeholder="prenom.nom@lcl.fr">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Issue GitLab liée</label>
+                    <input type="text" class="form-input" id="flag-issue" placeholder="https://gitlab.lcl.fr/.../issues/123">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stack technique</label>
+                    <div style="display:flex;gap:18px;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-java" checked> ☕ Java/Spring</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-python"> 🐍 Python</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-angular"> 🅰️ Angular</label>
+                    </div>
+                </div>
+                <div class="form-group" style="padding:16px 18px;background:rgba(52,211,153,0.08);border-radius:11px;border:1px solid rgba(52,211,153,0.2);">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;">
+                        <input type="checkbox" id="create-in-gitlab" checked style="width:17px;height:17px;">
+                        🚀 Créer le flag dans GitLab (API)
+                    </label>
+                    <div class="form-hint" style="margin-left:27px;">Le flag sera créé OFF par défaut dans GitLab > Operations > Feature Flags</div>
+                </div>
+                <div class="form-group" style="margin-top:12px;padding:16px 18px;background:rgba(139,92,246,0.08);border-radius:11px;border:1px solid rgba(139,92,246,0.2);">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;">
+                        <input type="checkbox" id="sync-client-file" checked style="width:17px;height:17px;">
+                        📄 Synchroniser le fichier client (MR automatique)
+                    </label>
+                    <div class="form-hint" style="margin-left:27px;">Met à jour le type FeatureFlags dans le code</div>
+                    <div id="client-file-config" style="margin-top:13px;padding:13px;background:rgba(0,0,0,0.2);border-radius:9px;">
+                        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                            <div style="flex:1;min-width:180px;">
+                                <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">📁 Chemin du fichier</label>
+                                <input type="text" class="form-input" id="client-file-path" placeholder="src/app/core/feature-flags.ts" style="font-size:12px;">
+                            </div>
+                            <div style="min-width:130px;">
+                                <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">🔧 Stack</label>
+                                <select class="form-select" id="client-file-stack" style="font-size:12px;">
+                                    <option value="angular">🅰️ Angular/TS</option>
+                                    <option value="react">⚛️ React/TS</option>
+                                    <option value="java">☕ Java/Spring</option>
+                                    <option value="python">🐍 Python</option>
+                                </select>
+                            </div>
+                            <div style="padding-top:20px;">
+                                <button class="btn btn-secondary" id="btn-detect-client-file" style="font-size:12px;padding:7px 11px;">🔍 Détecter</button>
+                            </div>
+                        </div>
+                        <div id="client-file-status" style="margin-top:8px;font-size:12px;color:var(--text2);"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Environnement(s)</label>
+                    <div style="display:flex;gap:18px;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-dev" checked> 🔧 dev</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-staging"> 🧪 staging</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-prod" checked> 🚀 production</label>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-generate">🚀 Créer et générer</button>
+                </div>
+                <div id="api-result" style="display:none;margin-top:18px;"></div>
+                <div class="generated-files" id="generated-files" style="display:none;">
+                    <div class="panel-title" style="margin-top:24px;">📦 Fichiers générés</div>
+                    <div id="files-list"></div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="btn-reset-wizard">🔄 Nouveau flag</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLEANUP -->
+        <div class="panel" id="panel-cleanup">
+            <div class="panel-title">🧹 Décommissionnement des Flags</div>
+            <div class="alert alert-info">
+                <div class="alert-icon">📖</div>
+                <div class="alert-content">
+                    <div class="alert-title">Règles de décommissionnement</div>
+                    <div class="alert-text">
+                        • Flag à 100% depuis ≥ 2 semaines → <strong>Cleanup maintenant</strong><br>
+                        • Flag > 1 mois → <strong>Dette technique</strong> — Justification ou suppression<br>
+                        • Flag > 2 mois → <strong>Critique</strong> — Bloquer nouvelles features
+                    </div>
+                </div>
+            </div>
+            <div id="cleanup-container">
+                <div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:16px;">Analyse des flags...</p></div>
+            </div>
+        </div>
+
+        <!-- DOC -->
+        <div class="panel" id="panel-doc">
+            <div class="panel-title">📚 Documentation de Référence</div>
+            <div class="alert alert-success">
+                <div class="alert-icon">🏆</div>
+                <div class="alert-content">
+                    <div class="alert-title">Stratégie Feature Flags LCL</div>
+                    <div class="alert-text">Cette documentation est la référence officielle pour l'utilisation des feature flags chez LCL.</div>
+                </div>
+            </div>
+            <div style="margin:24px 0;">
+                <h3 style="margin-bottom:16px;font-size:16px;">🤔 Matrice de décision : Flag ou pas ?</h3>
+                <div style="background:var(--surface3);border-radius:13px;overflow:hidden;">
+                    <table class="doc-table">
+                        <thead><tr><th>Cas d'usage</th><th>Flag ?</th><th>Solution</th></tr></thead>
+                        <tbody id="decision-matrix">
+                            <tr><td>Nouveau parcours de paiement</td><td>✅ OUI</td><td>Feature Flag</td></tr>
+                            <tr><td>Refonte du tableau de bord</td><td>✅ OUI</td><td>Feature Flag</td></tr>
+                            <tr><td>Kill switch API externe</td><td>⚠️ OUI*</td><td>Ops Flag (validation TL+PO)</td></tr>
+                            <tr><td>Cache Redis</td><td>❌ NON</td><td>Variable d'environnement</td></tr>
+                            <tr><td>Permission utilisateur</td><td>❌ NON</td><td>Système IAM/RBAC</td></tr>
+                            <tr><td>Bannière promo</td><td>❌ NON</td><td>Base de données / CMS</td></tr>
+                            <tr><td>A/B Testing</td><td>❌ NON</td><td>Outil dédié (Optimizely...)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="panel" id="panel-history">
+            <div class="panel-title">📜 Historique des changements</div>
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+                <input type="text" class="form-input" id="history-search" placeholder="🔍 Rechercher un flag..." style="flex:1;min-width:180px;" oninput="filterAuditHistory()">
+                <select class="form-select" id="history-filter-env" style="width:170px;" onchange="filterAuditHistory()">
+                    <option value="">Tous environnements</option>
+                </select>
+                <select class="form-select" id="history-filter-status" style="width:150px;" onchange="filterAuditHistory()">
+                    <option value="">Tous statuts</option>
+                    <option value="active">Actifs</option>
+                    <option value="inactive">Inactifs</option>
+                    <option value="deleted">Supprimés</option>
+                </select>
+                <button class="btn btn-secondary" id="history-reload" style="padding:9px 14px;" title="Recharger depuis GitLab">🔄</button>
+            </div>
+            <div id="history-meta" style="font-size:12px;color:var(--text3);margin-bottom:12px;min-height:16px;"></div>
+            <div class="ff-history-list" id="history-list">
+                <div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:16px;">Chargement de l'historique…</p></div>
+            </div>
+        </div>
+
+        <!--
+            Panels "Approbations" et "Permissions" retirés du DOM pour le bac à sable.
+            Voir le commentaire en haut sur les tabs. Code JS associé désactivé via
+            le bloc "RBAC & APPROVALS - DÉSACTIVÉ POUR LE BAC À SABLE".
+        -->
+
+    </div>
+
+    <!-- Modal Cleanup -->
+    <dialog id="cleanup-modal" class="cleanup-dialog">
+        <div class="cw-header">
+            <div class="cw-flag-name" id="modal-flag-name">—</div>
+            <button class="cw-close" data-action="cleanup-close">✕</button>
+        </div>
+        <div class="cw-steps">
+            <div class="cw-step active" id="cw-step-dot-1"><span>1</span><small>Statut</small></div>
+            <div class="cw-step-line"></div>
+            <div class="cw-step" id="cw-step-dot-2"><span>2</span><small>Action</small></div>
+            <div class="cw-step-line"></div>
+            <div class="cw-step" id="cw-step-dot-3"><span>3</span><small>Checklist dev</small></div>
+        </div>
+
+        <div class="cw-panel active" id="cw-panel-1">
+            <div class="cw-section-title">État actuel du flag</div>
+            <div class="cw-status-grid" id="cw-status-grid"></div>
+            <div class="cw-info-box">
+                <span style="font-size:18px;flex-shrink:0;">💡</span>
+                <div><strong>Désactiver ≠ Supprimer</strong><br><span style="font-size:12px;opacity:0.75;">Le flag reste dans GitLab et peut être réactivé à tout moment. La suppression définitive est faite par le développeur après cleanup du code.</span></div>
+            </div>
+            <div class="cw-btns">
+                <button class="cw-btn-cancel" data-action="cleanup-close">Fermer</button>
+                <button class="cw-btn-primary" data-cw-goto="2">Continuer →</button>
+            </div>
+        </div>
+
+        <div class="cw-panel" id="cw-panel-2">
+            <div class="cw-section-title">Activer ou désactiver le flag</div>
+            <div class="cw-toggle-choice">
+                <button class="cw-choice-btn cw-choice-off" id="cw-btn-deactivate" data-cw-toggle="false">
+                    <span class="cw-choice-icon">⏸</span>
+                    <strong>Désactiver</strong>
+                    <small>La feature disparaît pour les utilisateurs</small>
+                </button>
+                <button class="cw-choice-btn cw-choice-on" id="cw-btn-activate" data-cw-toggle="true">
+                    <span class="cw-choice-icon">▶</span>
+                    <strong>Activer</strong>
+                    <small>La feature devient visible pour les utilisateurs</small>
+                </button>
+            </div>
+            <div id="modal-api-result" style="display:none;margin-top:14px;"></div>
+            <div class="cw-btns" style="margin-top:18px;">
+                <button class="cw-btn-cancel" data-cw-goto="1">← Retour</button>
+                <a id="btn-view-gitlab" href="#" target="_blank" class="cw-btn-secondary" style="text-decoration:none;">↗ Voir dans GitLab</a>
+            </div>
+        </div>
+
+        <div class="cw-panel" id="cw-panel-3">
+            <div class="cw-section-title">Checklist pour les développeurs</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:14px;">À transmettre à l'équipe dev pour finaliser le cleanup :</div>
+            <div class="checklist" id="cleanup-checklist">
+                <div class="checklist-item" data-check="c1"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer le <strong>if/else du code</strong> (garder le nouveau comportement)</div></div>
+                <div class="checklist-item" data-check="c2"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer les <strong>tests @flag-off</strong> (comportement legacy)</div></div>
+                <div class="checklist-item" data-check="c3"><div class="checklist-checkbox"></div><div class="checklist-text">Transformer les <strong>tests @flag-on → @regression</strong></div></div>
+                <div class="checklist-item" data-check="c4"><div class="checklist-checkbox"></div><div class="checklist-text">Merger la <strong>MR de cleanup</strong> sur main</div></div>
+                <div class="checklist-item" data-check="c5"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer le flag dans GitLab <strong>après merge</strong></div></div>
+            </div>
+            <div id="cw-checklist-status" class="cw-checklist-status">0/5 étapes complétées</div>
+            <div class="cw-btns">
+                <button class="cw-btn-cancel" data-cw-goto="2">← Retour</button>
+                <button class="cw-btn-primary" data-action="cleanup-close">✅ Terminé</button>
+            </div>
+        </div>
+    </dialog>
+
+
+
+    <script src="js/feature-flag-manager.js"></script>
+
+
+
+<script>
+// Timeline rendered by main renderTimelineChart()
+</script>
+</body>
+</html>

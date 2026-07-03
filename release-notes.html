@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Release Notes — DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="stylesheet" href="css/releasenotes.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <button class="back-btn" data-action="go-back" aria-label="Retour au hub">← Hub</button>
+            <div class="logo">
+                <div class="logo-icon">📋</div>
+                <div class="logo-text">Release <span>Notes</span></div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="project-badge">
+                <span>📦</span>
+                <span id="projectName">-</span>
+            </div>
+            <button class="refresh-btn" data-action="refresh-all">
+                <span>🔄</span> Actualiser
+            </button>
+            <button class="btn primary" data-action="generate-all-missing" id="generateAllBtn" style="display: none;">
+                <span>⚡</span> Générer tous les manquants
+            </button>
+        </div>
+    </header>
+
+    <!-- MODAL PUSH -->
+    <div class="modal-overlay" id="pushModal" data-action="modal-overlay-click">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">📤 Publier sur GitLab</div>
+                <button class="modal-close" data-action="close-modal" aria-label="Fermer">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>Tag :</strong> <span id="modalTag">-</span></p>
+                    <p><strong>Fichier :</strong> <code>releases/<span id="modalFile">-</span>.md</code></p>
+                    <p><strong>Branche :</strong> <span id="modalBranch">-</span></p>
+                </div>
+                <div class="modal-preview">
+                    <div class="modal-preview-header">
+                        📋 Aperçu du contenu
+                    </div>
+                    <div class="modal-preview-content">
+                        <pre id="modalPreviewContent">-</pre>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" data-action="close-modal">❌ Annuler</button>
+                    <button class="btn" data-action="download-markdown">
+                        <span>📥</span> Télécharger
+                    </button>
+                    <button class="btn primary" data-action="push-to-gitlab">
+                        <span>📤</span> Confirmer le push
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✅</span>
+        <span id="toastMessage">-</span>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">🏷️ Tags du projet</div>
+                <div class="sidebar-stats">
+                    <span><strong id="totalTags">0</strong> tags</span>
+                    <span class="dot">•</span>
+                    <span><strong id="missingCount">0</strong> sans release</span>
+                </div>
+                <div class="sidebar-meta">
+                    <span class="sm-row">📂 Stockage : <code>releases/</code></span>
+                    <span class="sm-row">🌿 Branche : <code id="storageBranch">main</code></span>
+                </div>
+            </div>
+            <div class="tags-list" id="tagsList">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement des tags...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="content" id="content">
+            <div class="empty-state">
+                <div class="empty-icon">👈</div>
+                <div class="empty-title">Sélectionne un tag</div>
+                <div class="empty-subtitle">Choisis un tag dans la liste pour voir ou générer ses release notes</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/releasenotes.js"></script>
+</body>
+</html>

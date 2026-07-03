@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 DORA Tribu - Tableau de bord</title>
+    <link rel="stylesheet" href="css/dora-workspace.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <a href="hub-mockup-v2_1.html" class="back-btn" data-hub-link>←</a>
+            <h1>📊 DORA Tribu</h1>
+            <span id="workspaceName">Chargement...</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="period-selector">
+                <label>Période : </label>
+                <select id="periodSelect">
+                    <option value="30">30 jours</option>
+                    <option value="90" selected>90 jours</option>
+                    <option value="180">180 jours</option>
+                    <option value="365">365 jours</option>
+                    <option value="custom">Personnalisé…</option>
+                </select>
+                <span id="customPeriodInputs" style="display:none; margin-left:8px;">
+                    <input type="date" id="periodFrom">
+                    <span style="margin:0 4px;">→</span>
+                    <input type="date" id="periodTo">
+                </span>
+            </div>
+            <button class="btn-ghost" id="organizeBtn">⚙️ Organiser les squads</button>
+            <button class="btn-ghost" id="exportBtn">📤 Export</button>
+            <button class="btn-ghost" id="importBtn">📥 Import</button>
+            <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
+            <button class="btn-refresh" id="refreshBtn">🔄 Recharger</button>
+        </div>
+    </div>
+
+    <div id="organizePanel" class="organize-panel" style="display:none;">
+        <div class="organize-head">
+            <h2>⚙️ Organiser les squads de la tribu</h2>
+            <p>Donne un nom à la squad, coche ses repos, et crée-la. Les repos non rangés restent en « Non assignée ».</p>
+        </div>
+        <div class="squad-create">
+            <input type="text" id="newSquadName" class="squad-name-input" placeholder="Nom de la squad (ex: Checkout)" maxlength="40">
+            <div class="create-repos-label">Repos de cette squad :</div>
+            <div id="createReposList" class="create-repos-list"></div>
+            <button class="btn-refresh" id="addSquadBtn">+ Créer la squad</button>
+        </div>
+        <div class="organize-divider"></div>
+        <div class="existing-squads-label">Squads existantes</div>
+        <div id="squadEditor" class="squad-editor"></div>
+        <div class="organize-foot">
+            <button class="btn-ghost" id="closeOrganizeBtn">Fermer</button>
+            <span class="organize-hint">💾 Sauvegarde automatique (storage + JSON exportable)</span>
+        </div>
+    </div>
+
+    <div id="loadingContainer" class="loading">
+        <div class="spinner"></div>
+        <p>Analyse des pipelines et merge requests...</p>
+    </div>
+
+    <div id="errorContainer" style="display:none;"></div>
+
+    <div id="mainContent" style="display:none;">
+
+        <!-- 1. Vue tribu : 4 grandes cartes -->
+        <div class="summary" id="summaryCards"></div>
+
+        <!-- 2. Évolution dans le temps -->
+        <div class="block">
+            <div class="block-title">📈 Évolution de la tribu</div>
+            <div class="chart-card">
+                <div id="trendsGrid"><div class="trend-loading">Calcul de l'évolution…</div></div>
+            </div>
+        </div>
+
+        <!-- Carte de chaleur squads x métriques -->
+        <div class="block">
+            <div class="block-title">🔥 Carte de chaleur par squad</div>
+            <div class="chart-card"><div id="heatmapContainer"></div></div>
+        </div>
+
+        <!-- 4. Détail par squad -->
+        <div class="block">
+            <div class="block-title">🗂️ Détail par squad</div>
+            <div class="squad-cards" id="squadCards"></div>
+        </div>
+
+        <!-- Tableau détaillé squad → repos -->
+        <div class="block">
+            <div class="block-title">📋 Détail repo par repo</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Squad / Repo</th>
+                            <th>Deploy Freq (/sem)</th>
+                            <th>Lead Time (h)</th>
+                            <th>CFR (%)</th>
+                            <th>MTTR (h)</th>
+                            <th>Niveau global</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reposTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/dora-workspace.js"></script>
+</body>
+</html>

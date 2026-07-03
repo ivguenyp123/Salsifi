@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démarrer un projet | LCL DevOps Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/project-scaffolder.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="hub.html" class="back-btn" data-hub-link>←</a>
+            <h1>🚀 Démarrer un projet</h1>
+        </div>
+        <div class="project-badge">
+            <span>📂</span>
+            <span class="project-name" id="headerProjectName">…</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" data-step="1">
+                <div class="step-number"><span>1</span></div>
+                <span class="step-label">Workflow</span>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-number"><span>2</span></div>
+                <span class="step-label">Stack</span>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-number"><span>3</span></div>
+                <span class="step-label">Options</span>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-number"><span>4</span></div>
+                <span class="step-label">Résumé</span>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card" id="formCard">
+
+            <!-- Step 1: Workflow -->
+            <div class="form-step active" data-step="1">
+                <div class="form-section">
+                    <h3>🔀 Workflow Git</h3>
+                    <div class="radio-cards">
+                        <div class="radio-card">
+                            <input type="radio" name="workflow" id="gitflow" value="gitflow" checked>
+                            <label for="gitflow">
+                                <div class="radio-icon">🌳</div>
+                                <div class="radio-title">GitFlow</div>
+                                <div class="radio-desc">Cycles de release planifiés</div>
+                                <div class="radio-features">
+                                    <div class="feature-item"><span class="check">✓</span> Branche main</div>
+                                    <div class="feature-item"><span class="check">✓</span> Branche develop</div>
+                                    <div class="feature-item"><span class="check">✓</span> Exemple feature/*</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="workflow" id="feature-branching" value="feature-branching">
+                            <label for="feature-branching">
+                                <div class="radio-icon">🌿</div>
+                                <div class="radio-title">Feature Branching</div>
+                                <div class="radio-desc">Simple, sans branche develop</div>
+                                <div class="radio-features">
+                                    <div class="feature-item"><span class="check">✓</span> Branche main</div>
+                                    <div class="feature-item"><span class="check">✓</span> Exemple feature/*</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="workflow" id="trunk" value="trunk">
+                            <label for="trunk">
+                                <div class="radio-icon">🚄</div>
+                                <div class="radio-title">Trunk-based</div>
+                                <div class="radio-desc">Continuous Deployment</div>
+                                <div class="radio-features">
+                                    <div class="feature-item"><span class="check">✓</span> Branche main uniquement</div>
+                                    <div class="feature-item"><span class="check">✓</span> Merge Train activé</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="info-box" id="workflowInfo">
+                        <span class="info-icon">ℹ️</span>
+                        <span class="info-text" id="workflowInfoText">GitFlow est recommandé pour les projets avec des cycles de release planifiés.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Stack -->
+            <div class="form-step" data-step="2">
+                <div class="form-section">
+                    <h3>🛠️ Stack technique</h3>
+                    <div class="radio-cards">
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="java" value="java" checked>
+                            <label for="java">
+                                <div class="radio-icon">☕</div>
+                                <div class="radio-title">Java Maven</div>
+                                <div class="radio-desc">Spring Boot, Maven</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="angular" value="angular">
+                            <label for="angular">
+                                <div class="radio-icon">🅰️</div>
+                                <div class="radio-title">Angular</div>
+                                <div class="radio-desc">Angular 17+, Node.js</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="python" value="python">
+                            <label for="python">
+                                <div class="radio-icon">🐍</div>
+                                <div class="radio-title">Python</div>
+                                <div class="radio-desc">FastAPI, Poetry</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="node" value="node">
+                            <label for="node">
+                                <div class="radio-icon">💚</div>
+                                <div class="radio-title">Node.js</div>
+                                <div class="radio-desc">Express / NestJS</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="dotnet" value="dotnet">
+                            <label for="dotnet">
+                                <div class="radio-icon">🔷</div>
+                                <div class="radio-title">.NET</div>
+                                <div class="radio-desc">ASP.NET Core</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="cobol" value="cobol">
+                            <label for="cobol">
+                                <div class="radio-icon">🏛️</div>
+                                <div class="radio-title">COBOL / z/OS</div>
+                                <div class="radio-desc">Mainframe, DBB, CICS</div>
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" name="stack" id="empty" value="empty">
+                            <label for="empty">
+                                <div class="radio-icon">📁</div>
+                                <div class="radio-title">Minimal</div>
+                                <div class="radio-desc">README + .gitignore</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Options -->
+            <div class="form-step" data-step="3">
+                <div class="form-section">
+                    <h3>⚙️ Options</h3>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="optKustomize" checked>
+                            <span class="checkbox-icon">☸️</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">Kustomize (ArgoCD)</div>
+                                <div class="checkbox-hint">Structure base + overlays vide</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="optGitlabCi" checked>
+                            <span class="checkbox-icon">🔄</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">.gitlab-ci.yml</div>
+                                <div class="checkbox-hint">Placeholder → Pipeline Generator</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="optDockerfile">
+                            <span class="checkbox-icon">🐳</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">Dockerfile</div>
+                                <div class="checkbox-hint">Multi-stage optimisé</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="optEditorconfig" checked>
+                            <span class="checkbox-icon">📝</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">.editorconfig</div>
+                                <div class="checkbox-hint">Formatage cohérent</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="optProtect" checked>
+                            <span class="checkbox-icon">🔒</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">Protéger main</div>
+                                <div class="checkbox-hint">Merge request obligatoire</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="checkbox-item" id="optProtectDevelopContainer">
+                            <input type="checkbox" id="optProtectDevelop">
+                            <span class="checkbox-icon">🔐</span>
+                            <div class="checkbox-content">
+                                <div class="checkbox-label">Protéger develop</div>
+                                <div class="checkbox-hint">GitFlow uniquement</div>
+                            </div>
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Summary -->
+            <div class="form-step" data-step="4">
+                <div class="form-section">
+                    <h3>📋 Résumé</h3>
+                    <div class="summary-header">
+                        <span class="icon">📂</span>
+                        <div class="info">
+                            <div class="name" id="summaryRepoName">…</div>
+                            <div class="path" id="summaryRepoPath">…</div>
+                        </div>
+                        <div class="summary-badges">
+                            <span class="summary-badge" id="summaryWorkflow">🌳 GitFlow</span>
+                            <span class="summary-badge green" id="summaryStack">☕ Java Maven</span>
+                        </div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <h4>👁️ Aperçu</h4>
+                            <div class="preview-tabs">
+                                <button class="preview-tab active" data-preview="files">Fichiers</button>
+                                <button class="preview-tab" data-preview="branches">Branches</button>
+                                <button class="preview-tab" data-preview="settings">Settings</button>
+                            </div>
+                        </div>
+                        <div class="preview-content active" data-preview="files">
+                            <div class="file-tree" id="fileTree"></div>
+                        </div>
+                        <div class="preview-content" data-preview="branches">
+                            <div class="branch-list" id="branchList"></div>
+                        </div>
+                        <div class="preview-content" data-preview="settings">
+                            <div class="settings-list" id="settingsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="prevBtn" style="visibility: hidden;">← Précédent</button>
+                <button class="btn btn-primary" id="nextBtn">Suivant →</button>
+            </div>
+        </div>
+
+        <!-- Success Card -->
+        <div class="form-card success-card" id="successCard">
+            <div class="success-icon">🎉</div>
+            <h2>Merge Request créée !</h2>
+            <p>Une MR a été créée avec tous les fichiers. Merge-la pour finaliser l'initialisation.</p>
+
+            <a href="#" class="repo-link" id="mrLink" target="_blank">🔀 Voir la Merge Request</a>
+
+            <div class="created-summary" id="createdSummary">
+                <div class="summary-card">
+                    <h4>📁 Fichiers</h4>
+                    <div id="summaryFiles"></div>
+                </div>
+                <div class="summary-card">
+                    <h4>🌿 Branches</h4>
+                    <div id="summaryBranches"></div>
+                </div>
+                <div class="summary-card">
+                    <h4>⚙️ Settings</h4>
+                    <div id="summarySettings"></div>
+                </div>
+            </div>
+
+            <div class="next-steps">
+                <h4>🚀 Prochaines étapes</h4>
+                <div class="next-step-item">
+                    <div class="next-step-number">1</div>
+                    <div class="next-step-text">Merger la MR dans main</div>
+                    <a href="#" class="next-step-link" id="mrLinkStep">Merge Request →</a>
+                </div>
+                <div class="next-step-item">
+                    <div class="next-step-number">2</div>
+                    <div class="next-step-text">Configurer le pipeline CI/CD</div>
+                    <a href="pipeline-generator.html" class="next-step-link">Pipeline Generator →</a>
+                </div>
+                <div class="next-step-item">
+                    <div class="next-step-number">3</div>
+                    <div class="next-step-text">Cloner le repository</div>
+                    <code class="next-step-link" id="cloneCommand" style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.25); padding: 5px 10px; border-radius: 6px;">git clone …</code>
+                </div>
+            </div>
+
+            <div style="margin-top: 28px;">
+                <a href="hub.html" class="btn btn-secondary" data-hub-link>← Retour au Hub</a>
+            </div>
+        </div>
+
+        <!-- Blocked Card : repo non vide → initialisation refusée (par sécurité) -->
+        <div class="form-card blocked-card" id="blockedCard" style="display:none;">
+            <div class="blocked-badge">🛡️</div>
+            <h2 id="blockedReason">Initialisation impossible</h2>
+            <p class="blocked-detail" id="blockedDetail">Ce repo ne peut pas être initialisé.</p>
+            <div class="blocked-note">
+                <span class="blocked-note-icon">✓</span>
+                <span>C'est volontaire : le Scaffolder est réservé aux <strong>repos neufs</strong>. Dès qu'un repo contient déjà du code, il refuse d'écrire — pour ne jamais rien écraser.</span>
+            </div>
+            <div class="blocked-actions">
+                <a href="hub.html" class="btn btn-primary" id="blockedHubLink" data-hub-link>← Retour au Hub</a>
+            </div>
+            <div class="blocked-hint">Tu pourras relancer « Démarrer » avec un autre repo.</div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Initialisation en cours…</div>
+        <div class="loading-steps">
+            <div class="loading-step" data-loading="files">
+                <span class="step-icon">⏳</span>
+                <span>Création des fichiers…</span>
+            </div>
+            <div class="loading-step" data-loading="branches">
+                <span class="step-icon">⏳</span>
+                <span>Création des branches…</span>
+            </div>
+            <div class="loading-step" data-loading="protect">
+                <span class="step-icon">⏳</span>
+                <span>Protection des branches…</span>
+            </div>
+            <div class="loading-step" data-loading="settings">
+                <span class="step-icon">⏳</span>
+                <span>Configuration du projet…</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/project-scaffolder.js"></script>
+</body>
+</html>

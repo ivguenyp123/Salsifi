@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛡️ Gouvernance Repo - DevOps Hub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/gouvernance-repo.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <a class="back-btn" href="workspace-hub.html" data-hub-link>←</a>
+      <h1>🛡️ Gouvernance Repo <span style="font-size:11px;padding:4px 10px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);border-radius:6px;color:#6ee7b7;font-weight:700;margin-left:8px;">CIS</span></h1>
+      <div class="workspace-badge" id="workspaceBadge">📁 Chargement...</div>
+      <button onclick="showCisInfo()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:14px;font-weight:700;cursor:pointer;margin-left:8px;">?</button>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="report-btn" id="reportBtn" onclick="generateReport()" disabled>📄 Générer rapport équipes</button>
+      <button class="scan-btn" id="secretsBtn" onclick="startSecretsScan()" disabled style="background:linear-gradient(135deg,#ef4444,#b91c1c);">🔑 Scan secrets</button>
+      <button class="scan-btn" id="scanBtn" onclick="startScan()">🔍 Scanner le workspace</button>
+    </div>
+  </div>
+
+  <div class="loading-section" id="loadingSection" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Analyse en cours...</div>
+    <div class="loading-sub" id="loadingProgress"></div>
+  </div>
+
+  <div id="results" style="display:none;">
+    <div class="score-bar">
+      <div class="score-circle" id="scoreCircle">
+        <div class="num" id="scoreNum">--</div>
+        <div class="denom">/100</div>
+      </div>
+      <div class="score-info">
+        <div class="score-title">Score de conformité workspace</div>
+        <div class="score-sub" id="scoreSub">--</div>
+        <div class="score-track"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+        <div class="score-counts" id="scoreCounts"></div>
+      </div>
+      <div class="summary-pills" id="summaryPills"></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-filter="all"      onclick="setFilter(this)">Tous <span class="count" id="countAll">0</span></div>
+      <div class="tab"        data-filter="critical" onclick="setFilter(this)">🔴 Critiques <span class="count red" id="countCritical">0</span></div>
+      <div class="tab"        data-filter="warning"  onclick="setFilter(this)">🟡 Warnings <span class="count orange" id="countWarning">0</span></div>
+      <div class="tab"        data-filter="ok"       onclick="setFilter(this)">✅ Conformes <span class="count" id="countOk">0</span></div>
+    </div>
+    <div class="repos-grid" id="reposGrid"></div>
+  </div>
+
+  <div class="state-box" id="initialState">
+    <div class="icon">🛡️</div>
+    <h3>Gouvernance Repo</h3>
+    <p>Vérifiez la conformité de tous vos repos en un clic.<br>Branch protection, approval settings, lock files, Maven.</p>
+  </div>
+
+</div>
+<div class="fix-toast" id="fixToast"></div>
+
+<!-- CIS Info Modal -->
+<div id="cisModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;backdrop-filter:blur(10px);" onclick="if(event.target===this) closeCisInfo()">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#667eea,#764ba2);padding:40px;border-radius:24px;max-width:600px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 style="font-size:24px;font-weight:700;color:white;">🛡️ CIS GitLab Benchmark</h2>
+      <button onclick="closeCisInfo()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="color:white;line-height:1.6;font-size:14px;">
+      <p style="margin-bottom:16px;"><strong>CIS (Center for Internet Security)</strong> est un organisme indépendant qui publie des standards de sécurité reconnus mondialement.</p>
+      
+      <p style="margin-bottom:16px;">Le <strong>CIS GitLab Benchmark v1.0.1</strong> (avril 2024) est <strong>la référence officielle</strong> pour sécuriser GitLab en mode supply chain : 298 pages, 122 recommandations couvrant code source, CI/CD, dépendances, artifacts et déploiement.</p>
+      
+      <div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:12px;margin:20px 0;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-weight:700;margin-bottom:8px;">📊 Ce module scanne:</div>
+        <div style="padding-left:20px;">
+          • <strong>Section 1.1</strong> - Code Changes (branch protection, approvals, signed commits)<br>
+          • <strong>Section 1.2</strong> - Repository Management (SECURITY.md)<br>
+          • <strong>Section 1.3</strong> - Contribution Access (maintainers, MFA)<br>
+          • <strong>Section 1.4</strong> - Third-Party (webhooks sécurisés)
+        </div>
+      </div>
+      
+      <p style="margin-bottom:16px;"><strong>Pourquoi c'est important ?</strong></p>
+      <ul style="padding-left:20px;margin-bottom:16px;">
+        <li>Standard international accepté par les auditeurs</li>
+        <li>Gap analysis objectif de votre posture de sécurité</li>
+        <li>Documentation compliance clé en main</li>
+        <li>Couverture supply chain complète</li>
+      </ul>
+      
+      <p style="font-size:12px;opacity:0.7;">Ce module implémente actuellement 13 checks CIS. Le benchmark complet contient 122 recommandations.</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/gouvernance-repo.js"></script>
+</body>
+</html>
