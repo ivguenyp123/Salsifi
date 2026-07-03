@@ -172,13 +172,8 @@
                 </div>
             `).join('');
 
-            // "Pour aller plus loin" — calculé en live (contextuel + classiques)
+            // "Pour aller plus loin" — ateliers réels (référentiel) + conseils génériques
             renderDeeperSection(key);
-
-            // Ateliers recommandés — pilotés par les axes faibles + référentiel
-            try {
-                renderRecommendedWorkshops(currentRepo ? readSynCache(currentRepo.id) : null);
-            } catch (e) { /* section absente ou synthèse indisponible : on ignore */ }
 
             // Scroll en haut quand on ouvre
             overlay.scrollTop = 0;
@@ -2117,51 +2112,32 @@
             return recos.slice(0, WS_RECO_MAX);
         }
 
-        function renderRecommendedWorkshops(syn) {
-            const section = document.getElementById('dd-workshops-section');
-            const list = document.getElementById('dd-workshops');
-            if (!section || !list) return;
-            const recos = recommendedWorkshops(syn);
-            if (!recos.length) { section.style.display = 'none'; return; }
-            section.style.display = '';
-            const esc = window.escapeHtml || (s => s);
-            list.innerHTML = recos.map(w => {
-                const label = esc(w.action || w.titre || '');
-                const badge = `<span class="dd-deeper-badge">${esc(w.axeName)}</span>`;
-                if (w.lien) {
-                    return `<li class="ws-reco" data-lien="${esc(w.lien)}">
-                        <a href="${esc(w.lien)}" target="_blank" rel="noopener" class="dd-deeper-text" style="text-decoration:none;color:inherit;">${label}</a>
-                        ${badge}<span class="arrow">↗</span></li>`;
-                }
-                return `<li class="ws-reco is-soon">
-                    <span class="dd-deeper-text" style="opacity:0.55;">${label}</span>
-                    ${badge}<span class="dd-deeper-badge" style="opacity:0.6;">bientôt</span></li>`;
-            }).join('');
-        }
-
         // ───── État courant du deeper pour gérer "Voir plus" ───────────────
         let currentDeeperEntries = [];   // toutes les entrées triées
         let currentDeeperExpanded = false;
 
+        // « Pour aller plus loin » = ateliers réels du référentiel (cliquables,
+        // pilotés par les axes faibles) + conseils génériques du chemin (non
+        // cliquables, pas encore d'atelier dédié). Plus de toast « à venir ».
         function renderDeeperSection(key) {
-            const pool = DEEPER_POOL[key] || [];
             const syn = currentRepo ? readSynCache(currentRepo.id) : null;
 
-            // Évaluer le contexte
-            const enriched = pool.map(entry => ({
-                ...entry,
-                isContextual: typeof entry.context === 'function' && !!entry.context(syn)
+            const ateliers = recommendedWorkshops(syn).map(w => ({
+                kind: 'atelier',
+                text: w.action || w.titre || '',
+                axeName: w.axeName,
+                lien: w.lien || null
             }));
 
-            // Trier : contextuelles en haut, puis classiques (ordre du pool préservé à l'intérieur)
-            const contextual = enriched.filter(e => e.isContextual);
-            const classics = enriched.filter(e => !e.isContextual);
-            currentDeeperEntries = [...contextual, ...classics];
+            const conseils = (DEEPER_POOL[key] || [])
+                .filter(e => !e.workshop)   // on garde les pistes génériques (sans atelier)
+                .map(e => ({ kind: 'conseil', text: e.text }));
+
+            currentDeeperEntries = [...ateliers, ...conseils];
             currentDeeperExpanded = false;
 
             paintDeeperList();
 
-            // Bouton "Voir plus" si > MAX
             const moreWrap = document.getElementById('dd-deeper-more');
             const moreBtn = document.getElementById('dd-deeper-more-btn');
             if (currentDeeperEntries.length > DEEPER_VISIBLE_MAX) {
@@ -2174,19 +2150,26 @@
 
         function paintDeeperList() {
             const list = document.getElementById('dd-deeper');
+            const esc = window.escapeHtml || (s => s);
             const visible = currentDeeperExpanded
                 ? currentDeeperEntries
                 : currentDeeperEntries.slice(0, DEEPER_VISIBLE_MAX);
 
-            list.innerHTML = visible.map(e => `
-                <li class="${e.isContextual ? 'is-contextual' : ''}"
-                    data-entry-id="${e.id}"
-                    data-workshop="${e.workshop || ''}">
-                    <span class="dd-deeper-text">${e.text}</span>
-                    ${e.isContextual ? '<span class="dd-deeper-badge">🎯 Pour toi</span>' : ''}
-                    <span class="arrow">→</span>
-                </li>
-            `).join('');
+            list.innerHTML = visible.map(e => {
+                if (e.kind === 'atelier') {
+                    const badge = `<span class="dd-deeper-badge">${esc(e.axeName)}</span>`;
+                    if (e.lien) {
+                        return `<li class="dd-atelier">`
+                            + `<a href="${esc(e.lien)}" target="_blank" rel="noopener" class="dd-deeper-text" style="text-decoration:none;color:inherit;">${esc(e.text)}</a>`
+                            + `${badge}<span class="arrow">↗</span></li>`;
+                    }
+                    return `<li class="dd-atelier is-soon">`
+                        + `<span class="dd-deeper-text" style="opacity:0.55;">${esc(e.text)}</span>`
+                        + `${badge}<span class="dd-deeper-badge" style="opacity:0.6;">bientôt</span></li>`;
+                }
+                // Conseil générique : non cliquable
+                return `<li class="dd-conseil" style="cursor:default;"><span class="dd-deeper-text">${esc(e.text)}</span></li>`;
+            }).join('');
         }
 
         // Toggle "Voir plus" / "Voir moins"
@@ -2198,24 +2181,6 @@
                 ? 'Voir moins'
                 : `Voir plus de pistes (${currentDeeperEntries.length - DEEPER_VISIBLE_MAX})`;
         });
-
-        // ───── Click sur une entrée → ouvrir l'atelier ─────────────────────
-        // Pour l'instant : toast "atelier à venir". Plus tard : ouverture du .md
-        document.getElementById('dd-deeper').addEventListener('click', e => {
-            const li = e.target.closest('li[data-entry-id]');
-            if (!li) return;
-            const entryId = li.dataset.entryId;
-            const workshop = li.dataset.workshop;
-            openWorkshop(entryId, workshop);
-        });
-
-        function openWorkshop(entryId, workshop) {
-            if (workshop) {
-                showHubToast(`📝 Atelier <strong>${workshop}</strong> à venir`, 'info');
-            } else {
-                showHubToast(`📝 Atelier <strong>${entryId}</strong> à venir`, 'info');
-            }
-        }
 
         // ───── Toast simple ────────────────────────────────────────────────
         function showHubToast(html, type = 'info', duration = 3500) {
