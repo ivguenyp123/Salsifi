@@ -1915,12 +1915,17 @@ async function renderAccompaniments() {
             });
         }
 
+        // Lien Confluence de chaque action, via le référentiel commun.
+        // L'ordre des actions code == ordre du référentiel (vérifié), donc
+        // l'index i suffit. lien null = page pas encore écrite.
+        const wsList = (window.Salsifi && window.Salsifi.workshops)
+            ? window.Salsifi.workshops.get(item.id, niveauKey) : [];
         accompagnements.push({
             id: item.id,
             title: qAcc.label,
             categorie: qAcc.categorie,
             dataPoint: item.metricData ? `${item.metricData.val} · règle : ${item.metricData.rule}` : null,
-            actions: niveauInfo.actions.map((a, i) => ({ id: `${item.id}#${i}`, text: a, done: false })),
+            actions: niveauInfo.actions.map((a, i) => ({ id: `${item.id}#${i}`, text: a, done: false, lien: (wsList[i] && wsList[i].lien) || null })),
             niveau: niveauDeclencheur,
             niveauTitre: niveauInfo.titre,
             isDiagnostic: false
@@ -1961,7 +1966,10 @@ async function renderAccompaniments() {
                 html += `</div>`;
                 if (item.dataPoint) html += `<div style="font-size:11px;opacity:0.5;margin-bottom:8px;">📊 ${item.dataPoint}</div>`;
                 item.actions.forEach(action => {
-                    html += `<div class="action-item ${selectedActions.has(action.id)?'selected':''}" data-aid="${action.id}"><div class="ai-check"></div><div class="ai-content"><div class="ai-task">${action.text}</div></div></div>`;
+                    const wsLink = action.lien
+                        ? `<a class="ws-link" href="${action.lien}" target="_blank" rel="noopener" title="Ouvrir l'atelier dans Confluence" style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:var(--accent,#a78bfa);text-decoration:none;border:1px solid var(--border-subtle,rgba(255,255,255,0.08));border-radius:6px;padding:3px 10px;">📄 Voir l'atelier</a>`
+                        : '';
+                    html += `<div class="action-item ${selectedActions.has(action.id)?'selected':''}" data-aid="${action.id}"><div class="ai-check"></div><div class="ai-content"><div class="ai-task">${action.text}</div>${wsLink}</div></div>`;
                 });
                 html += `</div>`;
             }
@@ -1979,6 +1987,7 @@ async function renderAccompaniments() {
     const list = document.getElementById('actionsList');
     if (!list || list.dataset.delegated === '1') return;
     list.addEventListener('click', (e) => {
+        if (e.target.closest('.ws-link')) return;   // laisse le lien atelier s'ouvrir sans (dé)sélectionner
         const item = e.target.closest('.action-item[data-aid]');
         if (!item || !list.contains(item)) return;
         const aid = item.dataset.aid;
