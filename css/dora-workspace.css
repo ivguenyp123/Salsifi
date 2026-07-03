@@ -3,13 +3,10 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --bg-deep:#0f0a1f; --bg-mid:#1a1230;
-    --bg-card:rgba(28,20,50,0.6); --bg-card-hover:rgba(40,28,70,0.75);
-    --border-subtle:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.18);
-    --text-primary:#f5f1ff; --text-secondary:#b8aed8; --text-muted:#7a6fa3;
+--bg-card-hover:rgba(40,28,70,0.75);
+--border-strong:rgba(255,255,255,0.18);
     --accent:#7c5cff; --accent-glow:rgba(124,92,255,0.4);
-    --deliver:#2dd4bf; --inspect:#fb923c;
-    --font-display:'Bricolage Grotesque',-apple-system,sans-serif;
+--font-display:'Bricolage Grotesque',-apple-system,sans-serif;
     --font-body:'Manrope',-apple-system,sans-serif;
 }
 

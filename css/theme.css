@@ -1,0 +1,41 @@
+/*
+ * Salsifi — design tokens communs
+ * ------------------------------------------------------------------
+ * Palette partagée par toutes les pages. À charger AVANT le CSS de
+ * page :
+ *     <link rel="stylesheet" href="css/theme.css">
+ *     <link rel="stylesheet" href="css/<page>.css">
+ *
+ * Chaque page ne conserve dans son propre :root que ce qui lui est
+ * spécifique (--accent, polices, motifs de fond…). Grâce à la cascade
+ * des variables CSS, une page peut toujours surcharger un token ici
+ * en le redéfinissant dans son fichier (chargé après).
+ *
+ * NB : --ok n'est volontairement PAS ici (certaines pages l'utilisent
+ * ou l'omettent de façon incompatible avec une valeur commune).
+ */
+:root {
+    /* Fonds */
+    --bg-deep:  #0f0a1f;
+    --bg-mid:   #1a1230;
+    --bg-card:  rgba(28, 20, 50, 0.6);
+
+    /* Bordures */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+
+    /* Texte */
+    --text-primary:   #f5f1ff;
+    --text-secondary: #b8aed8;
+    --text-muted:     #7a6fa3;
+
+    /* Palette de catégories (4 chemins) */
+    --inspect: #fb923c;
+    --deliver: #2dd4bf;
+    --measure: #7c5cff;
+    --collab:  #f472b6;
+
+    /* États */
+    --info: #60a5fa;
+    --warn: #fbbf24;
+    --err:  #f87171;
+}

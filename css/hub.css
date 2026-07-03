@@ -1,23 +1,16 @@
         :root {
             /* Palette Hub */
-            --bg-deep:        #0f0a1f;
-            --bg-mid:         #1a1230;
-            --bg-card:        rgba(28, 20, 50, 0.6);
             --bg-card-hover:  rgba(40, 28, 70, 0.75);
-            --border-subtle:  rgba(255, 255, 255, 0.08);
             --border-strong:  rgba(255, 255, 255, 0.18);
-            --text-primary:   #f5f1ff;
-            --text-secondary: #b8aed8;
-            --text-muted:     #7a6fa3;
 
             /* Couleurs des 4 directions */
-            --measure:        #7c5cff;  /* violet — analytique */
+/* violet — analytique */
             --measure-glow:   rgba(124, 92, 255, 0.4);
-            --deliver:        #2dd4bf;  /* cyan-vert — action */
+/* cyan-vert — action */
             --deliver-glow:   rgba(45, 212, 191, 0.4);
-            --inspect:        #fb923c;  /* orange-ambre — vigilance */
+/* orange-ambre — vigilance */
             --inspect-glow:   rgba(251, 146, 60, 0.4);
-            --collab:         #f472b6;  /* rose — humain */
+/* rose — humain */
             --collab-glow:    rgba(244, 114, 182, 0.4);
 
             --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;

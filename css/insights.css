@@ -8,15 +8,8 @@
 
 :root {
     /* Palette Hub (synchronisée) */
-    --bg-deep:        #0f0a1f;
-    --bg-mid:         #1a1230;
-    --bg-card:        rgba(28, 20, 50, 0.6);
     --bg-card-hover:  rgba(40, 28, 70, 0.75);
-    --border-subtle:  rgba(255, 255, 255, 0.08);
     --border-strong:  rgba(255, 255, 255, 0.18);
-    --text-primary:   #f5f1ff;
-    --text-secondary: #b8aed8;
-    --text-muted:     #7a6fa3;
 
     /* Chemin Mesurer (violet — analytique) */
     --accent:        #7c5cff;
@@ -24,9 +17,6 @@
     --accent-light:  #a78bfa;
 
     /* Couleurs des 3 autres chemins (pour le contraste) */
-    --deliver:       #2dd4bf;
-    --inspect:       #fb923c;
-    --collab:        #f472b6;
 
     /* DORA levels */
     --elite:   #2dd4bf;
