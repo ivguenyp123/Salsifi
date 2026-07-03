@@ -989,11 +989,7 @@ function openRepoHub(id) {
     window.location.href = `${HUB_URL}?repo=${encodeURIComponent(repo.id)}`;
 }
 
-function escapeHtml(t) {
-    const d = document.createElement('div');
-    d.textContent = t || '';
-    return d.innerHTML;
-}
+function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
 function showError(msg) {
     document.getElementById('loadingContainer').style.display = 'none';

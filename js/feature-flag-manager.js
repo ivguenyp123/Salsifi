@@ -318,15 +318,7 @@
         // via innerHTML / template string. NB : redéfini plus bas localement pour
         // compatibilité avec un usage existant ; les deux fonctions retournent
         // le même résultat.
-        function escapeAttr(t) {
-            if (t === null || t === undefined) return '';
-            return String(t)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
+        function escapeAttr(v) { return window.Salsifi.escapeAttr(v); }
 
         // ══════════════════════════════════════════════════════════════════
         // INITIALISATION
@@ -2224,11 +2216,7 @@ Flags existants: ${existingFlags.join(', ')}`
         // Si le besoin remonte un jour, utiliser JSZip (CDN) pour construire un
         // ZIP côté client à partir de `window.generatedFiles`.
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // ══════════════════════════════════════════════════════════════════
         // RBAC & APPROVALS — DÉSACTIVÉ POUR LE BAC À SABLE

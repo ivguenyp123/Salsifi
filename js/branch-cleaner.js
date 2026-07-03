@@ -58,25 +58,12 @@
             return all;
         }
 
-        function escapeHtml(text) {
-            if (text === null || text === undefined) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // Échappe les caractères dangereux pour un usage dans un attribut HTML.
         // (escapeHtml suffit pour le contenu textuel mais pour data-attributes
         // on veut aussi neutraliser " et ').
-        function escapeAttr(text) {
-            if (text === null || text === undefined) return '';
-            return String(text)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
+        function escapeAttr(v) { return window.Salsifi.escapeAttr(v); }
 
         // ══════════════════════════════════════════════════════════════════
         //  INIT

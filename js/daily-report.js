@@ -30,38 +30,13 @@
             return r;
         }
 
-        async function runWithConcurrency(tasks, limit) {
-            const results = [];
-            const executing = new Set();
-            for (const task of tasks) {
-                const p = Promise.resolve().then(task);
-                results.push(p);
-                executing.add(p);
-                const clean = () => executing.delete(p);
-                p.then(clean, clean);
-                if (executing.size >= limit) await Promise.race(executing);
-            }
-            return Promise.allSettled(results);
-        }
+        function runWithConcurrency(tasks, limit) { return window.Salsifi.runWithConcurrency(tasks, limit); }
 
-        function escapeHtml(text) {
-            if (text === null || text === undefined) return '';
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // Échappement strict pour attributs HTML (href, data-*, etc.).
         // Plus restrictif qu'escapeHtml — neutralise aussi ' et ".
-        function escapeAttr(text) {
-            if (text === null || text === undefined) return '';
-            return String(text)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
+        function escapeAttr(v) { return window.Salsifi.escapeAttr(v); }
 
         // ══════════════════════════════════════════════════════════════════
         //  INITIALISATION

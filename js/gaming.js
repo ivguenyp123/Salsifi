@@ -60,12 +60,7 @@
         }
 
         // Échappement HTML pour tout contenu issu de l'API injecté via innerHTML.
-        function escapeHtml(t) {
-            if (t === null || t === undefined) return '';
-            const d = document.createElement('div');
-            d.textContent = String(t);
-            return d.innerHTML;
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // Stats collectées depuis GitLab
         let stats = {

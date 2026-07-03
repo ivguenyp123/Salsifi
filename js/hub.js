@@ -371,15 +371,7 @@
         let isLoadingMoreRepos = false;
 
         // ───── Helpers HTML escape ─────────────────────────────────────────
-        function escapeHtml(str) {
-            if (str == null) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // ───── fetch avec retry 429 ────────────────────────────────────────
         async function fetchGitLab(endpoint, init = {}) {

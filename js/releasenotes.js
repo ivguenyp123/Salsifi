@@ -38,31 +38,11 @@
             return r;
         }
 
-        async function runWithConcurrency(tasks, limit) {
-            const results = [];
-            const executing = new Set();
-            for (const task of tasks) {
-                const p = Promise.resolve().then(task);
-                results.push(p);
-                executing.add(p);
-                const clean = () => executing.delete(p);
-                p.then(clean, clean);
-                if (executing.size >= limit) await Promise.race(executing);
-            }
-            return Promise.allSettled(results);
-        }
+        function runWithConcurrency(tasks, limit) { return window.Salsifi.runWithConcurrency(tasks, limit); }
 
         // escapeHtml est défini plus bas (préservé du code original).
         // escapeAttr ajouté pour les attributs HTML (data-*, href, value).
-        function escapeAttr(text) {
-            if (text === null || text === undefined) return '';
-            return String(text)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
+        function escapeAttr(v) { return window.Salsifi.escapeAttr(v); }
 
         // ══════════════════════════════════════════════════════════════════
         //  EVENT DELEGATION — remplace tous les onclick inline (HTML + JS)
@@ -705,11 +685,7 @@
         //  UTILS
         // ══════════════════════════════════════════════════════════════════
         
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
         // Markdown → HTML simpliste avec sanitization en amont.
         //

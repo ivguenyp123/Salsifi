@@ -116,12 +116,7 @@ async function apiAll(endpoint, params = {}) {
 }
 
 // Échappement HTML systématique pour les valeurs venant de l'API ou de sessionStorage.
-function escapeHtml(t) {
-    if (t === null || t === undefined) return '';
-    const d = document.createElement('div');
-    d.textContent = String(t);
-    return d.innerHTML;
-}
+function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
 
 // ════════════════════════════════════════════════════════════
 //  LOAD ALL DATA
