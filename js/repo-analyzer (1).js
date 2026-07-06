@@ -12,7 +12,7 @@
 
         // ── AUTH + REPO — modèle plateforme (aligné DevOps Hub) ──
         const STORAGE_KEY = 'devops_hub_workspaces';
-        const HUB_URL = 'hub-mockup-v2_1.html'; // le mockup V2 est le hub ; seul endroit à changer
+        const HUB_URL = 'hub.html'; // le mockup V2 est le hub ; seul endroit à changer
 
         function loadAuth() {
             const raw = localStorage.getItem(STORAGE_KEY);

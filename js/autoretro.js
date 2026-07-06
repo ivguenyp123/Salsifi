@@ -3,7 +3,7 @@
         // ══════════════════════════════════════════════════════════════════
 
         let GITLAB_URL = null, token = null, projectId = null, selectedDays = 21, retroData = null;
-        const HUB_URL = 'hub-mockup-v2_1.html'; // mockup V2 = hub
+        const HUB_URL = 'hub.html'; // mockup V2 = hub
         let alerts = [], generatedUS = [], doraMetrics = {};
 
         // Concurrence pour les fetches d'environnements. 8 simultanés cohérent

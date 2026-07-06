@@ -375,7 +375,7 @@ function doraLevel(metric, value) {
         return              { level: 'Low',    cls: 'low',    pct: 15,  gap: `+${(7 - value).toFixed(1)} deploy/sem pour Elite` };
     }
     if (metric === 'lt') {
-        // heures — seuils DORA Accelerate 2024 alignés sur hub-mockup-v2_1.html
+        // heures — seuils DORA Accelerate 2024 alignés sur hub.html
         // Elite < 1 jour, High < 1 semaine, Medium < 1 mois
         if (value <= 24)  return { level: 'Elite',  cls: 'elite',  pct: 100, gap: null };
         if (value <= 168) return { level: 'High',   cls: 'high',   pct: 70,  gap: `Encore ${(value - 24).toFixed(0)}h à gagner pour Elite` };
@@ -850,7 +850,7 @@ function generateQuickWins(state, raw, pipelines30, mergeRequests, branches, con
         if (contrib.length <= 1) {
             wins.push({ priority: 'urgent', dora: 'mttr', icon: '🚌',
                 text: `1 seul contributeur actif — bus factor critique. En cas d'incident, le temps de restore dépend d'une seule personne.`,
-                link: 'Hub', linkUrl: 'hub-mockup-v2_1.html' });
+                link: 'Hub', linkUrl: 'hub.html' });
         }
         if (wins.filter(w => w.dora === 'mttr').length === 0) {
             wins.push({ priority: 'important', dora: 'mttr', icon: '🩹',

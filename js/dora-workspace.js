@@ -6,7 +6,7 @@ let GITLAB_URL = null, token = null, currentWorkspace = null;
 let lastResults = null;   // derniers résultats repo (pour re-render après réorg sans refetch)
 
 // Hub de retour (mockup V2), aligné sur gouvernance-repo.
-const HUB_URL = 'hub-mockup-v2_1.html';
+const HUB_URL = 'hub.html';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Flèche retour → hub V2 (pattern data-hub-link comme les autres modules).

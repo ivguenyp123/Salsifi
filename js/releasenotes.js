@@ -126,7 +126,7 @@
         });
 
         function goBack() {
-            window.location.href = 'hub-mockup-v2_1.html';
+            window.location.href = 'hub.html';
         }
 
         async function loadAll() {

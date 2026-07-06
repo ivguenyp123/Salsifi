@@ -359,7 +359,7 @@
         //  Repo  : query param ?repo=<id> (posé par le hub)
         // ══════════════════════════════════════════════════════════════════
         const STORAGE_KEY = 'devops_hub_workspaces';
-        const HUB_URL = 'hub-mockup-v2_1.html'; // le mockup V2 est le hub ; seul endroit à changer
+        const HUB_URL = 'hub.html'; // le mockup V2 est le hub ; seul endroit à changer
 
         let projectPath = null; // path_with_namespace, pour les liens GitLab
 

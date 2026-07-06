@@ -9,7 +9,7 @@
   'use strict';
 
   let GITLAB_URL = '', token = '', username = '';
-  const HUB_URL = 'hub-mockup-v2_1.html';
+  const HUB_URL = 'hub.html';
 
   let aborted = false;
   let running = false;

@@ -7,7 +7,7 @@
         let projectName = null;
 
         const STORAGE_KEY = 'devops_hub_workspaces';
-        const HUB_URL = 'hub-mockup-v2_1.html';
+        const HUB_URL = 'hub.html';
 
         function loadAuth() {
             const raw = localStorage.getItem(STORAGE_KEY);

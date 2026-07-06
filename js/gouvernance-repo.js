@@ -8,7 +8,7 @@
   'use strict';
 
   let GITLAB_URL = '', token = '', username = '';
-  const HUB_URL = 'hub-mockup-v2_1.html';
+  const HUB_URL = 'hub.html';
 
   // Mode mono-repo : ?repo=<id> passé par le hub. Si présent, tous les scans
   // (surface/historique/supply/CIS) ne portent QUE sur ce repo.

@@ -7,7 +7,7 @@
 
         // ⚠️ Nom de page du NOUVEAU hub (le seul endroit à changer pour les liens retour).
         // Le mockup V2 est désormais le hub. Si tu le renommes (ex. hub.html en prod), change ici.
-        const HUB_URL = 'hub-mockup-v2_1.html';
+        const HUB_URL = 'hub.html';
 
         function loadAuth() {
             const raw = localStorage.getItem(STORAGE_KEY);

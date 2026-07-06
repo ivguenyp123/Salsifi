@@ -779,7 +779,7 @@
                 document.getElementById('badgesContainer').innerHTML = `
                     <div class="loading">
                         ⚠️ Aucun projet sélectionné.<br>
-                        <a href="hub-mockup-v2_1.html" style="color: var(--accent-light, #a78bfa);">Retour au Hub</a>
+                        <a href="hub.html" style="color: var(--accent-light, #a78bfa);">Retour au Hub</a>
                     </div>
                 `;
                 return;
