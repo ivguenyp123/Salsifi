@@ -1,5 +1,62 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.0.1 — 2026-07-06 · Correctifs
+
+Grande passe de revue (5 relectures croisées de tous les modules, chaque
+signalement vérifié dans le code avant correction). **17 défauts de correction**
+corrigés, validés en syntaxe **et** au navigateur (14 pages, zéro erreur JS
+introduite). Aucune régression : les correctifs sont locaux et ciblés.
+
+### 🐛 Calcul & métriques
+
+| Module | Défaut | Effet | Correctif |
+|---|---|---|---|
+| **hub** | `syn.tags` jamais renseigné | Badge « Semantic Versioning » indébloquable, XP sous-compté (−75) | `tags` ajouté à la synthèse |
+| **maturité** | Pilier data **Sécurité toujours à 0** (questions `dataOnly` X01-X05 exclues du calcul) | Carte Sécurité « non conforme » et score global amputé (~12 pts) malgré des métriques GitLab bien lues | `dataScoreForCat` inclut les questions data |
+| **feature flags** | `% rollout` forcé à 100 dès qu'un flag est actif | Un rollout progressif à 25 % affiché à 100 %, classification faussée | `active` = interrupteur, pas pourcentage |
+| **feature flags** | Sparkline de santé lue via `b.s` (→ NaN) | Courbe jamais tracée | Lecture de `b.score` |
+| **gaming** | Taux review/MR calculés sur un échantillon de 30 mais divisés par le total | Badges de review indébloquables dès >30 MRs | Division par la taille réelle de l'échantillon |
+| **insights · gaming · dora** | MTTR : pannes consécutives d'un même incident comptées plusieurs fois | Médiane MTTR biaisée vers le bas, nb d'incidents gonflé | Seule la 1ʳᵉ panne d'une série démarre le chrono |
+| **daily-report** | Issues sans borne haute + « du jour » basé sur `updated_at` | Compteurs gonflés sur une date passée | Filtre sur `merged_at` / `closed_at` + borne haute |
+
+### 🔎 Scanners & analyse
+
+- **secrets-scanner & gouvernance-repo** : `getFileContent` utilisait `?ref=HEAD`
+  (404 silencieux) → **aucun contenu lu**, 0 secret / 0 alerte supply / Maven CIS
+  figées en permanence. On passe désormais la branche par défaut du repo.
+- **CIS (gouvernance & secrets)** : les erreurs non-403 (404 GitLab CE, réseau)
+  étaient prises pour un vrai résultat → **faux « non conforme » et faux
+  « conforme »**. Elles deviennent « non vérifiable ».
+- **repo-analyzer** : une réponse non-tableau (endpoint 403) faisait **planter
+  toute l'analyse** ; chaque fetch de liste est coercé en tableau.
+- **repo-diet** : détection des dossiers par **sous-chaîne** (`bin` matchait
+  `combine.js`, `out` matchait `about.md`…) → faux positifs massifs. Match par
+  segment de chemin + un fichier n'est plus compté qu'une fois.
+
+### 🔒 Écritures GitLab & sécurité
+
+- **branch-cleaner** : la **branche par défaut** est exclue de la suppression
+  même si sa protection a été retirée (`branch.default`).
+- **pipeline-generator** : les variables **sensibles étaient poussées non
+  masquées** (tokens/mots de passe visibles dans les logs de jobs) → masquées ;
+  `exportSecretsTemplate` plantait (`currentSecrets` inexistant) → corrigé.
+- **feature flags** : annuler la confirmation prod depuis le wizard cleanup
+  laissait le handler patché en place → **risque de toggle sur le mauvais flag**.
+  Le handler d'origine est restauré et l'action en attente purgée.
+- **mr-reviewer** : attribut `data-iid` dupliqué (coquille).
+
+### 🔜 Identifié, non corrigé (volontairement)
+
+- **repo-analyzer** : détection CODEOWNERS / templates MR sur un arbre non
+  récursif (faux positifs) — le passage en récursif change la sémantique des
+  autres détections racine, reporté.
+- **insights CFR** : carte / quick-wins / score affichent 3 valeurs — c'est le
+  « plancher de tendance » **voulu**, à clarifier côté UX plutôt qu'à corriger.
+- Décalage de fuseau du graphe d'évolution, paginations partielles, code mort
+  (hub) : mineurs / cosmétiques.
+
+---
+
 ## v1.0.0 — 2026-07-06
 
 Première version consolidée de la plateforme. Un ensemble de pages HTML/CSS/JS
