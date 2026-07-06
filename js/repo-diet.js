@@ -66,13 +66,7 @@
         const HUB_URL = 'hub.html'; // mockup V2 = hub ; seul endroit à changer
 
         function loadAuth() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            try {
-                const data = JSON.parse(raw);
-                if (!data.gitlabUrl || !data.token) return null;
-                return data;
-            } catch { return null; }
+            return window.Salsifi.loadAuth({ redirect: false });
         }
 
         async function init() {

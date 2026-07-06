@@ -12,13 +12,7 @@
         const HUB_URL = 'hub.html';
 
         function loadAuth() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            try {
-                const data = JSON.parse(raw);
-                if (!data.gitlabUrl || !data.token) return null;
-                return data;
-            } catch { return null; }
+            return window.Salsifi.loadAuth({ redirect: false });
         }
 
         // URL du backend MR Reviewer - Configurable via localStorage ou variable globale
