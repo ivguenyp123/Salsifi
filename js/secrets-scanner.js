@@ -121,7 +121,7 @@
   async function getFileTree(projectId) {
     const files = [];
     let page = 1;
-    while (true) {
+    while (page <= 50) {   // garde-fou dur : 50 pages × 100 = 5000 fichiers max (jamais de boucle non bornée)
       const batch = await fetchGL(`/projects/${projectId}/repository/tree?recursive=true&per_page=100&page=${page}`);
       if (!batch || !Array.isArray(batch) || batch.length === 0) break;
       files.push(...batch.map(f => f.path));
