@@ -37,6 +37,13 @@ body::before {
 .app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; max-width: 680px; margin: 0 auto; }
 
 .top { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; flex: none; }
+.back-hub {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; font-size: 17px; text-decoration: none;
+  color: var(--text-secondary, #c6bae0); background: var(--cc-card); border: 1px solid var(--cc-line);
+  transition: .18s;
+}
+.back-hub:hover { background: var(--cc-card-h); border-color: var(--cc-line2); color: #fff; transform: translateX(-2px); }
 .bell {
   width: 40px; height: 40px; border-radius: 13px; flex: none;
   background: linear-gradient(140deg, var(--cc-glow-light), var(--cc-pink));
