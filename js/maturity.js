@@ -1397,7 +1397,10 @@ function declScoreForCat(catId) {
 }
 
 function dataScoreForCat(catId) {
-    const qs = getCatQuestions(catId).filter(q => q.metric);
+    // On inclut les questions `dataOnly` (ex. la catégorie Sécurité X01-X05, jamais
+    // posées dans le quiz mais toutes issues de métriques GitLab) : getCatQuestions
+    // les exclut, ce qui rendait le pilier data Sécurité toujours nul.
+    const qs = QUESTIONS.filter(q => q.cat === catId && q.metric);
     if (!qs.length) return null;
     const scored = qs.filter(q => GITLAB_DATA[q.metric]?.score != null);
     if (!scored.length) return null;

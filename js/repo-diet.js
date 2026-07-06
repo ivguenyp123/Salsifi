@@ -266,15 +266,21 @@
                 else if (['.jar', '.dll', '.exe', '.zip'].includes(ext)) analysis.distribution.binary++;
                 else analysis.distribution.other++;
 
+                const segments = pathLower.split('/');
                 for (const [key, pattern] of Object.entries(SUSPECT_PATTERNS)) {
                     let isSuspect = false;
                     if (pattern.extensions?.includes(ext)) isSuspect = true;
-                    if (pattern.folders?.some(f => pathLower.includes(f.toLowerCase()))) isSuspect = true;
+                    // Match par SEGMENT de chemin, pas par sous-chaîne : sinon `bin`
+                    // matchait `combine.js`, `out` matchait `about.md`, etc.
+                    if (pattern.folders?.some(f => segments.includes(f.toLowerCase()))) isSuspect = true;
 
                     if (isSuspect) {
                         if (!analysis.patterns[key]) analysis.patterns[key] = { ...pattern, files: [] };
                         analysis.patterns[key].files.push(file);
                         analysis.suspects.push(file);
+                        // Un fichier n'est classé QUE dans le premier pattern qui matche —
+                        // sinon il est compté plusieurs fois dans `suspects` (total gonflé).
+                        break;
                     }
                 }
             }

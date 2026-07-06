@@ -324,6 +324,12 @@ function computeDORA(pipelines30, mergeRequests, allPipelines, nowRef, defaultBr
         for (let i = 0; i < prodPipelines30.length - 1; i++) {
             const p = prodPipelines30[i];
             if (p.status !== 'failed') continue;
+            // Un incident = une SÉRIE de failed jusqu'au prochain success. On ne démarre
+            // le chrono qu'à la première panne : si le dernier pipeline de la même ref
+            // était déjà failed, on est encore dans le même incident (déjà comptabilisé)
+            // — sinon F1,F2,S produisait 2 échantillons et biaisait la médiane vers le bas.
+            const prevSameRef = prodPipelines30.slice(0, i).reverse().find(n => n.ref === p.ref);
+            if (prevSameRef && prevSameRef.status === 'failed') continue;
             const next = prodPipelines30.slice(i + 1).find(n => n.ref === p.ref && n.status === 'success');
             if (next) {
                 const hours = (new Date(next.created_at) - new Date(p.created_at)) / 3600000;

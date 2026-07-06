@@ -516,7 +516,14 @@
                     }
                 }
             }
-            if (flag.active) rolloutPercent = Math.max(rolloutPercent, 100);
+            // `active` est l'interrupteur maître, PAS le % de déploiement : un flag
+            // inactif est à 0 %, un flag actif sans stratégie de % est à 100 %, mais
+            // un flag actif en rollout progressif garde son pourcentage réel.
+            if (!flag.active) {
+                rolloutPercent = 0;
+            } else if (!flag.strategies || flag.strategies.length === 0) {
+                rolloutPercent = 100;
+            }
 
             // Type de flag
             const isOpsFlag = flag.name.startsWith('disable-');
@@ -2611,8 +2618,8 @@ Flags existants: ${existingFlags.join(', ')}`
             buckets.push({ day: days + 1, score: currentScore });
             if (buckets.length < 2) return;
 
-            var minS = Math.min.apply(null, buckets.map(function(b){ return b.s; }));
-            var maxS = Math.max.apply(null, buckets.map(function(b){ return b.s; }));
+            var minS = Math.min.apply(null, buckets.map(function(b){ return b.score; }));
+            var maxS = Math.max.apply(null, buckets.map(function(b){ return b.score; }));
             if (maxS === minS) { maxS = minS + 10; minS = Math.max(0, minS - 10); }
 
             var pad = 4;
@@ -2698,9 +2705,13 @@ Flags existants: ${existingFlags.join(', ')}`
                 _pendingToggle = { flagName: currentCleanupFlag, activate, toggleEl: { closest: () => null } };
                 showProdConfirm(currentCleanupFlag, activate, flag);
                 window._cwPendingAction = { flagName: currentCleanupFlag, activate };
-                const origConfirm = confirmProdToggle;
+                // On stocke l'original sur window pour que cancelProdConfirm puisse le
+                // restaurer si l'utilisateur annule (sinon le patch wizard fuit et le
+                // prochain toggle prod viserait l'ancien flag).
+                window._cwOrigConfirm = confirmProdToggle;
                 window.confirmProdToggle = async function() {
-                    window.confirmProdToggle = origConfirm;
+                    window.confirmProdToggle = window._cwOrigConfirm;
+                    window._cwOrigConfirm = null;
                     const pcm = document.getElementById('pcm-dialog');
                     if (pcm) { pcm.close(); pcm.remove(); }
                     if (!window._cwPendingAction) return;
@@ -3322,6 +3333,11 @@ Flags existants: ${existingFlags.join(', ')}`
         function cancelProdConfirm() {
             const dlg = document.getElementById('pcm-dialog'); if (dlg) { dlg.close(); dlg.remove(); }
             _pendingToggle = null;
+            // Si un wizard cleanup avait monkey-patché confirmProdToggle, on le restaure
+            // et on purge l'action en attente — sinon un toggle prod ultérieur (depuis la
+            // table) rejouerait la version wizard sur un flag périmé.
+            if (window._cwOrigConfirm) { window.confirmProdToggle = window._cwOrigConfirm; window._cwOrigConfirm = null; }
+            window._cwPendingAction = null;
         }
 
         function confirmProdToggle() {

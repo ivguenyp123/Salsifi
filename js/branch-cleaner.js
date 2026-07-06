@@ -193,7 +193,9 @@
                         ...branch,
                         ageDays,
                         isMerged: mergedBranches.has(branch.name),
-                        isProtected: protectedBranches.has(branch.name) || branch.protected,
+                        // `branch.default` (fourni par l'API branches) exclut la branche
+                        // par defaut de la suppression, meme si sa protection a ete retiree.
+                        isProtected: protectedBranches.has(branch.name) || branch.protected || branch.default,
                         authorName: branch.commit?.author_name || 'Unknown'
                     };
                 });

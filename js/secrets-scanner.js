@@ -130,9 +130,13 @@
     }
     return files;
   }
-  async function getFileContent(projectId, path) {
+  async function getFileContent(projectId, path, ref) {
     try {
-      const data = await fetchGL(`/projects/${projectId}/repository/files/${encodeURIComponent(path)}?ref=HEAD`);
+      // L'API Files exige un ref réel (branche/tag/SHA) : `HEAD` n'est pas résolu
+      // de façon fiable et renvoie 404 → contenu toujours vide. On passe la branche
+      // par défaut du repo, comme partout ailleurs dans la plateforme.
+      const q = ref ? `?ref=${encodeURIComponent(ref)}` : '';
+      const data = await fetchGL(`/projects/${projectId}/repository/files/${encodeURIComponent(path)}${q}`);
       return data?.content ? atob(data.content) : null;
     } catch { return null; }
   }
@@ -205,7 +209,7 @@
       const batch = suspects.slice(i, i + BATCH);
       await Promise.all(batch.map(async (filePath) => {
         let content;
-        try { content = await getFileContent(repo.id, filePath); } catch { return; }
+        try { content = await getFileContent(repo.id, filePath, repo.defaultBranch); } catch { return; }
         if (!content || content.length > 200000) return;
         result.scanned++;
         const leafName = filePath.split('/').pop();
@@ -418,7 +422,7 @@
       if (aborted) break;
       const batch = targets.slice(i, i + BATCH);
       await Promise.all(batch.map(async ({ p, eco }) => {
-        let content; try { content = await getFileContent(repo.id, p); } catch { return; }
+        let content; try { content = await getFileContent(repo.id, p, repo.defaultBranch); } catch { return; }
         if (!content || content.length > 500000) return;
         result.scanned++;
         try { checkSupply(eco, content, p, result.findings); } catch { /* fichier malformé, on continue */ }
@@ -1278,12 +1282,14 @@ if(document.getElementById('supTable')) renderSup();
       if (!p) add('branch', '1.1.1', 'Branche par défaut protégée', 'ko', `\`${defaultBranch}\` non protégée`);
       else if (p.allow_force_push) add('branch', '1.1.1', 'Branche par défaut protégée', 'ko', 'Force push autorisé');
       else add('branch', '1.1.1', 'Branche par défaut protégée', 'ok', 'Protégée, force push interdit');
-    } else add('branch', '1.1.1', 'Branche par défaut protégée', 'ko', 'Aucune protection');
+    } else add('branch', '1.1.1', 'Branche par défaut protégée', 'unverif', 'Vérification impossible');
 
     // 1.1.3/4/5 Approval settings (config)
     const ap = await fetchGLStatus(`/projects/${repo.id}/approvals`);
     if (ap.status === 403) add('approvals', '1.1.4', 'Paramètres d\'approbation', 'unverif', 'Droits insuffisants pour vérifier');
-    else if (ap.data) {
+    // Uniquement une vraie réponse 2xx : sur 404 (édition GitLab sans cet endpoint),
+    // `ap.data` est l'objet d'erreur {message} — le parser produisait un faux « 0 approbateur ».
+    else if (ap.status >= 200 && ap.status < 300 && ap.data) {
       const a = ap.data;
       const req = a.approvals_before_merge ?? 0;
       const flags = [
@@ -1338,7 +1344,7 @@ if(document.getElementById('supTable')) renderSup();
         const bad = hk.data.filter(h => !String(h.url).startsWith('https://') || !h.token).length;
         add('webhooks', '1.4.4', 'Webhooks sécurisés (HTTPS + token)', bad ? 'ko' : 'ok', bad ? `${bad}/${hk.data.length} non sécurisé(s)` : `${hk.data.length} sécurisé(s)`);
       }
-    } else add('webhooks', '1.4.4', 'Webhooks sécurisés (HTTPS + token)', 'ok', 'Aucun webhook');
+    } else add('webhooks', '1.4.4', 'Webhooks sécurisés (HTTPS + token)', 'unverif', 'Vérification impossible');
 
     // Lock files (fichiers — info, non corrigés par MR car nécessitent un vrai résolveur)
     const lockMap = [];
@@ -1360,7 +1366,7 @@ if(document.getElementById('supTable')) renderSup();
     // Maven versions fixées (fichier)
     if (has('pom.xml')) {
       const pomPath = find('pom.xml');
-      let content = null; try { content = pomPath ? await getFileContent(repo.id, pomPath) : null; } catch {}
+      let content = null; try { content = pomPath ? await getFileContent(repo.id, pomPath, defaultBranch) : null; } catch {}
       const ranges = content ? parseMavenRanges(content) : [];
       add('maven', '2.4.x', 'Versions Maven fixées', ranges.length ? 'ko' : 'ok',
         ranges.length ? `${ranges.length} version(s) non figée(s)` : 'Toutes figées');

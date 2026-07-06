@@ -69,18 +69,23 @@
             }
         }
 
-        // FETCH DATA 
-        async function fetchBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/branches?per_page=100`); analysisData.branches = await res.json() || []; } catch(e){} }
-        async function fetchContributors() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/contributors?per_page=100`); analysisData.contributors = await res.json() || []; } catch(e){} }
-        async function fetchCommits() { const since = new Date(Date.now() - 90 * 86400000).toISOString(); try { const res = await fetchGitLab(`/projects/${projectId}/repository/commits?per_page=100&since=${since}`); analysisData.commits = await res.json() || []; } catch(e){} }
-        async function fetchMergeRequests() { try { const res = await fetchGitLab(`/projects/${projectId}/merge_requests?state=all&per_page=100`); analysisData.mergeRequests = await res.json() || []; } catch(e){} }
+        // FETCH DATA
+        // Sur un endpoint refusé (403 : pipelines désactivés, etc.) `gitlabFetch` renvoie
+        // quand même la Response ; `res.json()` donne alors un objet {message}, pas un
+        // tableau, et `|| []` ne protège pas (l'objet est truthy). On coerce donc en
+        // tableau pour qu'un seul endpoint refusé ne fasse pas planter toute l'analyse.
+        async function jsonArray(res) { try { const j = await res.json(); return Array.isArray(j) ? j : []; } catch { return []; } }
+        async function fetchBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/branches?per_page=100`); analysisData.branches = await jsonArray(res); } catch(e){} }
+        async function fetchContributors() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/contributors?per_page=100`); analysisData.contributors = await jsonArray(res); } catch(e){} }
+        async function fetchCommits() { const since = new Date(Date.now() - 90 * 86400000).toISOString(); try { const res = await fetchGitLab(`/projects/${projectId}/repository/commits?per_page=100&since=${since}`); analysisData.commits = await jsonArray(res); } catch(e){} }
+        async function fetchMergeRequests() { try { const res = await fetchGitLab(`/projects/${projectId}/merge_requests?state=all&per_page=100`); analysisData.mergeRequests = await jsonArray(res); } catch(e){} }
         async function fetchProject() { try { const res = await fetchGitLab(`/projects/${projectId}`); analysisData.project = await res.json(); } catch(e){} }
-        async function fetchProtectedBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/protected_branches`); analysisData.protectedBranches = await res.json() || []; } catch(e){} }
-        async function fetchRepoTree() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/tree?per_page=100`); analysisData.repoTree = await res.json() || []; } catch(e){} }
-        async function fetchLabels() { try { const res = await fetchGitLab(`/projects/${projectId}/labels?per_page=100`); analysisData.labels = await res.json() || []; } catch(e){} }
-        async function fetchPipelines() { try { const res = await fetchGitLab(`/projects/${projectId}/pipelines?per_page=100`); analysisData.pipelines = await res.json() || []; } catch(e){} }
-        async function fetchFailedJobs() { try { const res = await fetchGitLab(`/projects/${projectId}/jobs?scope[]=failed&per_page=100`); analysisData.failedJobs = await res.json() || []; } catch(e){} }
-        async function fetchDeployments() { try { const res = await fetchGitLab(`/projects/${projectId}/deployments?per_page=100`); analysisData.deployments = await res.json() || []; } catch(e){} }
+        async function fetchProtectedBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/protected_branches`); analysisData.protectedBranches = await jsonArray(res); } catch(e){} }
+        async function fetchRepoTree() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/tree?per_page=100`); analysisData.repoTree = await jsonArray(res); } catch(e){} }
+        async function fetchLabels() { try { const res = await fetchGitLab(`/projects/${projectId}/labels?per_page=100`); analysisData.labels = await jsonArray(res); } catch(e){} }
+        async function fetchPipelines() { try { const res = await fetchGitLab(`/projects/${projectId}/pipelines?per_page=100`); analysisData.pipelines = await jsonArray(res); } catch(e){} }
+        async function fetchFailedJobs() { try { const res = await fetchGitLab(`/projects/${projectId}/jobs?scope[]=failed&per_page=100`); analysisData.failedJobs = await jsonArray(res); } catch(e){} }
+        async function fetchDeployments() { try { const res = await fetchGitLab(`/projects/${projectId}/deployments?per_page=100`); analysisData.deployments = await jsonArray(res); } catch(e){} }
 
         function detectFlow() {
             const branchNames = analysisData.branches.map(b => b.name.toLowerCase());

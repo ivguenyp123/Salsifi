@@ -1231,7 +1231,7 @@
             const deploys = await computeDeploys(repo, pipelines);
             const maturity = await computeMaturity(repo, pipelines, mrs, branches, ciFile, protectedBranches, projectDetails, tagsCount, approvals);
 
-            return { dora, deploys, maturity, busFactor };
+            return { dora, deploys, maturity, busFactor, tags: tagsCount };
         }
 
         // ───── Rendu final ─────────────────────────────────────────────────

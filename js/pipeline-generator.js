@@ -9,20 +9,22 @@
         let existingSecrets = [];
 
         // Variables CI/CD LCL - liste fixe
+        // `sensitive: true` → la variable est poussée sur GitLab avec masked:true
+        // (sinon le token/mot de passe apparaîtrait en clair dans les logs de jobs).
         const LCL_VARIABLES = [
-            { key: 'ARGOCD_AUTH_TOKEN', desc: 'Token ArgoCD principal' },
-            { key: 'ARGOCD_AUTH_TOKEN_DEVELOPMENT', desc: 'Token ArgoCD DEV' },
+            { key: 'ARGOCD_AUTH_TOKEN', desc: 'Token ArgoCD principal', sensitive: true },
+            { key: 'ARGOCD_AUTH_TOKEN_DEVELOPMENT', desc: 'Token ArgoCD DEV', sensitive: true },
             { key: 'ARTIFACTORY_USER_ACCOUNT', desc: 'Compte Artifactory' },
-            { key: 'ARTIFACTORY_USER_PASSWORD', desc: 'Password Artifactory' },
+            { key: 'ARTIFACTORY_USER_PASSWORD', desc: 'Password Artifactory', sensitive: true },
             { key: 'PROXY_USER_NAME', desc: 'Username Proxy' },
             { key: 'service_account', desc: 'Service Account' },
-            { key: 'SERVICE_ACCOUNT_PASSWORD_HP', desc: 'Password HP' },
-            { key: 'SERVICE_ACCOUNT_PASSWORD_P', desc: 'Password P' },
+            { key: 'SERVICE_ACCOUNT_PASSWORD_HP', desc: 'Password HP', sensitive: true },
+            { key: 'SERVICE_ACCOUNT_PASSWORD_P', desc: 'Password P', sensitive: true },
             { key: 'SERVICE_ACCOUNT_USERNAME_HP', desc: 'Username HP' },
             { key: 'SERVICE_ACCOUNT_USERNAME_P', desc: 'Username P' },
             { key: 'SONARQUBE_PROJECTKEY', desc: 'Clé projet SonarQube' },
-            { key: 'SONARQUBE_TOKEN', desc: 'Token SonarQube' },
-            { key: 'SONARQUBE_TOKEN_METRICS', desc: 'Token Metrics SonarQube' },
+            { key: 'SONARQUBE_TOKEN', desc: 'Token SonarQube', sensitive: true },
+            { key: 'SONARQUBE_TOKEN_METRICS', desc: 'Token Metrics SonarQube', sensitive: true },
             { key: 'SONARQUBE_URL', desc: 'URL SonarQube' },
         ];
 
@@ -83,9 +85,9 @@
                 html += `
                     <div class="secret-item ${exists ? 'exists' : 'missing'}">
                         <div class="secret-key" title="${variable.desc}">${variable.key}</div>
-                        <input type="password" class="secret-input" id="secret-${variable.key}" 
+                        <input type="password" class="secret-input" id="secret-${variable.key}"
                                placeholder="${exists ? '••••••••' : 'Entrer la valeur...'}"
-                               data-key="${variable.key}">
+                               data-key="${variable.key}" data-masked="${variable.sensitive ? 'true' : 'false'}">
                         <div class="secret-status">${exists ? '✅' : '❌'}</div>
                         <div class="secret-actions">
                             <button class="secret-btn save" onclick="saveSecret('${variable.key}')">💾</button>
@@ -337,7 +339,7 @@
         }
 
         function exportSecretsTemplate() {
-            const template = currentSecrets.map(s => `${s.key}=`).join('\n');
+            const template = LCL_VARIABLES.map(s => `${s.key}=`).join('\n');
             const blob = new Blob([template], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

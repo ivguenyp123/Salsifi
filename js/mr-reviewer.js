@@ -298,7 +298,7 @@
                 return;
             }
             c.innerHTML = mrList.map(mr => `
-                <div class="mr-card" data-iid="${mr.iid}" data-action="select-mr" data-iid="${mr.iid}">
+                <div class="mr-card" data-iid="${mr.iid}" data-action="select-mr">
                     <div class="mr-card-header">
                         <span class="mr-id">!${mr.iid}</span>
                         <span class="mr-status open">🟢 Ouverte</span>

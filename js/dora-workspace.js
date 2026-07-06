@@ -231,13 +231,17 @@ async function computeRepoMetrics(repo, since, until, days) {
             failCount = fail;
             totalPipeCount = totalPipes;
 
-            // MTTR : pour chaque failed, trouver le prochain success sur la même branche.
-            // Pas de dedup ici : on veut chaque incident (la dedup tuerait les failed consécutifs).
+            // MTTR : un incident = une série de failed jusqu'au prochain success sur la
+            // même branche. On ne démarre le chrono qu'à la PREMIÈRE panne d'une série :
+            // compter chaque failed consécutif (F1,F2,S) créerait plusieurs échantillons
+            // pour un seul incident et biaiserait la médiane vers le bas.
             const mttrSource = prod.length > 0 ? prod : pipelines;
             const sortedAsc = [...mttrSource].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const recov = [];
             for (let i = 0; i < sortedAsc.length - 1; i++) {
                 if (sortedAsc[i].status === 'failed') {
+                    const prevSameRef = sortedAsc.slice(0, i).reverse().find(p => p.ref === sortedAsc[i].ref);
+                    if (prevSameRef && prevSameRef.status === 'failed') continue;
                     const nextOK = sortedAsc.slice(i + 1).find(p => p.ref === sortedAsc[i].ref && p.status === 'success');
                     if (nextOK) {
                         const dur = (new Date(nextOK.created_at) - new Date(sortedAsc[i].created_at)) / 3600000;

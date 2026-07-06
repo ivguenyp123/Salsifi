@@ -882,6 +882,9 @@
                 const list = prodPipelinesByRef[ref];
                 for (let i = 0; i < list.length - 1; i++) {
                     if (list[i].status !== 'failed') continue;
+                    // Première panne d'une série seulement : les failed consécutifs de la
+                    // même ref appartiennent au même incident (déjà comptabilisé).
+                    if (i > 0 && list[i - 1].status === 'failed') continue;
                     const next = list.slice(i + 1).find(n => n.status === 'success');
                     if (next) {
                         const hours = (new Date(next.created_at) - new Date(list[i].created_at)) / 3600000;
@@ -988,10 +991,14 @@
                 }
             }
 
-            stats.reviewedMRRate = mrs.length > 0 ? Math.round((withApproval / mrs.length) * 100) : 0;
+            // Les taches d'enrichissement (approvals/notes) ne portent que sur `enriched`
+            // (echantillon de 30 max) : on divise donc par la taille de l'echantillon,
+            // pas par `mrs.length` (qui peut valoir des milliers) — sinon les taux sont
+            // mecaniquement plafonnes et les badges deviennent impossibles a debloquer.
+            stats.reviewedMRRate = enriched.length > 0 ? Math.round((withApproval / enriched.length) * 100) : 0;
             stats.avgMRSize = sizeCount > 0 ? Math.round(totalSize / sizeCount) : null;
             stats.avgMRFiles = filesCount > 0 ? totalFiles / filesCount : null;
-            stats.avgCommentsPerMR = mrs.length > 0 ? totalComments / mrs.length : 0;
+            stats.avgCommentsPerMR = enriched.length > 0 ? totalComments / enriched.length : 0;
             stats.distinctReviewers = reviewers.size;
             stats.avgMRCycleTime = cycleTimes.length > 0
                 ? cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length
@@ -1004,7 +1011,7 @@
                     ? (reviewTimes[mid - 1] + reviewTimes[mid]) / 2
                     : reviewTimes[mid];
             }
-            stats.mrWithoutApproval = mrs.length - withApproval;
+            stats.mrWithoutApproval = enriched.length - withApproval;
 
             // MRs zombies (ouvertes > 7 jours).
             const openMrs = await fetchAll(`/projects/${projectId}/merge_requests?state=opened`);
