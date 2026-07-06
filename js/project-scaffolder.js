@@ -56,7 +56,7 @@
                     return; // wizard jamais affiché → aucun write possible
                 }
 
-                updateUI();
+                startConcierge(false);
             } catch (e) {
                 console.error('Erreur chargement du repo:', e);
                 alert("Impossible de charger le repo sélectionné.\n\n" + e.message + "\n\nRetour au Hub.");
@@ -126,17 +126,10 @@
         }
 
         function showBlocked(reason, detail) {
-            const formCard = document.getElementById('formCard');
-            const blocked = document.getElementById('blockedCard');
-            const progress = document.querySelector('.progress-steps');
-            if (formCard) formCard.style.display = 'none';
-            if (progress) progress.style.display = 'none';
-            if (blocked) {
-                document.getElementById('blockedReason').textContent = reason;
-                document.getElementById('blockedDetail').textContent = detail;
-                document.getElementById('blockedHubLink').href = HUB_URL;
-                blocked.style.display = 'block';
-            }
+            const t = document.getElementById('thread');
+            if (t) t.innerHTML = `<div class="blocked-wrap"><h2>\ud83d\uded1 ${esc(reason)}</h2>`
+                + `<p>${esc(detail)}</p>`
+                + `<p>Le Concierge ne touche qu'aux repos neufs. <a href="${HUB_URL}" data-hub-link>\u2190 Retour au hub</a></p></div>`;
         }
 
         // ============================================
@@ -159,306 +152,351 @@
         };
 
         // ============================================
-        // DOM ELEMENTS
+        // CONCIERGE — moteur conversationnel (remplace le wizard)
+        // Le noyau déduit le flow ; la conversation remplit `config`,
+        // puis on lance le VRAI initializeProject() (écriture GitLab).
         // ============================================
-        const steps = document.querySelectorAll('.step');
-        const formSteps = document.querySelectorAll('.form-step');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const formCard = document.getElementById('formCard');
-        const successCard = document.getElementById('successCard');
-        const loadingOverlay = document.getElementById('loadingOverlay');
 
-        // ============================================
-        // NAVIGATION
-        // ============================================
-        function updateUI() {
-            // Update progress steps
-            steps.forEach((step, index) => {
-                const stepNum = index + 1;
-                step.classList.remove('active', 'completed');
-                if (stepNum === currentStep) {
-                    step.classList.add('active');
-                } else if (stepNum < currentStep) {
-                    step.classList.add('completed');
-                }
-            });
+        // Le moteur réel appelle loadingOverlay.classList : on neutralise
+        // (le pipeline est désormais rendu dans le fil de discussion).
+        const loadingOverlay = { classList: { add() {}, remove() {} } };
 
-            // Show/hide form steps
-            formSteps.forEach(fs => {
-                fs.classList.remove('active');
-                if (parseInt(fs.dataset.step) === currentStep) {
-                    fs.classList.add('active');
-                }
-            });
+        let thread, toastEl;
 
-            // Update buttons
-            prevBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-            
-            if (currentStep === totalSteps) {
-                nextBtn.innerHTML = '🚀 Initialiser';
-            } else {
-                nextBtn.innerHTML = 'Suivant →';
-            }
-
-            // Step-specific updates
-            if (currentStep === 3) {
-                updateOptionsVisibility();
-            }
-            if (currentStep === 4) {
-                updateSummary();
-            }
-        }
-
-        function nextStep() {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                updateUI();
-            } else {
-                initializeProject();
-            }
-        }
-
-        function prevStep() {
-            if (currentStep > 1) {
-                currentStep--;
-                updateUI();
-            }
-        }
-
-        // ============================================
-        // WORKFLOW SELECTION
-        // ============================================
-        const workflowInfoTexts = {
-            'gitflow': 'GitFlow est recommandé pour les projets avec des cycles de release planifiés.',
-            'feature-branching': 'Feature Branching est idéal pour les petites équipes avec des déploiements fréquents.',
-            'trunk': 'Trunk-based active automatiquement le Merge Train pour un flux CD optimisé.'
+        /* ─── Catalogue des flows (pick → clé config du moteur) ─── */
+        const FLOWS = {
+            trunk:   { ic: '🪵', name: 'Trunk-based',       cfg: 'trunk',            sub: "Une branche principale, features éphémères derrière des feature flags." },
+            gitflow: { ic: '🌿', name: 'Gitflow',           cfg: 'gitflow',          sub: "develop + release/* + hotfix/*. Structuré, fait pour les versions." },
+            feature: { ic: '🌱', name: 'Feature branching', cfg: 'feature-branching', sub: "Branches feature/* courtes, MR vers main. Le choix d'équilibre." },
         };
+        // clé moteur → clé FLOWS (pour re-afficher un flow choisi en direct)
+        const CFG_TO_FLOW = { trunk: 'trunk', gitflow: 'gitflow', 'feature-branching': 'feature' };
 
-        document.querySelectorAll('input[name="workflow"]').forEach(input => {
-            input.addEventListener('change', (e) => {
-                config.workflow = e.target.value;
-                document.getElementById('workflowInfoText').textContent = workflowInfoTexts[config.workflow];
-            });
-        });
+        /* ─── Catalogue des stacks (aligné sur le moteur) ─── */
+        const STACKS = [
+            ['☕', 'Java',              'Maven + Spring',        'java'],
+            ['🟢', 'Node',              'package.json',          'node'],
+            ['🐍', 'Python',            'pyproject + requirements', 'python'],
+            ['🅰️', 'Angular',           'package.json + angular.json', 'angular'],
+            ['🔷', '.NET',              'csproj',                'dotnet'],
+            ['📟', 'COBOL / Mainframe', 'structure DBB + JCL',   'cobol'],
+            ['📦', 'Vide',              'juste la structure Git', 'empty'],
+        ];
 
-        // ============================================
-        // STACK SELECTION
-        // ============================================
-        document.querySelectorAll('input[name="stack"]').forEach(input => {
-            input.addEventListener('change', (e) => {
-                config.stack = e.target.value;
-            });
-        });
+        /* ─── Les 5 signaux (séquence maïeutique) — que du concret ─── */
+        const SIGNALS = [
+            {key:'flags', q:"Première chose, la plus déterminante : votre équipe utilise des <b>feature flags</b> ? (masquer du code pas fini en prod)",
+             opts:[['🚩',"Oui, on s'en sert","feature flags en place",true],['🚫','Non, pas vraiment','pas de flags',false],['🤷','Je ne sais pas',"on n'en utilise pas alors",false]]},
+            {key:'fast', q:"Vous livrez plutôt <b>en continu</b> (plusieurs fois par semaine) ou <b>par versions</b> datées ?",
+             opts:[['⚡','En continu','déploiements fréquents',true],['📦','Par versions','releases planifiées',false]]},
+            {key:'team', q:"Vous êtes <b>combien</b> à pousser sur ce repo ?",
+             opts:[['👤','1 à 4','petite équipe','small'],['👥','5 à 12','équipe moyenne','mid'],['🏢','Plus de 12','grande équipe','large']]},
+            {key:'cad', q:"Et la <b>cadence</b> de mise en prod, c'est plutôt…",
+             opts:[['🔄','Plusieurs fois/jour','flux continu','daily'],['🗓️','Par sprint / semaine','rythme régulier','sprint'],['📌','Par version datée','jalonné','release']]},
+            {key:'ci', q:"Dernier point : votre <b>CI/CD</b>, vous la diriez comment ? (tests auto, pipeline fiable)",
+             opts:[['🟢',"Solide, on a confiance",'CI mature','high'],['🟡','Correcte, perfectible','CI moyenne','mid'],['🔴','Fragile ou quasi absente','CI faible','low']]},
+        ];
 
-        // ============================================
-        // OPTIONS
-        // ============================================
-        function updateOptionsVisibility() {
-            const protectDevelopContainer = document.getElementById('optProtectDevelopContainer');
-            if (config.workflow === 'gitflow') {
-                protectDevelopContainer.classList.remove('disabled');
-                protectDevelopContainer.querySelector('input').disabled = false;
-            } else {
-                protectDevelopContainer.classList.add('disabled');
-                protectDevelopContainer.querySelector('input').disabled = true;
-                protectDevelopContainer.querySelector('input').checked = false;
-                config.options.protectDevelop = false;
-            }
+        /* ─── Noyau déterministe : déduire le flow ─── */
+        function deduceFlow(s){
+            const reasons = {trunk:[], gitflow:[], feature:[]};
+            if(s.flags){ reasons.trunk.push(['pro','🚩','Feature flags en place',"le prérequis n°1 du trunk"]); }
+            else { reasons.trunk.push(['con','🚩','Pas de feature flags','trunk devient risqué sans eux']); }
+            if(s.fast){ reasons.trunk.push(['pro','⚡','Livraison continue','colle au flux du trunk']);
+                        reasons.feature.push(['pro','⚡','Rythme soutenu','features courtes adaptées']); }
+            else { reasons.gitflow.push(['pro','📦','Livraison par versions','ce pour quoi Gitflow est fait']); }
+            if(s.team==='large'){ reasons.gitflow.push(['pro','🏢','Grande équipe','la structure release/* aide à coordonner']);
+                                  reasons.feature.push(['pro','🏢','Beaucoup de monde',"l'isolation par branche limite les collisions"]); }
+            else if(s.team==='small'){ reasons.trunk.push(['pro','👤','Petite équipe','coordination légère, trunk fluide']); }
+            if(s.cad==='daily'){ reasons.trunk.push(['pro','🔄','Plusieurs déploiements/jour','trunk est taillé pour ça']); }
+            else if(s.cad==='release'){ reasons.gitflow.push(['pro','📌','Versions datées','hotfix/* et release/* prennent tout leur sens']); }
+            else { reasons.feature.push(['pro','🗓️','Rythme par sprint','MR régulières vers main']); }
+            if(s.ci==='high'){ reasons.trunk.push(['pro','🟢','CI solide',"trunk EXIGE une CI fiable — vous l'avez"]); }
+            else if(s.ci==='low'){ reasons.trunk.push(['con','🔴','CI fragile','trunk casserait main en continu']);
+                                   reasons.gitflow.push(['pro','🟢','CI perfectible','les paliers de Gitflow pardonnent davantage']); }
+
+            let score = {trunk:0, gitflow:0, feature:1};
+            if(s.flags && s.ci!=='low'){ score.trunk += 2; if(s.fast)score.trunk++; if(s.cad==='daily')score.trunk++; if(s.team==='small')score.trunk++; if(s.ci==='high')score.trunk++; }
+            else { score.trunk = -2; }
+            if(!s.fast || s.cad==='release'){ score.gitflow += 2; }
+            if(s.team==='large') score.gitflow++;
+            if(s.ci==='low') score.gitflow++;
+            if(s.cad==='release') score.gitflow++;
+            if(s.team!=='large') score.feature++;
+            if(s.cad==='sprint') score.feature++;
+            if(!s.flags && s.fast) score.feature++;
+
+            const ranked = Object.entries(score).sort((a,b)=>b[1]-a[1]);
+            const pick = ranked[0][0];
+            const gap = ranked[0][1]-ranked[1][1];
+            const conf = Math.max(62, Math.min(96, 70 + gap*9));
+            return {pick, reasons:reasons[pick], score, ranked, conf};
         }
 
-        document.querySelectorAll('.checkbox-item input').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const optionMap = {
-                    'optKustomize': 'kustomize',
-                    'optGitlabCi': 'gitlabCi',
-                    'optDockerfile': 'dockerfile',
-                    'optEditorconfig': 'editorconfig',
-                    'optProtect': 'protectMain',
-                    'optProtectDevelop': 'protectDevelop'
-                };
-                const option = optionMap[e.target.id];
-                if (option) {
-                    config.options[option] = e.target.checked;
-                }
+        /* ─── État conversation ─── */
+        let answers = {}, qi = 0, deduced = null, visits = 0, chosenFlow = null;
+
+        /* ─── Entrée : appelée par boot() après auth + repo + garde-fou ─── */
+        function startConcierge(reset){
+            thread = document.getElementById('thread');
+            toastEl = document.getElementById('toast');
+            thread.innerHTML = ''; answers = {}; qi = 0; deduced = null; chosenFlow = null;
+            if(reset){ visits++; try{ sessionStorage.setItem('cc_visits', visits); }catch(e){} }
+            else { try{ visits = +(sessionStorage.getItem('cc_visits') || 0); }catch(e){ visits = 0; } }
+            const expert = visits >= 1;
+            document.getElementById('expertBadge').classList.toggle('on', expert);
+            const repo = sessionData.projectName || 'ton repo';
+
+            if(expert){
+                bot(`Re 👋 <code>${esc(repo)}</code> ? Même contexte que la dernière fois (petite équipe, flags, CI solide) ?`, ()=>{
+                    quick([
+                        ['⚡','Oui, pareil','je redéduis direct', ()=>{ mine('Même contexte'); answers={flags:true,fast:true,team:'small',cad:'daily',ci:'high'};
+                            botThink(()=>{ deduced=deduceFlow(answers); bot("Alors c'est limpide :", showReco); }); }],
+                        ['🎛️','Non, c\'est différent','repose les questions', ()=>{ visits=0; document.getElementById('expertBadge').classList.remove('on'); mine("C'est différent cette fois"); startFlowSequence(); }],
+                    ]);
+                });
+                return;
+            }
+
+            bot(`Salut 👋 <code>${esc(repo)}</code> est tout neuf. Avant de générer quoi que ce soit, il y a <b>une</b> décision qui compte vraiment et qui t'engagera pour des mois : <b>le flow Git</b>.`, ()=>{
+                botThink(()=> bot("Pas besoin d'être expert Git — je te pose 5 petites questions de contexte, et je te recommande le bon. Tu valides ou tu contestes. On y va ?", ()=>{
+                    quick([
+                        ['🎯','Allons-y','guide-moi', ()=>{ mine('Allons-y'); startFlowSequence(); }],
+                        ['🧠','Je sais déjà lequel je veux','je te le dis', ()=>{ mine('Je sais déjà'); pickFlowDirect(); }],
+                    ]);
+                }));
             });
-        });
-
-        // ============================================
-        // PREVIEW TABS
-        // ============================================
-        document.querySelectorAll('.preview-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.preview-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.querySelector(`.preview-content[data-preview="${tab.dataset.preview}"]`).classList.add('active');
-            });
-        });
-
-        // ============================================
-        // SUMMARY
-        // ============================================
-        function updateSummary() {
-            // Update header
-            document.getElementById('summaryRepoName').textContent = sessionData.projectName;
-            document.getElementById('summaryRepoPath').textContent = sessionData.projectId;
-
-            const workflowLabels = {
-                'gitflow': '🌳 GitFlow',
-                'feature-branching': '🌿 Feature Branching',
-                'trunk': '🚄 Trunk-based'
-            };
-            const stackLabels = {
-                'java': '☕ Java Maven',
-                'angular': '🅰️ Angular',
-                'python': '🐍 Python',
-                'node': '💚 Node.js',
-                'dotnet': '🔷 .NET',
-                'cobol': '🏛️ COBOL/z/OS',
-                'empty': '📁 Minimal'
-            };
-
-            document.getElementById('summaryWorkflow').textContent = workflowLabels[config.workflow];
-            document.getElementById('summaryStack').textContent = stackLabels[config.stack];
-
-            // Update previews
-            updateFileTree();
-            updateBranchList();
-            updateSettingsList();
         }
 
-        function updateFileTree() {
-            let html = `<span class="folder">${sessionData.projectName}/</span><br>`;
-            
-            const files = [];
-            
-            files.push({ name: 'README.md', hint: 'généré' });
-            files.push({ name: '.gitignore', hint: config.stack });
-            
-            if (config.options.gitlabCi) {
-                files.push({ name: '.gitlab-ci.yml', hint: 'placeholder' });
-            }
-            if (config.options.editorconfig) {
-                files.push({ name: '.editorconfig', hint: '' });
-            }
-            if (config.options.dockerfile) {
-                files.push({ name: 'Dockerfile', hint: 'multi-stage' });
-            }
+        /* ─── séquence maïeutique : une question à la fois ─── */
+        function startFlowSequence(){ qi=0; answers={}; askSignal(); }
+        function askSignal(){
+            if(qi>=SIGNALS.length){ runDeduction(); return; }
+            const sg = SIGNALS[qi];
+            botThink(()=>{
+                bot(sg.q, ()=>{
+                    qmeta();
+                    quick(sg.opts.map(([ic,title,sub,val])=>[ic,title,sub,()=>{
+                        answers[sg.key]=val; mine(title); qi++; askSignal();
+                    }]));
+                });
+            }, qi===0?500:680);
+        }
+        function qmeta(){
+            const c=document.createElement('div'); c.className='qmeta';
+            let dots=''; for(let k=0;k<SIGNALS.length;k++){ dots+=`<i class="${k<qi?'done':k===qi?'cur':''}"></i>`; }
+            c.innerHTML = `question ${qi+1} / ${SIGNALS.length} <span class="qdots">${dots}</span>`;
+            thread.appendChild(c); scroll();
+        }
+        function runDeduction(){
+            botThink(()=>{
+                deduced = deduceFlow(answers);
+                bot("Voilà, j'ai tout ce qu'il me faut. Je croise les 5 signaux…", showReco);
+            }, 950);
+        }
 
-            // Stack specific
-            if (config.stack === 'java') {
-                files.push({ name: 'pom.xml', hint: '' });
-                files.push({ name: 'src/', hint: '', folder: true });
-            } else if (config.stack === 'angular') {
-                files.push({ name: 'package.json', hint: '' });
-                files.push({ name: 'angular.json', hint: '' });
-                files.push({ name: 'src/', hint: '', folder: true });
-            } else if (config.stack === 'python') {
-                files.push({ name: 'pyproject.toml', hint: '' });
-                files.push({ name: 'requirements.txt', hint: '' });
-                files.push({ name: 'src/', hint: '', folder: true });
-            } else if (config.stack === 'node') {
-                files.push({ name: 'package.json', hint: '' });
-                files.push({ name: 'src/', hint: '', folder: true });
-            } else if (config.stack === 'dotnet') {
-                files.push({ name: `${sessionData.projectName}.csproj`, hint: '' });
-                files.push({ name: 'src/', hint: '', folder: true });
-            } else if (config.stack === 'cobol') {
-                files.push({ name: 'src/', hint: '', folder: true, sub: [
-                    'cobol/*.cbl',
-                    'copybook/*.cpy',
-                    'jcl/*.jcl',
-                    'bms/'
-                ]});
-                files.push({ name: 'build/', hint: 'DBB', folder: true, sub: [
-                    'build.groovy',
-                    'build.properties'
-                ]});
-            }
+        /* ─── LA RECO : raisonnement visible ─── */
+        function showReco(){
+            const f = FLOWS[deduced.pick];
+            const wrap=document.createElement('div'); wrap.className='reco';
+            let sig = deduced.reasons.map(([type,ic,t,w])=>`
+                <div class="signal ${type}"><span class="sg-ic">${type==='pro'?'✓':'⚠'}</span>
+                <span class="sg-tx"><b>${t}</b> — ${w}</span></div>`).join('');
+            if(!sig) sig = `<div class="signal pro"><span class="sg-ic">✓</span><span class="sg-tx">Choix d'équilibre, sans contre-indication forte.</span></div>`;
+            wrap.innerHTML = `
+                <div class="reco-top">
+                    <div class="reco-tag">MA RECOMMANDATION</div>
+                    <div class="reco-name">${f.ic} ${f.name}<span class="reco-conf">${deduced.conf}% sûr</span></div>
+                    <div class="reco-sub">${f.sub}</div>
+                </div>
+                <div class="reco-why">
+                    <div class="reco-why-h">POURQUOI — ce qui a pesé dans ta situation</div>
+                    ${sig}
+                </div>
+                <div class="reco-foot">
+                    <button class="pbtn go" data-go>Parfait, on part là-dessus</button>
+                    <button class="pbtn alt" data-no>Pas convaincu, montre les autres</button>
+                </div>`;
+            thread.appendChild(wrap); scroll();
+            wrap.querySelector('[data-go]').onclick=()=>{ wrap.querySelector('.reco-foot').remove(); acceptFlow(deduced.pick); };
+            wrap.querySelector('[data-no]').onclick=()=>{ wrap.style.opacity=.55; showAlternatives(); };
+        }
 
-            if (config.options.kustomize) {
-                files.push({ name: 'kustomize/', hint: '', folder: true, sub: [
-                    'base/',
-                    'overlays/dev/',
-                    'overlays/recette/',
-                    'overlays/prod/'
-                ]});
-            }
+        /* ─── contester : alternatives avec lucidité ─── */
+        function showAlternatives(){
+            botThink(()=> bot("Carrément, c'est ta décision. Voilà les deux autres, avec ce que ça impliquerait <b>pour ta situation précise</b> — sans te le cacher :", ()=>{
+                const others = deduced.ranked.filter(([k])=>k!==deduced.pick);
+                const c=document.createElement('div'); c.className='alts';
+                others.forEach(([k,sc])=>{
+                    const f=FLOWS[k];
+                    const risky = (k==='trunk' && (!answers.flags || answers.ci==='low'));
+                    const fit = sc<=0 ? 'déconseillé ici' : sc<2 ? 'possible' : 'solide aussi';
+                    let why='';
+                    if(k==='trunk'&&!answers.flags) why="Sans feature flags, tu pousserais du code non fini en prod. Techniquement jouable, mais c'est le piège classique.";
+                    else if(k==='trunk'&&answers.ci==='low') why="Trunk exige une CI béton ; avec une CI fragile, main casserait souvent.";
+                    else if(k==='gitflow'&&answers.fast) why="Solide, mais ses paliers release/* ralentiraient ton rythme continu.";
+                    else if(k==='gitflow') why="Très structuré — un peu lourd si l'équipe est petite, mais sûr.";
+                    else if(k==='feature') why="Le compromis sûr : moins optimal que ma reco ici, mais jamais un mauvais choix.";
+                    else if(k==='trunk') why="Viable vu tes signaux, mais demande de la discipline d'équipe.";
+                    const card=document.createElement('div'); card.className='alt-card'+(risky?' warn':'');
+                    card.innerHTML=`<div class="ac-top"><span>${f.ic}</span><span class="ac-name">${f.name}</span><span class="ac-fit">${fit}</span></div><div class="ac-why">${risky?'⚠ ':''}${why}</div>`;
+                    card.onclick=()=>{ mine('Je préfère '+f.name); if(risky){ confirmRisky(k); } else { acceptFlow(k); } };
+                    c.appendChild(card);
+                });
+                const back=document.createElement('div'); back.className='alt-card';
+                back.innerHTML=`<div class="ac-top"><span>↩️</span><span class="ac-name">Finalement, je garde ta reco</span><span class="ac-fit">${FLOWS[deduced.pick].name}</span></div>`;
+                back.onclick=()=>{ mine('Je garde ta reco'); acceptFlow(deduced.pick); };
+                c.appendChild(back);
+                thread.appendChild(c); scroll();
+            }));
+        }
+        function confirmRisky(k){
+            botThink(()=> bot("Ok — je te suis, c'est toi qui décides. Juste pour être clair : je le mettrai en place proprement, mais le risque que je t'ai signalé reste réel. On y va quand même ?", ()=>{
+                quick([
+                    ['✅','Oui, je sais ce que je fais','en conscience', ()=>{ mine('Oui, en conscience'); acceptFlow(k); }],
+                    ['↩️','Non, reviens à ta reco','plus prudent', ()=>{ mine('Reviens à ta reco'); acceptFlow(deduced.pick); }],
+                ]);
+            }));
+        }
 
-            files.forEach((f, i) => {
-                const isLast = i === files.length - 1 && !f.sub;
-                const prefix = isLast ? '└── ' : '├── ';
-                const className = f.folder ? 'folder' : 'file';
-                const hint = f.hint ? ` <span class="generated">← ${f.hint}</span>` : '';
-                html += `${prefix}<span class="${className}">${f.name}</span>${hint}<br>`;
-                
-                if (f.sub) {
-                    f.sub.forEach((s, si) => {
-                        const subPrefix = si === f.sub.length - 1 ? '    └── ' : '    ├── ';
-                        html += `${subPrefix}<span class="folder">${s}</span><br>`;
-                    });
-                }
+        /* ─── flow accepté → on écrit config puis on demande la stack ─── */
+        function acceptFlow(k){
+            chosenFlow = k;
+            config.workflow = FLOWS[k].cfg;
+            config.options.protectDevelop = (config.workflow === 'gitflow');
+            botThink(()=> bot(`Excellent. <b>${FLOWS[k].name}</b>, c'est noté 🔒 Deux derniers points et je te montre tout :`, askStack));
+        }
+        function pickFlowDirect(){
+            botThink(()=> bot("Vas-y, lequel ?", ()=>{
+                quick(Object.entries(FLOWS).map(([k,f])=>[f.ic,f.name,f.sub.split('.')[0],()=>{
+                    mine(f.name); acceptFlow(k);
+                }]));
+            }));
+        }
+
+        /* ─── stack ─── */
+        function askStack(){
+            botThink(()=> bot("La <b>techno principale</b> du projet, c'est laquelle ? (je génère la structure et le pipeline adaptés)", ()=>{
+                quick(STACKS.map(([ic,title,sub,val])=>[ic,title,sub,()=>{
+                    config.stack = val; mine(title); askDocker();
+                }]));
+            }));
+        }
+
+        /* ─── docker ─── */
+        function askDocker(){
+            botThink(()=> bot("Tu veux un <b>Dockerfile</b> prêt à l'emploi ? (image multi-stage)", ()=>{
+                quick([
+                    ['🐳','Oui, ajoute Docker','multi-stage', ()=>{ config.options.dockerfile = true; mine('Oui, Docker'); showRecap(); }],
+                    ['🙅','Non merci','pas de Docker', ()=>{ config.options.dockerfile = false; mine('Pas de Docker'); showRecap(); }],
+                ]);
+            }));
+        }
+
+        /* ─── recap éditable ─── */
+        function showRecap(){
+            const f = FLOWS[chosenFlow] || FLOWS.feature;
+            const stackLabel = (STACKS.find(s=>s[3]===config.stack) || ['📦','Vide'])[1];
+            const stackIc = (STACKS.find(s=>s[3]===config.stack) || ['📦'])[0];
+            const wrap=document.createElement('div'); wrap.className='recap';
+            wrap.innerHTML=`
+                <div class="recap-h">✨ Ce que je vais créer</div>
+                <div class="recap-rows">
+                    <div class="recap-row"><span class="ri">${stackIc}</span><span class="rl">stack</span><span class="rv">${esc(stackLabel)}</span><span class="redit" data-e="stack">changer</span></div>
+                    <div class="recap-row"><span class="ri">${f.ic}</span><span class="rl">flow</span><span class="rv">${f.name}</span><span class="redit" data-e="flow">changer</span></div>
+                    <div class="recap-row"><span class="ri">🐳</span><span class="rl">docker</span><span class="rv">${config.options.dockerfile?'Oui, multi-stage':'Non'}</span><span class="redit" data-e="docker">changer</span></div>
+                    <div class="recap-row"><span class="ri">🦊</span><span class="rl">ci</span><span class="rv">Template LCL · ${esc(config.stack)} · ${config.workflow}</span></div>
+                </div>
+                <div class="recap-foot">
+                    <button class="pbtn go" data-go style="background:linear-gradient(135deg,var(--cc-warm),var(--cc-pink));color:#1a1018">C'est parfait, montre le périmètre</button>
+                    <button class="pbtn alt" data-no>Un détail à changer</button>
+                </div>`;
+            thread.appendChild(wrap); scroll();
+            wrap.querySelector('[data-go]').onclick=()=>{ wrap.querySelector('.recap-foot').remove(); showScope(); };
+            wrap.querySelector('[data-no]').onclick=()=>{ wrap.style.opacity=.5; botThink(()=>bot("Dis-moi quoi 👍",()=>{
+                quick([
+                    ['🌿','Le flow','revenir dessus',()=>{ mine('Le flow'); startFlowSequence(); }],
+                    ['🧱','La stack','changer de techno',()=>{ mine('La stack'); askStack(); }],
+                    ['🐳','Docker','activer / désactiver',()=>{ mine('Docker'); askDocker(); }],
+                ]);
+            })); };
+            wrap.querySelectorAll('.redit').forEach(el=>el.onclick=()=>{
+                wrap.style.opacity=.5;
+                if(el.dataset.e==='flow'){ mine('Revoir le flow'); startFlowSequence(); }
+                else if(el.dataset.e==='stack'){ mine('Revoir la stack'); askStack(); }
+                else { mine('Revoir Docker'); askDocker(); }
             });
-
-            document.getElementById('fileTree').innerHTML = html;
         }
 
-        function updateBranchList() {
-            const branches = [];
-            
-            branches.push({ name: 'main', badges: ['default', config.options.protectMain ? 'protected' : null].filter(Boolean) });
-            
-            if (config.workflow === 'gitflow') {
-                branches.push({ name: 'develop', badges: config.options.protectDevelop ? ['protected'] : [] });
-                branches.push({ name: 'feature/example', badges: ['example'] });
-            } else if (config.workflow === 'feature-branching') {
-                branches.push({ name: 'feature/example', badges: ['example'] });
-            }
+        /* ─── scope : périmètre d'exécution avant d'agir ─── */
+        function showScope(){
+            const branch = config.workflow==='gitflow' ? 'develop' : 'main';
+            const dockerLine = config.options.dockerfile ? ' + Dockerfile' : '';
+            const sc=document.createElement('div'); sc.className='scope';
+            sc.innerHTML=`
+                <div class="scope-h">🔒 périmètre d'exécution</div>
+                <div class="scope-body">
+                    <div class="scope-line"><span class="si sok">✓</span><span>Initialiser la structure <b>${FLOWS[chosenFlow].name}</b> (branche cible <b>${branch}</b>)</span></div>
+                    <div class="scope-line"><span class="si sok">✓</span><span>Écrire les fichiers <b>${esc(config.stack)}</b>${dockerLine} + le <code>.gitlab-ci.yml</code> adapté</span></div>
+                    <div class="scope-line"><span class="si sok">✓</span><span>Ouvrir une <b>Merge Request</b></span></div>
+                    <div class="scope-line"><span class="si sno">✕</span><span class="sno">Aucun merge. Aucun déploiement. Aucun push direct.</span></div>
+                </div>`;
+            thread.appendChild(sc); scroll();
+            botThink(()=> bot("Je lance ?", ()=>{
+                quick([
+                    ['🚀','Oui, prépare la MR','je validerai le merge', ()=>{ mine('Lance'); runPipeline(); }],
+                    ['✋','Attends','je revois', ()=>{ mine('Je revois'); showRecap(); }],
+                ]);
+            }));
+        }
 
-            let html = '';
-            branches.forEach(b => {
-                const badgesHtml = b.badges.map(badge => {
-                    const labels = {
-                        'default': 'DEFAULT',
-                        'protected': '🔒 PROTECTED',
-                        'example': 'EXAMPLE'
-                    };
-                    return `<span class="branch-badge ${badge}">${labels[badge]}</span>`;
-                }).join('');
-                
-                html += `
-                    <div class="branch-item">
-                        <span class="branch-icon">🌿</span>
-                        <span class="branch-name">${b.name}</span>
-                        ${badgesHtml}
-                    </div>
-                `;
+        /* ─── pipeline RÉEL : rend les étapes, puis appelle initializeProject() ─── */
+        function runPipeline(){
+            const steps=[
+                ['files','Écriture des fichiers + ouverture de la MR'],
+                ['branches','Création des branches du flow'],
+                ['protect','Protection des branches'],
+                ['settings','Réglages projet'],
+            ];
+            const pipe=document.createElement('div'); pipe.className='pipe';
+            pipe.innerHTML=steps.map(([k,s])=>`<div class="pipe-step" data-loading="${k}"><span class="ps-ic"></span><span>${s}</span></div>`).join('');
+            thread.appendChild(pipe); scroll();
+            // → moteur réel (setLoadingStep pilote les .pipe-step, showSuccess rend la done-card)
+            initializeProject();
+        }
+
+        /* ════ primitives de chat ════ */
+        function bot(html,cb,delay){
+            const m=document.createElement('div'); m.className='msg';
+            m.innerHTML=`<div class="av bot">🛎️</div><div class="bubble bot">${html}</div>`;
+            thread.appendChild(m); scroll(); if(cb) setTimeout(cb, delay||420);
+        }
+        function botThink(cb,ms){
+            const m=document.createElement('div'); m.className='msg';
+            m.innerHTML=`<div class="av bot">🛎️</div><div class="bubble bot"><div class="typing"><i></i><i></i><i></i></div></div>`;
+            thread.appendChild(m); scroll();
+            setTimeout(()=>{ m.remove(); cb(); }, ms||780);
+        }
+        function mine(txt){
+            const m=document.createElement('div'); m.className='msg mine';
+            m.innerHTML=`<div class="av me">🧑</div><div class="bubble me">${esc(txt)}</div>`;
+            thread.appendChild(m); scroll();
+        }
+        function quick(items,append){
+            if(!append) clearInputs();
+            const c=document.createElement('div'); c.className='choices'; c.dataset.input='1';
+            items.forEach(([ic,title,sub,fn])=>{
+                const btn=document.createElement('button'); btn.className=sub?'choice':'choice ghost';
+                btn.innerHTML=sub?`<span class="ic">${ic}</span><span class="tx"><b>${title}</b><small>${sub}</small></span>`:`<span class="ic">${ic}</span> ${title}`;
+                btn.onclick=()=>{ clearInputs(); fn(); }; c.appendChild(btn);
             });
-
-            document.getElementById('branchList').innerHTML = html;
+            thread.appendChild(c); scroll();
         }
+        function clearInputs(){ thread.querySelectorAll('[data-input]').forEach(e=>e.remove()); }
+        function scroll(){ setTimeout(()=>{ if(thread) thread.scrollTop=thread.scrollHeight; }, 30); }
+        function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+        function toastMsg(m){ if(!toastEl) return; toastEl.textContent=m; toastEl.classList.add('on'); setTimeout(()=>toastEl.classList.remove('on'),2600); }
 
-        function updateSettingsList() {
-            const settings = [];
-
-            if (config.options.protectMain) {
-                settings.push('Branche main protégée');
-            }
-            if (config.workflow === 'gitflow' && config.options.protectDevelop) {
-                settings.push('Branche develop protégée');
-            }
-            if (config.workflow === 'trunk') {
-                settings.push('Merged results pipelines activé');
-                settings.push('Merge train activé');
-            }
-
-            let html = settings.length > 0 
-                ? settings.map(s => `<div class="settings-item"><span class="check">✓</span> ${s}</div>`).join('')
-                : '<div class="settings-item" style="opacity: 0.5">Aucun setting particulier</div>';
-
-            document.getElementById('settingsList').innerHTML = html;
-        }
 
         // ============================================
         // FILE TEMPLATES
@@ -1085,12 +1123,12 @@ Voir le [zOps Platform](zops-platform.html) pour:
         }
 
         function setLoadingStep(step, state) {
-            const stepEl = document.querySelector(`.loading-step[data-loading="${step}"]`);
-            stepEl.classList.remove('active', 'done', 'error');
-            stepEl.classList.add(state);
-            stepEl.querySelector('.step-icon').textContent = 
-                state === 'active' ? '⏳' : 
-                state === 'done' ? '✅' : '❌';
+            const el = document.querySelector(`.pipe-step[data-loading="${step}"]`);
+            if (!el) return;
+            el.classList.remove('run', 'done', 'error');
+            el.classList.add(state === 'active' ? 'run' : state);
+            const ic = el.querySelector('.ps-ic');
+            if (ic) ic.textContent = state === 'done' ? '✓' : state === 'error' ? '✕' : '';
         }
 
         // ============================================
@@ -1356,36 +1394,23 @@ ${createdFiles.map(f => '- `' + f + '`').join('\n')}
         }
 
         function showSuccess(files, branches, settings) {
-            formCard.style.display = 'none';
-            successCard.classList.add('show');
-
-            // MR link
+            const f = FLOWS[chosenFlow] || FLOWS.feature;
             const mrUrl = `${sessionData.gitlabUrl}/-/merge_requests/${window.createdMR.iid}`;
-            document.getElementById('mrLink').href = mrUrl;
-            document.getElementById('mrLinkStep').href = mrUrl;
-            document.getElementById('cloneCommand').textContent = `git clone ${sessionData.gitlabUrl}.git`;
-
-            // Files summary
-            document.getElementById('summaryFiles').innerHTML = files.map(f => `
-                <div class="summary-item"><span class="check">✓</span> ${f}</div>
-            `).join('');
-
-            // Branches summary
-            document.getElementById('summaryBranches').innerHTML = branches.map(b => `
-                <div class="summary-item"><span class="check">✓</span> ${b}</div>
-            `).join('');
-
-            // Settings summary
-            document.getElementById('summarySettings').innerHTML = settings.length > 0 
-                ? settings.map(s => `<div class="summary-item"><span class="check">✓</span> ${s}</div>`).join('')
-                : '<div class="summary-item" style="opacity:0.5">—</div>';
+            const d = document.createElement('div'); d.className = 'done-card';
+            d.innerHTML = `<h3>\u2728 Pr\u00eat \u2014 la MR t'attend</h3>`
+                + `<p>Structure <b>${esc(f.name)}</b> initialis\u00e9e, ${files.length} fichiers \u00e9crits, CI adapt\u00e9e au flow, Merge Request ouverte. Tu n'as plus qu'\u00e0 relire et merger.</p>`
+                + `<a class="gitbtn" href="${mrUrl}" target="_blank" rel="noopener">\ud83e\udd8a Voir la Merge Request</a>`
+                + `<div class="clone">git clone ${esc(sessionData.gitlabUrl)}.git</div>`
+                + `<div class="humannote">Je m'arr\u00eate l\u00e0. C'est toi qui valides et merges \u2014 je ne touche jamais \u00e0 la branche prot\u00e9g\u00e9e.</div>`;
+            thread.appendChild(d); scroll();
+            botThink(() => bot("La prochaine fois, je me souviendrai de ton contexte et j'irai droit \u00e0 la reco. \u00c0 tout' \ud83d\udc4b", () => {
+                quick([['\u21ba', 'Refaire un repo', 'recommencer', () => startConcierge(true)]]);
+            }), 500);
         }
 
         // ============================================
         // EVENT LISTENERS
         // ============================================
-        nextBtn.addEventListener('click', nextStep);
-        prevBtn.addEventListener('click', prevStep);
 
         // ============================================
         // INIT
