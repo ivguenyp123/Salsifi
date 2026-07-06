@@ -15,13 +15,12 @@
         const HUB_URL = 'hub.html'; // le mockup V2 est le hub ; seul endroit à changer
 
         function loadAuth() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
-            try {
-                const data = JSON.parse(raw);
-                if (!data.gitlabUrl || !data.token) return null;
-                return data;
-            } catch { return null; }
+            return window.Salsifi.loadAuth({ redirect: false });
+        }
+
+        // Transport GitLab commun : retry automatique sur rate-limit HTTP 429.
+        async function fetchGitLab(endpoint) {
+            return window.Salsifi.gitlabFetch(GITLAB_URL, token, endpoint);
         }
 
         async function init() {
@@ -40,7 +39,7 @@
 
             // Nom du repo (fetch léger avant l'analyse complète)
             try {
-                const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}`, { headers: { 'PRIVATE-TOKEN': token } });
+                const res = await fetchGitLab(`/projects/${projectId}`);
                 if (!res.ok) throw new Error('Projet introuvable');
                 const project = await res.json();
                 document.getElementById('headerProjectName').textContent = project.name;
@@ -71,17 +70,17 @@
         }
 
         // FETCH DATA 
-        async function fetchBranches() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/repository/branches?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.branches = await res.json() || []; } catch(e){} }
-        async function fetchContributors() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/repository/contributors?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.contributors = await res.json() || []; } catch(e){} }
-        async function fetchCommits() { const since = new Date(Date.now() - 90 * 86400000).toISOString(); try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/repository/commits?per_page=100&since=${since}`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.commits = await res.json() || []; } catch(e){} }
-        async function fetchMergeRequests() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/merge_requests?state=all&per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.mergeRequests = await res.json() || []; } catch(e){} }
-        async function fetchProject() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.project = await res.json(); } catch(e){} }
-        async function fetchProtectedBranches() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/protected_branches`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.protectedBranches = await res.json() || []; } catch(e){} }
-        async function fetchRepoTree() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/repository/tree?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.repoTree = await res.json() || []; } catch(e){} }
-        async function fetchLabels() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/labels?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.labels = await res.json() || []; } catch(e){} }
-        async function fetchPipelines() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/pipelines?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.pipelines = await res.json() || []; } catch(e){} }
-        async function fetchFailedJobs() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/jobs?scope[]=failed&per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.failedJobs = await res.json() || []; } catch(e){} }
-        async function fetchDeployments() { try { const res = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/deployments?per_page=100`, { headers: { 'PRIVATE-TOKEN': token } }); analysisData.deployments = await res.json() || []; } catch(e){} }
+        async function fetchBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/branches?per_page=100`); analysisData.branches = await res.json() || []; } catch(e){} }
+        async function fetchContributors() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/contributors?per_page=100`); analysisData.contributors = await res.json() || []; } catch(e){} }
+        async function fetchCommits() { const since = new Date(Date.now() - 90 * 86400000).toISOString(); try { const res = await fetchGitLab(`/projects/${projectId}/repository/commits?per_page=100&since=${since}`); analysisData.commits = await res.json() || []; } catch(e){} }
+        async function fetchMergeRequests() { try { const res = await fetchGitLab(`/projects/${projectId}/merge_requests?state=all&per_page=100`); analysisData.mergeRequests = await res.json() || []; } catch(e){} }
+        async function fetchProject() { try { const res = await fetchGitLab(`/projects/${projectId}`); analysisData.project = await res.json(); } catch(e){} }
+        async function fetchProtectedBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/protected_branches`); analysisData.protectedBranches = await res.json() || []; } catch(e){} }
+        async function fetchRepoTree() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/tree?per_page=100`); analysisData.repoTree = await res.json() || []; } catch(e){} }
+        async function fetchLabels() { try { const res = await fetchGitLab(`/projects/${projectId}/labels?per_page=100`); analysisData.labels = await res.json() || []; } catch(e){} }
+        async function fetchPipelines() { try { const res = await fetchGitLab(`/projects/${projectId}/pipelines?per_page=100`); analysisData.pipelines = await res.json() || []; } catch(e){} }
+        async function fetchFailedJobs() { try { const res = await fetchGitLab(`/projects/${projectId}/jobs?scope[]=failed&per_page=100`); analysisData.failedJobs = await res.json() || []; } catch(e){} }
+        async function fetchDeployments() { try { const res = await fetchGitLab(`/projects/${projectId}/deployments?per_page=100`); analysisData.deployments = await res.json() || []; } catch(e){} }
 
         function detectFlow() {
             const branchNames = analysisData.branches.map(b => b.name.toLowerCase());
