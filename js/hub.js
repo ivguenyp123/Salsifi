@@ -2089,17 +2089,26 @@
             'Culture': 'C', 'Delivery': 'D', 'Hygiène': 'H', 'Pratiques': 'P',
             'Qualité': 'Q', 'Résilience': 'R', 'Stabilité': 'S', 'Sécurité': 'X'
         };
+        // Chaque chemin ne recommande que les ateliers de SES axes (sinon les 4
+        // chemins affichent les mêmes). Les 8 axes répartis 2 par chemin.
+        const WS_PATH_AXES = {
+            measure: ['Stabilité', 'Résilience'],
+            deliver: ['Delivery', 'Pratiques'],
+            inspect: ['Hygiène', 'Sécurité'],
+            collab:  ['Culture', 'Qualité']
+        };
         const WS_RECO_MAX = 6;
 
         function wsLevelFromScore(score) {
             return score < 33 ? 1 : score < 66 ? 2 : 3;
         }
 
-        function recommendedWorkshops(syn) {
+        function recommendedWorkshops(syn, pathKey) {
             const W = window.Salsifi && window.Salsifi.workshops;
             if (!W || !syn || !syn.maturity || !syn.maturity.axes) return [];
+            const allowed = (pathKey && WS_PATH_AXES[pathKey]) ? new Set(WS_PATH_AXES[pathKey]) : null;
             const axes = Object.entries(syn.maturity.axes)
-                .filter(([, v]) => v != null)
+                .filter(([name, v]) => v != null && (!allowed || allowed.has(name)))
                 .sort((a, b) => a[1] - b[1]);   // du plus faible au plus fort
             const recos = [];
             for (const [name, score] of axes) {
@@ -2130,7 +2139,7 @@
         function renderDeeperSection(key) {
             const syn = currentRepo ? readSynCache(currentRepo.id) : null;
 
-            const ateliers = recommendedWorkshops(syn).map(w => ({
+            const ateliers = recommendedWorkshops(syn, key).map(w => ({
                 kind: 'atelier',
                 text: w.action || w.titre || '',
                 axeName: w.axeName,
