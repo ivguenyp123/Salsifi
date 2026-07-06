@@ -421,9 +421,21 @@
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            
+
             document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
             document.getElementById(`panel-${tabName}`).classList.add('active');
+
+            // L'onglet Historique se remplit à l'ouverture (avant : il restait bloqué
+            // sur le placeholder tant qu'on ne cliquait pas « Recharger »).
+            // Si les audit events sont déjà en cache (pré-chargés à l'init), on rend
+            // directement ; sinon on lance le chargement GitLab.
+            if (tabName === 'history') {
+                if (AUDIT_EVENTS_CACHE && AUDIT_EVENTS_CACHE.fetchedAt) {
+                    renderFlagHistoryList();
+                } else {
+                    loadAuditHistory();
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════
