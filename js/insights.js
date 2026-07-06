@@ -452,16 +452,19 @@ function renderDoraCards(v) {
     // CFR
     const cfrDisplay = v.cfr !== null ? `${v.cfr}%` : 'N/A';
 
-    // ── Plancher de tendance ──
-    let cfrFloor = v.cfr;
+    // ── Tendance récente (honnête, sans écraser le badge) ──
+    // Le badge, le % de la carte, le résumé DORA et les quick-wins reflètent TOUS le même
+    // CFR de la fenêtre (v.cfr). Avant, un « plancher de tendance » gonflait en silence le
+    // badge/niveau (badge Elite sur un chiffre affiché à 12 %, et 3 valeurs différentes
+    // entre la carte, le résumé DORA et les quick-wins). Si la fenêtre récente (5j) est à
+    // un meilleur niveau DORA, on l'annonce désormais EXPLICITEMENT à côté du badge.
+    let cfrRecentNote = '';
     if (v.cfr !== null && v.cfr5 !== null) {
+        const order = { 'low': 0, 'medium': 1, 'high': 2, 'elite': 3 };
         const lvl5 = doraLevel('cfr', v.cfr5);
         const lvlFinal = doraLevel('cfr', v.cfr);
-        const order = { 'low': 0, 'medium': 1, 'high': 2, 'elite': 3 };
         if (order[lvl5.cls] > order[lvlFinal.cls]) {
-            const floorLevels = { 'medium': 15, 'high': 10, 'elite': 5 };
-            const floorCls = ['medium', 'high', 'elite'][order[lvl5.cls] - 1];
-            cfrFloor = floorLevels[floorCls] || v.cfr;
+            cfrRecentNote = ` <span style="color:#6ee7b7;font-size:12px">· tendance 5j : ${lvl5.level}</span>`;
         }
     }
 
@@ -483,13 +486,13 @@ function renderDoraCards(v) {
     const cfrTrendHtml = (v.cfrTrend === 'down'   ? ' <span style="color:#6ee7b7;font-size:13px">↘️ en amélioration</span>'
                         : v.cfrTrend === 'up'     ? ' <span style="color:#fca5a5;font-size:13px">↗️ en dégradation</span>'
                         : v.cfrTrend === 'stable' ? ' <span style="opacity:0.5;font-size:13px">→ stable</span>'
-                        : '') + cfrWindows;
+                        : '') + cfrRecentNote + cfrWindows;
     const cfrNaReason = v.cfr === null
         ? (v.cfrInsufficient
             ? `⚠️ Pas assez de livraisons sur main/master (${v.totalP} pipeline${v.totalP > 1 ? 's' : ''})`
             : '⚪ Aucun pipeline sur main/master')
         : null;
-    renderCard('failureRate', 'cfr', cfrFloor, cfrDisplay, cfrNaReason, cfrTrendHtml);
+    renderCard('failureRate', 'cfr', v.cfr, cfrDisplay, cfrNaReason, cfrTrendHtml);
 
     // MTTR
     const mttrDisplay = v.mttr !== null ? (v.mttr >= 24 ? `${(v.mttr / 24).toFixed(1)}j` : `${v.mttr}h`) : '—';

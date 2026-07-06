@@ -81,7 +81,23 @@
         async function fetchMergeRequests() { try { const res = await fetchGitLab(`/projects/${projectId}/merge_requests?state=all&per_page=100`); analysisData.mergeRequests = await jsonArray(res); } catch(e){} }
         async function fetchProject() { try { const res = await fetchGitLab(`/projects/${projectId}`); analysisData.project = await res.json(); } catch(e){} }
         async function fetchProtectedBranches() { try { const res = await fetchGitLab(`/projects/${projectId}/protected_branches`); analysisData.protectedBranches = await jsonArray(res); } catch(e){} }
-        async function fetchRepoTree() { try { const res = await fetchGitLab(`/projects/${projectId}/repository/tree?per_page=100`); analysisData.repoTree = await jsonArray(res); } catch(e){} }
+        async function fetchRepoTree() {
+            // Arbre RÉCURSIF (paginé, cap 20 pages = 2000 entrées) : sans `recursive`, on ne
+            // voyait que la racine — CODEOWNERS/templates MR (souvent sous .gitlab/) étaient
+            // manqués → faux quick-wins « à créer ». Les détections racine restent basées sur
+            // les seules entrées de premier niveau (voir `repoFiles`).
+            try {
+                const all = [];
+                for (let page = 1; page <= 20; page++) {
+                    const res = await fetchGitLab(`/projects/${projectId}/repository/tree?recursive=true&per_page=100&page=${page}`);
+                    const batch = await jsonArray(res);
+                    if (!batch.length) break;
+                    all.push(...batch);
+                    if (batch.length < 100) break;
+                }
+                analysisData.repoTree = all;
+            } catch(e){}
+        }
         async function fetchLabels() { try { const res = await fetchGitLab(`/projects/${projectId}/labels?per_page=100`); analysisData.labels = await jsonArray(res); } catch(e){} }
         async function fetchPipelines() { try { const res = await fetchGitLab(`/projects/${projectId}/pipelines?per_page=100`); analysisData.pipelines = await jsonArray(res); } catch(e){} }
         async function fetchFailedJobs() { try { const res = await fetchGitLab(`/projects/${projectId}/jobs?scope[]=failed&per_page=100`); analysisData.failedJobs = await jsonArray(res); } catch(e){} }
@@ -117,7 +133,10 @@
             const projectUrl = analysisData.project?.web_url || '#';
             const openMRs = analysisData.mergeRequests.filter(mr => mr.state === 'opened');
             const mergedMRs = analysisData.mergeRequests.filter(mr => mr.state === 'merged');
-            const repoFiles = analysisData.repoTree.map(f => f.name.toLowerCase());
+            // repoFiles = entrées de PREMIER NIVEAU uniquement (l'arbre est récursif) :
+            // les détections .gitlab-ci.yml / README / CONTRIBUTING / .gitignore visent la
+            // racine et ne doivent pas matcher un fichier homonyme enfoui dans un sous-dossier.
+            const repoFiles = analysisData.repoTree.filter(f => !String(f.path).includes('/')).map(f => f.name.toLowerCase());
             const protectedNames = analysisData.protectedBranches.map(b => b.name.toLowerCase());
 
             // ════════════════════════════════════════════════════════════════════
@@ -512,8 +531,9 @@
                 });
             }
 
-            // 20. Pas de CODEOWNERS
-            const hasCodeowners = repoFiles.includes('codeowners') || repoFiles.includes('.gitlab/codeowners');
+            // 20. Pas de CODEOWNERS — GitLab le lit à la racine, dans docs/ ou dans .gitlab/
+            const hasCodeowners = analysisData.repoTree.some(f =>
+                /^(CODEOWNERS|docs\/CODEOWNERS|\.gitlab\/CODEOWNERS)$/i.test(f.path || ''));
             if (!hasCodeowners && analysisData.contributors.length > 3) {
                 quickWins.push({
                     priority: 'improvement',
