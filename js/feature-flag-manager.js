@@ -300,24 +300,10 @@
         // INITIALISATION
         // ══════════════════════════════════════════════════════════════════
         async function init() {
-            token = sessionStorage.getItem('gitlab_token');
-            GITLAB_URL = sessionStorage.getItem('gitlab_base_url');
-            projectId = sessionStorage.getItem('gitlab_project_id');
-
-            // Fallback nouveau format hub : localStorage devops_hub_workspaces
-            if (!token || !GITLAB_URL) {
-                const authRaw = localStorage.getItem('devops_hub_workspaces');
-                if (authRaw) {
-                    try {
-                        const auth = JSON.parse(authRaw);
-                        token = token || auth.token;
-                        GITLAB_URL = GITLAB_URL || auth.gitlabUrl;
-                    } catch {}
-                }
-            }
-            if (!projectId) {
-                projectId = localStorage.getItem('hub_selected_repo_id');
-            }
+            // Auth centralisee (devops_hub_workspaces + fallback sessionStorage legacy)
+            const _auth = window.Salsifi.loadAuth({ redirect: false });
+            if (_auth) { token = _auth.token; GITLAB_URL = _auth.gitlabUrl; }
+            projectId = sessionStorage.getItem('gitlab_project_id') || localStorage.getItem('hub_selected_repo_id');
 
             // Guard strict : projectId numérique requis pour cibler le bon projet.
             // Sans ça, tous les fetches partent sur /projects/null/... et échouent

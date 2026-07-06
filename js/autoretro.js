@@ -133,14 +133,7 @@
             });
 
             // Auth modèle plateforme (localStorage devops_hub_workspaces) + repo via ?repo=
-            const auth = (() => {
-                try {
-                    const raw = localStorage.getItem('devops_hub_workspaces');
-                    if (!raw) return null;
-                    const d = JSON.parse(raw);
-                    return (d.gitlabUrl && d.token) ? d : null;
-                } catch { return null; }
-            })();
+            const auth = window.Salsifi.loadAuth({ redirect: false });
             if (!auth) { window.location.href = 'login.html'; return; }
 
             const repoId = new URLSearchParams(location.search).get('repo');

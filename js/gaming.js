@@ -744,17 +744,9 @@
 
         async function init() {
             // Nouveau format hub : localStorage 'devops_hub_workspaces' (JSON) + 'hub_selected_repo_id'
-            const authRaw = localStorage.getItem('devops_hub_workspaces');
-            if (authRaw) {
-                try {
-                    const auth = JSON.parse(authRaw);
-                    token = auth.token;
-                    GITLAB_URL = auth.gitlabUrl;
-                } catch { /* fallback ci-dessous */ }
-            }
-            // Fallback ancien format (sessionStorage)
-            if (!token) token = sessionStorage.getItem('gitlab_token');
-            if (!GITLAB_URL) GITLAB_URL = sessionStorage.getItem('gitlab_base_url');
+            // Auth centralisee (devops_hub_workspaces + fallback sessionStorage legacy)
+            const _auth = window.Salsifi.loadAuth({ redirect: false });
+            if (_auth) { token = _auth.token; GITLAB_URL = _auth.gitlabUrl; }
 
             // Project ID : nouveau format puis ancien
             const selectedRepoId = localStorage.getItem('hub_selected_repo_id');

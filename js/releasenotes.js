@@ -79,18 +79,9 @@
             // + 'hub_selected_repo_id' + cache 'hub_cache_repos_<username>' pour le nom.
             // Fallback ancien format sessionStorage pour rétro-compat.
             // Pattern aligné sur bus-factor.js.
-            let workspaces = null;
-            const authRaw = localStorage.getItem('devops_hub_workspaces');
-            if (authRaw) {
-                try {
-                    workspaces = JSON.parse(authRaw);
-                    token = workspaces.token || '';
-                    gitlabBaseUrl = workspaces.gitlabUrl || '';
-                } catch { /* fallback ci-dessous */ }
-            }
-            // Fallback ancien format
-            if (!token) token = sessionStorage.getItem('gitlab_token') || '';
-            if (!gitlabBaseUrl) gitlabBaseUrl = sessionStorage.getItem('gitlab_base_url') || '';
+            // Auth centralisee (devops_hub_workspaces + fallback sessionStorage legacy)
+            const _auth = window.Salsifi.loadAuth({ redirect: false });
+            if (_auth) { token = _auth.token; gitlabBaseUrl = _auth.gitlabUrl; }
 
             // Project ID : nouveau format (sélection hub) puis ancien
             projectId = localStorage.getItem('hub_selected_repo_id')
@@ -100,9 +91,9 @@
             // Nom du projet : sessionStorage en priorité (vient peut-être de la page précédente),
             // sinon on essaie le cache repos du hub.
             projectName = sessionStorage.getItem('gitlab_project') || '';
-            if (!projectName && workspaces) {
+            if (!projectName && _auth) {
                 try {
-                    const cacheKey = 'hub_cache_repos_' + (workspaces.username || '');
+                    const cacheKey = 'hub_cache_repos_' + (_auth.username || '');
                     const cacheRaw = localStorage.getItem(cacheKey);
                     if (cacheRaw) {
                         const cache = JSON.parse(cacheRaw);

@@ -79,12 +79,10 @@ function resolveProdBranches(defaultBranch) {
 
 async function init() {
     // Auth : toujours via localStorage (pattern hub/gouvernance/workspace-setup).
-    const gws = localStorage.getItem('devops_hub_workspaces');
-    if (!gws) { return showError('Non connecté. Ouvre le hub et connecte-toi d\'abord. <br><a href="' + HUB_URL + '" style="color:#a78bfa;">← Retour au hub</a>'); }
-    const cfg = JSON.parse(gws);
-    GITLAB_URL = cfg.gitlabUrl;
-    token = cfg.token;
-    if (!token || !GITLAB_URL) { return showError('Configuration GitLab incomplète (token ou URL manquant).'); }
+    const _auth = window.Salsifi.loadAuth({ redirect: false });
+    if (!_auth) { return showError('Non connecté. Ouvre le hub et connecte-toi d\'abord. <br><a href="' + HUB_URL + '" style="color:#a78bfa;">← Retour au hub</a>'); }
+    GITLAB_URL = _auth.gitlabUrl;
+    token = _auth.token;
 
     // DORA = vue workspace uniquement (agrégation multi-repos).
     // Pas de mode mono-repo. Sans workspace actif : message (pas de redirection,

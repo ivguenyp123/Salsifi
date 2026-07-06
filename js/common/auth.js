@@ -26,20 +26,19 @@
 
     Salsifi.loadAuth = function loadAuth(opts) {
         opts = opts || {};
-        var auth = null;
+        var d = null;
         try {
             var raw = localStorage.getItem(AUTH_KEY);
-            if (raw) {
-                var d = JSON.parse(raw);
-                if (d) {
-                    var url = d.gitlabUrl || null;
-                    if (!url) { try { url = sessionStorage.getItem('gitlab_base_url'); } catch (e) {} }
-                    if (d.token && url) {
-                        auth = { token: d.token, gitlabUrl: url, username: d.username || '' };
-                    }
-                }
-            }
-        } catch (e) { /* JSON invalide → auth reste null */ }
+            if (raw) d = JSON.parse(raw);
+        } catch (e) { /* JSON invalide → d reste null */ }
+
+        var tok = (d && d.token) || null;
+        var url = (d && d.gitlabUrl) || null;
+        // Fallbacks legacy (ancien format sessionStorage), même si devops_hub_workspaces absent
+        if (!tok) { try { tok = sessionStorage.getItem('gitlab_token'); } catch (e) {} }
+        if (!url) { try { url = sessionStorage.getItem('gitlab_base_url'); } catch (e) {} }
+
+        var auth = (tok && url) ? { token: tok, gitlabUrl: url, username: (d && d.username) || '' } : null;
 
         if (!auth && opts.redirect !== false) {
             global.location.href = LOGIN_URL;
