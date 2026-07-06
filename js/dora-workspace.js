@@ -115,16 +115,7 @@ async function fetchGitLab(endpoint) {
         }
 
 async function fetchAll(endpoint) {
-    let all = [], page = 1;
-    while (true) {
-        const url = `${endpoint}&page=${page}`;
-        const batch = await fetchGitLab(url);
-        if (!batch || !batch.length) break;
-        all = all.concat(batch);
-        if (batch.length < 100) break;
-        page++;
-    }
-    return all;
+    return window.Salsifi.gitlabPaginate(GITLAB_URL, token, endpoint);
 }
 
 function daysAgoISO(d) { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }

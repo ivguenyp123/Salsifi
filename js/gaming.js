@@ -17,17 +17,7 @@
 
         // Pagination automatique avec garde-fou 50 pages (5000 résultats max).
         async function fetchAll(endpoint) {
-            const all = [];
-            let page = 1;
-            const sep = endpoint.includes('?') ? '&' : '?';
-            while (page <= 50) {
-                const batch = await fetchGitLab(`${endpoint}${sep}page=${page}`);
-                if (!batch || !Array.isArray(batch) || batch.length === 0) break;
-                all.push(...batch);
-                if (batch.length < 100) break;
-                page++;
-            }
-            return all;
+            return window.Salsifi.gitlabPaginate(GITLAB_URL, token, endpoint);
         }
 
         // POST pour /ci/lint (parse YAML côté serveur).

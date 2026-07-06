@@ -120,19 +120,9 @@
         // DATA FETCHING
         // ══════════════════════════════════════════════════════════════════
         async function fetchAllMergedMRs(since) {
-            let all = [], page = 1;
-            while (page <= 10) {
-                const r = await fetch(`${GITLAB_URL}/api/v4/projects/${projectId}/merge_requests?state=merged&per_page=100&page=${page}&updated_after=${since}`, {
-                    headers: { 'PRIVATE-TOKEN': GITLAB_TOKEN }
-                });
-                if (!r.ok) throw new Error(`Erreur GitLab: ${r.status}`);
-                const mrs = await r.json();
-                if (!Array.isArray(mrs) || !mrs.length) break;
-                all = all.concat(mrs);
-                if (mrs.length < 100) break;
-                page++;
-            }
-            return all;
+            return window.Salsifi.gitlabPaginate(GITLAB_URL, GITLAB_TOKEN,
+                `/projects/${projectId}/merge_requests?state=merged&updated_after=${since}`,
+                { maxPages: 10, throwOnError: true });
         }
 
         async function analyzeMRChanges() {

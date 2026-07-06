@@ -43,22 +43,7 @@
         }
 
         async function fetchAllGitLab(endpoint) {
-            const all = [];
-            let page = 1;
-            const sep = endpoint.includes('?') ? '&' : '?';
-            while (page <= 50) {
-                const r = await fetchGitLab(`${endpoint}${sep}page=${page}&per_page=100`);
-                if (!r.ok) {
-                    if (page === 1) throw new Error(`API ${endpoint} → ${r.status}`);
-                    break;
-                }
-                const batch = await r.json();
-                if (!Array.isArray(batch) || batch.length === 0) break;
-                all.push(...batch);
-                if (batch.length < 100) break;
-                page++;
-            }
-            return all;
+            return window.Salsifi.gitlabPaginate(GITLAB_URL, GITLAB_TOKEN, endpoint, { throwOnError: true });
         }
 
         // fetch avec timeout réel via AbortController (l'option `timeout: 5000`

@@ -2837,22 +2837,13 @@
             listEl.innerHTML = '<div class="ws-modal-loading">⏳ Chargement des projets GitLab…</div>';
             _wsUpdateSaveBtn();
 
-            // Fetch GitLab — toutes les pages (fetch direct, même pattern que workspace-setup.js)
+            // Fetch GitLab — toutes les pages, via la pagination commune (bornée)
             try {
-                const allProjects = [];
-                let page = 1;
-                while (true) {
-                    const response = await fetch(
-                        `${auth.gitlabUrl}/api/v4/projects?membership=true&per_page=100&page=${page}&order_by=name&sort=asc`,
-                        { headers: { 'PRIVATE-TOKEN': auth.token } }
-                    );
-                    if (!response.ok) throw new Error('Erreur API GitLab (page ' + page + ')');
-                    const batch = await response.json();
-                    if (!Array.isArray(batch) || batch.length === 0) break;
-                    allProjects.push(...batch);
-                    if (batch.length < 100) break;
-                    page++;
-                }
+                const allProjects = await Salsifi.gitlabPaginate(
+                    auth.gitlabUrl, auth.token,
+                    '/projects?membership=true&order_by=name&sort=asc',
+                    { throwOnError: true }
+                );
                 _wsModalProjects = allProjects;
                 console.log('[ws] projets reçus:', _wsModalProjects.length);
                 wsRenderModalRepos();

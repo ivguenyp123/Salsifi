@@ -204,16 +204,9 @@
         }
 
         async function fetchAllFiles() {
-            // Boucle paginée propre (avant : récursion qui faisait perdre la lisibilité).
-            allFiles = [];
-            for (let page = 1; page <= 20; page++) {
-                const r = await fetchGitLab(`/projects/${projectId}/repository/tree?recursive=true&per_page=100&page=${page}`);
-                if (!r.ok) break;
-                const batch = await r.json();
-                if (!Array.isArray(batch) || batch.length === 0) break;
-                batch.forEach(f => allFiles.push({ name: f.name, path: f.path, type: f.type }));
-                if (batch.length < 100) break;
-            }
+            const items = await window.Salsifi.gitlabPaginate(GITLAB_URL, token,
+                `/projects/${projectId}/repository/tree?recursive=true`, { maxPages: 20 });
+            allFiles = items.map(f => ({ name: f.name, path: f.path, type: f.type }));
         }
 
         // Récupère la taille réelle de chaque fichier suspect via

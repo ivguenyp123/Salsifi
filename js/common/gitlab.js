@@ -40,4 +40,48 @@
         return r;
     };
 
+    /**
+     * Contrat « GET simple » : renvoie le JSON parsé, ou null si erreur/HTTP non-ok.
+     * (Ne PAS rappeler .json() sur le retour — il est déjà parsé.)
+     * @returns {Promise<any|null>}
+     */
+    Salsifi.gitlabJson = async function gitlabJson(baseUrl, token, endpoint, init = {}) {
+        try {
+            const r = await Salsifi.gitlabFetch(baseUrl, token, endpoint, init);
+            return r.ok ? await r.json() : null;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    /**
+     * Pagination GitLab, agrégée et TOUJOURS bornée (jamais de boucle infinie).
+     * Ajoute per_page (défaut 100, sauf si déjà présent dans endpoint) et page,
+     * s'arrête dès qu'une page est vide / partielle, avec un cap de pages dur.
+     *
+     * @param {string} endpoint  chemin après /api/v4, SANS page (ex. "/projects/1/repository/branches")
+     * @param {object} [opts]    { perPage=100, maxPages=50, throwOnError=false }
+     *   - throwOnError:true → lève si la 1re page échoue (sinon renvoie l'agrégat partiel/vide)
+     * @returns {Promise<Array>} tous les éléments concaténés
+     */
+    Salsifi.gitlabPaginate = async function gitlabPaginate(baseUrl, token, endpoint, opts = {}) {
+        const perPage = opts.perPage || 100;
+        const maxPages = opts.maxPages || 50;
+        const all = [];
+        const hasPer = /[?&]per_page=/.test(endpoint);
+        const withPer = hasPer ? endpoint : endpoint + (endpoint.includes('?') ? '&' : '?') + 'per_page=' + perPage;
+        for (let page = 1; page <= maxPages; page++) {
+            const r = await Salsifi.gitlabFetch(baseUrl, token, withPer + '&page=' + page);
+            if (!r.ok) {
+                if (page === 1 && opts.throwOnError) throw new Error('GitLab ' + endpoint + ' → ' + r.status);
+                break;
+            }
+            const batch = await r.json();
+            if (!Array.isArray(batch) || batch.length === 0) break;
+            all.push(...batch);
+            if (batch.length < perPage) break;
+        }
+        return all;
+    };
+
 })(typeof window !== 'undefined' ? window : this);
