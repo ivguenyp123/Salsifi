@@ -164,13 +164,7 @@
             renderDrilldownStatsSkeleton(dir.stats);
 
             // Modules — statiques
-            document.getElementById('dd-modules').innerHTML = dir.modules.map(m => `
-                <div class="dd-module" data-module-name="${(window.escapeHtml || (s=>s))(m.name)}">
-                    <div class="dd-module-icon">${m.icon}</div>
-                    <div class="dd-module-name">${m.name}</div>
-                    <div class="dd-module-desc">${m.desc}</div>
-                </div>
-            `).join('');
+            document.getElementById('dd-modules').innerHTML = dir.modules.map(moduleCardHtml).join('');
 
             // "Pour aller plus loin" — ateliers réels (référentiel) + conseils génériques
             renderDeeperSection(key);
@@ -228,10 +222,32 @@
         // (auth en localStorage). Les autres pages suivront au portage.
         const MODULE_REPO_AWARE = new Set(['Pipeline Generator', 'Repo Analyzer', 'Security Scanner', 'Repo Diet', 'Branch Monitor', 'MR Reviewer AI', 'Auto Retro', 'Smart Estimate']);
 
+        // Modules RÉSERVÉS : grisés + non cliquables (pas de self-service par les équipes).
+        // Le Secrets Scanner balaie TOUS les repos accessibles → lancé par la plateforme, pas en libre accès.
+        const MODULE_DISABLED = {
+            'Secrets Scanner': "Réservé à la plateforme — pas en libre accès pour les équipes."
+        };
+
+        // Markup d'une carte module (partagé drawer + grille expert), gère l'état réservé.
+        function moduleCardHtml(m) {
+            const esc = window.escapeHtml || (s => s);
+            const reason = MODULE_DISABLED[m.name];
+            return `
+                <div class="dd-module${reason ? ' is-disabled' : ''}" data-module-name="${esc(m.name)}"${reason ? ` title="${esc(reason)}"` : ''}>
+                    <div class="dd-module-icon">${m.icon}</div>
+                    <div class="dd-module-name">${m.name}${reason ? ' <span class="dd-module-lock">🔒 réservé</span>' : ''}</div>
+                    <div class="dd-module-desc">${m.desc}</div>
+                </div>`;
+        }
+
         document.getElementById('dd-modules').addEventListener('click', e => {
             const card = e.target.closest('.dd-module[data-module-name]');
             if (!card) return;
             const name = card.dataset.moduleName;
+            if (MODULE_DISABLED[name]) {
+                showHubToast(`🔒 <strong>${escapeHtml(name)}</strong> — ${escapeHtml(MODULE_DISABLED[name])}`, 'info');
+                return;
+            }
             let url = MODULE_URLS[name];
             if (url) {
                 if (MODULE_REPO_AWARE.has(name) && currentRepo) {
@@ -312,13 +328,7 @@
             Object.keys(DIRECTIONS).forEach(key => {
                 const dir = DIRECTIONS[key];
                 (dir.modules || []).forEach(m => {
-                    cards.push(`
-                        <div class="dd-module" data-module-name="${escapeHtml(m.name)}">
-                            <div class="dd-module-icon">${m.icon}</div>
-                            <div class="dd-module-name">${m.name}</div>
-                            <div class="dd-module-desc">${m.desc}</div>
-                        </div>
-                    `);
+                    cards.push(moduleCardHtml(m));
                 });
             });
             grid.innerHTML = cards.join('');
@@ -340,6 +350,10 @@
             const card = e.target.closest('.dd-module[data-module-name]');
             if (!card) return;
             const name = card.dataset.moduleName;
+            if (MODULE_DISABLED[name]) {
+                showHubToast(`🔒 <strong>${escapeHtml(name)}</strong> — ${escapeHtml(MODULE_DISABLED[name])}`, 'info');
+                return;
+            }
             let url = MODULE_URLS[name];
             if (url) {
                 if (MODULE_REPO_AWARE.has(name) && currentRepo) {
