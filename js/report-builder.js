@@ -357,6 +357,15 @@
     </div>`;
   }
 
+  // Applique une nouvelle sélection : invalide le rapport déjà généré (sinon
+  // l'export resterait périmé) et re-rend la liste APRÈS le cycle de drag (le
+  // rebuild innerHTML pendant un drag natif casse les glissers suivants).
+  function applySelection(deferRender) {
+    invalidate();
+    if (deferRender) setTimeout(renderComposer, 0);
+    else renderComposer();
+  }
+
   // ── drag & drop ──
   function wireDnd() {
     document.querySelectorAll('.block-card').forEach(card => {
@@ -365,26 +374,29 @@
         card.classList.add('dragging');
         try { e.dataTransfer.setData('text/plain', card.dataset.id); e.dataTransfer.effectAllowed = 'move'; } catch (x) {}
       });
-      card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragData = null; });
+      card.addEventListener('dragend', () => { document.querySelectorAll('.block-card.dragging').forEach(c => c.classList.remove('dragging')); dragData = null; });
     });
     const canvas = el('canvas');
-    canvas.ondragover = e => { e.preventDefault(); canvas.classList.add('drop-active'); };
-    canvas.ondragleave = () => canvas.classList.remove('drop-active');
+    canvas.ondragover = e => { e.preventDefault(); try { e.dataTransfer.dropEffect = 'move'; } catch (x) {} canvas.classList.add('drop-active'); };
+    canvas.ondragleave = e => { if (e.target === canvas) canvas.classList.remove('drop-active'); };
     canvas.ondrop = e => {
       e.preventDefault(); canvas.classList.remove('drop-active');
       if (!dragData) return;
+      const id = dragData.id;
       const after = dragAfter(canvas, e.clientY);
-      selected = selected.filter(x => x !== dragData.id); // retire si déjà présent (réordonnancement)
-      const at = after == null ? selected.length : selected.indexOf(after.dataset.id);
-      selected.splice(at < 0 ? selected.length : at, 0, dragData.id);
-      renderComposer();
+      const afterId = after ? after.dataset.id : null;
+      dragData = null;
+      selected = selected.filter(x => x !== id); // retire si déjà présent (réordonnancement)
+      const at = afterId == null ? selected.length : selected.indexOf(afterId);
+      selected.splice(at < 0 ? selected.length : at, 0, id);
+      applySelection(true);
     };
     // retirer un bloc en le glissant vers la palette
     const palette = el('palette');
-    palette.ondragover = e => { e.preventDefault(); };
+    palette.ondragover = e => { e.preventDefault(); try { e.dataTransfer.dropEffect = 'move'; } catch (x) {} };
     palette.ondrop = e => {
       e.preventDefault();
-      if (dragData && dragData.from === 'canvas') { selected = selected.filter(x => x !== dragData.id); renderComposer(); }
+      if (dragData && dragData.from === 'canvas') { const id = dragData.id; dragData = null; selected = selected.filter(x => x !== id); applySelection(true); }
     };
   }
   function dragAfter(container, y) {
@@ -402,14 +414,28 @@
   //  GÉNÉRATION DU RAPPORT (données réelles)
   // ══════════════════════════════════════════════════════════════════
   let lastHtml = null;
+  let genToken = 0;
+
+  // Toute modif de la sélection périme le rapport déjà produit : on coupe le
+  // téléchargement et l'aperçu pour que l'export corresponde TOUJOURS à l'écran.
+  function invalidate() {
+    genToken++;
+    lastHtml = null;
+    const d = el('downloadBtn'); if (d) d.disabled = true;
+    const pw = el('previewWrap'); if (pw) pw.classList.remove('show');
+  }
 
   async function generate() {
     if (!selected.length) return;
-    REPO._tree = null; // données fraîches à chaque génération
+    const token = ++genToken;         // ce run est le seul valide
+    const order = selected.slice();   // fige la sélection au clic
+    REPO._tree = null;                // données fraîches à chaque génération
     setStatus('Récupération des données GitLab…', true);
     el('genBtn').disabled = true;
+    el('downloadBtn').disabled = true;
     const sections = [];
-    for (const id of selected) {
+    for (const id of order) {
+      if (token !== genToken) { setStatus('Sélection modifiée — relance la génération.', false); el('genBtn').disabled = false; return; }
       const b = BLOCK_BY_ID[id];
       setStatus(`Bloc « ${b.title} »…`, true);
       try {
@@ -419,6 +445,7 @@
         sections.push({ ok: false, block: b, error: e.message || 'indisponible' });
       }
     }
+    if (token !== genToken) { setStatus('Sélection modifiée — relance la génération.', false); el('genBtn').disabled = false; return; }
     const stamp = new Date();
     lastHtml = buildReport(sections, stamp);
     setStatus(`Rapport prêt — ${sections.length} bloc(s), données au ${stamp.toLocaleString('fr-FR')}.`, false);
@@ -507,9 +534,9 @@
   // ── API publique (onclick) ──
   window.ReportBuilder = {
     generate, download,
-    add(id) { if (!selected.includes(id)) selected.push(id); renderComposer(); },
-    remove(id) { selected = selected.filter(x => x !== id); renderComposer(); },
-    toggleAll() { selected = selected.length === BLOCKS.length ? [] : DEFAULT_ORDER.slice(); renderComposer(); },
+    add(id) { if (!selected.includes(id)) selected.push(id); applySelection(false); },
+    remove(id) { selected = selected.filter(x => x !== id); applySelection(false); },
+    toggleAll() { selected = selected.length === BLOCKS.length ? [] : DEFAULT_ORDER.slice(); applySelection(false); },
   };
 
   // ── bootstrap ──
