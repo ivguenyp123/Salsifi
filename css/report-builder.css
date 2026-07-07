@@ -36,18 +36,26 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 .zone.canvas { border: 1.5px dashed var(--border-subtle); border-radius: 12px; padding: 10px; transition: .18s; }
 .zone.canvas.drop-active { border-color: var(--deliver); background: rgba(45, 212, 191, .05); }
 
-.block-card { display: flex; align-items: center; gap: 11px; padding: 11px 13px; background: rgba(0, 0, 0, .22); border: 1px solid var(--border-subtle); border-radius: 11px; cursor: grab; transition: .16s; }
+.block-card { display: flex; align-items: center; gap: 11px; padding: 11px 13px; background: rgba(0, 0, 0, .22); border: 1px solid var(--border-subtle); border-radius: 11px; transition: border-color .16s, background .16s; touch-action: none; }
 .block-card:hover { border-color: var(--border-strong); background: var(--bg-card-hover); }
-.block-card.dragging { opacity: .4; }
+.block-card.is-src { opacity: .35; }
 .block-card.canvas { border-left: 3px solid var(--measure); }
-.bc-grip { color: var(--text-muted); font-size: 13px; letter-spacing: -2px; cursor: grab; }
+/* fantôme suivi par le pointeur pendant le drag */
+.block-ghost { position: fixed; z-index: 9999; pointer-events: none; opacity: .95; box-shadow: 0 12px 34px rgba(0, 0, 0, .55); background: var(--bg-mid); }
+/* trait d'insertion */
+.drop-line { height: 0; margin: 3px 2px; border-top: 2px solid var(--deliver); border-radius: 2px; box-shadow: 0 0 8px rgba(45, 212, 191, .7); }
+body.dnd-active { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.bc-grip { color: var(--text-muted); font-size: 13px; letter-spacing: -2px; cursor: grab; flex-shrink: 0; }
 .bc-icon { font-size: 20px; flex-shrink: 0; }
 .bc-body { flex: 1; min-width: 0; }
 .bc-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .bc-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
-.bc-add, .bc-x { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0, 0, 0, .25); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: .15s; }
+.bc-ctrl { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.bc-add, .bc-x, .bc-mv { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0, 0, 0, .25); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: .15s; display: inline-flex; align-items: center; justify-content: center; }
 .bc-add:hover { border-color: var(--deliver); color: var(--deliver); }
 .bc-x:hover { border-color: var(--err); color: var(--err); }
+.bc-mv:hover:not(:disabled) { border-color: var(--measure); color: var(--measure); }
+.bc-mv:disabled { opacity: .3; cursor: not-allowed; }
 .empty-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 24px 12px; line-height: 1.5; }
 .drop-hint { border: 1.5px dashed var(--border-subtle); border-radius: 10px; }
 

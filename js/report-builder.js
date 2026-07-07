@@ -329,7 +329,6 @@
   // Ordre de rapport par défaut = TOUS les blocs (rapport complet d'emblée).
   const DEFAULT_ORDER = ['identity', 'dora', 'delivery', 'mrs', 'issues', 'commits', 'contributors', 'branches', 'releases', 'ciconfig', 'governance', 'flags', 'hygiene'];
   let selected = DEFAULT_ORDER.slice();
-  let dragData = null;
 
   const el = id => document.getElementById(id);
 
@@ -339,75 +338,126 @@
       ? avail.map(b => cardHtml(b, 'palette')).join('')
       : '<div class="empty-hint">Tous les blocs sont dans le rapport.</div>';
     el('canvas').innerHTML = selected.length
-      ? selected.map(id => cardHtml(BLOCK_BY_ID[id], 'canvas')).join('')
-      : '<div class="empty-hint drop-hint">Glisse des blocs ici — ils seront générés dans cet ordre.</div>';
-    wireDnd();
+      ? selected.map((id, i) => cardHtml(BLOCK_BY_ID[id], 'canvas', i)).join('')
+      : '<div class="empty-hint drop-hint">Glisse un bloc ici (ou clique ＋) — ils seront générés dans cet ordre.</div>';
     el('genBtn').disabled = selected.length === 0;
     el('genCount').textContent = selected.length + ' bloc' + (selected.length > 1 ? 's' : '');
   }
 
-  function cardHtml(b, zone) {
-    return `<div class="block-card ${zone}" draggable="true" data-id="${b.id}">
-      <span class="bc-grip">⋮⋮</span>
+  function cardHtml(b, zone, i) {
+    const last = selected.length - 1;
+    return `<div class="block-card ${zone}" data-id="${b.id}">
+      <span class="bc-grip" title="Glisser pour déplacer">⋮⋮</span>
       <span class="bc-icon">${b.icon}</span>
       <div class="bc-body"><div class="bc-title">${esc(b.title)}</div><div class="bc-desc">${esc(b.desc)}</div></div>
       ${zone === 'canvas'
-        ? `<button class="bc-x" title="Retirer" onclick="ReportBuilder.remove('${b.id}')">✕</button>`
-        : `<button class="bc-add" title="Ajouter" onclick="ReportBuilder.add('${b.id}')">＋</button>`}
+        ? `<span class="bc-ctrl">
+             <button class="bc-mv" title="Monter" onclick="ReportBuilder.move('${b.id}',-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+             <button class="bc-mv" title="Descendre" onclick="ReportBuilder.move('${b.id}',1)" ${i === last ? 'disabled' : ''}>▼</button>
+             <button class="bc-x" title="Retirer" onclick="ReportBuilder.remove('${b.id}')">✕</button>
+           </span>`
+        : `<button class="bc-add" title="Ajouter au rapport" onclick="ReportBuilder.add('${b.id}')">＋</button>`}
     </div>`;
   }
 
-  // Applique une nouvelle sélection : invalide le rapport déjà généré (sinon
-  // l'export resterait périmé) et re-rend la liste APRÈS le cycle de drag (le
-  // rebuild innerHTML pendant un drag natif casse les glissers suivants).
-  function applySelection(deferRender) {
-    invalidate();
-    if (deferRender) setTimeout(renderComposer, 0);
-    else renderComposer();
-  }
+  // Toute nouvelle sélection invalide le rapport déjà produit (sinon l'export
+  // resterait périmé) puis re-rend la liste.
+  function applySelection() { invalidate(); renderComposer(); }
 
-  // ── drag & drop ──
-  function wireDnd() {
-    document.querySelectorAll('.block-card').forEach(card => {
-      card.addEventListener('dragstart', e => {
-        dragData = { id: card.dataset.id, from: card.classList.contains('canvas') ? 'canvas' : 'palette' };
-        card.classList.add('dragging');
-        try { e.dataTransfer.setData('text/plain', card.dataset.id); e.dataTransfer.effectAllowed = 'move'; } catch (x) {}
-      });
-      card.addEventListener('dragend', () => { document.querySelectorAll('.block-card.dragging').forEach(c => c.classList.remove('dragging')); dragData = null; });
-    });
-    const canvas = el('canvas');
-    canvas.ondragover = e => { e.preventDefault(); try { e.dataTransfer.dropEffect = 'move'; } catch (x) {} canvas.classList.add('drop-active'); };
-    canvas.ondragleave = e => { if (e.target === canvas) canvas.classList.remove('drop-active'); };
-    canvas.ondrop = e => {
-      e.preventDefault(); canvas.classList.remove('drop-active');
-      if (!dragData) return;
-      const id = dragData.id;
-      const after = dragAfter(canvas, e.clientY);
-      const afterId = after ? after.dataset.id : null;
-      dragData = null;
-      selected = selected.filter(x => x !== id); // retire si déjà présent (réordonnancement)
-      const at = afterId == null ? selected.length : selected.indexOf(afterId);
-      selected.splice(at < 0 ? selected.length : at, 0, id);
-      applySelection(true);
-    };
-    // retirer un bloc en le glissant vers la palette
-    const palette = el('palette');
-    palette.ondragover = e => { e.preventDefault(); try { e.dataTransfer.dropEffect = 'move'; } catch (x) {} };
-    palette.ondrop = e => {
-      e.preventDefault();
-      if (dragData && dragData.from === 'canvas') { const id = dragData.id; dragData = null; selected = selected.filter(x => x !== id); applySelection(true); }
-    };
+  // ══════════════════════════════════════════════════════════════════
+  //  DRAG & DROP maison (Pointer Events) — robuste, cross-navigateur.
+  //  Toute la zone « Mon rapport » est cible ; on peut déposer n'importe où
+  //  (haut, bas, entre deux). Pas de HTML5 draggable (trop fragile).
+  // ══════════════════════════════════════════════════════════════════
+  let drag = null;
+
+  function setupDnd() {
+    document.addEventListener('pointerdown', onDown);
   }
-  function dragAfter(container, y) {
-    const cards = [...container.querySelectorAll('.block-card:not(.dragging)')];
-    let closest = null, closestOffset = -Infinity;
-    for (const c of cards) {
-      const box = c.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closestOffset) { closestOffset = offset; closest = c; }
+  function onDown(e) {
+    if (e.button != null && e.button > 0) return;         // clic gauche / tactile
+    const card = e.target.closest('.block-card');
+    if (!card || e.target.closest('button')) return;      // laisse ＋ / ✕ / ▲▼ agir
+    drag = { id: card.dataset.id, from: card.classList.contains('canvas') ? 'canvas' : 'palette', x0: e.clientX, y0: e.clientY, src: card, active: false, ghost: null, offX: 0, offY: 0 };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  }
+  function onMove(e) {
+    if (!drag) return;
+    if (!drag.active) {
+      if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return; // seuil
+      startGhost(e);
+      drag.active = true;
+      document.body.classList.add('dnd-active');
     }
-    return closest;
+    e.preventDefault();
+    drag.ghost.style.left = (e.clientX - drag.offX) + 'px';
+    drag.ghost.style.top = (e.clientY - drag.offY) + 'px';
+    updateIndicator(e);
+  }
+  function onUp(e) {
+    window.removeEventListener('pointermove', onMove);
+    if (!drag) return;
+    const wasActive = drag.active;
+    const d = drag;
+    cleanup();
+    if (!wasActive) return;               // simple clic → rien
+    resolveDrop(e, d);
+  }
+  function startGhost(e) {
+    const r = drag.src.getBoundingClientRect();
+    const g = drag.src.cloneNode(true);
+    g.className = 'block-card block-ghost';
+    g.style.width = r.width + 'px';
+    drag.offX = e.clientX - r.left;
+    drag.offY = e.clientY - r.top;
+    g.style.left = (e.clientX - drag.offX) + 'px';
+    g.style.top = (e.clientY - drag.offY) + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.src.classList.add('is-src');
+  }
+  function inRect(x, y, r, padY) { padY = padY || 0; return x >= r.left && x <= r.right && y >= r.top - padY && y <= r.bottom + padY; }
+  function updateIndicator(e) {
+    const canvas = el('canvas');
+    const over = inRect(e.clientX, e.clientY, canvas.getBoundingClientRect(), 24);
+    canvas.classList.toggle('drop-active', over);
+    let line = document.getElementById('dropLine');
+    if (!over) { if (line) line.remove(); return; }
+    if (!line) { line = document.createElement('div'); line.id = 'dropLine'; line.className = 'drop-line'; }
+    const ref = refCard(canvas, e.clientY, drag.id);
+    if (ref) canvas.insertBefore(line, ref); else canvas.appendChild(line);
+  }
+  function refCard(canvas, y, excludeId) {
+    const cards = [...canvas.querySelectorAll('.block-card')].filter(c => c.dataset.id !== excludeId);
+    for (const c of cards) { const b = c.getBoundingClientRect(); if (y < b.top + b.height / 2) return c; }
+    return null;
+  }
+  function resolveDrop(e, d) {
+    const canvas = el('canvas'), palette = el('palette');
+    const overCanvas = inRect(e.clientX, e.clientY, canvas.getBoundingClientRect(), 24);
+    const overPalette = inRect(e.clientX, e.clientY, palette.getBoundingClientRect(), 24);
+    if (overCanvas) {
+      const arr = selected.filter(x => x !== d.id);
+      const ref = refCard(canvas, e.clientY, d.id);
+      const at = ref ? arr.indexOf(ref.dataset.id) : arr.length;
+      arr.splice(at < 0 ? arr.length : at, 0, d.id);
+      selected = arr;
+      applySelection();
+    } else if (d.from === 'canvas' && overPalette) {
+      selected = selected.filter(x => x !== d.id);
+      applySelection();
+    } else {
+      renderComposer(); // annulé : on restaure l'affichage
+    }
+  }
+  function cleanup() {
+    if (drag && drag.ghost) drag.ghost.remove();
+    document.querySelectorAll('.block-card.is-src').forEach(c => c.classList.remove('is-src'));
+    const line = document.getElementById('dropLine'); if (line) line.remove();
+    el('canvas').classList.remove('drop-active');
+    document.body.classList.remove('dnd-active');
+    drag = null;
   }
 
   // ══════════════════════════════════════════════════════════════════
@@ -534,9 +584,15 @@
   // ── API publique (onclick) ──
   window.ReportBuilder = {
     generate, download,
-    add(id) { if (!selected.includes(id)) selected.push(id); applySelection(false); },
-    remove(id) { selected = selected.filter(x => x !== id); applySelection(false); },
-    toggleAll() { selected = selected.length === BLOCKS.length ? [] : DEFAULT_ORDER.slice(); applySelection(false); },
+    add(id) { if (!selected.includes(id)) selected.push(id); applySelection(); },
+    remove(id) { selected = selected.filter(x => x !== id); applySelection(); },
+    toggleAll() { selected = selected.length === BLOCKS.length ? [] : DEFAULT_ORDER.slice(); applySelection(); },
+    move(id, dir) {
+      const i = selected.indexOf(id), j = i + dir;
+      if (i < 0 || j < 0 || j >= selected.length) return;
+      [selected[i], selected[j]] = [selected[j], selected[i]];
+      applySelection();
+    },
   };
 
   // ── bootstrap ──
@@ -550,6 +606,7 @@
     if (p) { REPO.name = p.name; REPO.path = p.path_with_namespace || p.name; REPO.defaultBranch = p.default_branch || 'main'; }
     else { REPO.name = 'repo #' + id; REPO.path = REPO.name; REPO.defaultBranch = 'main'; }
     el('repoLine').innerHTML = 'Dépôt : <code>' + esc(REPO.path) + '</code>';
+    setupDnd();
     renderComposer();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
