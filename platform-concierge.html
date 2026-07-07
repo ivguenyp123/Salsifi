@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Concierge — Salsifi</title>
+<!--
+  Quand le service est SERVI par le backend, injecter l'URL du proxy IA ici :
+  <meta name="salsifi-ai-proxy" content="/api/concierge">
+  En local (file://) sans cette balise → fallback regex, aucune IA.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/platform-concierge.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>🤖 Platform Concierge</h1>
+    </div>
+    <a class="btn-reset" href="hub.html">← Retour au hub</a>
+  </div>
+
+  <div class="detect" id="detect"><div class="detect-why">Lecture du repo…</div></div>
+
+  <div class="concierge">
+    <div class="concierge-eyebrow"><span class="dot"></span>Dis-moi ce que tu veux faire</div>
+    <div class="prompt-row">
+      <input class="prompt-input" id="prompt" placeholder="…" autocomplete="off">
+      <button class="send-btn" onclick="Concierge.run()">Comprendre →</button>
+    </div>
+    <div class="examples" id="examples"></div>
+  </div>
+
+  <div class="thinking" id="thinking"><div class="spinner"></div><span id="thinkingText">Analyse…</span></div>
+  <div class="result" id="result"></div>
+
+  <div class="demo-note">
+    <b>Nouveau service</b> — remplaçant conversationnel du <code>pipeline-generator</code> (qui reste en place le temps de la validation).
+    L’IA <b>traduit</b> ta phrase, le <b>noyau déterministe</b> lit les 3 sources de vérité, vérifie les invariants et prépare
+    branche + commit + MR. <b>Il ne merge jamais</b> et ne touche jamais la toolchain centrale.
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="js/common/utils.js"></script>
+<script src="js/common/gitlab.js"></script>
+<script src="js/common/auth.js"></script>
+<script src="js/platform-concierge.js"></script>
+</body>
+</html>
