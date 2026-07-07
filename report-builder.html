@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de rapport — Salsifi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/report-builder.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left"><h1>📊 Générateur de rapport</h1></div>
+    <a class="btn-reset" href="hub.html">← Retour au hub</a>
+  </div>
+  <div class="repo-line" id="repoLine">Lecture du repo…</div>
+
+  <p class="intro">
+    Choisis les blocs à inclure, <b>glisse-les</b> dans le rapport et <b>réordonne</b>-les.
+    Au clic sur <b>Générer</b>, chaque bloc interroge GitLab et le rapport est construit sur les
+    <b>données réelles du moment</b>. Tu peux ensuite le <b>télécharger</b> (HTML autonome, imprimable).
+  </p>
+
+  <div class="composer">
+    <div class="col">
+      <div class="col-head"><span>Blocs disponibles</span></div>
+      <div class="zone" id="palette"></div>
+    </div>
+    <div class="col">
+      <div class="col-head"><span>Mon rapport</span><span class="count" id="genCount">0 bloc</span></div>
+      <div class="zone canvas" id="canvas"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="genBtn" onclick="ReportBuilder.generate()">⚡ Générer le rapport</button>
+    <button class="btn btn-ghost" id="downloadBtn" onclick="ReportBuilder.download()" disabled>⬇️ Télécharger (.html)</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="preview-wrap" id="previewWrap">
+    <div class="preview-label">Aperçu (données réelles)</div>
+    <iframe class="preview" id="preview" title="Aperçu du rapport"></iframe>
+  </div>
+</div>
+
+<script src="js/common/utils.js"></script>
+<script src="js/common/gitlab.js"></script>
+<script src="js/common/auth.js"></script>
+<script src="js/report-builder.js"></script>
+</body>
+</html>

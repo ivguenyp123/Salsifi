@@ -30,7 +30,8 @@
                     { icon: '📋', name: 'DevOps Assessment', desc: 'Score de maturité sur 8 axes, radar et historique.' },
                     { icon: '🏆', name: 'Achievements', desc: '13 badges, niveau Rookie → DevOps God, motivation par jeu.' },
                     { icon: '🚌', name: 'Bus Factor', desc: 'Identifier les zones de code maîtrisées par une seule personne.' },
-                    { icon: '📅', name: 'Daily Report', desc: 'Synthèse quotidienne pour standups et conseils personnalisés.' }
+                    { icon: '📅', name: 'Daily Report', desc: 'Synthèse quotidienne pour standups et conseils personnalisés.' },
+                    { icon: '📄', name: 'Générateur de rapport', desc: 'Composer un rapport HTML téléchargeable à partir de blocs, sur données réelles.' }
                 ]
             },
             deliver: {
@@ -205,6 +206,7 @@
             'Achievements': 'gaming.html',
             'Bus Factor': 'bus-factor.html',
             'Daily Report': 'daily-report.html',
+            'Générateur de rapport': 'report-builder.html',
             'Feature Flag Manager': 'feature-flag-manager.html',
             'Release Notes': 'release-notes.html',
             'Pipeline Generator': 'pipeline-generator.html',
@@ -220,7 +222,7 @@
         };
         // Modules migrés au modèle plateforme : ils lisent le repo via ?repo=<id>
         // (auth en localStorage). Les autres pages suivront au portage.
-        const MODULE_REPO_AWARE = new Set(['Pipeline Generator', 'Repo Analyzer', 'Security Scanner', 'Repo Diet', 'Branch Monitor', 'MR Reviewer AI', 'Auto Retro', 'Smart Estimate']);
+        const MODULE_REPO_AWARE = new Set(['Pipeline Generator', 'Repo Analyzer', 'Security Scanner', 'Repo Diet', 'Branch Monitor', 'MR Reviewer AI', 'Auto Retro', 'Smart Estimate', 'Générateur de rapport']);
 
         // Modules RÉSERVÉS : grisés + non cliquables (pas de self-service par les équipes).
         // Le Secrets Scanner balaie TOUS les repos accessibles → lancé par la plateforme, pas en libre accès.
