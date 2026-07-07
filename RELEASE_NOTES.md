@@ -1,5 +1,58 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.1.0 — 2026-07-07 · Platform Concierge & Générateur de rapport
+
+Deux nouveaux services, sans casser l'existant (tout reste en `<script src>`
+statique, marche servi **et** en local `file://`).
+
+### 🤖 Platform Concierge (nouveau service)
+
+Assistant de livraison **conversationnel et gouverné** — futur remplaçant du
+`pipeline-generator`, qui reste **intact** tant que ce service n'est pas validé.
+Architecture à **2 couches** :
+
+- **✨ Couche IA (« comprendre »)** : traduit une phrase (« livre en dev »,
+  « release en prod », « bump 2.0.5 », « coupe sonar ») en intention structurée.
+  Passe par un **proxy backend** (auth → token, Vault → creds **Vertex**) ;
+  contrat documenté. **Fallback regex déterministe** si le proxy est absent
+  (mode local) — l'IA n'est sollicitée que si le repo l'exige (chaos/hétérogénéité).
+- **⚙️ Noyau déterministe (« exécuter »)**, 100 % client-side via l'API GitLab :
+  détecte le contexte (flow/pilotage/chaos), lit les **3 sources de vérité**,
+  vérifie les invariants (**cohérence**, **anti-fantôme**, **auto-bump**), résout
+  la branche, et prépare **branche + commit atomique + MR**. **Ne merge jamais** ;
+  ne touche jamais la toolchain centrale. Chaque geste produit une **attestation**
+  « qui a fait quoi » (couche IA vs noyau).
+
+Phase 1 livrée : livre dev/uat, release prod (prod-lock), bump, toggle test.
+Conventions LCL isolées dans un objet `CONV` (chemins des 3 sources, cible par
+flow), à ajuster à la convention réelle. `platform-concierge.html`.
+
+### 📄 Générateur de rapport (module « Mesurer & Progresser »)
+
+Composeur de rapport : on **glisse-dépose** les blocs voulus, on **ordonne**, on
+clique, et le module produit un **rapport HTML autonome téléchargeable** construit
+sur les **vraies données GitLab au moment du clic** (aperçu avant export).
+
+- **13 blocs**, tous pré-sélectionnés par défaut + bouton « Tout / Rien » :
+  identité, **DORA (4 métriques + niveaux)**, livraison, MR, issues, commits,
+  contributeurs & bus factor, branches, tags/releases, **config CI/CD**,
+  **gouvernance & conformité**, **feature flags**, **hygiène du dépôt**.
+- Rapport **self-contained** (CSS inline, polices système, imprimable, zéro
+  dépendance externe). Un bloc qui échoue s'affiche « indisponible » sans casser
+  le rapport. Arbre récursif mutualisé et rafraîchi à chaque génération.
+- Ajouté au hub dans le chemin **Mesurer & Progresser** (repo-aware).
+  `report-builder.html`.
+
+### 🐛 Correctifs du générateur de rapport
+
+- **Drag & drop** bloqué au-delà de ~2 blocs (le re-render pendant le drag natif
+  avortait les glissers) → re-render différé + nettoyage de fin de drag robuste.
+- **Export périmé** : changer la sélection après une génération laissait l'aperçu
+  et le téléchargement sur l'ancien rapport → toute modif **invalide** le rapport
+  (jeton de génération) ; l'export correspond désormais **toujours** à l'écran.
+
+---
+
 ## v1.0.1 — 2026-07-06 · Correctifs
 
 Grande passe de revue (5 relectures croisées de tous les modules, chaque
