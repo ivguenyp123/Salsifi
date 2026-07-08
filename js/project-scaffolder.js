@@ -129,7 +129,7 @@
             const t = document.getElementById('thread');
             if (t) t.innerHTML = `<div class="blocked-wrap"><h2>\ud83d\uded1 ${esc(reason)}</h2>`
                 + `<p>${esc(detail)}</p>`
-                + `<p>Le Concierge ne touche qu'aux repos neufs. <a href="${HUB_URL}" data-hub-link>\u2190 Retour au hub</a></p></div>`;
+                + `<p>Le Scaffold ne touche qu'aux repos neufs. <a href="${HUB_URL}" data-hub-link>\u2190 Retour au hub</a></p></div>`;
         }
 
         // ============================================
@@ -141,6 +141,7 @@
         const config = {
             workflow: 'gitflow',
             stack: 'java',
+            framework: null,
             options: {
                 kustomize: true,
                 gitlabCi: true,
@@ -152,7 +153,7 @@
         };
 
         // ============================================
-        // CONCIERGE — moteur conversationnel (remplace le wizard)
+        // SCAFFOLD — moteur conversationnel (remplace le wizard)
         // Le noyau déduit le flow ; la conversation remplit `config`,
         // puis on lance le VRAI initializeProject() (écriture GitLab).
         // ============================================
@@ -188,6 +189,29 @@
             ['📟', 'COBOL / Mainframe', 'structure DBB + JCL',   'cobol'],
             ['📦', 'Vide',              'juste la structure Git', 'empty'],
         ];
+
+        /* ─── Frameworks par stack (question posée après le langage) ───
+         * Les stacks absentes ici (angular, cobol, empty) n'ont pas de
+         * question framework : le framework est implicite ou non pertinent. */
+        const FRAMEWORKS = {
+            java:   [['🍃','Spring Boot',   'jar autoportant, le plus courant',      'spring'],
+                     ['🏛️','Jakarta EE',    'ex-J2EE, war déployé sur serveur d\'app','jakarta'],
+                     ['⚡','Quarkus',       'cloud-native, démarrage éclair',        'quarkus']],
+            node:   [['🚂','Express',       'minimaliste, ultra répandu',            'express'],
+                     ['🐦','NestJS',        'structuré, TypeScript, à la Angular',   'nest'],
+                     ['🍱','Fastify',       'léger et très rapide',                  'fastify']],
+            python: [['⚡','FastAPI',       'API async moderne',                     'fastapi'],
+                     ['🎸','Django',        'framework complet, batteries incluses', 'django'],
+                     ['🧪','Flask',         'micro-framework souple',                'flask']],
+            dotnet: [['🌐','ASP.NET Core Web API', 'API REST à contrôleurs',         'webapi'],
+                     ['✨','Minimal API',   'endpoints légers, sans contrôleurs',    'minimal']],
+        };
+        // Retourne [ic, nom, sub, val] du framework courant, ou null.
+        function frameworkMeta(){
+            const list = FRAMEWORKS[config.stack];
+            if(!list || !config.framework) return null;
+            return list.find(o => o[3] === config.framework) || null;
+        }
 
         /* ─── Les signaux (séquence maïeutique) — que du concret ─── */
         const SIGNALS = [
@@ -392,7 +416,18 @@
         function askStack(){
             botThink(()=> bot("La <b>techno principale</b> du projet, c'est laquelle ? (je génère la structure et le pipeline adaptés)", ()=>{
                 quick(STACKS.map(([ic,title,sub,val])=>[ic,title,sub,()=>{
-                    config.stack = val; mine(title); askDocker();
+                    config.stack = val; config.framework = null; mine(title); askFramework();
+                }]));
+            }));
+        }
+
+        /* ─── framework (dépend de la stack) ─── */
+        function askFramework(){
+            const opts = FRAMEWORKS[config.stack];
+            if(!opts){ config.framework = null; askDocker(); return; }   // pas de framework à choisir
+            botThink(()=> bot("Et sur quel <b>framework</b> ? (j'adapte les dépendances et la structure générées)", ()=>{
+                quick(opts.map(([ic,title,sub,val])=>[ic,title,sub,()=>{
+                    config.framework = val; mine(title); askDocker();
                 }]));
             }));
         }
@@ -412,11 +447,14 @@
             const f = FLOWS[chosenFlow] || FLOWS.feature;
             const stackLabel = (STACKS.find(s=>s[3]===config.stack) || ['📦','Vide'])[1];
             const stackIc = (STACKS.find(s=>s[3]===config.stack) || ['📦'])[0];
+            const fw = frameworkMeta();
+            const fwRow = fw ? `
+                    <div class="recap-row"><span class="ri">${fw[0]}</span><span class="rl">framework</span><span class="rv">${esc(fw[1])}</span><span class="redit" data-e="framework">changer</span></div>` : '';
             const wrap=document.createElement('div'); wrap.className='recap';
             wrap.innerHTML=`
                 <div class="recap-h">✨ Ce que je vais créer</div>
                 <div class="recap-rows">
-                    <div class="recap-row"><span class="ri">${stackIc}</span><span class="rl">stack</span><span class="rv">${esc(stackLabel)}</span><span class="redit" data-e="stack">changer</span></div>
+                    <div class="recap-row"><span class="ri">${stackIc}</span><span class="rl">stack</span><span class="rv">${esc(stackLabel)}</span><span class="redit" data-e="stack">changer</span></div>${fwRow}
                     <div class="recap-row"><span class="ri">${f.ic}</span><span class="rl">flow</span><span class="rv">${f.name}</span><span class="redit" data-e="flow">changer</span></div>
                     <div class="recap-row"><span class="ri">🐳</span><span class="rl">docker</span><span class="rv">${config.options.dockerfile?'Oui, multi-stage':'Non'}</span><span class="redit" data-e="docker">changer</span></div>
                     <div class="recap-row"><span class="ri">🦊</span><span class="rl">ci</span><span class="rv">Template LCL · ${esc(config.stack)} · ${config.workflow}</span></div>
@@ -428,16 +466,19 @@
             thread.appendChild(wrap); scroll();
             wrap.querySelector('[data-go]').onclick=()=>{ wrap.querySelector('.recap-foot').remove(); showScope(); };
             wrap.querySelector('[data-no]').onclick=()=>{ wrap.style.opacity=.5; botThink(()=>bot("Dis-moi quoi 👍",()=>{
-                quick([
+                const items = [
                     ['🌿','Le flow','revenir dessus',()=>{ mine('Le flow'); startFlowSequence(); }],
                     ['🧱','La stack','changer de techno',()=>{ mine('La stack'); askStack(); }],
-                    ['🐳','Docker','activer / désactiver',()=>{ mine('Docker'); askDocker(); }],
-                ]);
+                ];
+                if(FRAMEWORKS[config.stack]) items.push(['🧩','Le framework','changer de framework',()=>{ mine('Le framework'); askFramework(); }]);
+                items.push(['🐳','Docker','activer / désactiver',()=>{ mine('Docker'); askDocker(); }]);
+                quick(items);
             })); };
             wrap.querySelectorAll('.redit').forEach(el=>el.onclick=()=>{
                 wrap.style.opacity=.5;
                 if(el.dataset.e==='flow'){ mine('Revoir le flow'); startFlowSequence(); }
                 else if(el.dataset.e==='stack'){ mine('Revoir la stack'); askStack(); }
+                else if(el.dataset.e==='framework'){ mine('Revoir le framework'); askFramework(); }
                 else { mine('Revoir Docker'); askDocker(); }
             });
         }
@@ -451,7 +492,7 @@
                 <div class="scope-h">🔒 périmètre d'exécution</div>
                 <div class="scope-body">
                     <div class="scope-line"><span class="si sok">✓</span><span>Initialiser la structure <b>${FLOWS[chosenFlow].name}</b> (branche cible <b>${branch}</b>)</span></div>
-                    <div class="scope-line"><span class="si sok">✓</span><span>Écrire les fichiers <b>${esc(config.stack)}</b>${dockerLine} + le <code>.gitlab-ci.yml</code> adapté</span></div>
+                    <div class="scope-line"><span class="si sok">✓</span><span>Écrire les fichiers <b>${esc(config.stack)}${frameworkMeta() ? ' · ' + esc(frameworkMeta()[1]) : ''}</b>${dockerLine} + le <code>.gitlab-ci.yml</code> adapté</span></div>
                     <div class="scope-line"><span class="si sok">✓</span><span>Ouvrir une <b>Merge Request</b></span></div>
                     <div class="scope-line"><span class="si sno">✕</span><span class="sno">Aucun merge. Aucun déploiement. Aucun push direct.</span></div>
                 </div>`;
@@ -724,31 +765,119 @@ CMD ["sh"]
         }
 
         function getPomXml() {
-            return `<?xml version="1.0" encoding="UTF-8"?>
+            const head = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.lcl</groupId>
     <artifactId>${sessionData.projectName}</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    
+    <version>1.0.0-SNAPSHOT</version>`;
+            const name = `
     <name>${sessionData.projectName}</name>
-    <description>${projectDescription || 'Application LCL'}</description>
-    
+    <description>${projectDescription || 'Application LCL'}</description>`;
+
+            if (config.framework === 'jakarta') {
+                // Jakarta EE (ex-J2EE) : war déployé sur un serveur d'application.
+                return `${head}
+    <packaging>war</packaging>
+${name}
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-web-api</artifactId>
+            <version>10.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${sessionData.projectName}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+`;
+            }
+
+            if (config.framework === 'quarkus') {
+                // Quarkus : cloud-native, packaging via le plugin Quarkus.
+                return `${head}
+    <packaging>jar</packaging>
+${name}
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <quarkus.platform.version>3.8.1</quarkus.platform.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>\${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+                <version>\${quarkus.platform.version}</version>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+`;
+            }
+
+            // Spring Boot (défaut) : jar autoportant.
+            return `${head}
+    <packaging>jar</packaging>
+${name}
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.0</version>
     </parent>
-    
+
     <properties>
         <java.version>21</java.version>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -760,7 +889,7 @@ CMD ["sh"]
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -792,7 +921,8 @@ CMD ["sh"]
                         "typescript": "~5.2.0"
                     }
                 }, null, 2);
-            } else {
+            }
+            if (config.framework === 'nest') {
                 return JSON.stringify({
                     name: sessionData.projectName,
                     version: "1.0.0",
@@ -800,17 +930,39 @@ CMD ["sh"]
                     main: "dist/main.js",
                     scripts: {
                         start: "node dist/main.js",
-                        build: "tsc",
-                        dev: "ts-node src/main.ts"
+                        build: "nest build",
+                        dev: "nest start --watch",
+                        test: "jest"
                     },
                     dependencies: {
-                        express: "^4.18.0"
+                        "@nestjs/common": "^10.0.0",
+                        "@nestjs/core": "^10.0.0",
+                        "@nestjs/platform-express": "^10.0.0",
+                        "reflect-metadata": "^0.2.0",
+                        "rxjs": "^7.8.0"
                     },
                     devDependencies: {
-                        typescript: "^5.0.0"
+                        "@nestjs/cli": "^10.0.0",
+                        "typescript": "^5.0.0"
                     }
                 }, null, 2);
             }
+            const nodeDep = config.framework === 'fastify' ? { fastify: "^4.26.0" } : { express: "^4.18.0" };
+            return JSON.stringify({
+                name: sessionData.projectName,
+                version: "1.0.0",
+                description: projectDescription || "",
+                main: "dist/main.js",
+                scripts: {
+                    start: "node dist/main.js",
+                    build: "tsc",
+                    dev: "ts-node src/main.ts"
+                },
+                dependencies: nodeDep,
+                devDependencies: {
+                    typescript: "^5.0.0"
+                }
+            }, null, 2);
         }
 
         function getAngularJson() {
@@ -827,15 +979,22 @@ CMD ["sh"]
             }, null, 2);
         }
 
+        // Dépendances Python selon le framework choisi.
+        function getPythonDeps() {
+            if (config.framework === 'django') return ['Django>=5.0', 'gunicorn>=21.2.0'];
+            if (config.framework === 'flask')  return ['Flask>=3.0.0', 'gunicorn>=21.2.0'];
+            return ['fastapi>=0.100.0', 'uvicorn>=0.23.0', 'pydantic>=2.0.0']; // fastapi (défaut)
+        }
+
         function getPyprojectToml() {
+            const deps = getPythonDeps().map(d => '    "' + d + '",').join('\n');
             return `[project]
 name = "${sessionData.projectName}"
 version = "1.0.0"
 description = "${projectDescription || ''}"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
+${deps}
 ]
 
 [build-system]
@@ -845,9 +1004,52 @@ build-backend = "setuptools.build_meta"
         }
 
         function getRequirementsTxt() {
-            return `fastapi>=0.100.0
-uvicorn>=0.23.0
-pydantic>=2.0.0
+            return getPythonDeps().join('\n') + '\n';
+        }
+
+        // Point d'entrée Python adapté au framework.
+        function getPythonMain() {
+            if (config.framework === 'django') {
+                return `#!/usr/bin/env python
+"""Point d'entrée Django (équivalent manage.py)."""
+import os
+import sys
+
+
+def main():
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "src.settings")
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(sys.argv)
+
+
+if __name__ == "__main__":
+    main()
+`;
+            }
+            if (config.framework === 'flask') {
+                return `from flask import Flask
+
+app = Flask(__name__)
+
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
+`;
+            }
+            // FastAPI (défaut)
+            return `from fastapi import FastAPI
+
+app = FastAPI(title="${sessionData.projectName}")
+
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
 `;
         }
 
@@ -859,6 +1061,31 @@ pydantic>=2.0.0
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 </Project>
+`;
+        }
+
+        // Point d'entrée .NET selon le framework (Web API à contrôleurs / Minimal API).
+        function getDotnetProgram() {
+            if (config.framework === 'minimal') {
+                return `var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+app.MapGet("/", () => new { status = "ok" });
+
+app.Run();
+`;
+            }
+            // ASP.NET Core Web API à contrôleurs (défaut)
+            return `var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+var app = builder.Build();
+
+app.MapControllers();
+
+app.Run();
 `;
         }
 
@@ -1217,7 +1444,7 @@ Voir le [zOps Platform](zops-platform.html) pour:
                     actions.push({ action: 'create', file_path: 'pyproject.toml', content: getPyprojectToml() });
                     actions.push({ action: 'create', file_path: 'requirements.txt', content: getRequirementsTxt() });
                     actions.push({ action: 'create', file_path: 'src/__init__.py', content: '' });
-                    actions.push({ action: 'create', file_path: 'src/main.py', content: '# Entry point\n' });
+                    actions.push({ action: 'create', file_path: 'src/main.py', content: getPythonMain() });
                     createdFiles.push('pyproject.toml', 'requirements.txt', 'src/');
                 } else if (config.stack === 'node') {
                     actions.push({ action: 'create', file_path: 'package.json', content: getPackageJson('node') });
@@ -1225,8 +1452,9 @@ Voir le [zOps Platform](zops-platform.html) pour:
                     createdFiles.push('package.json', 'src/');
                 } else if (config.stack === 'dotnet') {
                     actions.push({ action: 'create', file_path: `${sessionData.projectName}.csproj`, content: getCsproj() });
+                    actions.push({ action: 'create', file_path: 'Program.cs', content: getDotnetProgram() });
                     actions.push({ action: 'create', file_path: 'src/.gitkeep', content: '' });
-                    createdFiles.push(`${sessionData.projectName}.csproj`, 'src/');
+                    createdFiles.push(`${sessionData.projectName}.csproj`, 'Program.cs', 'src/');
                 } else if (config.stack === 'cobol') {
                     // COBOL / Mainframe structure
                     // Override README with mainframe-specific
@@ -1292,7 +1520,7 @@ Voir le [zOps Platform](zops-platform.html) pour:
 
 ### Configuration
 - **Workflow**: ${config.workflow}
-- **Stack**: ${config.stack}
+- **Stack**: ${config.stack}${frameworkMeta() ? '\n- **Framework**: ' + frameworkMeta()[1] : ''}
 
 ### Fichiers créés
 ${createdFiles.map(f => '- `' + f + '`').join('\n')}
