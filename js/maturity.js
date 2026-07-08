@@ -794,7 +794,7 @@ function showToast(message, type = 'info') {
             opacity: 0; transition: opacity .25s ease, transform .25s ease;
             pointer-events: none;
             max-width: 90vw; text-align: center;
-            border: 1px solid var(--border-strong, rgba(255,255,255,0.18));
+            border: 1px solid var(--border-strong, var(--ov-18));
         `;
         document.body.appendChild(toast);
     }
@@ -1425,7 +1425,7 @@ function renderReport() {
             { label:'Déclaratif', data:catScores.map(c=>c.decl), backgroundColor:'rgba(167,139,250,0.15)', borderColor:'rgba(167,139,250,0.6)', borderWidth:2, borderDash:[5,5], pointRadius:4 },
             { label:'Data GitLab', data:catScores.map(c=>c.data??c.decl), backgroundColor:'rgba(96,165,250,0.15)', borderColor:'rgba(96,165,250,0.8)', borderWidth:2, pointRadius:5 }
         ]},
-        options:{ responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100, grid:{ color:'rgba(255,255,255,0.06)' }, pointLabels:{ font:{ size:11 }, color:'rgba(255,255,255,0.6)' } } }, plugins:{ legend:{ labels:{ color:'rgba(255,255,255,0.6)', font:{ size:11 } } } } }
+        options:{ responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100, grid:{ color:cssVar('--chart-grid','rgba(255,255,255,0.06)') }, pointLabels:{ font:{ size:11 }, color:cssVar('--chart-ink','rgba(255,255,255,0.6)') } } }, plugins:{ legend:{ labels:{ color:cssVar('--chart-ink','rgba(255,255,255,0.6)'), font:{ size:11 } } } } }
     });
     window._catScores = catScores;
     document.getElementById('confrontGrid').innerHTML = catScores.map((c,idx) => {
@@ -1948,13 +1948,13 @@ async function renderAccompaniments() {
         html += `<div class="action-category"><div class="ac-header">${icon} ${cat}</div>`;
         catItems.forEach(item => {
             if (item.isDiagnostic) {
-                html += `<div style="background:rgba(255,255,255,0.04);border-left:3px solid rgba(167,139,250,0.5);border-radius:10px;padding:12px 16px;margin-bottom:10px;">`;
+                html += `<div style="background:var(--ov-04);border-left:3px solid rgba(167,139,250,0.5);border-radius:10px;padding:12px 16px;margin-bottom:10px;">`;
                 html += `<div style="font-size:11px;font-weight:700;opacity:0.5;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;">🔍 Diagnostic</div>`;
                 html += `<div class="action-item ${selectedActions.has(item.actions[0].id)?'selected':''}" data-aid="${item.actions[0].id}"><div class="ai-check"></div><div class="ai-content"><div class="ai-task">${item.actions[0].text}</div></div></div>`;
                 html += `</div>`;
             } else {
                 const niveauColor = item.niveau === 1 ? 'rgba(248,113,113,0.3)' : item.niveau === 2 ? 'rgba(251,191,36,0.3)' : 'rgba(96,165,250,0.3)';
-                html += `<div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:14px 16px;margin-bottom:10px;">`;
+                html += `<div style="background:var(--ov-04);border-radius:12px;padding:14px 16px;margin-bottom:10px;">`;
                 html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">`;
                 html += `<div style="font-size:13px;font-weight:700;flex:1;">${item.title}</div>`;
                 if (item.niveau) html += `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${niveauColor}">Niveau ${item.niveau} — ${item.niveauTitre}</span>`;
@@ -1962,7 +1962,7 @@ async function renderAccompaniments() {
                 if (item.dataPoint) html += `<div style="font-size:11px;opacity:0.5;margin-bottom:8px;">📊 ${item.dataPoint}</div>`;
                 item.actions.forEach(action => {
                     const wsLink = action.lien
-                        ? `<a class="ws-link" href="${action.lien}" target="_blank" rel="noopener" title="Ouvrir l'atelier dans Confluence" style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:var(--accent,#a78bfa);text-decoration:none;border:1px solid var(--border-subtle,rgba(255,255,255,0.08));border-radius:6px;padding:3px 10px;">📄 Voir l'atelier</a>`
+                        ? `<a class="ws-link" href="${action.lien}" target="_blank" rel="noopener" title="Ouvrir l'atelier dans Confluence" style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:var(--accent,#a78bfa);text-decoration:none;border:1px solid var(--border-subtle,var(--ov-08));border-radius:6px;padding:3px 10px;">📄 Voir l'atelier</a>`
                         : '';
                     html += `<div class="action-item ${selectedActions.has(action.id)?'selected':''}" data-aid="${action.id}"><div class="ai-check"></div><div class="ai-content"><div class="ai-task">${action.text}</div>${wsLink}</div></div>`;
                 });
@@ -2235,8 +2235,8 @@ function exportActionPlan() {
     .hero::before {
         content: ''; position: absolute; inset: 0;
         background:
-            radial-gradient(800px 300px at 100% -10%, rgba(255,255,255,0.18), transparent 60%),
-            radial-gradient(500px 200px at -10% 110%, rgba(255,255,255,0.10), transparent 60%);
+            radial-gradient(800px 300px at 100% -10%, var(--ov-18), transparent 60%),
+            radial-gradient(500px 200px at -10% 110%, var(--ov-1), transparent 60%);
         pointer-events: none;
     }
     .hero > * { position: relative; }
@@ -2253,9 +2253,9 @@ function exportActionPlan() {
         margin-top: 8px;
     }
     .meta-card {
-        background: rgba(255,255,255,0.13);
+        background: var(--ov-13);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.22);
+        border: 1px solid var(--ov-22);
         border-radius: 12px;
         padding: 14px 18px;
     }

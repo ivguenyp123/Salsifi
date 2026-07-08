@@ -8,8 +8,8 @@
 
 :root {
     /* Palette Hub (synchronisée) */
-    --bg-card-hover:  rgba(40, 28, 70, 0.75);
-    --border-strong:  rgba(255, 255, 255, 0.18);
+    --bg-card-hover:  var(--raise-75);
+    --border-strong:  var(--ov-18);
 
     /* Chemin Mesurer (violet — analytique) */
     --accent:        #7c5cff;
@@ -267,7 +267,7 @@ body::after {
 /* Progress vers Elite */
 .elite-bar {
     height: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 3px;
     margin-bottom: 6px;
     overflow: hidden;
@@ -390,7 +390,7 @@ body::after {
 .score-row-bar {
     flex: 2;
     height: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -468,7 +468,7 @@ body::after {
 .qw-col-badge.high   { background: rgba(96, 165, 250, 0.15); color: var(--high); }
 .qw-col-badge.medium { background: rgba(251, 191, 36, 0.15); color: var(--medium); }
 .qw-col-badge.low    { background: rgba(251, 113, 133, 0.15); color: var(--low); }
-.qw-col-bar { height: 4px; background: rgba(255, 255, 255, 0.06); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.qw-col-bar { height: 4px; background: var(--ov-06); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
 .qw-col-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 .qw-col-bar-fill.elite  { background: var(--elite); }
 .qw-col-bar-fill.high   { background: var(--high); }
@@ -533,7 +533,7 @@ body::after {
     align-items: flex-start;
     padding: 14px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--ov-03);
     border: 1px solid var(--border-subtle);
     margin-bottom: 10px;
     font-size: 13px;

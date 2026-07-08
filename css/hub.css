@@ -1,7 +1,7 @@
         :root {
             /* Palette Hub */
-            --bg-card-hover:  rgba(40, 28, 70, 0.75);
-            --border-strong:  rgba(255, 255, 255, 0.18);
+            --bg-card-hover:  var(--raise-75);
+            --border-strong:  var(--ov-18);
 
             /* Couleurs des 4 directions */
 /* violet — analytique */
@@ -113,6 +113,7 @@
             transition: all 0.2s;
         }
         .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--border-strong); }
+        .theme-toggle { padding: 8px 11px; font-size: 15px; line-height: 1; }
         .user-pill {
             display: flex; align-items: center; gap: 10px;
             background: var(--bg-card);
@@ -276,9 +277,9 @@
             height: 28px;
             border-radius: 6px;
             background: linear-gradient(90deg,
-                rgba(255,255,255,0.04) 0%,
-                rgba(255,255,255,0.10) 50%,
-                rgba(255,255,255,0.04) 100%);
+                var(--ov-04) 0%,
+                var(--ov-1) 50%,
+                var(--ov-04) 100%);
             background-size: 200% 100%;
             animation: skeletonShimmer 1.4s infinite;
             vertical-align: middle;
@@ -393,13 +394,13 @@
             font-weight: 500;
             padding: 5px 11px;
             border-radius: 100px;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--ov-06);
             border: 1px solid var(--border-subtle);
             color: var(--text-secondary);
             transition: all 0.2s;
         }
         .direction-card:hover .module-chip {
-            background: rgba(255, 255, 255, 0.10);
+            background: var(--ov-1);
             border-color: var(--border-strong);
             color: var(--text-primary);
         }
@@ -471,9 +472,9 @@
         .sugg-skel-tag, .sugg-skel-text, .sugg-skel-cta {
             border-radius: 6px;
             background: linear-gradient(90deg,
-                rgba(255,255,255,0.04) 0%,
-                rgba(255,255,255,0.08) 50%,
-                rgba(255,255,255,0.04) 100%);
+                var(--ov-04) 0%,
+                var(--ov-08) 50%,
+                var(--ov-04) 100%);
             background-size: 200% 100%;
             animation: skeletonShimmer 1.4s infinite;
         }
@@ -526,7 +527,7 @@
             background:
                 radial-gradient(ellipse 760px 520px at 15% 8%, var(--mood-1, rgba(124,92,255,0.18)), transparent 60%),
                 radial-gradient(ellipse 640px 480px at 88% 18%, var(--mood-2, rgba(45,212,191,0.10)), transparent 60%),
-                linear-gradient(rgba(15, 10, 31, 0.90), rgba(15, 10, 31, 0.92));
+                linear-gradient(var(--glass-9), var(--glass-92));
             backdrop-filter: blur(20px);
             z-index: 100;
             opacity: 0;
@@ -668,9 +669,9 @@
             width: 90px;
             border-radius: 6px;
             background: linear-gradient(90deg,
-                rgba(255,255,255,0.04) 0%,
-                rgba(255,255,255,0.10) 50%,
-                rgba(255,255,255,0.04) 100%);
+                var(--ov-04) 0%,
+                var(--ov-1) 50%,
+                var(--ov-04) 100%);
             background-size: 200% 100%;
             animation: skeletonShimmer 1.4s infinite;
         }
@@ -1023,8 +1024,8 @@
             width: calc(100% - 16px);
             margin: 8px;
             padding: 10px 12px;
-            background: rgba(255,255,255,0.04);
-            border: 1px dashed rgba(255,255,255,0.15);
+            background: var(--ov-04);
+            border: 1px dashed var(--ov-15);
             border-radius: 8px;
             color: var(--text-muted);
             font-size: 13px;
@@ -1033,9 +1034,9 @@
             transition: background 120ms, color 120ms, border-color 120ms;
         }
         .repo-load-more:hover:not(:disabled) {
-            background: rgba(255,255,255,0.07);
+            background: var(--ov-07);
             color: var(--text);
-            border-color: rgba(255,255,255,0.25);
+            border-color: var(--ov-25);
         }
         .repo-load-more:disabled {
             opacity: 0.6;
@@ -1050,9 +1051,9 @@
             margin: 4px 0;
             border-radius: 8px;
             background: linear-gradient(90deg,
-                rgba(255,255,255,0.04) 0%,
-                rgba(255,255,255,0.08) 50%,
-                rgba(255,255,255,0.04) 100%);
+                var(--ov-04) 0%,
+                var(--ov-08) 50%,
+                var(--ov-04) 100%);
             background-size: 200% 100%;
             animation: skeletonShimmer 1.4s infinite;
         }
@@ -1140,7 +1141,7 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .ws-item:hover { background: rgba(255,255,255,0.05); }
+        .ws-item:hover { background: var(--ov-05); }
         .ws-item-icon {
             width: 32px; height: 32px;
             border-radius: 8px;
@@ -1161,7 +1162,7 @@
             cursor: pointer;
             border-radius: 10px;
         }
-        .ws-manage:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .ws-manage:hover { background: var(--ov-05); color: var(--text-primary); }
         .ws-manage .ws-manage-hint { font-size: 10px; color: var(--text-muted); }
 
         /* Breadcrumb workspace : remplace le picker repo en vue workspace */
@@ -1343,7 +1344,7 @@
             color: var(--m-accent);
             padding: 4px 10px;
             border-radius: 100px;
-            background: rgba(255,255,255,0.04);
+            background: var(--ov-04);
             border: 1px solid var(--border-subtle);
         }
         .ws-module-name {
@@ -1437,14 +1438,14 @@
             width: 26px; height: 26px;
             border-radius: 6px;
             border: 1px solid var(--border-subtle);
-            background: rgba(255,255,255,0.04);
+            background: var(--ov-04);
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 12px;
             display: flex; align-items: center; justify-content: center;
             transition: all 0.15s;
         }
-        .ws-item-action:hover { background: rgba(255,255,255,0.10); color: var(--text-primary); }
+        .ws-item-action:hover { background: var(--ov-1); color: var(--text-primary); }
         .ws-item-action.is-danger:hover { background: rgba(251, 113, 133, 0.15); color: #fb7185; border-color: rgba(251, 113, 133, 0.3); }
 
         /* Bouton "Ajouter repo" dans la vue workspace */
@@ -1473,7 +1474,7 @@
         .ws-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 10, 31, 0.75);
+            background: var(--glass-75);
             backdrop-filter: blur(8px);
             z-index: 200;
             display: none;
@@ -1515,7 +1516,7 @@
         .ws-modal-close {
             width: 32px; height: 32px;
             border-radius: 8px;
-            background: rgba(255,255,255,0.05);
+            background: var(--ov-05);
             border: 1px solid var(--border-subtle);
             color: var(--text-secondary);
             cursor: pointer;
@@ -1523,7 +1524,7 @@
             display: flex; align-items: center; justify-content: center;
             transition: all 0.15s;
         }
-        .ws-modal-close:hover { background: rgba(255,255,255,0.10); color: var(--text-primary); }
+        .ws-modal-close:hover { background: var(--ov-1); color: var(--text-primary); }
         .ws-modal-search {
             padding: 14px 28px;
             border-bottom: 1px solid var(--border-subtle);
@@ -1590,14 +1591,14 @@
             letter-spacing: 0.06em;
             padding: 3px 8px;
             border-radius: 100px;
-            background: rgba(255,255,255,0.06);
+            background: var(--ov-06);
             color: var(--text-secondary);
             flex-shrink: 0;
         }
         .ws-modal-badge.private  { background: rgba(251, 191, 36, 0.15);  color: #fbbf24; }
         .ws-modal-badge.public   { background: rgba(45, 212, 191, 0.15);  color: #2dd4bf; }
         .ws-modal-badge.internal { background: rgba(124, 92, 255, 0.15);  color: #a78bfa; }
-        .ws-modal-badge.added    { background: rgba(255,255,255,0.05);    color: var(--text-muted); }
+        .ws-modal-badge.added    { background: var(--ov-05);    color: var(--text-muted); }
         .ws-modal-foot {
             padding: 16px 28px;
             border-top: 1px solid var(--border-subtle);

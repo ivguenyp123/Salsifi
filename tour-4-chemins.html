@@ -7,14 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/theme.css">
     <style>
         :root {
-            --bg-deep:        #0f0a1f;
-            --bg-mid:         #1a1230;
-            --bg-card:        rgba(28, 20, 50, 0.6);
-            --bg-card-hover:  rgba(40, 28, 70, 0.75);
-            --border-subtle:  rgba(255, 255, 255, 0.08);
-            --border-strong:  rgba(255, 255, 255, 0.18);
+            
+            
+            --bg-card:        var(--card-6);
+            --bg-card-hover:  var(--raise-75);
+            --border-subtle:  var(--ov-08);
+            --border-strong:  var(--ov-18);
             --text-primary:   #f5f1ff;
             --text-secondary: #b8aed8;
             --text-muted:     #7a6fa3;
@@ -67,7 +69,7 @@
             position: fixed;
             inset: 0;
             z-index: 100;
-            background: rgba(15, 10, 31, 0.85);
+            background: var(--glass-85);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             display: flex;
@@ -144,7 +146,7 @@
         .tour-progress-dot {
             width: 8px; height: 8px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--ov-15);
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -154,7 +156,7 @@
             background: var(--accent, var(--text-primary));
         }
         .tour-progress-dot.completed {
-            background: rgba(255, 255, 255, 0.4);
+            background: var(--ov-4);
         }
 
         /* ===========================================================
@@ -215,7 +217,7 @@
             position: relative;
             box-shadow:
                 0 20px 60px rgba(124, 92, 255, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                inset 0 1px 0 var(--ov-2);
             animation: logoFloat 4s ease-in-out infinite;
         }
         .welcome-logo::after {
@@ -282,14 +284,14 @@
             cursor: pointer;
             box-shadow:
                 0 12px 32px rgba(124, 92, 255, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                inset 0 1px 0 var(--ov-2);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .welcome-cta:hover {
             transform: translateY(-2px);
             box-shadow:
                 0 16px 40px rgba(124, 92, 255, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                inset 0 1px 0 var(--ov-2);
         }
         .welcome-cta:active { transform: translateY(0); }
 

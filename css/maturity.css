@@ -8,8 +8,8 @@
 
 :root {
     /* Palette Hub (synchronisée) */
-    --bg-card-hover:  rgba(40, 28, 70, 0.75);
-    --border-strong:  rgba(255, 255, 255, 0.18);
+    --bg-card-hover:  var(--raise-75);
+    --border-strong:  var(--ov-18);
 
     /* Chemin Mesurer (violet — analytique) */
     --accent:        #7c5cff;
@@ -73,7 +73,7 @@ body::after {
     align-items: center;
     gap: 16px;
     padding: 14px 32px;
-    background: rgba(15, 10, 31, 0.7);
+    background: var(--glass-7);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid var(--border-subtle);
@@ -233,7 +233,7 @@ body::after {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--ov-04);
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
     padding: 10px 16px;
@@ -242,7 +242,7 @@ body::after {
     color: var(--text-primary);
 }
 .axe-chip .ac-count {
-    background: rgba(255, 255, 255, 0.10);
+    background: var(--ov-1);
     padding: 2px 8px;
     border-radius: 8px;
     font-size: 11px;
@@ -387,7 +387,7 @@ body::after {
 .qp-bar {
     flex: 1;
     height: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -476,7 +476,7 @@ body::after {
 .lvl-opt { cursor: pointer; }
 .lvl-opt input { display: none; }
 .lvl-box {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--ov-03);
     border: 2px solid var(--border-subtle);
     border-radius: 12px;
     padding: 14px 4px;
@@ -485,7 +485,7 @@ body::after {
     cursor: pointer;
 }
 .lvl-box:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-color: var(--border-strong);
     transform: translateY(-2px);
 }
@@ -508,7 +508,7 @@ body::after {
     text-transform: uppercase;
     margin-top: 2px;
 }
-.lvl-opt input:checked + .lvl-box .lvl-lbl { color: rgba(255, 255, 255, 0.95); }
+.lvl-opt input:checked + .lvl-box .lvl-lbl { color: var(--ov-95); }
 
 .quiz-nav {
     display: flex;
@@ -584,7 +584,7 @@ body::after {
 }
 .ld-bar {
     height: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 20px;
@@ -751,7 +751,7 @@ body::after {
 .cf-bar-track {
     flex: 1;
     height: 8px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -794,7 +794,7 @@ body::after {
     position: fixed;
     inset: 0;
     z-index: 200;
-    background: rgba(15, 10, 31, 0.75);
+    background: var(--glass-75);
     backdrop-filter: blur(16px);
     display: flex;
     align-items: center;
@@ -881,7 +881,7 @@ body::after {
 }
 .cf-modal-bar-track {
     height: 10px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 5px;
     overflow: hidden;
     margin-bottom: 6px;
@@ -920,7 +920,7 @@ body::after {
     margin-bottom: 14px;
 }
 .cf-detail-item {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--ov-03);
     border: 1px solid var(--border-subtle);
     border-radius: 14px;
     padding: 18px 20px;
@@ -963,7 +963,7 @@ body::after {
     font-size: 13px;
     line-height: 1.65;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--ov-03);
     border-radius: 10px;
     padding: 12px 14px;
 }
@@ -1036,7 +1036,7 @@ body::after {
 }
 
 .action-item {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--ov-02);
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
     padding: 14px 18px;
@@ -1048,7 +1048,7 @@ body::after {
     cursor: pointer;
 }
 .action-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--ov-05);
     border-color: var(--border-strong);
 }
 .action-item.selected {
@@ -1070,7 +1070,7 @@ body::after {
     border-radius: 6px;
     flex-shrink: 0;
     margin-top: 2px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--ov-04);
     border: 2px solid var(--border-strong);
     display: flex;
     align-items: center;
@@ -1095,7 +1095,7 @@ body::after {
     font-weight: 600;
     padding: 3px 9px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--ov-05);
     border: 1px solid var(--border-subtle);
     color: var(--text-secondary);
     letter-spacing: 0.02em;

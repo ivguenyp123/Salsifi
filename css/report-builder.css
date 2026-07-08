@@ -4,8 +4,8 @@
  * Réutilise css/theme.css ; ne définit ici que le spécifique.
  */
 :root {
-  --bg-card-hover: rgba(40, 28, 70, .75);
-  --border-strong: rgba(255, 255, 255, .18);
+  --bg-card-hover: var(--raise-75);
+  --border-strong: var(--ov-18);
   --ok: #34d399;
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'Manrope', system-ui, sans-serif;

@@ -8,9 +8,9 @@
 
 :root {
     /* Palette Hub */
-    --bg-card-hover:  rgba(40, 28, 70, 0.75);
+    --bg-card-hover:  var(--raise-75);
     --bg-card-lift:   rgba(50, 38, 90, 0.85);
-    --border-strong:  rgba(255, 255, 255, 0.18);
+    --border-strong:  var(--ov-18);
 
     /* Chemin Mesurer (violet) */
     --accent:        #7c5cff;
@@ -78,7 +78,7 @@ body::after {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(15, 10, 31, 0.7);
+    background: var(--glass-7);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid var(--border-subtle);
@@ -469,7 +469,7 @@ body::after {
 .contributor-progress {
     flex: 1;
     height: 8px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 4px;
     overflow: hidden;
     max-width: 200px;
@@ -644,7 +644,7 @@ body::after {
 .branch-contributor-bar {
     width: 60px;
     height: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -749,7 +749,7 @@ body::after {
 .dev-ownership-bar {
     flex: 1;
     height: 10px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ov-06);
     border-radius: 5px;
     overflow: hidden;
 }

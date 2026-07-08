@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/theme.js"></script>
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/hub.css">
 </head>
@@ -42,6 +43,7 @@
                 </div>
             </div>
             <div class="header-actions">
+                <button class="header-btn theme-toggle" id="themeToggle" onclick="salsifiToggleTheme()" title="Basculer le thème" aria-label="Basculer clair / sombre">🌙</button>
                 <button class="header-btn">📚 Documentation</button>
                 <div style="position: relative;" id="wsPillWrap">
                     <div class="ws-pill" id="wsPill" onclick="wsToggleDropdown(event)">
@@ -345,5 +347,20 @@
     <script src="js/common/auth.js"></script>
     <script src="js/common/workshops.js"></script>
     <script src="js/hub.js"></script>
+    <script>
+        // Sélecteur de thème : bascule + synchro de l'icône (soleil / lune).
+        (function () {
+            var btn = document.getElementById('themeToggle');
+            if (!btn || !window.SalsifiTheme) return;
+            function sync() {
+                var light = window.SalsifiTheme.get() === 'light';
+                btn.textContent = light ? '☀️' : '🌙';
+                btn.title = light ? 'Passer en mode sombre' : 'Passer en mode clair';
+            }
+            window.salsifiToggleTheme = function () { window.SalsifiTheme.toggle(); sync(); };
+            window.addEventListener('salsifi:themechange', sync);
+            sync();
+        })();
+    </script>
 </body>
 </html>

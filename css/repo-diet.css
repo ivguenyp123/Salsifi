@@ -3,8 +3,8 @@
    Module « Inspecter & Sécuriser » → accent --inspect (orange-ambre).
    ═══════════════════════════════════════════════════════════════ */
 :root {
---bg-card-hover:rgba(40,28,70,0.75);
---border-strong:rgba(255,255,255,0.18);
+--bg-card-hover:var(--raise-75);
+--border-strong:var(--ov-18);
 --inspect-glow:rgba(251,146,60,0.4);  --ok:#34d399;--accent:var(--inspect); --accent-glow:var(--inspect-glow);
   --brand-gradient:linear-gradient(135deg,var(--inspect),var(--collab));
   --font-display:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,sans-serif;
@@ -18,7 +18,7 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .container { max-width:1280px; margin:0 auto; position:relative; z-index:1; }
 
 /* HEADER */
-.header { display:flex; align-items:center; gap:16px; padding:18px 24px; margin-bottom:22px; background:rgba(15,10,31,0.6); backdrop-filter:blur(20px); border-radius:16px; border:1px solid var(--border-subtle); }
+.header { display:flex; align-items:center; gap:16px; padding:18px 24px; margin-bottom:22px; background:var(--glass-6); backdrop-filter:blur(20px); border-radius:16px; border:1px solid var(--border-subtle); }
 .header-left { display:flex; align-items:center; gap:16px; flex:1; }
 .back-btn { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--bg-card); border:1px solid var(--border-subtle); color:var(--text-secondary); text-decoration:none; font-size:18px; transition:all 0.2s; }
 .back-btn:hover { background:var(--bg-card-hover); color:var(--text-primary); transform:translateX(-2px); }
@@ -116,7 +116,7 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 .history-stat-value { font-family:var(--font-display); font-size:18px; font-weight:700; }
 
 /* MODAL */
-.modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,10,31,0.8); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; }
+.modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:var(--glass-8); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.show { display:flex; }
 .modal-content { background:var(--bg-mid); border:1px solid var(--border-strong); border-radius:18px; max-width:680px; width:100%; max-height:82vh; display:flex; flex-direction:column; overflow:hidden; }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid var(--border-subtle); }

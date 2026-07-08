@@ -251,12 +251,12 @@
                 '<span style="display:flex;align-items:center;gap:5px;">' +
                 '<span style="width:9px;height:9px;border-radius:2px;background:rgba(124,92,252,0.75);display:inline-block;"></span>' +
                 'Créations <strong style="color:#a78bfa;margin-left:3px;">' + data.totalCreates + '</strong>' +
-                '<span style="color:rgba(255,255,255,0.3);font-size:10px;margin-left:2px;">(4 sem: ' + last4c + ')</span>' +
+                '<span style="color:var(--ov-3);font-size:10px;margin-left:2px;">(4 sem: ' + last4c + ')</span>' +
                 '</span>' +
                 '<span style="display:flex;align-items:center;gap:5px;">' +
                 '<span style="width:9px;height:9px;border-radius:2px;background:rgba(110,231,183,0.65);display:inline-block;"></span>' +
                 'Suppressions <strong style="color:#6ee7b7;margin-left:3px;">' + data.totalDeletes + '</strong>' +
-                '<span style="color:rgba(255,255,255,0.3);font-size:10px;margin-left:2px;">(4 sem: ' + last4d + ')</span>' +
+                '<span style="color:var(--ov-3);font-size:10px;margin-left:2px;">(4 sem: ' + last4d + ')</span>' +
                 '</span>';
         }
 
@@ -879,7 +879,7 @@
                         (critCount > 0 ? '<strong style="color:#fca5a5;">' + critCount + ' flag(s) critique(s)</strong> ' : '') +
                         (detteCount > 0 ? '<span style="color:#fcd34d;">' + detteCount + ' flag(s) en dette</span>' : '') +
                         ' — action requise</span>' +
-                        '<button id="cta-goto-flags" style="padding:8px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:9px;color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Voir les flags →</button>';
+                        '<button id="cta-goto-flags" style="padding:8px 16px;background:var(--ov-15);border:1px solid var(--ov-3);border-radius:9px;color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Voir les flags →</button>';
                     ctaEl.querySelector('#cta-goto-flags')?.addEventListener('click', goToFlagsTab);
                 } else {
                     ctaEl.style.display = 'none';
@@ -3105,7 +3105,7 @@ Flags existants: ${existingFlags.join(', ')}`
             }
 
             if (flags.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:36px;color:rgba(255,255,255,0.35);">Aucun flag correspondant</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ov-35);">Aucun flag correspondant</td></tr>';
                 return;
             }
 
@@ -3113,11 +3113,11 @@ Flags existants: ${existingFlags.join(', ')}`
                 var scopes = [];
                 (flag.strategies || []).forEach(function(s){ (s.scopes || []).forEach(function(sc){ scopes.push(sc.environment_scope || '*'); }); });
                 var envs = scopes.filter(function(v,i,a){ return a.indexOf(v) === i; });
-                if (!envs.length || envs.indexOf('*') !== -1) return '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.12);margin-right:3px;">*</span>';
+                if (!envs.length || envs.indexOf('*') !== -1) return '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--ov-12);margin-right:3px;">*</span>';
                 return envs.map(function(e){
                     // 'production' mis en évidence (vert) — c'est l'info la plus importante
                     var isProd = e === 'production';
-                    var bg = isProd ? 'rgba(52,211,153,0.22)' : 'rgba(255,255,255,0.12)';
+                    var bg = isProd ? 'rgba(52,211,153,0.22)' : cssVar('--chart-grid','rgba(255,255,255,0.12)');
                     var col = isProd ? '#34d399' : 'inherit';
                     var wt  = isProd ? 'font-weight:700;' : '';
                     return '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + bg + ';color:' + col + ';' + wt + 'margin-right:3px;">' + escapeAttr(e) + '</span>';
@@ -3141,7 +3141,7 @@ Flags existants: ${existingFlags.join(', ')}`
             //   • en prod, 0 info    → "✓" (présence confirmée, durée inconnue)
             function prodCell(f) {
                 if (!f.inProd) {
-                    return '<span style="font-size:11px;color:rgba(255,255,255,0.3);">— hors prod</span>';
+                    return '<span style="font-size:11px;color:var(--ov-3);">— hors prod</span>';
                 }
                 // debtDays = meilleure estimation dispo de la durée en prod
                 var d = (f.prodSinceDays != null) ? f.prodSinceDays
@@ -3227,7 +3227,7 @@ Flags existants: ${existingFlags.join(', ')}`
                     html += '<tr class="family-header-row" data-family="' + escapeAttr(label) + '" data-action="toggle-family" style="cursor:pointer;">' +
                         '<td colspan="7" style="background:rgba(124,92,252,0.10);border-top:1px solid rgba(124,92,252,0.25);padding:9px 14px;">' +
                             '<span style="font-size:13px;font-weight:800;color:#c4b5fd;">' + caret + ' ' + escapeHtml(dispLabel) + '</span>' +
-                            '<span style="font-size:11px;color:rgba(255,255,255,0.45);margin-left:8px;">' + members.length + ' flag' + (members.length>1?'s':'') + '</span>' +
+                            '<span style="font-size:11px;color:var(--ov-45);margin-left:8px;">' + members.length + ' flag' + (members.length>1?'s':'') + '</span>' +
                         '</td>' +
                     '</tr>';
                     if (!collapsed) html += members.map(renderFlagRow).join('');
@@ -3264,7 +3264,7 @@ Flags existants: ${existingFlags.join(', ')}`
             style.textContent =
                 '.sortable-th { cursor:pointer; transition: color 0.2s; }' +
                 '.sortable-th:hover { color: white; }' +
-                '.sort-icon { font-size:10px; color:rgba(255,255,255,0.25); margin-left:4px; transition: color 0.2s; }';
+                '.sort-icon { font-size:10px; color:var(--ov-25); margin-left:4px; transition: color 0.2s; }';
             document.head.appendChild(style);
         })();
 

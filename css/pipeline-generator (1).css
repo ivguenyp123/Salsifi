@@ -3,12 +3,12 @@
    Module du chemin « Livrer & Déployer » → accent --deliver (cyan-vert).
    ═══════════════════════════════════════════════════════════════ */
 :root {
-    --bg-deep:        #0f0a1f;
-    --bg-mid:         #1a1230;
-    --bg-card:        rgba(28, 20, 50, 0.6);
-    --bg-card-hover:  rgba(40, 28, 70, 0.75);
-    --border-subtle:  rgba(255, 255, 255, 0.08);
-    --border-strong:  rgba(255, 255, 255, 0.18);
+    
+    
+    --bg-card:        var(--card-6);
+    --bg-card-hover:  var(--raise-75);
+    --border-subtle:  var(--ov-08);
+    --border-strong:  var(--ov-18);
     --text-primary:   #f5f1ff;
     --text-secondary: #b8aed8;
     --text-muted:     #7a6fa3;
@@ -60,7 +60,7 @@ body::before {
 .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 24px; margin-bottom: 22px;
-    background: rgba(15, 10, 31, 0.6);
+    background: var(--glass-6);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
@@ -322,7 +322,7 @@ body::before {
 /* ═══════════ SECRETS PREVIEW MODAL ═══════════ */
 .secrets-preview-modal {
     display: none; position: fixed; inset: 0; z-index: 100;
-    background: rgba(15,10,31,0.8); backdrop-filter: blur(8px);
+    background: var(--glass-8); backdrop-filter: blur(8px);
     align-items: center; justify-content: center; padding: 20px;
 }
 .secrets-preview-modal.show { display: flex; }

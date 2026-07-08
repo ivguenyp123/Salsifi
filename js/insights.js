@@ -470,15 +470,15 @@ function renderDoraCards(v) {
 
     const cfrWindows = v.cfr !== null ? `
         <div style="display:flex;gap:10px;margin-top:8px;margin-bottom:4px">
-            <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;text-align:center">
+            <div style="flex:1;background:var(--ov-08);border-radius:8px;padding:6px 10px;text-align:center">
                 <div style="font-size:10px;opacity:0.6;margin-bottom:2px">30j</div>
                 <div style="font-size:14px;font-weight:700;color:#fca5a5">${v.cfr30 !== null ? v.cfr30+'%' : 'N/A'}</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;text-align:center">
+            <div style="flex:1;background:var(--ov-08);border-radius:8px;padding:6px 10px;text-align:center">
                 <div style="font-size:10px;opacity:0.6;margin-bottom:2px">10j</div>
                 <div style="font-size:14px;font-weight:700;color:#fca5a5">${v.cfr10 !== null ? v.cfr10+'%' : '—'}</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;text-align:center">
+            <div style="flex:1;background:var(--ov-08);border-radius:8px;padding:6px 10px;text-align:center">
                 <div style="font-size:10px;opacity:0.6;margin-bottom:2px">5j</div>
                 <div style="font-size:14px;font-weight:700;color:#fca5a5">${v.cfr5 !== null ? v.cfr5+'%' : '—'}</div>
             </div>
@@ -697,22 +697,22 @@ function renderEvolutionChart(pipelines30, mergeRequests) {
             },
             scales: {
                 x: {
-                    ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 10 } },
-                    grid: { color: 'rgba(255,255,255,0.08)' }
+                    ticks: { color: cssVar('--chart-ink','rgba(255,255,255,0.6)'), font: { size: 10 } },
+                    grid: { color: cssVar('--chart-grid','rgba(255,255,255,0.08)') }
                 },
                 y: {
                     type: 'linear',
                     position: 'left',
-                    title: { display: true, text: 'Déploiements', color: 'rgba(255,255,255,0.6)' },
-                    ticks: { color: 'rgba(255,255,255,0.6)' },
-                    grid: { color: 'rgba(255,255,255,0.08)' },
+                    title: { display: true, text: 'Déploiements', color: cssVar('--chart-ink','rgba(255,255,255,0.6)') },
+                    ticks: { color: cssVar('--chart-ink','rgba(255,255,255,0.6)') },
+                    grid: { color: cssVar('--chart-grid','rgba(255,255,255,0.08)') },
                     min: 0
                 },
                 y1: {
                     type: 'linear',
                     position: 'right',
-                    title: { display: true, text: 'Lead Time (h)', color: 'rgba(255,255,255,0.6)' },
-                    ticks: { color: 'rgba(255,255,255,0.6)' },
+                    title: { display: true, text: 'Lead Time (h)', color: cssVar('--chart-ink','rgba(255,255,255,0.6)') },
+                    ticks: { color: cssVar('--chart-ink','rgba(255,255,255,0.6)') },
                     grid: { drawOnChartArea: false },
                     min: 0
                 }
@@ -1007,25 +1007,25 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
        background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95);
        min-height:100vh;color:white;padding:40px; }
 .container { max-width:900px;margin:0 auto; }
-.header { text-align:center;padding:40px;background:rgba(255,255,255,0.1);border-radius:24px;
-          border:1px solid rgba(255,255,255,0.2);margin-bottom:40px; }
+.header { text-align:center;padding:40px;background:var(--ov-1);border-radius:24px;
+          border:1px solid var(--ov-2);margin-bottom:40px; }
 .header h1 { font-size:32px;font-weight:800;margin-bottom:8px; }
 .header p { opacity:0.7;font-size:15px; }
-.project { display:inline-block;padding:10px 20px;background:rgba(255,255,255,0.15);
+.project { display:inline-block;padding:10px 20px;background:var(--ov-15);
            border-radius:12px;font-size:16px;font-weight:600;margin-top:16px; }
 .section-title { font-size:20px;font-weight:700;margin:30px 0 16px;
-                 padding-bottom:10px;border-bottom:2px solid rgba(255,255,255,0.2); }
-.score-global { text-align:center;padding:30px;background:rgba(255,255,255,0.1);border-radius:20px;
-                border:1px solid rgba(255,255,255,0.2);margin-bottom:30px; }
+                 padding-bottom:10px;border-bottom:2px solid var(--ov-2); }
+.score-global { text-align:center;padding:30px;background:var(--ov-1);border-radius:20px;
+                border:1px solid var(--ov-2);margin-bottom:30px; }
 .score-value { font-size:64px;font-weight:800; }
 .score-level { font-size:20px;font-weight:700;margin-top:8px; }
 .dora-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px; }
-.dora-card { background:rgba(255,255,255,0.1);border-radius:16px;padding:24px;
-             border:1px solid rgba(255,255,255,0.2); }
+.dora-card { background:var(--ov-1);border-radius:16px;padding:24px;
+             border:1px solid var(--ov-2); }
 .dora-name { font-size:13px;font-weight:600;opacity:0.8;margin-bottom:8px; }
 .dora-val { font-size:36px;font-weight:800;margin-bottom:8px; }
 .dora-badge { display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600; }
-.method-note { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);
+.method-note { background:var(--ov-07);border:1px solid var(--ov-15);
                border-radius:12px;padding:16px;font-size:12px;opacity:0.75;margin-top:20px;line-height:1.7; }
 .footer { text-align:center;margin-top:40px;opacity:0.5;font-size:13px; }
 </style></head><body><div class="container">

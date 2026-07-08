@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feature Flag Manager - LCL DevOps Hub</title>
     <link rel="stylesheet" href="css/feature-flag-manager.css">
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/theme.css">
     <style>
         /* Contrôles de regroupement par famille */
         .family-select {
-            background: rgba(255,255,255,0.06);
-            color: #e6e6f0;
-            border: 1px solid rgba(255,255,255,0.14);
+            background: var(--ov-06);
+            color: var(--text-primary);
+            border: 1px solid var(--ov-14);
             border-radius: 10px;
             padding: 7px 12px;
             font-size: 12px;
@@ -30,13 +32,13 @@
             gap: 7px;
             font-size: 12px;
             font-weight: 600;
-            color: rgba(255,255,255,0.75);
+            color: var(--ov-75);
             cursor: pointer;
             user-select: none;
             padding: 6px 10px;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--ov-12);
+            background: var(--ov-04);
             transition: border-color .15s, background .15s;
         }
         .grouped-toggle-label:hover { border-color: rgba(124,92,252,0.5); }

@@ -473,7 +473,7 @@
             border-radius: 12px; 
             padding: 25px 20px; 
             text-align: center;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid var(--ov-1);
             transition: all 0.3s;
         }
         .score-box:hover {
@@ -488,7 +488,7 @@
             margin-bottom: 10px;
         }
         .score-box .label { 
-            color: rgba(255,255,255,0.7); 
+            color: var(--ov-7); 
             font-size: 0.85em;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -503,7 +503,7 @@
             border-radius: 16px; 
             padding: 25px 30px; 
             margin-bottom: 25px;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid var(--ov-1);
         }
         .section h2 { 
             font-family: 'Press Start 2P', cursive; 
@@ -516,7 +516,7 @@
         /* Items */
         .it { 
             padding: 14px 18px; 
-            background: rgba(255,255,255,0.05); 
+            background: var(--ov-05); 
             border-radius: 8px; 
             margin-bottom: 10px;
             border-left: 4px solid transparent;
@@ -532,7 +532,7 @@
             background: rgba(0,0,0,0.4); 
             border-radius: 12px; 
             min-width: 120px;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid var(--ov-1);
         }
         .player:first-child { border-color: #ffd93d; box-shadow: 0 0 15px rgba(255,217,61,0.3); }
         .player .avatar { 
@@ -546,7 +546,7 @@
             justify-content: center; 
             font-weight: 700;
             font-size: 1.3em;
-            border: 3px solid rgba(255,255,255,0.3);
+            border: 3px solid var(--ov-3);
         }
         .player:first-child .avatar { border-color: #ffd93d; }
         .player .name { font-weight: 700; margin-bottom: 5px; }
@@ -566,7 +566,7 @@
         .footer { 
             text-align: center; 
             padding: 30px; 
-            color: rgba(255,255,255,0.5); 
+            color: var(--ov-5); 
             font-size: 0.85em;
         }
         .footer .brand {
@@ -987,7 +987,7 @@
                 <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border-left: 4px solid ${typeColors[a.type]};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-weight: 700;">${a.icon} ${escapeHtml(a.title)}</span>
-                        <span style="font-size: 9px; padding: 3px 8px; border-radius: 10px; background: rgba(255,255,255,0.1);">${escapeHtml(a.type.toUpperCase())}</span>
+                        <span style="font-size: 9px; padding: 3px 8px; border-radius: 10px; background: var(--ov-1);">${escapeHtml(a.type.toUpperCase())}</span>
                     </div>
                     <div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${escapeHtml(a.description)}</div>
                     <div style="font-size: 11px; color: #00f5ff;">💡 ${escapeHtml(a.action)}</div>
@@ -1006,17 +1006,17 @@
             // codé, description vient de l'alert (donc potentiellement nom de
             // contributeur). Boutons via data-action au lieu de onclick inline.
             document.getElementById('usList').innerHTML = generatedUS.map((us, i) => `
-                <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 18px; border: 2px solid rgba(255,255,255,0.1);">
+                <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 18px; border: 2px solid var(--ov-1);">
                     <span style="font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: 700; background: ${typeColors[us.type]};">${escapeHtml(us.type.toUpperCase())}</span>
                     <div style="font-weight: 700; font-size: 13px; margin: 10px 0;">${escapeHtml(us.title)}</div>
                     <div style="font-size: 11px; opacity: 0.7; margin-bottom: 12px;">${escapeHtml(us.description)}</div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-family: 'Press Start 2P', cursive; font-size: 9px; color: #ffd93d;">⭐ ${us.points} pts</span>
-                        <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.1);">📊 ${escapeHtml(us.priority)}</span>
+                        <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--ov-1);">📊 ${escapeHtml(us.priority)}</span>
                     </div>
                     <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <button data-action="copy-us" data-index="${i}" style="flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">📋 Copier</button>
-                        <button data-action="show-us-detail" data-index="${i}" style="flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">👁️ Détail</button>
+                        <button data-action="copy-us" data-index="${i}" style="flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; cursor: pointer; border: 1px solid var(--ov-2); background: var(--ov-05); color: white;">📋 Copier</button>
+                        <button data-action="show-us-detail" data-index="${i}" style="flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; cursor: pointer; border: 1px solid var(--ov-2); background: var(--ov-05); color: white;">👁️ Détail</button>
                     </div>
                 </div>
             `).join('');
