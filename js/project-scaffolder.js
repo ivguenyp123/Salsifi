@@ -165,9 +165,15 @@
 
         /* ─── Catalogue des flows (pick → clé config du moteur) ─── */
         const FLOWS = {
-            trunk:   { ic: '🪵', name: 'Trunk-based',       cfg: 'trunk',            sub: "Une branche principale, features éphémères derrière des feature flags." },
-            gitflow: { ic: '🌿', name: 'Gitflow',           cfg: 'gitflow',          sub: "develop + release/* + hotfix/*. Structuré, fait pour les versions." },
-            feature: { ic: '🌱', name: 'Feature branching', cfg: 'feature-branching', sub: "Branches feature/* courtes, MR vers main. Le choix d'équilibre." },
+            trunk:   { ic: '🪵', name: 'Trunk-based',       cfg: 'trunk',
+                sub: "Une seule branche principale, sur laquelle tout le monde fusionne très souvent.",
+                desc: "Il n'y a qu'une branche vivante : <code>main</code>. Chacun y intègre son travail plusieurs fois par jour, en tout petits morceaux. Le code pas encore fini n'est <b>pas</b> isolé dans une branche à part : il est fusionné dans <code>main</code> mais masqué derrière des <b>feature flags</b> (les interrupteurs). Résultat : aucune branche qui traîne, une intégration permanente, une mise en prod très rapide. En contrepartie, ça <b>exige</b> des feature flags et une CI fiable." },
+            gitflow: { ic: '🌿', name: 'Gitflow',           cfg: 'gitflow',
+                sub: "Des branches dédiées par étape : develop, release/*, hotfix/*.",
+                desc: "Deux branches durables : <code>main</code> (le reflet exact de la prod) et <code>develop</code> (là où tout s'intègre). On prépare chaque version sur une branche <code>release/*</code>, et on corrige un incident de prod en urgence via <code>hotfix/*</code>. Très structuré et prévisible, pensé pour livrer des <b>versions datées</b> — mais plus lourd et plus lent au quotidien." },
+            feature: { ic: '🌱', name: 'Feature branching', cfg: 'feature-branching',
+                sub: "Une branche courte par fonctionnalité, fusionnée dans main via une MR relue.",
+                desc: "Pour chaque tâche, on crée une branche <code>feature/*</code> courte, on développe dessus, puis on la fusionne dans <code>main</code> via une Merge Request relue. Simple à comprendre, bon isolement du travail, et <b>pas besoin de feature flags</b>. Le compromis classique : moins rapide que le trunk, moins carré que Gitflow, mais rarement un mauvais choix." },
         };
         // clé moteur → clé FLOWS (pour re-afficher un flow choisi en direct)
         const CFG_TO_FLOW = { trunk: 'trunk', gitflow: 'gitflow', 'feature-branching': 'feature' };
@@ -183,48 +189,53 @@
             ['📦', 'Vide',              'juste la structure Git', 'empty'],
         ];
 
-        /* ─── Les 5 signaux (séquence maïeutique) — que du concret ─── */
+        /* ─── Les signaux (séquence maïeutique) — que du concret ─── */
         const SIGNALS = [
-            {key:'flags', q:"Première chose, la plus déterminante : votre équipe utilise des <b>feature flags</b> ? (masquer du code pas fini en prod)",
-             opts:[['🚩',"Oui, on s'en sert","feature flags en place",true],['🚫','Non, pas vraiment','pas de flags',false],['🤷','Je ne sais pas',"on n'en utilise pas alors",false]]},
-            {key:'fast', q:"Vous livrez plutôt <b>en continu</b> (plusieurs fois par semaine) ou <b>par versions</b> datées ?",
-             opts:[['⚡','En continu','déploiements fréquents',true],['📦','Par versions','releases planifiées',false]]},
+            {key:'flags',
+             q:"Première chose, la plus déterminante : les <b>feature flags</b>.<br><br>"
+             + "Un feature flag, c'est un simple <b>interrupteur dans le code</b> (souvent un <code>if</code> piloté par une config) qui <b>active ou masque une fonctionnalité en production, sans changer de branche</b>. Ça permet de fusionner du code pas encore fini sans que l'utilisateur le voie : on allume l'interrupteur le jour où c'est prêt.<br><br>"
+             + "👉 À ne pas confondre avec une <b>branche</b> : la branche isole le code <i>avant</i> de le fusionner ; le flag masque du code <i>déjà fusionné et parti en prod</i>. C'est ce qui rend le trunk-based possible.<br><br>"
+             + "Votre équipe s'en sert ?",
+             opts:[['🚩',"Oui, on s'en sert","des flags en place",true],['🚫','Non','pas de flags',false],['🤷','On ne connaît pas',"on part sans, alors",false]]},
+            {key:'merge',
+             q:"Vous <b>fusionnez</b> votre travail dans la branche principale à quelle fréquence ? (autrement dit : au bout de combien de temps votre code rejoint celui des autres)",
+             opts:[['🔄','Chaque jour ou presque','petites intégrations continues','daily'],['🗓️','Quelques fois par semaine','par petits lots','week'],['📦','Quand la fonctionnalité est finie','plus grosses intégrations','done']]},
             {key:'team', q:"Vous êtes <b>combien</b> à pousser sur ce repo ?",
              opts:[['👤','1 à 4','petite équipe','small'],['👥','5 à 12','équipe moyenne','mid'],['🏢','Plus de 12','grande équipe','large']]},
-            {key:'cad', q:"Et la <b>cadence</b> de mise en prod, c'est plutôt…",
-             opts:[['🔄','Plusieurs fois/jour','flux continu','daily'],['🗓️','Par sprint / semaine','rythme régulier','sprint'],['📌','Par version datée','jalonné','release']]},
-            {key:'ci', q:"Dernier point : votre <b>CI/CD</b>, vous la diriez comment ? (tests auto, pipeline fiable)",
-             opts:[['🟢',"Solide, on a confiance",'CI mature','high'],['🟡','Correcte, perfectible','CI moyenne','mid'],['🔴','Fragile ou quasi absente','CI faible','low']]},
+            {key:'cad', q:"Dernier point : la <b>mise en production</b>, c'est à quel rythme ?",
+             opts:[['⚡','Plusieurs fois par semaine','flux continu','daily'],['🗓️','Par sprint / à date régulière','rythme cadencé','sprint'],['📌','Par version datée / jalon','releases planifiées','release']]},
         ];
 
         /* ─── Noyau déterministe : déduire le flow ─── */
+        // Note : la CI n'est plus demandée — les projets partent sur la CI LCL
+        // par défaut, qu'on considère fiable. Le prérequis « CI solide » du trunk
+        // est donc couvert d'office (voir le pro ci-dessous).
         function deduceFlow(s){
             const reasons = {trunk:[], gitflow:[], feature:[]};
-            if(s.flags){ reasons.trunk.push(['pro','🚩','Feature flags en place',"le prérequis n°1 du trunk"]); }
-            else { reasons.trunk.push(['con','🚩','Pas de feature flags','trunk devient risqué sans eux']); }
-            if(s.fast){ reasons.trunk.push(['pro','⚡','Livraison continue','colle au flux du trunk']);
-                        reasons.feature.push(['pro','⚡','Rythme soutenu','features courtes adaptées']); }
-            else { reasons.gitflow.push(['pro','📦','Livraison par versions','ce pour quoi Gitflow est fait']); }
+            if(s.flags){ reasons.trunk.push(['pro','🚩','Feature flags en place',"le prérequis n°1 du trunk-based"]);
+                         reasons.trunk.push(['pro','🟢','CI LCL par défaut',"le second prérequis du trunk est couvert d'office"]); }
+            else { reasons.trunk.push(['con','🚩','Pas de feature flags','sans eux, du code non fini partirait visible en prod']); }
+            if(s.merge==='daily'){ reasons.trunk.push(['pro','🔄','Intégration quotidienne',"c'est le cœur même du trunk-based"]); }
+            else if(s.merge==='week'){ reasons.feature.push(['pro','🌿','Intégration régulière','des branches courtes fusionnées souvent']); }
+            else { reasons.gitflow.push(['pro','📦','Intégration en fin de fonctionnalité','des paliers structurés collent mieux']);
+                   reasons.feature.push(['pro','🌱','Une branche par fonctionnalité','isolée jusqu\'à ce qu\'elle soit prête']); }
             if(s.team==='large'){ reasons.gitflow.push(['pro','🏢','Grande équipe','la structure release/* aide à coordonner']);
                                   reasons.feature.push(['pro','🏢','Beaucoup de monde',"l'isolation par branche limite les collisions"]); }
             else if(s.team==='small'){ reasons.trunk.push(['pro','👤','Petite équipe','coordination légère, trunk fluide']); }
-            if(s.cad==='daily'){ reasons.trunk.push(['pro','🔄','Plusieurs déploiements/jour','trunk est taillé pour ça']); }
+            if(s.cad==='daily'){ reasons.trunk.push(['pro','⚡','Mise en prod plusieurs fois/semaine','trunk est taillé pour ça']); }
             else if(s.cad==='release'){ reasons.gitflow.push(['pro','📌','Versions datées','hotfix/* et release/* prennent tout leur sens']); }
             else { reasons.feature.push(['pro','🗓️','Rythme par sprint','MR régulières vers main']); }
-            if(s.ci==='high'){ reasons.trunk.push(['pro','🟢','CI solide',"trunk EXIGE une CI fiable — vous l'avez"]); }
-            else if(s.ci==='low'){ reasons.trunk.push(['con','🔴','CI fragile','trunk casserait main en continu']);
-                                   reasons.gitflow.push(['pro','🟢','CI perfectible','les paliers de Gitflow pardonnent davantage']); }
 
             let score = {trunk:0, gitflow:0, feature:1};
-            if(s.flags && s.ci!=='low'){ score.trunk += 2; if(s.fast)score.trunk++; if(s.cad==='daily')score.trunk++; if(s.team==='small')score.trunk++; if(s.ci==='high')score.trunk++; }
+            if(s.flags){ score.trunk += 3; if(s.merge==='daily')score.trunk += 2; if(s.cad==='daily')score.trunk++; if(s.team==='small')score.trunk++; }
             else { score.trunk = -2; }
-            if(!s.fast || s.cad==='release'){ score.gitflow += 2; }
+            if(s.merge==='done' || s.cad==='release'){ score.gitflow += 2; }
             if(s.team==='large') score.gitflow++;
-            if(s.ci==='low') score.gitflow++;
             if(s.cad==='release') score.gitflow++;
             if(s.team!=='large') score.feature++;
             if(s.cad==='sprint') score.feature++;
-            if(!s.flags && s.fast) score.feature++;
+            if(s.merge==='week') score.feature++;
+            if(!s.flags && s.merge!=='daily') score.feature++;
 
             const ranked = Object.entries(score).sort((a,b)=>b[1]-a[1]);
             const pick = ranked[0][0];
@@ -248,9 +259,9 @@
             const repo = sessionData.projectName || 'ton repo';
 
             if(expert){
-                bot(`Re 👋 <code>${esc(repo)}</code> ? Même contexte que la dernière fois (petite équipe, flags, CI solide) ?`, ()=>{
+                bot(`Re 👋 <code>${esc(repo)}</code> ? Même contexte que la dernière fois (petite équipe, flags, intégration quotidienne) ?`, ()=>{
                     quick([
-                        ['⚡','Oui, pareil','je redéduis direct', ()=>{ mine('Même contexte'); answers={flags:true,fast:true,team:'small',cad:'daily',ci:'high'};
+                        ['⚡','Oui, pareil','je redéduis direct', ()=>{ mine('Même contexte'); answers={flags:true,merge:'daily',team:'small',cad:'daily'};
                             botThink(()=>{ deduced=deduceFlow(answers); bot("Alors c'est limpide :", showReco); }); }],
                         ['🎛️','Non, c\'est différent','repose les questions', ()=>{ visits=0; document.getElementById('expertBadge').classList.remove('on'); mine("C'est différent cette fois"); startFlowSequence(); }],
                     ]);
@@ -259,7 +270,7 @@
             }
 
             bot(`Salut 👋 <code>${esc(repo)}</code> est tout neuf. Avant de générer quoi que ce soit, il y a <b>une</b> décision qui compte vraiment et qui t'engagera pour des mois : <b>le flow Git</b>.`, ()=>{
-                botThink(()=> bot("Pas besoin d'être expert Git — je te pose 5 petites questions de contexte, et je te recommande le bon. Tu valides ou tu contestes. On y va ?", ()=>{
+                botThink(()=> bot("Pas besoin d'être expert Git — je te pose 4 petites questions de contexte, et je te recommande le bon. Tu valides ou tu contestes. On y va ?", ()=>{
                     quick([
                         ['🎯','Allons-y','guide-moi', ()=>{ mine('Allons-y'); startFlowSequence(); }],
                         ['🧠','Je sais déjà lequel je veux','je te le dis', ()=>{ mine('Je sais déjà'); pickFlowDirect(); }],
@@ -291,7 +302,7 @@
         function runDeduction(){
             botThink(()=>{
                 deduced = deduceFlow(answers);
-                bot("Voilà, j'ai tout ce qu'il me faut. Je croise les 5 signaux…", showReco);
+                bot("Voilà, j'ai tout ce qu'il me faut. Je croise tes signaux…", showReco);
             }, 950);
         }
 
@@ -308,6 +319,10 @@
                     <div class="reco-tag">MA RECOMMANDATION</div>
                     <div class="reco-name">${f.ic} ${f.name}<span class="reco-conf">${deduced.conf}% sûr</span></div>
                     <div class="reco-sub">${f.sub}</div>
+                </div>
+                <div class="reco-desc">
+                    <div class="reco-desc-h">COMMENT ÇA MARCHE</div>
+                    <div class="reco-desc-tx">${f.desc}</div>
                 </div>
                 <div class="reco-why">
                     <div class="reco-why-h">POURQUOI — ce qui a pesé dans ta situation</div>
@@ -329,17 +344,16 @@
                 const c=document.createElement('div'); c.className='alts';
                 others.forEach(([k,sc])=>{
                     const f=FLOWS[k];
-                    const risky = (k==='trunk' && (!answers.flags || answers.ci==='low'));
+                    const risky = (k==='trunk' && !answers.flags);
                     const fit = sc<=0 ? 'déconseillé ici' : sc<2 ? 'possible' : 'solide aussi';
                     let why='';
-                    if(k==='trunk'&&!answers.flags) why="Sans feature flags, tu pousserais du code non fini en prod. Techniquement jouable, mais c'est le piège classique.";
-                    else if(k==='trunk'&&answers.ci==='low') why="Trunk exige une CI béton ; avec une CI fragile, main casserait souvent.";
-                    else if(k==='gitflow'&&answers.fast) why="Solide, mais ses paliers release/* ralentiraient ton rythme continu.";
-                    else if(k==='gitflow') why="Très structuré — un peu lourd si l'équipe est petite, mais sûr.";
+                    if(k==='trunk'&&!answers.flags) why="Sans feature flags, tu fusionnerais du code non fini directement visible en prod. Techniquement jouable, mais c'est le piège classique.";
+                    else if(k==='gitflow'&&answers.cad==='daily') why="Solide, mais ses paliers release/* ralentiraient ton rythme de mise en prod continu.";
+                    else if(k==='gitflow') why="Très structuré — un peu lourd si l'équipe est petite, mais sûr et prévisible.";
                     else if(k==='feature') why="Le compromis sûr : moins optimal que ma reco ici, mais jamais un mauvais choix.";
-                    else if(k==='trunk') why="Viable vu tes signaux, mais demande de la discipline d'équipe.";
+                    else if(k==='trunk') why="Viable vu tes signaux, mais demande une vraie discipline d'équipe.";
                     const card=document.createElement('div'); card.className='alt-card'+(risky?' warn':'');
-                    card.innerHTML=`<div class="ac-top"><span>${f.ic}</span><span class="ac-name">${f.name}</span><span class="ac-fit">${fit}</span></div><div class="ac-why">${risky?'⚠ ':''}${why}</div>`;
+                    card.innerHTML=`<div class="ac-top"><span>${f.ic}</span><span class="ac-name">${f.name}</span><span class="ac-fit">${fit}</span></div><div class="ac-desc">${f.desc}</div><div class="ac-why">${risky?'⚠ ':''}${why}</div>`;
                     card.onclick=()=>{ mine('Je préfère '+f.name); if(risky){ confirmRisky(k); } else { acceptFlow(k); } };
                     c.appendChild(card);
                 });
