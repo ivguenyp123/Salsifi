@@ -346,7 +346,33 @@
     <script src="js/common/gitlab.js"></script>
     <script src="js/common/auth.js"></script>
     <script src="js/common/workshops.js"></script>
-    <script src="js/hub.js"></script>
+    <!-- hub.js éclaté en modules (portée globale partagée, scripts classiques).
+         Ordre libre SAUF main.js (bootstrap) qui doit rester en dernier. -->
+    <script src="js/hub/config/directions.js"></script>
+    <script src="js/hub/config/modules.js"></script>
+    <script src="js/hub/core/state.js"></script>
+    <script src="js/hub/core/utils.js"></script>
+    <script src="js/hub/repo/repo-picker.js"></script>
+    <script src="js/hub/synthesis/cache.js"></script>
+    <script src="js/hub/metrics/dora.js"></script>
+    <script src="js/hub/metrics/deploys.js"></script>
+    <script src="js/hub/metrics/maturity.js"></script>
+    <script src="js/hub/metrics/bus-factor.js"></script>
+    <script src="js/hub/synthesis/compute.js"></script>
+    <script src="js/hub/suggestions/rules.js"></script>
+    <script src="js/hub/suggestions/engine.js"></script>
+    <script src="js/hub/ui/cards.js"></script>
+    <script src="js/hub/ui/mood.js"></script>
+    <script src="js/hub/ui/suggestions-view.js"></script>
+    <script src="js/hub/ui/drilldown.js"></script>
+    <script src="js/hub/ui/expert-mode.js"></script>
+    <script src="js/hub/ui/toast.js"></script>
+    <script src="js/hub/drilldown/stats.js"></script>
+    <script src="js/hub/workspaces/workspace-storage.js"></script>
+    <script src="js/hub/workspaces/workspace-modal.js"></script>
+    <script src="js/hub/workspaces/workspace-actions.js"></script>
+    <script src="js/hub/start/start-modal.js"></script>
+    <script src="js/hub/main.js"></script>
     <script>
         // Sélecteur de thème : bascule + synchro de l'icône (soleil / lune).
         (function () {
