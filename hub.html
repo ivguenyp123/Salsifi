@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="header-btn theme-toggle" id="themeToggle" onclick="salsifiToggleTheme()" title="Basculer le thème" aria-label="Basculer clair / sombre">🌙</button>
+                <button class="header-btn theme-toggle" id="themeToggle" onclick="salsifiToggleTheme()" title="Basculer le thème" aria-label="Basculer clair / sombre">🌙 Thème</button>
                 <button class="header-btn">📚 Documentation</button>
                 <div style="position: relative;" id="wsPillWrap">
                     <div class="ws-pill" id="wsPill" onclick="wsToggleDropdown(event)">
@@ -354,7 +354,7 @@
             if (!btn || !window.SalsifiTheme) return;
             function sync() {
                 var light = window.SalsifiTheme.get() === 'light';
-                btn.textContent = light ? '☀️' : '🌙';
+                btn.textContent = light ? '☀️ Thème clair' : '🌙 Thème sombre';
                 btn.title = light ? 'Passer en mode sombre' : 'Passer en mode clair';
             }
             window.salsifiToggleTheme = function () { window.SalsifiTheme.toggle(); sync(); };

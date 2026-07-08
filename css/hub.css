@@ -113,7 +113,7 @@
             transition: all 0.2s;
         }
         .header-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--border-strong); }
-        .theme-toggle { padding: 8px 11px; font-size: 15px; line-height: 1; }
+        .theme-toggle { white-space: nowrap; }
         .user-pill {
             display: flex; align-items: center; gap: 10px;
             background: var(--bg-card);
