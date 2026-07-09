@@ -516,7 +516,7 @@
         </div>
         <div class="grp-intro">
             Crée des groupes et coche les flags à y ranger, puis affiche-les via « Groupes : Manuel » dans la vue groupée.
-            <span class="grp-local">Tes modifications sont locales à ce navigateur — clique <b>« 📤 Générer le fichier »</b> et committe-le pour les partager à toute l'équipe.</span>
+            <span class="grp-local" id="grp-status">…</span>
         </div>
         <div class="grp-new">
             <input type="text" id="grp-new-name" class="grp-input" placeholder="Nom du nouveau groupe (ex. Checkout, Paiement…)" maxlength="60"/>
@@ -524,8 +524,7 @@
         </div>
         <div class="grp-list" id="grp-list"></div>
         <div class="grp-footer">
-            <button class="btn btn-secondary" data-action="groups-reset" style="margin-right:auto;" title="Jeter le brouillon local et repartir des groupes publiés dans le fichier">↺ Fichier partagé</button>
-            <button class="btn btn-primary" data-action="groups-generate" title="Télécharger feature-flag-groups.js à committer pour publier les groupes">📤 Générer le fichier</button>
+            <span class="grp-save" id="grp-save" style="margin-right:auto;"></span>
             <button class="btn btn-secondary" data-action="groups-close">Fermer</button>
         </div>
     </dialog>
@@ -600,7 +599,6 @@
     <script src="js/common/utils.js"></script>
     <script src="js/common/gitlab.js"></script>
     <script src="js/common/auth.js"></script>
-    <script src="js/feature-flag-groups.js"></script>
     <script src="js/feature-flag-manager.js"></script>
 
 

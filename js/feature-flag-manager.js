@@ -422,10 +422,6 @@
                         const inp = document.getElementById('grp-new-name');
                         createGroup(inp.value); inp.value = ''; inp.focus();
                     } else if (a === 'group-delete') deleteGroup(t.dataset.groupId);
-                    else if (a === 'groups-generate') generateGroupsFile();
-                    else if (a === 'groups-reset') {
-                        if (!_groupsDirty || confirm('Repartir des groupes publiés (fichier partagé) et jeter tes modifications locales ?')) resetGroupsToShared();
-                    }
                 });
                 groupsModal.addEventListener('change', function (e) {
                     const t = e.target;
@@ -855,7 +851,10 @@
             // des familles et on repeuple le dropdown de filtre par famille.
             _familyCache = null;
             populateFamilyFilter();
-            loadManualGroups();   // groupes manuels du projet (localStorage)
+            // Groupes manuels : variable projet (partagée) ou localStorage (perso).
+            loadManualGroups().then(function () {
+                if (_flagGrouped && _groupMode === 'manual') renderFlagsTable();
+            });
 
             // Stats
             const featureFlags = currentFlags.filter(f => !f.isOpsFlag);
@@ -3038,92 +3037,90 @@ Flags existants: ${existingFlags.join(', ')}`
         let _familyCache = null;   // résultat de computeFlagGroups, recalculé au load
         let _collapsedFamilies = new Set(); // labels de familles repliées
 
-        // ── Groupes MANUELS (créés par l'équipe, persistés en local) ──────
-        // Stockés en localStorage par projet ; jamais écrits dans GitLab.
-        // Chaque groupe : { id, name, flags:[nom de flag, …] }. Un flag peut
-        // appartenir à plusieurs groupes.
+        // ── Groupes MANUELS (créés par l'équipe) ──────────────────────────
+        // Stockage PARTAGÉ = variable de projet GitLab (SALSIFI_FF_GROUPS),
+        // lisible/écrivable seulement par les rôles Maintainer. Les autres
+        // (403 sur l'API variables) retombent sur localStorage → ils ne voient
+        // que LEURS groupes. Solution d'attente avant un vrai back.
+        // Chaque groupe : { id, name, flags:[…] } ; un flag peut être dans
+        // plusieurs groupes.
         let _manualGroups = [];
-        let _groupMode = 'auto';   // 'auto' (familles) | 'manual' (groupes créés)
-        let _groupsDirty = false;  // édits locaux non encore publiés dans le fichier partagé
+        let _groupMode = 'auto';        // 'auto' (familles) | 'manual'
+        let _groupsShared = false;      // true = variable projet (Maintainer) ; false = perso
+        let _groupsLoaded = false;
+        let _groupsSaveTimer = null;
+        const FF_GROUPS_VAR = 'SALSIFI_FF_GROUPS';
         function _groupsKey() { return 'ffm_manual_groups_' + (projectId || 'default'); }
+        function _newGroupId() { return 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-        // Groupes PARTAGÉS : lus depuis le fichier déployé js/feature-flag-groups.js
-        // (window.Salsifi.featureFlagGroups[<projectId>]), comme workshops.js.
-        function _sharedGroups() {
+        function _parseGroups(str) {
             try {
-                const all = (window.Salsifi && window.Salsifi.featureFlagGroups) || {};
-                const g = all[projectId] || all[String(projectId)] || [];
-                return Array.isArray(g) ? g : [];
+                const p = JSON.parse(str);
+                return Array.isArray(p) ? p.filter(g => g && g.name && Array.isArray(g.flags)) : [];
             } catch { return []; }
         }
+        function _readLocalGroups() { return _parseGroups(localStorage.getItem(_groupsKey())); }
 
-        // Priorité : brouillon local (localStorage) s'il existe, sinon fichier partagé.
-        function loadManualGroups() {
+        // Charge les groupes : variable projet (partagée) si accessible, sinon
+        // localStorage (personnel). Fixe _groupsShared en conséquence.
+        async function loadManualGroups() {
+            _groupsLoaded = true;
             try {
-                const raw = localStorage.getItem(_groupsKey());
-                if (raw != null) {
-                    const p = JSON.parse(raw);
-                    _manualGroups = Array.isArray(p) ? p.filter(g => g && g.name && Array.isArray(g.flags)) : [];
-                    _groupsDirty = true;   // on a un brouillon local
+                const r = await fetchGitLab('/projects/' + projectId + '/variables/' + FF_GROUPS_VAR);
+                if (r.status === 200) {
+                    const v = await r.json();
+                    _groupsShared = true;
+                    _manualGroups = _parseGroups(v && v.value);
                     return;
                 }
-            } catch { /* localStorage illisible → on retombe sur le fichier */ }
-            _manualGroups = _sharedGroups().map(g => ({
-                id: g.id || _newGroupId(), name: g.name, flags: (g.flags || []).slice()
-            }));
-            _groupsDirty = false;
+                if (r.status === 404) { _groupsShared = true; _manualGroups = []; return; } // Maintainer, variable pas encore créée
+                _groupsShared = false;   // 401/403 → pas Maintainer
+            } catch (e) {
+                _groupsShared = false;
+            }
+            _manualGroups = _readLocalGroups();   // repli personnel
         }
+
+        // Sauvegarde : partagé → variable projet (débouncé, un seul appel après
+        // une rafale de clics) ; personnel → localStorage immédiat.
         function saveManualGroups() {
-            _groupsDirty = true;
-            try { localStorage.setItem(_groupsKey(), JSON.stringify(_manualGroups)); }
-            catch (e) { console.warn('Sauvegarde locale des groupes impossible:', e); }
+            if (_groupsShared) {
+                if (_groupsSaveTimer) clearTimeout(_groupsSaveTimer);
+                _setGroupsStatus('… enregistrement');
+                _groupsSaveTimer = setTimeout(_pushGroupsToProjectVar, 600);
+            } else {
+                try { localStorage.setItem(_groupsKey(), JSON.stringify(_manualGroups)); }
+                catch (e) { console.warn('Sauvegarde locale des groupes impossible:', e); }
+            }
         }
-        // Repartir du fichier partagé (jette le brouillon local).
-        function resetGroupsToShared() {
-            try { localStorage.removeItem(_groupsKey()); } catch {}
-            loadManualGroups();
-            renderGroupsModal();
-            renderFlagsTable();
+        async function _pushGroupsToProjectVar() {
+            const value = JSON.stringify(_manualGroups);
+            const H = { 'Content-Type': 'application/json' };
+            try {
+                let r = await fetchGitLab('/projects/' + projectId + '/variables/' + FF_GROUPS_VAR,
+                    { method: 'PUT', headers: H, body: JSON.stringify({ value: value }) });
+                if (r.status === 404) {   // pas encore créée → création
+                    r = await fetchGitLab('/projects/' + projectId + '/variables',
+                        { method: 'POST', headers: H,
+                          body: JSON.stringify({ key: FF_GROUPS_VAR, value: value, masked: false, protected: false }) });
+                }
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                _setGroupsStatus('✅ enregistré (partagé)');
+            } catch (e) {
+                console.warn('Écriture de la variable projet impossible:', e);
+                _setGroupsStatus('⚠️ échec de l’enregistrement');
+            }
         }
-        function _newGroupId() {
-            return 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        function _setGroupsStatus(txt) {
+            const el = document.getElementById('grp-save');
+            if (el) el.textContent = txt || '';
         }
-
-        // Génère le contenu de js/feature-flag-groups.js (tous projets confondus,
-        // le projet courant écrasé par le brouillon local) et le télécharge : à
-        // committer pour publier les groupes à toute l'équipe.
-        function generateGroupsFile() {
-            let all = {};
-            try { all = Object.assign({}, (window.Salsifi && window.Salsifi.featureFlagGroups) || {}); } catch {}
-            all[String(projectId)] = _manualGroups.map(g => ({ id: g.id, name: g.name, flags: g.flags.slice() }));
-            // On retire les projets sans groupe pour garder le fichier propre.
-            Object.keys(all).forEach(k => { if (!all[k] || !all[k].length) delete all[k]; });
-            const body = JSON.stringify(all, null, 4).replace(/\n/g, '\n    ');
-            const content =
-'/*\n' +
-' * Salsifi — groupes manuels de feature flags (PARTAGÉS)\n' +
-' * Généré depuis le Feature Flag Manager. Committer ce fichier pour publier\n' +
-' * les groupes à toute l\'équipe (même principe que workshops.js).\n' +
-' *   Salsifi.featureFlagGroups[<projectId>] = [ { id, name, flags:[…] }, … ]\n' +
-' */\n' +
-'(function (global) {\n' +
-'    \'use strict\';\n' +
-'    var Salsifi = global.Salsifi || (global.Salsifi = {});\n' +
-'    Salsifi.featureFlagGroups = ' + body + ';\n' +
-'})(typeof window !== \'undefined\' ? window : this);\n';
-
-            const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'feature-flag-groups.js';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 30000);
-            alert('Fichier « feature-flag-groups.js » téléchargé.\n\n'
-                + 'Remplace js/feature-flag-groups.js par ce fichier, committe et déploie : '
-                + 'toute l\'équipe verra alors les mêmes groupes.');
+        function _updateGroupsBanner() {
+            const el = document.getElementById('grp-status');
+            if (!el) return;
+            el.innerHTML = _groupsShared
+                ? '🔒 Groupes <b>partagés</b> (rôle Maintainer) — visibles par toute l\'équipe.'
+                : '👤 Groupes <b>personnels</b> — visibles seulement par toi. (rôle Maintainer requis pour les partager)';
         }
 
         const STATUS_ORDER = { CRITIQUE:0, DETTE:1, CLEANUP:2, STABILISATION:3, ROLLOUT:4, OPS:5 };
@@ -3452,11 +3449,14 @@ Flags existants: ${existingFlags.join(', ')}`
             }).join('');
         }
 
-        function openGroupsModal() {
-            loadManualGroups();
-            renderGroupsModal();
+        async function openGroupsModal() {
             const d = document.getElementById('groups-modal');
             if (d && !d.open) d.showModal();
+            _setGroupsStatus('… chargement');
+            await loadManualGroups();       // relit la variable (frais) + détecte le rôle
+            renderGroupsModal();
+            _updateGroupsBanner();
+            _setGroupsStatus('');
         }
         function closeGroupsModal() {
             const d = document.getElementById('groups-modal');
