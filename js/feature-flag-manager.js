@@ -405,6 +405,40 @@
             // Rapport HTML groupé par environnement
             document.getElementById('btn-env-report')?.addEventListener('click', generateEnvReport);
 
+            // Groupes manuels : mode Auto/Manuel + ouverture du gestionnaire
+            document.getElementById('group-mode-select')?.addEventListener('change', (e) => setGroupMode(e.target.value));
+            document.getElementById('btn-manage-groups')?.addEventListener('click', openGroupsModal);
+            document.getElementById('grp-new-name')?.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { createGroup(this.value); this.value = ''; }
+            });
+            const groupsModal = document.getElementById('groups-modal');
+            if (groupsModal) {
+                groupsModal.addEventListener('click', function (e) {
+                    const t = e.target.closest('[data-action]');
+                    if (!t) return;
+                    const a = t.dataset.action;
+                    if (a === 'groups-close') closeGroupsModal();
+                    else if (a === 'group-create') {
+                        const inp = document.getElementById('grp-new-name');
+                        createGroup(inp.value); inp.value = ''; inp.focus();
+                    } else if (a === 'group-delete') deleteGroup(t.dataset.groupId);
+                    else if (a === 'groups-generate') generateGroupsFile();
+                    else if (a === 'groups-reset') {
+                        if (!_groupsDirty || confirm('Repartir des groupes publiés (fichier partagé) et jeter tes modifications locales ?')) resetGroupsToShared();
+                    }
+                });
+                groupsModal.addEventListener('change', function (e) {
+                    const t = e.target;
+                    if (t.dataset.action === 'group-toggle-flag') toggleFlagInGroup(t.dataset.groupId, t.dataset.flagName, t.checked);
+                    else if (t.dataset.action === 'group-rename') renameGroup(t.dataset.groupId, t.value);
+                });
+                groupsModal.addEventListener('input', function (e) {
+                    if (e.target.dataset.action === 'group-search') _grpSearchFilter(e.target.dataset.groupId, e.target.value);
+                });
+                // Clic sur le fond (backdrop) ferme le modal
+                groupsModal.addEventListener('click', function (e) { if (e.target === groupsModal) closeGroupsModal(); });
+            }
+
             // History tab controls
             document.getElementById('history-search')?.addEventListener('input', filterAuditHistory);
             document.getElementById('history-filter-env')?.addEventListener('change', filterAuditHistory);
@@ -821,6 +855,7 @@
             // des familles et on repeuple le dropdown de filtre par famille.
             _familyCache = null;
             populateFamilyFilter();
+            loadManualGroups();   // groupes manuels du projet (localStorage)
 
             // Stats
             const featureFlags = currentFlags.filter(f => !f.isOpsFlag);
@@ -3006,6 +3041,94 @@ Flags existants: ${existingFlags.join(', ')}`
         let _familyCache = null;   // résultat de computeFlagGroups, recalculé au load
         let _collapsedFamilies = new Set(); // labels de familles repliées
 
+        // ── Groupes MANUELS (créés par l'équipe, persistés en local) ──────
+        // Stockés en localStorage par projet ; jamais écrits dans GitLab.
+        // Chaque groupe : { id, name, flags:[nom de flag, …] }. Un flag peut
+        // appartenir à plusieurs groupes.
+        let _manualGroups = [];
+        let _groupMode = 'auto';   // 'auto' (familles) | 'manual' (groupes créés)
+        let _groupsDirty = false;  // édits locaux non encore publiés dans le fichier partagé
+        function _groupsKey() { return 'ffm_manual_groups_' + (projectId || 'default'); }
+
+        // Groupes PARTAGÉS : lus depuis le fichier déployé js/feature-flag-groups.js
+        // (window.Salsifi.featureFlagGroups[<projectId>]), comme workshops.js.
+        function _sharedGroups() {
+            try {
+                const all = (window.Salsifi && window.Salsifi.featureFlagGroups) || {};
+                const g = all[projectId] || all[String(projectId)] || [];
+                return Array.isArray(g) ? g : [];
+            } catch { return []; }
+        }
+
+        // Priorité : brouillon local (localStorage) s'il existe, sinon fichier partagé.
+        function loadManualGroups() {
+            try {
+                const raw = localStorage.getItem(_groupsKey());
+                if (raw != null) {
+                    const p = JSON.parse(raw);
+                    _manualGroups = Array.isArray(p) ? p.filter(g => g && g.name && Array.isArray(g.flags)) : [];
+                    _groupsDirty = true;   // on a un brouillon local
+                    return;
+                }
+            } catch { /* localStorage illisible → on retombe sur le fichier */ }
+            _manualGroups = _sharedGroups().map(g => ({
+                id: g.id || _newGroupId(), name: g.name, flags: (g.flags || []).slice()
+            }));
+            _groupsDirty = false;
+        }
+        function saveManualGroups() {
+            _groupsDirty = true;
+            try { localStorage.setItem(_groupsKey(), JSON.stringify(_manualGroups)); }
+            catch (e) { console.warn('Sauvegarde locale des groupes impossible:', e); }
+        }
+        // Repartir du fichier partagé (jette le brouillon local).
+        function resetGroupsToShared() {
+            try { localStorage.removeItem(_groupsKey()); } catch {}
+            loadManualGroups();
+            renderGroupsModal();
+            renderFlagsTable();
+        }
+        function _newGroupId() {
+            return 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        }
+
+        // Génère le contenu de js/feature-flag-groups.js (tous projets confondus,
+        // le projet courant écrasé par le brouillon local) et le télécharge : à
+        // committer pour publier les groupes à toute l'équipe.
+        function generateGroupsFile() {
+            let all = {};
+            try { all = Object.assign({}, (window.Salsifi && window.Salsifi.featureFlagGroups) || {}); } catch {}
+            all[String(projectId)] = _manualGroups.map(g => ({ id: g.id, name: g.name, flags: g.flags.slice() }));
+            // On retire les projets sans groupe pour garder le fichier propre.
+            Object.keys(all).forEach(k => { if (!all[k] || !all[k].length) delete all[k]; });
+            const body = JSON.stringify(all, null, 4).replace(/\n/g, '\n    ');
+            const content =
+'/*\n' +
+' * Salsifi — groupes manuels de feature flags (PARTAGÉS)\n' +
+' * Généré depuis le Feature Flag Manager. Committer ce fichier pour publier\n' +
+' * les groupes à toute l\'équipe (même principe que workshops.js).\n' +
+' *   Salsifi.featureFlagGroups[<projectId>] = [ { id, name, flags:[…] }, … ]\n' +
+' */\n' +
+'(function (global) {\n' +
+'    \'use strict\';\n' +
+'    var Salsifi = global.Salsifi || (global.Salsifi = {});\n' +
+'    Salsifi.featureFlagGroups = ' + body + ';\n' +
+'})(typeof window !== \'undefined\' ? window : this);\n';
+
+            const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'feature-flag-groups.js';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+            alert('Fichier « feature-flag-groups.js » téléchargé.\n\n'
+                + 'Remplace js/feature-flag-groups.js par ce fichier, committe et déploie : '
+                + 'toute l\'équipe verra alors les mêmes groupes.');
+        }
+
         const STATUS_ORDER = { CRITIQUE:0, DETTE:1, CLEANUP:2, STABILISATION:3, ROLLOUT:4, OPS:5 };
 
         // ══════════════════════════════════════════════════════════════════
@@ -3241,6 +3364,108 @@ Flags existants: ${existingFlags.join(', ')}`
 
         function filterFlags() { renderFlagsTable(); }
 
+        // ══════════════════════════════════════════════════════════════════
+        // GROUPES MANUELS — mode, gestion, modal
+        // ══════════════════════════════════════════════════════════════════
+        function setGroupMode(mode) {
+            _groupMode = mode === 'manual' ? 'manual' : 'auto';
+            // Passer en manuel n'a de sens qu'en vue groupée : on l'active.
+            if (_groupMode === 'manual') {
+                _flagGrouped = true;
+                const t = document.getElementById('grouped-view-toggle');
+                if (t) t.checked = true;
+            }
+            renderFlagsTable();
+        }
+
+        function _grpById(id) { return _manualGroups.find(g => g.id === id); }
+        function _grpStatusColor(status) {
+            return { ROLLOUT:'#a78bfa', STABILISATION:'#60a5fa', CLEANUP:'#34d399',
+                     DETTE:'#fbbf24', CRITIQUE:'#f87171', OPS:'#6b7280' }[status] || '#6b7280';
+        }
+
+        function createGroup(name) {
+            name = (name || '').trim();
+            if (!name) return;
+            _manualGroups.push({ id: _newGroupId(), name: name, flags: [] });
+            saveManualGroups();
+            renderGroupsModal();
+            renderFlagsTable();
+        }
+        function deleteGroup(id) {
+            const g = _grpById(id);
+            if (g && g.flags.length && !confirm('Supprimer le groupe « ' + g.name + ' » ? (les flags ne sont pas supprimés)')) return;
+            _manualGroups = _manualGroups.filter(x => x.id !== id);
+            saveManualGroups();
+            renderGroupsModal();
+            renderFlagsTable();
+        }
+        function renameGroup(id, name) {
+            const g = _grpById(id);
+            if (!g) return;
+            g.name = (name || '').trim() || g.name;
+            saveManualGroups();
+            renderFlagsTable();
+        }
+        function toggleFlagInGroup(id, flagName, on) {
+            const g = _grpById(id);
+            if (!g) return;
+            const i = g.flags.indexOf(flagName);
+            if (on && i === -1) g.flags.push(flagName);
+            else if (!on && i !== -1) g.flags.splice(i, 1);
+            saveManualGroups();
+            const c = document.getElementById('grp-count-' + id);
+            if (c) c.textContent = g.flags.length + ' flag' + (g.flags.length > 1 ? 's' : '');
+            renderFlagsTable();
+        }
+        function _grpSearchFilter(id, q) {
+            q = (q || '').toLowerCase();
+            const card = document.querySelector('.grp-card[data-group-id="' + id + '"]');
+            if (!card) return;
+            card.querySelectorAll('.grp-flag').forEach(function (row) {
+                row.style.display = row.dataset.name.indexOf(q) !== -1 ? '' : 'none';
+            });
+        }
+
+        function renderGroupsModal() {
+            const list = document.getElementById('grp-list');
+            if (!list) return;
+            if (!_manualGroups.length) {
+                list.innerHTML = '<div class="grp-empty">Aucun groupe pour l\'instant.<br>Crée-en un ci-dessus, puis coche les flags à y ranger.</div>';
+                return;
+            }
+            const allFlags = currentFlags.slice().sort((a, b) => a.name.localeCompare(b.name));
+            list.innerHTML = _manualGroups.map(function (g) {
+                const rows = allFlags.map(function (f) {
+                    const checked = g.flags.indexOf(f.name) !== -1 ? 'checked' : '';
+                    return '<label class="grp-flag" data-name="' + escapeAttr(f.name.toLowerCase()) + '">'
+                        + '<input type="checkbox" data-action="group-toggle-flag" data-group-id="' + g.id + '" data-flag-name="' + escapeAttr(f.name) + '" ' + checked + '/>'
+                        + '<span class="fdot" style="background:' + _grpStatusColor(f.status) + '"></span>'
+                        + '<span class="fname">' + escapeHtml(f.name) + '</span></label>';
+                }).join('');
+                return '<div class="grp-card" data-group-id="' + g.id + '">'
+                    + '<div class="grp-card-head">'
+                        + '<input class="grp-name-input" value="' + escapeAttr(g.name) + '" data-action="group-rename" data-group-id="' + g.id + '" maxlength="60"/>'
+                        + '<span class="grp-count" id="grp-count-' + g.id + '">' + g.flags.length + ' flag' + (g.flags.length > 1 ? 's' : '') + '</span>'
+                        + '<button class="grp-del" data-action="group-delete" data-group-id="' + g.id + '" title="Supprimer le groupe">🗑</button>'
+                    + '</div>'
+                    + '<input class="grp-search" placeholder="🔍 filtrer les flags…" data-action="group-search" data-group-id="' + g.id + '"/>'
+                    + '<div class="grp-flags">' + rows + '</div>'
+                + '</div>';
+            }).join('');
+        }
+
+        function openGroupsModal() {
+            loadManualGroups();
+            renderGroupsModal();
+            const d = document.getElementById('groups-modal');
+            if (d && !d.open) d.showModal();
+        }
+        function closeGroupsModal() {
+            const d = document.getElementById('groups-modal');
+            if (d && d.open) d.close();
+        }
+
         function renderFlagsTable() {
             var tbody = document.getElementById('flagsTableBody');
             if (!tbody) return;
@@ -3385,37 +3610,56 @@ Flags existants: ${existingFlags.join(', ')}`
             }
 
             if (_flagGrouped) {
-                // ── MODE GROUPÉ : accordéon par famille ──────────────────
-                // On regroupe les flags DÉJÀ filtrés/triés par famille.
-                var famMap = new Map(); // label -> [flags]
-                flags.forEach(function(f) {
-                    var lbl = familyOfFlag(f.name);
-                    if (!famMap.has(lbl)) famMap.set(lbl, []);
-                    famMap.get(lbl).push(f);
-                });
-                // ordre : grosses familles d'abord, "Isolés" en dernier
-                var famEntries = [...famMap.entries()].sort(function(a, b){
-                    if (a[0] === '∅ Isolés') return 1;
-                    if (b[0] === '∅ Isolés') return -1;
-                    return b[1].length - a[1].length || a[0].localeCompare(b[0]);
-                });
+                // ── MODE GROUPÉ : accordéon, par famille (auto) ou par groupe manuel ──
+                var famEntries;   // [ [label, [flags]], … ] déjà filtrés/triés
+                if (_groupMode === 'manual') {
+                    // Groupes créés par l'équipe. Un flag peut être dans plusieurs groupes.
+                    famEntries = _manualGroups.map(function(g){
+                        var members = flags.filter(function(f){ return g.flags.indexOf(f.name) !== -1; });
+                        return [g.name, members];
+                    }).filter(function(e){ return e[1].length > 0; });
+                    var ungrouped = flags.filter(function(f){
+                        return !_manualGroups.some(function(g){ return g.flags.indexOf(f.name) !== -1; });
+                    });
+                    if (ungrouped.length) famEntries.push(['∅ Sans groupe', ungrouped]);
+                } else {
+                    // Familles auto-détectées par clustering des noms.
+                    var famMap = new Map(); // label -> [flags]
+                    flags.forEach(function(f) {
+                        var lbl = familyOfFlag(f.name);
+                        if (!famMap.has(lbl)) famMap.set(lbl, []);
+                        famMap.get(lbl).push(f);
+                    });
+                    // ordre : grosses familles d'abord, "Isolés" en dernier
+                    famEntries = [...famMap.entries()].sort(function(a, b){
+                        if (a[0] === '∅ Isolés') return 1;
+                        if (b[0] === '∅ Isolés') return -1;
+                        return b[1].length - a[1].length || a[0].localeCompare(b[0]);
+                    });
+                }
 
-                var html = '';
-                famEntries.forEach(function(entry){
-                    var label = entry[0], members = entry[1];
-                    var isOrph = label === '∅ Isolés';
-                    var collapsed = _collapsedFamilies.has(label);
-                    var dispLabel = isOrph ? 'Isolés' : label;
-                    var caret = collapsed ? '▸' : '▾';
-                    html += '<tr class="family-header-row" data-family="' + escapeAttr(label) + '" data-action="toggle-family" style="cursor:pointer;">' +
-                        '<td colspan="7" style="background:rgba(124,92,252,0.10);border-top:1px solid rgba(124,92,252,0.25);padding:9px 14px;">' +
-                            '<span style="font-size:13px;font-weight:800;color:#c4b5fd;">' + caret + ' ' + escapeHtml(dispLabel) + '</span>' +
-                            '<span style="font-size:11px;color:var(--ov-45);margin-left:8px;">' + members.length + ' flag' + (members.length>1?'s':'') + '</span>' +
-                        '</td>' +
-                    '</tr>';
-                    if (!collapsed) html += members.map(renderFlagRow).join('');
-                });
-                tbody.innerHTML = html;
+                if (!famEntries.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text3);font-size:13px;">'
+                        + 'Aucun groupe manuel exploitable. Clique « 🗂️ Gérer les groupes » pour en créer et y ranger des flags.'
+                        + '</td></tr>';
+                } else {
+                    var html = '';
+                    famEntries.forEach(function(entry){
+                        var label = entry[0], members = entry[1];
+                        var isOrph = label === '∅ Isolés' || label === '∅ Sans groupe';
+                        var collapsed = _collapsedFamilies.has(label);
+                        var dispLabel = isOrph ? label.replace('∅ ', '') : label;
+                        var caret = collapsed ? '▸' : '▾';
+                        html += '<tr class="family-header-row" data-family="' + escapeAttr(label) + '" data-action="toggle-family" style="cursor:pointer;">' +
+                            '<td colspan="7" style="background:rgba(124,92,252,0.10);border-top:1px solid rgba(124,92,252,0.25);padding:9px 14px;">' +
+                                '<span style="font-size:13px;font-weight:800;color:#c4b5fd;">' + caret + ' ' + escapeHtml(dispLabel) + '</span>' +
+                                '<span style="font-size:11px;color:var(--ov-45);margin-left:8px;">' + members.length + ' flag' + (members.length>1?'s':'') + '</span>' +
+                            '</td>' +
+                        '</tr>';
+                        if (!collapsed) html += members.map(renderFlagRow).join('');
+                    });
+                    tbody.innerHTML = html;
+                }
             } else {
                 // ── MODE PLAT ────────────────────────────────────────────
                 tbody.innerHTML = flags.map(renderFlagRow).join('');
