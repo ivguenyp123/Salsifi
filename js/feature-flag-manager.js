@@ -2401,19 +2401,16 @@ Flags existants: ${existingFlags.join(', ')}`
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
 
-            // Vue immédiate dans un nouvel onglet (imprimable / enregistrable)…
-            const win = window.open(url, '_blank');
-            // …et à défaut (popup bloquée) téléchargement du fichier.
-            if (!win) {
-                const project = (sessionStorage.getItem('gitlab_project') || 'projet').replace(/[^\w.-]+/g, '-');
-                const date = new Date().toISOString().slice(0, 10);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'feature-flags-' + project + '-' + date + '.html';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
+            // Téléchargement direct du fichier HTML (pas d'ouverture d'onglet).
+            const project = (sessionStorage.getItem('gitlab_project') || 'projet').replace(/[^\w.-]+/g, '-');
+            const date = new Date().toISOString().slice(0, 10);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'feature-flags-' + project + '-' + date + '.html';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
             setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
         }
 
