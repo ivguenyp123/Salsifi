@@ -402,6 +402,9 @@
             document.querySelectorAll('.sortable-th').forEach(th =>
                 th.addEventListener('click', () => sortFlags(th.dataset.col)));
 
+            // Rapport HTML groupé par environnement
+            document.getElementById('btn-env-report')?.addEventListener('click', generateEnvReport);
+
             // History tab controls
             document.getElementById('history-search')?.addEventListener('input', filterAuditHistory);
             document.getElementById('history-filter-env')?.addEventListener('change', filterAuditHistory);
@@ -2198,6 +2201,186 @@ Flags existants: ${existingFlags.join(', ')}`
         // ZIP côté client à partir de `window.generatedFiles`.
 
         function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
+
+        // ══════════════════════════════════════════════════════════════════
+        // RAPPORT HTML PAR ENVIRONNEMENT
+        // Génère un document HTML autonome listant tous les flags, groupés par
+        // environnement (production, staging, *…), pour sortir p.ex. « toutes
+        // les FF en prod » en un clic.
+        // ══════════════════════════════════════════════════════════════════
+
+        // Environnements d'un flag = ensemble des environment_scope de ses stratégies.
+        function flagEnvironments(flag) {
+            const envs = new Set();
+            (flag.strategies || []).forEach(function (s) {
+                (s.scopes || []).forEach(function (sc) {
+                    if (sc && sc.environment_scope) envs.add(sc.environment_scope);
+                });
+            });
+            return envs.size ? Array.from(envs) : ['(non scopé)'];
+        }
+
+        // Rollout réellement appliqué dans un environnement donné (les stratégies
+        // ciblant cet env, ou '*'). Master switch `active` prioritaire.
+        function flagRolloutInEnv(flag, env) {
+            if (!flag.active) return 0;
+            const strats = (flag.strategies || []).filter(function (s) {
+                return (s.scopes || []).some(function (sc) {
+                    return sc.environment_scope === env || sc.environment_scope === '*';
+                });
+            });
+            if (!strats.length) return flag.rolloutPercent != null ? flag.rolloutPercent : 100;
+            let pct = 0;
+            strats.forEach(function (s) {
+                if (s.parameters && s.parameters.percentage != null) {
+                    pct = Math.max(pct, parseInt(s.parameters.percentage, 10) || 0);
+                } else if (s.name === 'default') {
+                    pct = Math.max(pct, 100);
+                }
+            });
+            return pct;
+        }
+
+        // Ordre d'affichage des environnements : prod d'abord, puis '*', puis un
+        // ordre métier connu, puis alphabétique, « (non scopé) » en dernier.
+        function sortEnvNames(names) {
+            const RANK = { 'production': 0, 'prod': 0, '*': 1, 'staging': 3, 'preprod': 4,
+                'pre-production': 4, 'uat': 5, 'recette': 5, 'integration': 6, 'qa': 6,
+                'development': 8, 'dev': 8, 'test': 9 };
+            return names.slice().sort(function (a, b) {
+                const ra = a === '(non scopé)' ? 99 : (RANK[a] != null ? RANK[a] : 20);
+                const rb = b === '(non scopé)' ? 99 : (RANK[b] != null ? RANK[b] : 20);
+                if (ra !== rb) return ra - rb;
+                return a.localeCompare(b);
+            });
+        }
+
+        const REPORT_STATUS_META = {
+            ROLLOUT:       { label: 'Rollout',       color: '#a78bfa' },
+            STABILISATION: { label: 'Stabilisation', color: '#60a5fa' },
+            CLEANUP:       { label: 'Cleanup',       color: '#fbbf24' },
+            DETTE:         { label: 'Dette',         color: '#fb923c' },
+            CRITIQUE:      { label: 'Critique',      color: '#f87171' },
+            OPS:           { label: 'Ops',           color: '#94a3b8' }
+        };
+
+        function buildEnvReportHtml() {
+            const projectLabel = sessionStorage.getItem('gitlab_project') || 'Projet';
+            const now = new Date();
+            const dateStr = now.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
+
+            // Groupement env -> [flags]
+            const byEnv = {};
+            currentFlags.forEach(function (f) {
+                flagEnvironments(f).forEach(function (env) {
+                    (byEnv[env] = byEnv[env] || []).push(f);
+                });
+            });
+            const envNames = sortEnvNames(Object.keys(byEnv));
+
+            const envLabel = function (env) {
+                if (env === '*') return 'Tous environnements (*)';
+                if (env === '(non scopé)') return 'Non scopé (aucun environnement)';
+                return env;
+            };
+
+            // Résumé (chips par env)
+            const summaryChips = envNames.map(function (env) {
+                return '<span class="chip"><b>' + escapeHtml(envLabel(env)) + '</b> ' + byEnv[env].length + '</span>';
+            }).join('');
+
+            // Sections par environnement
+            const sections = envNames.map(function (env) {
+                const flags = byEnv[env].slice().sort(function (a, b) {
+                    if ((b.priority || 0) !== (a.priority || 0)) return (b.priority || 0) - (a.priority || 0);
+                    return a.name.localeCompare(b.name);
+                });
+                const rows = flags.map(function (f) {
+                    const meta = REPORT_STATUS_META[f.status] || { label: f.status || '—', color: '#94a3b8' };
+                    const pct = flagRolloutInEnv(f, env);
+                    const active = f.active
+                        ? '<span class="on">● actif</span>'
+                        : '<span class="off">○ inactif</span>';
+                    const prodInfo = (env === 'production' || env === 'prod') && f.prodSinceDays != null
+                        ? f.prodSinceDays + ' j' : '—';
+                    return '<tr>'
+                        + '<td class="mono">' + escapeHtml(f.name) + '</td>'
+                        + '<td>' + active + '</td>'
+                        + '<td class="num">' + pct + '%<div class="bar"><i style="width:' + pct + '%"></i></div></td>'
+                        + '<td><span class="badge" style="color:' + meta.color + ';border-color:' + meta.color + '55;background:' + meta.color + '18">' + escapeHtml(meta.label) + '</span></td>'
+                        + '<td class="desc">' + escapeHtml(f.description || '—') + '</td>'
+                        + '<td class="num">' + (f.ageInDays != null ? f.ageInDays + ' j' : '—') + '</td>'
+                        + '<td class="num">' + prodInfo + '</td>'
+                        + '</tr>';
+                }).join('');
+                const isProd = env === 'production' || env === 'prod';
+                const note = env === '*'
+                    ? '<p class="note">Ces flags s\'appliquent à <b>tous les environnements, prod comprise</b>.</p>'
+                    : '';
+                return '<section class="env' + (isProd ? ' env-prod' : '') + '">'
+                    + '<h2>' + (isProd ? '🚀 ' : '🌍 ') + escapeHtml(envLabel(env))
+                    + ' <span class="count">' + flags.length + ' flag' + (flags.length > 1 ? 's' : '') + '</span></h2>'
+                    + note
+                    + '<table><thead><tr><th>Flag</th><th>Interrupteur</th><th>Rollout</th><th>Statut</th><th>Description</th><th>Âge</th><th>En prod</th></tr></thead>'
+                    + '<tbody>' + rows + '</tbody></table></section>';
+            }).join('');
+
+            return '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
+                + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                + '<title>Feature Flags — ' + escapeHtml(projectLabel) + '</title><style>'
+                + ':root{--bg:#0f0a1f;--card:#181030;--line:rgba(255,255,255,.1);--ink:#f4f1ff;--ink2:#b8aed8;--ink3:#8479a6;--accent:#a78bfa}'
+                + '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}'
+                + '.wrap{max-width:1180px;margin:0 auto;padding:34px 22px 70px}'
+                + 'header h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em}header .meta{color:var(--ink3);font-size:13px;font-family:ui-monospace,monospace}'
+                + '.summary{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}'
+                + '.chip{font-size:12.5px;padding:5px 11px;border:1px solid var(--line);border-radius:100px;background:var(--card);color:var(--ink2)}'
+                + '.chip b{color:var(--ink)}'
+                + 'section.env{margin-top:34px}section.env h2{font-size:18px;margin:0 0 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:9px}'
+                + 'section.env-prod h2{color:#fbbf24}.count{font-family:ui-monospace,monospace;font-size:12px;color:var(--ink3);font-weight:400}'
+                + '.note{color:var(--ink2);font-size:13px;margin:-4px 0 12px}'
+                + 'table{width:100%;border-collapse:collapse;font-size:13px}'
+                + 'thead th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line)}'
+                + 'tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}'
+                + '.mono{font-family:ui-monospace,monospace;color:var(--ink)}.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink2)}'
+                + '.desc{color:var(--ink2);max-width:340px}'
+                + '.on{color:#34d399;font-weight:600}.off{color:var(--ink3)}'
+                + '.badge{font-size:11px;font-weight:600;padding:2px 9px;border:1px solid;border-radius:6px}'
+                + '.bar{height:4px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}'
+                + 'footer{margin-top:44px;color:var(--ink3);font-size:11.5px;font-family:ui-monospace,monospace;text-align:center}'
+                + '@media print{body{background:#fff;color:#111}.wrap{max-width:none}section.env h2,thead th{border-color:#ccc}.chip,section.env{break-inside:avoid}.card,.chip{background:#f5f5f7}tbody td{border-color:#eee}.desc,.num,.chip,.off,.count,header .meta{color:#444}.mono{color:#111}.bar{background:#eee}}'
+                + '</style></head><body><div class="wrap">'
+                + '<header><h1>🚩 Feature Flags — ' + escapeHtml(projectLabel) + '</h1>'
+                + '<div class="meta">Généré le ' + escapeHtml(dateStr) + ' · ' + currentFlags.length + ' flag' + (currentFlags.length > 1 ? 's' : '') + ' · groupés par environnement</div>'
+                + '<div class="summary">' + summaryChips + '</div></header>'
+                + sections
+                + '<footer>LCL DevOps Hub · Feature Flag Manager — un flag peut apparaître dans plusieurs environnements</footer>'
+                + '</div></body></html>';
+        }
+
+        function generateEnvReport() {
+            if (!currentFlags || currentFlags.length === 0) {
+                alert('Aucun feature flag à exporter. Charge d\'abord les flags du projet.');
+                return;
+            }
+            const html = buildEnvReportHtml();
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            // Vue immédiate dans un nouvel onglet (imprimable / enregistrable)…
+            const win = window.open(url, '_blank');
+            // …et à défaut (popup bloquée) téléchargement du fichier.
+            if (!win) {
+                const project = (sessionStorage.getItem('gitlab_project') || 'projet').replace(/[^\w.-]+/g, '-');
+                const date = new Date().toISOString().slice(0, 10);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'feature-flags-' + project + '-' + date + '.html';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+            setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        }
 
         // ══════════════════════════════════════════════════════════════════
         // RBAC & APPROVALS — DÉSACTIVÉ POUR LE BAC À SABLE
