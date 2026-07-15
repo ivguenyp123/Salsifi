@@ -107,6 +107,7 @@ tbody td { padding:12px 16px; font-size:14px; border-bottom:1px solid var(--bord
 tbody tr:last-child td { border-bottom:none; }
 tbody tr:hover { background:var(--ov-03); }
 .detail-cell { font-size:12px; color:var(--text-secondary); line-height:1.9; }
+.role-mixed-note { font-size:10px; color:var(--text-muted); margin-top:3px; }
 
 .m-name { font-weight:600; font-size:14px; }
 .m-user { font-size:12px; color:var(--text-muted); margin-top:2px; }

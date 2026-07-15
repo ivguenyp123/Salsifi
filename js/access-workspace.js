@@ -362,8 +362,23 @@ function renderPeopleTable(people) {
     if (bar) bar.innerHTML = roleFilterBar(peopleFilter, 'setPeopleFilter');
     const shown = people.filter(p => matchRole(p.maxLevel, peopleFilter));
     document.getElementById('peopleTableBody').innerHTML = shown.map(p => {
-        const detail = p.repos
-            .sort((a, b) => b.level - a.level)
+        // Dédup par repo (garde le rôle le plus élevé si plusieurs sources sur le même repo).
+        const byRepo = new Map();
+        for (const r of p.repos) {
+            const cur = byRepo.get(r.name);
+            if (!cur || r.level > cur.level) byRepo.set(r.name, r);
+        }
+        const repos = [...byRepo.values()].sort((a, b) => b.level - a.level);
+
+        // Rôle(s) ACTUEL(s) : le vrai rôle par repo, pas un max abstrait.
+        // Un seul rôle partout → un badge ; rôles différents selon le repo → chaque rôle distinct.
+        const distinctLevels = [...new Set(repos.map(r => r.level))].sort((a, b) => b - a);
+        const roleCell = distinctLevels.length === 1
+            ? `<span class="role-badge lvl-${distinctLevels[0]}">${esc(roleLabel(distinctLevels[0]))}</span>`
+            : distinctLevels.map(l => `<span class="role-badge sm lvl-${l}">${esc(roleLabel(l))}</span>`).join(' ') +
+              '<div class="role-mixed-note">selon le repo</div>';
+
+        const detail = repos
             .map(r => `${esc(r.name)} <span class="role-badge sm lvl-${r.level}">${esc(r.role)}</span>${r.inherited ? '<span class="pill pill-inherited sm">hérité</span>' : ''}`)
             .join(' · ');
         return `
@@ -372,8 +387,8 @@ function renderPeopleTable(people) {
                     <div class="m-name">${esc(p.name)}</div>
                     <div class="m-user">@${esc(p.username)}</div>
                 </td>
-                <td><span class="role-badge lvl-${p.maxLevel}">${esc(roleLabel(p.maxLevel))}</span></td>
-                <td>${p.repos.length}</td>
+                <td>${roleCell}</td>
+                <td>${repos.length}</td>
                 <td class="detail-cell">${detail}</td>
             </tr>`;
     }).join('') || '<tr><td colspan="4" class="muted">Aucune personne.</td></tr>';
