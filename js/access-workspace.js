@@ -11,6 +11,7 @@
 
 let GITLAB_URL = null, token = null, currentWorkspace = null;
 let lastModel = null;   // dernier modèle calculé (pour export / re-render)
+let historyLoaded = false;   // chargement paresseux de l'onglet Historique
 
 const HUB_URL = 'hub.html';
 
@@ -43,7 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function switchTab(name) {
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.tab === name));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('is-active', p.id === 'panel-' + name));
+    // L'historique appelle l'API → on ne le charge qu'au premier affichage.
+    if (name === 'history' && !historyLoaded) loadHistory();
 }
+
+function daysAgoISO(d) { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }
 
 async function init() {
     const _auth = window.Salsifi.loadAuth({ redirect: false });
@@ -144,6 +149,13 @@ async function loadAccessData() {
     loading.style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
     render(lastModel);
+
+    // L'historique est reconstruit à la demande : on invalide le cache et,
+    // si l'onglet est ouvert, on le recharge tout de suite.
+    historyLoaded = false;
+    const histView = document.getElementById('historyView');
+    if (histView) histView.innerHTML = '<div class="muted" style="padding:20px;">Ouvre cet onglet pour charger l\'historique des 30 derniers jours…</div>';
+    if (document.querySelector('.tab.is-active')?.dataset.tab === 'history') loadHistory();
 }
 
 // ───── Construction du modèle agrégé ──────────────────────────────────
@@ -344,6 +356,148 @@ function renderAdmins(admins) {
             </div>`;
         }).join('') +
         `</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// HISTORIQUE DU MOIS (accès & rôles)
+// ───────────────────────────────────────────────────
+// Deux sources selon l'édition GitLab du repo :
+//  1) AUDIT EVENTS (/audit_events) — Premium+ : ajouts, changements de
+//     rôle, retraits, changements d'expiration, avec l'auteur.
+//  2) Fallback ÉVÉNEMENTS (/events?action=joined|left) — toutes éditions :
+//     uniquement les arrivées / départs (pas les changements de rôle).
+// ═══════════════════════════════════════════════════
+
+const HIST_ICON = { added: '➕', joined: '➕', removed: '➖', left: '➖', role: '🔄', expiration: '⏳' };
+
+async function loadHistory() {
+    historyLoaded = true;
+    const view = document.getElementById('historyView');
+    view.innerHTML = '<div class="loading" style="padding:40px;"><div class="spinner"></div><p>Lecture des mouvements d\'accès du mois…</p></div>';
+
+    const afterISO = daysAgoISO(30);
+    const afterDate = afterISO.slice(0, 10);
+    const tasks = currentWorkspace.repositories.map(r => () => fetchRepoHistory(r, afterISO, afterDate));
+    const settled = await window.Salsifi.runWithConcurrency(tasks, 5);
+    const results = settled.map(s => s.status === 'fulfilled' ? s.value : null).filter(Boolean);
+    renderHistory(results);
+}
+
+async function fetchRepoHistory(repo, afterISO, afterDate) {
+    // 1) Tente les Audit Events (probe léger per_page=1 pour tester l'accès).
+    let probe = null;
+    try {
+        probe = await window.Salsifi.gitlabFetch(
+            GITLAB_URL, token,
+            `/projects/${repo.id}/audit_events?created_after=${encodeURIComponent(afterISO)}&per_page=1`
+        );
+    } catch { probe = null; }
+
+    if (probe && probe.ok) {
+        const events = await window.Salsifi.gitlabPaginate(
+            GITLAB_URL, token,
+            `/projects/${repo.id}/audit_events?created_after=${encodeURIComponent(afterISO)}`,
+            { maxPages: 5 }
+        ).catch(() => []);
+        return { repo, mode: 'audit', entries: parseAuditEvents(repo, events) };
+    }
+
+    // 2) Fallback CE : arrivées / départs via l'API Events.
+    try {
+        const [joined, left] = await Promise.all([
+            window.Salsifi.gitlabPaginate(GITLAB_URL, token, `/projects/${repo.id}/events?action=joined&after=${afterDate}`, { maxPages: 5 }),
+            window.Salsifi.gitlabPaginate(GITLAB_URL, token, `/projects/${repo.id}/events?action=left&after=${afterDate}`, { maxPages: 5 })
+        ]);
+        return { repo, mode: 'events', entries: parseCeEvents(repo, joined, left) };
+    } catch {
+        return { repo, mode: 'error', entries: [] };
+    }
+}
+
+// Ne garde que les événements d'audit liés à l'appartenance / aux droits.
+function parseAuditEvents(repo, events) {
+    const out = [];
+    for (const e of events) {
+        const d = e.details || {};
+        const at = e.created_at;
+        const actor = d.author_name || null;
+        const subject = d.target_details || d.target_id || '?';
+        if (d.add === 'user_access') {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'added', text: `ajouté comme ${d.as || d.to || '?'}` });
+        } else if (d.change === 'access_level') {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'role', text: `rôle ${d.from || '?'} → ${d.to || '?'}` });
+        } else if (d.remove === 'user_access') {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'removed', text: 'retiré du projet' });
+        } else if (d.change === 'expiration_date' || d.change === 'expiry') {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'expiration', text: `expiration ${d.from || '∅'} → ${d.to || '∅'}` });
+        }
+        // les autres audit events (paramètres, CI…) sont ignorés : hors périmètre accès.
+    }
+    return out;
+}
+
+function parseCeEvents(repo, joined, left) {
+    const out = [];
+    for (const e of joined || []) {
+        out.push({ at: e.created_at, repo: repo.name, actor: null, subject: (e.author && e.author.name) || '?', kind: 'joined', text: 'a rejoint le projet' });
+    }
+    for (const e of left || []) {
+        out.push({ at: e.created_at, repo: repo.name, actor: null, subject: (e.author && e.author.name) || '?', kind: 'left', text: 'a quitté le projet' });
+    }
+    return out;
+}
+
+function renderHistory(results) {
+    const view = document.getElementById('historyView');
+    const all = results.flatMap(r => r.entries).filter(e => e.at);
+    all.sort((a, b) => new Date(b.at) - new Date(a.at));
+
+    const eventsOnly = results.filter(r => r.mode === 'events').length;
+    const errored = results.filter(r => r.mode === 'error').length;
+
+    let banner = '';
+    if (eventsOnly) {
+        banner += `<div class="hist-note">ℹ️ ${eventsOnly} repo(s) en édition CE : seuls les <b>arrivées et départs</b> sont visibles. Les changements de rôle précis nécessitent les Audit Events (Premium+).</div>`;
+    }
+    if (errored) {
+        banner += `<div class="repo-errors">⚠️ ${errored} repo(s) : historique non lisible (droits insuffisants).</div>`;
+    }
+
+    if (!all.length) {
+        view.innerHTML = banner + '<div class="muted" style="padding:20px;">Aucun mouvement d\'accès sur les 30 derniers jours.</div>';
+        return;
+    }
+
+    // Regroupe par jour (du plus récent au plus ancien).
+    const groups = {};
+    for (const en of all) {
+        const day = en.at.slice(0, 10);
+        (groups[day] || (groups[day] = [])).push(en);
+    }
+    const days = Object.keys(groups).sort().reverse();
+
+    const body = days.map(day => {
+        const rows = groups[day].map(en => {
+            const icon = HIST_ICON[en.kind] || '•';
+            const time = new Date(en.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="hist-row">
+                    <div class="hist-icon">${icon}</div>
+                    <div class="hist-body">
+                        <div class="hist-line"><b>${esc(en.subject)}</b> ${esc(en.text)} <span class="chip">${esc(en.repo)}</span></div>
+                        <div class="hist-meta">${time}${en.actor ? ' · par ' + esc(en.actor) : ''}</div>
+                    </div>
+                </div>`;
+        }).join('');
+        return `<div class="hist-day"><div class="hist-day-label">${formatDay(day)}</div>${rows}</div>`;
+    }).join('');
+
+    view.innerHTML = banner + `<div class="hist-timeline">${body}</div>`;
+}
+
+function formatDay(day) {
+    const d = new Date(day + 'T00:00:00');
+    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 // ───── Export CSV ─────────────────────────────────────────────────────

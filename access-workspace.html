@@ -45,6 +45,7 @@
             <button class="tab is-active" data-tab="repos">📦 Par repo</button>
             <button class="tab" data-tab="people">👤 Par personne</button>
             <button class="tab" data-tab="admins">👑 Maintainers &amp; Owners</button>
+            <button class="tab" data-tab="history">📜 Historique (30 j)</button>
         </div>
 
         <!-- Vue Par repo -->
@@ -74,6 +75,11 @@
         <!-- Vue Maintainers & Owners -->
         <div class="tab-panel" id="panel-admins">
             <div id="adminsView"></div>
+        </div>
+
+        <!-- Vue Historique du mois -->
+        <div class="tab-panel" id="panel-history">
+            <div id="historyView"><div class="muted" style="padding:20px;">Ouvre cet onglet pour charger l'historique des 30 derniers jours…</div></div>
         </div>
 
     </div>
