@@ -86,6 +86,16 @@ body {
 .tab-panel { display:none; }
 .tab-panel.is-active { display:block; }
 
+/* Barre de filtres (tri par rôle / par type d'événement) */
+.filter-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.filter-chip {
+    padding:6px 13px; background:var(--ov-04); border:1px solid var(--border-subtle);
+    border-radius:20px; color:var(--text-secondary); font-family:var(--font-body);
+    font-size:13px; font-weight:500; cursor:pointer; transition:.15s;
+}
+.filter-chip:hover { background:var(--ov-08); color:var(--text-primary); }
+.filter-chip.is-active { background:rgba(124,92,255,0.18); border-color:var(--accent); color:#c4b5fd; }
+
 /* Tables */
 .table-container { background:var(--bg-card); backdrop-filter:blur(20px); border:1px solid var(--border-subtle); border-radius:16px; overflow:hidden; }
 table { width:100%; border-collapse:collapse; }

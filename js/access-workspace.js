@@ -13,6 +13,12 @@ let GITLAB_URL = null, token = null, currentWorkspace = null;
 let myUsername = '';    // utilisateur connecté (auteur des modifications de liste blanche)
 let lastModel = null;   // dernier modèle calculé (pour export / re-render)
 let historyLoaded = false;   // chargement paresseux de l'onglet Historique
+let lastHistory = null;      // derniers résultats d'historique (pour re-filtrer sans refetch)
+
+// Filtres de tri par rôle (partagés Par repo / Par personne) et par type d'événement (Historique).
+let repoFilter = 'all';      // all | admin | owner | maintainer
+let peopleFilter = 'all';    // all | admin | owner | maintainer
+let historyFilter = 'all';   // all | role | membership
 
 // Liste blanche des Maintainers autorisés (portée workspace).
 // Stockée en variable projet GitLab partagée (écriture = droit Maintainer),
@@ -34,6 +40,21 @@ const ROLE_LABELS = {
 function roleLabel(level) { return ROLE_LABELS[level] || ('Niveau ' + level); }
 // Un « administrateur » du repo = quelqu'un qui peut gérer les accès : Maintainer ou Owner.
 function isAdminLevel(level) { return level >= 40; }
+
+// Filtre de tri par rôle, partagé Par repo / Par personne.
+function matchRole(level, f) {
+    if (f === 'owner') return level >= 50;
+    if (f === 'maintainer') return level === 40;
+    if (f === 'admin') return level >= 40;   // Maintainers + Owners
+    return true;                              // all
+}
+const ROLE_FILTERS = [['all', 'Tous'], ['admin', '👑 Maintainers & Owners'], ['owner', 'Owners'], ['maintainer', 'Maintainers']];
+function roleFilterBar(current, setter) {
+    return '<div class="filter-bar">' + ROLE_FILTERS.map(([v, l]) =>
+        `<button class="filter-chip${current === v ? ' is-active' : ''}" onclick="${setter}('${v}')">${l}</button>`).join('') + '</div>';
+}
+function setReposFilter(f) { repoFilter = f; renderReposView(lastModel.repos, lastModel.errored); }
+function setPeopleFilter(f) { peopleFilter = f; renderPeopleTable(lastModel.peopleList); }
 
 const esc = window.Salsifi.escapeHtml;
 const escA = window.Salsifi.escapeAttr;
@@ -288,12 +309,19 @@ function alertIcon(level) {
 }
 
 function renderReposView(repos, errored) {
-    let html = '';
+    let html = roleFilterBar(repoFilter, 'setReposFilter');
     if (errored.length) {
         html += `<div class="repo-errors">⚠️ ${errored.length} repo(s) non lisibles (droits insuffisants ou introuvables) : ` +
             errored.map(r => esc(r.name)).join(', ') + '</div>';
     }
-    html += repos.map(r => {
+    const shown = repos
+        .map(r => ({ ...r, members: r.members.filter(m => matchRole(m.access_level, repoFilter)) }))
+        .filter(r => repoFilter === 'all' || r.members.length);
+    if (!shown.length) {
+        document.getElementById('reposView').innerHTML = html + '<div class="muted" style="padding:16px;">Aucun membre ne correspond à ce filtre.</div>';
+        return;
+    }
+    html += shown.map(r => {
         const rows = r.members.map(m => `
             <tr>
                 <td>
@@ -327,7 +355,10 @@ function renderReposView(repos, errored) {
 }
 
 function renderPeopleTable(people) {
-    document.getElementById('peopleTableBody').innerHTML = people.map(p => {
+    const bar = document.getElementById('peopleFilterBar');
+    if (bar) bar.innerHTML = roleFilterBar(peopleFilter, 'setPeopleFilter');
+    const shown = people.filter(p => matchRole(p.maxLevel, peopleFilter));
+    document.getElementById('peopleTableBody').innerHTML = shown.map(p => {
         const detail = p.repos
             .sort((a, b) => b.level - a.level)
             .map(r => `${esc(r.name)} <span class="role-badge sm lvl-${r.level}">${esc(r.role)}</span>${r.inherited ? '<span class="pill pill-inherited sm">hérité</span>' : ''}`)
@@ -654,6 +685,8 @@ async function fetchRepoHistory(repo, afterISO, afterDate) {
 }
 
 // Ne garde que les événements d'audit liés à l'appartenance / aux droits.
+// Robuste aux variantes de format GitLab : champs structurés (add/change/
+// remove + from/to) OU message libre `custom_message` selon la version.
 function parseAuditEvents(repo, events) {
     const out = [];
     for (const e of events) {
@@ -661,13 +694,20 @@ function parseAuditEvents(repo, events) {
         const at = e.created_at;
         const actor = d.author_name || null;
         const subject = d.target_details || d.target_id || '?';
-        if (d.add === 'user_access') {
-            out.push({ at, repo: repo.name, actor, subject, kind: 'added', text: `ajouté comme ${d.as || d.to || '?'}` });
-        } else if (d.change === 'access_level') {
-            out.push({ at, repo: repo.name, actor, subject, kind: 'role', text: `rôle ${d.from || '?'} → ${d.to || '?'}` });
-        } else if (d.remove === 'user_access') {
-            out.push({ at, repo: repo.name, actor, subject, kind: 'removed', text: 'retiré du projet' });
-        } else if (d.change === 'expiration_date' || d.change === 'expiry') {
+        const isUser = d.target_type === 'User' || d.target_type === 'Member' || !d.target_type;
+        const cm = String(d.custom_message || '').toLowerCase();
+
+        if (d.change === 'access_level' || d.change === 'access level' || (isUser && cm.includes('access level'))) {
+            // Changement de rôle : le cœur de ce que l'équipe veut suivre.
+            const text = (d.from || d.to)
+                ? `rôle ${d.from || '?'} → ${d.to || '?'}`
+                : (d.custom_message || 'changement de rôle');
+            out.push({ at, repo: repo.name, actor, subject, kind: 'role', text });
+        } else if (d.add === 'user_access' || (isUser && cm.includes('added user'))) {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'added', text: d.as ? `ajouté comme ${d.as}` : (d.custom_message || 'ajouté au projet') });
+        } else if (d.remove === 'user_access' || (isUser && cm.includes('removed user'))) {
+            out.push({ at, repo: repo.name, actor, subject, kind: 'removed', text: d.custom_message || 'retiré du projet' });
+        } else if (d.change === 'expiration_date' || d.change === 'expiry' || (isUser && cm.includes('expiration'))) {
             out.push({ at, repo: repo.name, actor, subject, kind: 'expiration', text: `expiration ${d.from || '∅'} → ${d.to || '∅'}` });
         }
         // les autres audit events (paramètres, CI…) sont ignorés : hors périmètre accès.
@@ -686,24 +726,43 @@ function parseCeEvents(repo, joined, left) {
     return out;
 }
 
-function renderHistory(results) {
-    const view = document.getElementById('historyView');
-    const all = results.flatMap(r => r.entries).filter(e => e.at);
-    all.sort((a, b) => new Date(b.at) - new Date(a.at));
+const HIST_FILTERS = [['all', 'Tout'], ['role', '🔄 Changements de rôle'], ['membership', '➕➖ Arrivées / départs']];
+function histFilterBar() {
+    return '<div class="filter-bar">' + HIST_FILTERS.map(([v, l]) =>
+        `<button class="filter-chip${historyFilter === v ? ' is-active' : ''}" onclick="setHistoryFilter('${v}')">${l}</button>`).join('') + '</div>';
+}
+function setHistoryFilter(f) { historyFilter = f; if (lastHistory) renderHistory(lastHistory); }
+function histMatch(kind) {
+    if (historyFilter === 'role') return kind === 'role' || kind === 'expiration';
+    if (historyFilter === 'membership') return kind === 'added' || kind === 'removed' || kind === 'joined' || kind === 'left';
+    return true;
+}
 
+function renderHistory(results) {
+    lastHistory = results;
+    const view = document.getElementById('historyView');
+    const auditRepos = results.filter(r => r.mode === 'audit').length;
     const eventsOnly = results.filter(r => r.mode === 'events').length;
     const errored = results.filter(r => r.mode === 'error').length;
 
-    let banner = '';
-    if (eventsOnly) {
-        banner += `<div class="hist-note">ℹ️ ${eventsOnly} repo(s) en édition CE : seuls les <b>arrivées et départs</b> sont visibles. Les changements de rôle précis nécessitent les Audit Events (Premium+).</div>`;
+    // Indicateur de couverture : dit d'emblée si les changements de rôle sont suivis chez toi.
+    let banner = `<div class="hist-note">${auditRepos
+        ? `🔄 Changements de rôle suivis sur <b>${auditRepos} repo(s)</b> (Audit Events).`
+        : '🔄 Changements de rôle <b>non disponibles</b> : aucun repo ne donne accès aux Audit Events (édition CE ou droits insuffisants).'}${eventsOnly ? ` ➕➖ Arrivées/départs seulement sur <b>${eventsOnly} repo(s)</b> en CE.` : ''}</div>`;
+    if (!auditRepos) {
+        banner += '<div class="hist-note">ℹ️ Sur un repo CE, GitLab n\'expose <b>aucun</b> historique de changement de rôle. Pour l\'obtenir malgré tout, il faudra photographier les rôles dans le temps (snapshot-service) et comparer.</div>';
     }
     if (errored) {
         banner += `<div class="repo-errors">⚠️ ${errored} repo(s) : historique non lisible (droits insuffisants).</div>`;
     }
+    banner += histFilterBar();
+
+    const all = results.flatMap(r => r.entries).filter(e => e.at && histMatch(e.kind));
+    all.sort((a, b) => new Date(b.at) - new Date(a.at));
 
     if (!all.length) {
-        view.innerHTML = banner + '<div class="muted" style="padding:20px;">Aucun mouvement d\'accès sur les 30 derniers jours.</div>';
+        const what = historyFilter === 'role' ? 'changement de rôle' : historyFilter === 'membership' ? 'arrivée/départ' : 'mouvement d\'accès';
+        view.innerHTML = banner + `<div class="muted" style="padding:20px;">Aucun ${what} sur les 30 derniers jours.</div>`;
         return;
     }
 
