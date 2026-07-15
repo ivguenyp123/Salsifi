@@ -61,6 +61,22 @@ function setPeopleFilter(f) { peopleFilter = f; renderPeopleTable(lastModel.peop
 const esc = window.Salsifi.escapeHtml;
 const escA = window.Salsifi.escapeAttr;
 
+// Lien vers la page « Membres » du repo dans GitLab, filtrée sur la personne
+// → clic sur un nom = j'atterris pile sur ses droits dans ce repo, pour agir.
+function repoMembersUrl(repoLike, username) {
+    let base = repoLike && repoLike.url;
+    if (!base) {
+        const path = (repoLike && repoLike.path) || '';
+        base = String(GITLAB_URL || '').replace(/\/+$/, '') + '/' + path;
+    }
+    base = String(base).replace(/\/+$/, '');
+    return base + '/-/project_members' + (username ? '?search=' + encodeURIComponent(username) : '');
+}
+// Nom cliquable ouvrant GitLab dans un nouvel onglet.
+function personLink(repoLike, username, inner) {
+    return `<a class="gl-link" href="${escA(repoMembersUrl(repoLike, username))}" target="_blank" rel="noopener noreferrer" title="Voir ses droits dans GitLab ↗">${inner} <span class="gl-arrow">↗</span></a>`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
     init();
@@ -199,10 +215,13 @@ function buildModel(repoResults) {
     for (const rr of repoResults) {
         if (rr.error) { errored.push(rr.repo); continue; }
         const admins = rr.members.filter(m => isAdminLevel(m.access_level) && m.state !== 'blocked');
+        const repoPath = rr.repo.path_with_namespace || rr.repo.path || rr.repo.name;
+        const repoUrl = rr.repo.url || rr.repo.web_url || '';
         repos.push({
             id: rr.repo.id,
             name: rr.repo.name,
-            path: rr.repo.path_with_namespace || rr.repo.name,
+            path: repoPath,
+            url: repoUrl,
             members: rr.members,
             adminCount: admins.length
         });
@@ -213,7 +232,7 @@ function buildModel(repoResults) {
                 people.set(m.username, p);
             }
             if (m.access_level > p.maxLevel) p.maxLevel = m.access_level;
-            p.repos.push({ name: rr.repo.name, role: m.role, level: m.access_level, inherited: m.inherited, expires_at: m.expires_at });
+            p.repos.push({ name: rr.repo.name, path: repoPath, url: repoUrl, role: m.role, level: m.access_level, inherited: m.inherited, expires_at: m.expires_at });
         }
     }
 
@@ -328,7 +347,7 @@ function renderReposView(repos, errored) {
         const rows = r.members.map(m => `
             <tr>
                 <td>
-                    <div class="m-name">${esc(m.name)}</div>
+                    <div class="m-name">${personLink(r, m.username, esc(m.name))}</div>
                     <div class="m-user">@${esc(m.username)}${m.state === 'blocked' ? ' <span class="pill pill-blocked">bloqué</span>' : ''}</div>
                 </td>
                 <td><span class="role-badge lvl-${m.access_level}">${esc(m.role)}</span></td>
@@ -379,12 +398,13 @@ function renderPeopleTable(people) {
               '<div class="role-mixed-note">selon le repo</div>';
 
         const detail = repos
-            .map(r => `${esc(r.name)} <span class="role-badge sm lvl-${r.level}">${esc(r.role)}</span>${r.inherited ? '<span class="pill pill-inherited sm">hérité</span>' : ''}`)
+            .map(r => `${personLink(r, p.username, esc(r.name))} <span class="role-badge sm lvl-${r.level}">${esc(r.role)}</span>${r.inherited ? '<span class="pill pill-inherited sm">hérité</span>' : ''}`)
             .join(' · ');
+        const nameLink = repos.length ? personLink(repos[0], p.username, esc(p.name)) : esc(p.name);
         return `
             <tr>
                 <td>
-                    <div class="m-name">${esc(p.name)}</div>
+                    <div class="m-name">${nameLink}</div>
                     <div class="m-user">@${esc(p.username)}</div>
                 </td>
                 <td>${roleCell}</td>

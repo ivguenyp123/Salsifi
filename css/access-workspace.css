@@ -110,6 +110,12 @@ tbody tr:hover { background:var(--ov-03); }
 .role-mixed-note { font-size:10px; color:var(--text-muted); margin-top:3px; }
 
 .m-name { font-weight:600; font-size:14px; }
+.gl-link { color:inherit; text-decoration:none; cursor:pointer; border-bottom:1px dotted var(--border-strong); transition:.15s; }
+.gl-link:hover { color:var(--accent); border-bottom-color:var(--accent); }
+.gl-arrow { font-size:11px; opacity:0; transition:.15s; }
+.gl-link:hover .gl-arrow { opacity:.8; }
+.detail-cell .gl-link { border-bottom:none; }
+.detail-cell .gl-link:hover { text-decoration:underline; }
 .m-user { font-size:12px; color:var(--text-muted); margin-top:2px; }
 .muted { color:var(--text-muted); }
 
