@@ -8,6 +8,7 @@
             sessionStorage.setItem('current_workspace', JSON.stringify(ws));
             if (kind === 'dora')        window.location.href = 'dora-workspace.html';
             else if (kind === 'gouvernance') window.location.href = 'gouvernance-repo.html';
+            else if (kind === 'access')      window.location.href = 'access-workspace.html';
         }
 
         function wsRenameWorkspace(id) {
@@ -88,6 +89,7 @@
             sessionStorage.setItem('current_workspace', JSON.stringify(ws));
             if (kind === 'dora')        window.location.href = 'dora-workspace.html';
             else if (kind === 'gouvernance') window.location.href = 'gouvernance-repo.html';
+            else if (kind === 'access')      window.location.href = 'access-workspace.html';
         }
 
         // ───── Import JSON ─────────────────────────────────────────────────

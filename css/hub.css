@@ -1326,6 +1326,7 @@
         .ws-module:hover::before { opacity: 0.45; }
         .ws-module.m-dora        { --m-accent: var(--measure); --m-glow: var(--measure-glow); }
         .ws-module.m-gouvernance { --m-accent: var(--inspect); --m-glow: var(--inspect-glow); }
+        .ws-module.m-access      { --m-accent: var(--inspect); --m-glow: var(--inspect-glow); }
         .ws-module-head {
             display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 20px; position: relative; z-index: 1;

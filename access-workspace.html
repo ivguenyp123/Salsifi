@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔑 Accès & Rôles - Workspace</title>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/access-workspace.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <a href="hub.html" class="back-btn" data-hub-link>←</a>
+            <h1>🔑 Accès & Rôles</h1>
+            <span id="workspaceName">Chargement...</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <button class="btn-ghost" id="exportBtn">📤 Export CSV</button>
+            <button class="btn-refresh" id="refreshBtn">🔄 Recharger</button>
+        </div>
+    </div>
+
+    <div id="loadingContainer" class="loading">
+        <div class="spinner"></div>
+        <p id="loadingText">Lecture des membres et de leurs rôles…</p>
+    </div>
+
+    <div id="errorContainer" style="display:none;"></div>
+
+    <div id="mainContent" style="display:none;">
+
+        <!-- 1. Vue tribu : cartes de synthèse -->
+        <div class="summary" id="summaryCards"></div>
+
+        <!-- 2. Alertes -->
+        <div class="block">
+            <div class="block-title">🚨 Points d'attention</div>
+            <div class="chart-card"><div id="alertsContainer"></div></div>
+        </div>
+
+        <!-- Onglets -->
+        <div class="tabs" id="tabs">
+            <button class="tab is-active" data-tab="repos">📦 Par repo</button>
+            <button class="tab" data-tab="people">👤 Par personne</button>
+            <button class="tab" data-tab="admins">👑 Maintainers &amp; Owners</button>
+        </div>
+
+        <!-- Vue Par repo -->
+        <div class="tab-panel is-active" id="panel-repos">
+            <div id="reposView"></div>
+        </div>
+
+        <!-- Vue Par personne -->
+        <div class="tab-panel" id="panel-people">
+            <div class="block">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Personne</th>
+                                <th>Rôle le plus élevé</th>
+                                <th>Repos (accès)</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="peopleTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vue Maintainers & Owners -->
+        <div class="tab-panel" id="panel-admins">
+            <div id="adminsView"></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/common/utils.js"></script>
+<script src="js/common/gitlab.js"></script>
+<script src="js/common/auth.js"></script>
+<script src="js/access-workspace.js"></script>
+</body>
+</html>
