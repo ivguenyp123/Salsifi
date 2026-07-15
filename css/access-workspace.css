@@ -148,6 +148,36 @@ tbody tr:hover { background:var(--ov-03); }
 .admin-repos { display:flex; flex-wrap:wrap; gap:6px; }
 .chip { display:inline-block; padding:3px 9px; border-radius:8px; font-size:11px; background:var(--ov-06); border:1px solid var(--border-subtle); color:var(--text-secondary); }
 
+/* Rapport de gouvernance */
+.rpt-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+.rpt-title { font-family:var(--font-display); font-size:18px; font-weight:700; letter-spacing:-0.02em; }
+.rpt-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
+.rpt-kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:26px; }
+.rpt-kpi { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:14px; padding:14px; }
+.rpt-kpi-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+.rpt-kpi-value { font-family:var(--font-display); font-size:26px; font-weight:700; margin:6px 0 2px; }
+.rpt-kpi-value.bad { color:#fca5a5; } .rpt-kpi-value.warn { color:#fdba74; } .rpt-kpi-value.good { color:#5eead4; }
+.rpt-kpi-meta { font-size:11px; color:var(--text-muted); }
+
+.rpt-finding { background:var(--bg-card); border:1px solid var(--border-subtle); border-left-width:4px; border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+.rpt-finding.sev-critical { border-left-color:#ef4444; }
+.rpt-finding.sev-warn { border-left-color:#fb923c; }
+.rpt-finding-head { font-size:15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rpt-count { background:var(--ov-08); border:1px solid var(--border-strong); border-radius:20px; padding:1px 10px; font-size:12px; font-weight:600; color:var(--text-secondary); }
+.rpt-finding-desc { font-size:13px; color:var(--text-secondary); line-height:1.55; margin:8px 0 0; }
+.rpt-list { margin:12px 0 0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
+.rpt-list li { font-size:13px; color:var(--text-secondary); padding:6px 10px; background:var(--ov-03); border-radius:8px; }
+.rpt-list li b { color:var(--text-primary); }
+
+.rpt-reco { background:rgba(124,92,255,0.08); border:1px solid rgba(124,92,255,0.28); border-radius:14px; padding:18px 20px; margin-top:20px; }
+.rpt-reco-title { font-family:var(--font-display); font-size:15px; font-weight:600; margin-bottom:10px; }
+.rpt-reco ol { margin:0; padding-left:20px; }
+.rpt-reco li { font-size:13px; color:var(--text-secondary); line-height:1.7; }
+.rpt-reco li b { color:var(--text-primary); }
+
+@media (max-width:1100px) { .rpt-kpis { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:640px) { .rpt-kpis { grid-template-columns:repeat(2,1fr); } }
+
 /* Conformité — liste blanche */
 .wl-editor { margin-bottom:22px; }
 .wl-title { font-family:var(--font-display); font-size:15px; font-weight:600; margin-bottom:6px; }

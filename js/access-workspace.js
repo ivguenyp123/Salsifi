@@ -12,6 +12,7 @@
 let GITLAB_URL = null, token = null, currentWorkspace = null;
 let myUsername = '';    // utilisateur connecté (auteur des modifications de liste blanche)
 let lastModel = null;   // dernier modèle calculé (pour export / re-render)
+let lastReport = null;  // dernier rapport de gouvernance calculé (pour téléchargement)
 let historyLoaded = false;   // chargement paresseux de l'onglet Historique
 let lastHistory = null;      // derniers résultats d'historique (pour re-filtrer sans refetch)
 
@@ -273,6 +274,7 @@ function buildModel(repoResults) {
 function render(model) {
     renderSummary(model);
     renderAlerts(model.alerts);
+    renderReport(model);
     renderReposView(model.repos, model.errored);
     renderPeopleTable(model.peopleList);
     renderAdmins(model.admins);
@@ -397,6 +399,190 @@ function renderAdmins(admins) {
             </div>`;
         }).join('') +
         `</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// RAPPORT — synthèse de gouvernance des accès
+// ───────────────────────────────────────────────────
+// Calcule les signaux de dette d'accès à partir du roster déjà chargé :
+// accès hérités (racine au niveau groupe), accès sans expiration (pas de
+// revue), comptes bloqués encore listés, comptes de service en rôle élevé.
+// ═══════════════════════════════════════════════════
+
+// Heuristique « compte technique / de service » (bot, robot, root…).
+// Sert à signaler pour revue, pas à bloquer : quelques faux positifs tolérés.
+const SERVICE_RX = /(^|[_-])(bot|bots|robot|operator|runner|service|svc|deploy|deployer|ci|cd|pipeline|automation|token|sonar|nexus|artifactory|vault|terraform|ansible|jenkins|scanner)([_-]|$)/i;
+function looksLikeService(username, name) {
+    const u = String(username || ''), n = String(name || '');
+    if (/^(root|administrator|ghost|support[-_]?bot)$/i.test(u)) return true;
+    if (SERVICE_RX.test(u) || SERVICE_RX.test(n)) return true;
+    if (/^app[_-]/i.test(u)) return true;                     // APP_ZOE_0147
+    if (/^(svc|sa)[_-]/i.test(u) || /[_-]sa$/i.test(u)) return true;
+    if (/^[A-Z0-9_]{4,}$/.test(u) && /\d/.test(u)) return true; // MAJUSCULES + chiffres = compte technique
+    return false;
+}
+function isBlockedState(state) { return !!state && state !== 'active'; }
+
+function computeReport(model) {
+    const pairs = [];   // 1 accès = (repo, membre)
+    for (const r of model.repos) for (const m of r.members) pairs.push({ repoId: r.id, repo: r.name, m });
+    const total = pairs.length;
+    const inherited = pairs.filter(p => p.m.inherited);
+    const noExpiry = pairs.filter(p => !p.m.expires_at);
+    const blocked = pairs.filter(p => isBlockedState(p.m.state));
+    const ownersPairs = pairs.filter(p => p.m.access_level >= 50);
+    const service = pairs.filter(p => looksLikeService(p.m.username, p.m.name));
+    const serviceHigh = service.filter(p => p.m.access_level >= 40);
+    const serviceOwner = service.filter(p => p.m.access_level >= 50);
+    const pct = n => total ? Math.round((n / total) * 100) : 0;
+
+    const findings = [];
+    if (serviceOwner.length) {
+        findings.push({ sev: 'critical', icon: '💣', title: 'Comptes de service / techniques en Owner', count: serviceOwner.length, pairs: serviceOwner,
+            desc: 'Un compte technique (bot, root, deploy…) avec le niveau max. Si son token fuite, c\'est un Owner complet. Ces comptes devraient être Maintainer ou moins — jamais Owner.' });
+    }
+    if (blocked.length) {
+        findings.push({ sev: 'critical', icon: '🚫', title: 'Comptes bloqués encore présents', count: blocked.length, pairs: blocked,
+            desc: 'Comptes bloqués (LDAP / suspendus / partis) qui gardent leur rôle. Si le blocage saute ou est contourné, l\'accès est toujours là. Dette d\'accès à purger.' });
+    }
+    const inhPct = pct(inherited.length);
+    if (inhPct >= 50) {
+        const distinctInhOwners = new Set(inherited.filter(p => p.m.access_level >= 50).map(p => p.m.username));
+        findings.push({ sev: 'warn', icon: '🌳', title: `Sur-héritage : ${inhPct}% des accès viennent du groupe`, count: inherited.length, pairs: [],
+            desc: `La racine du problème n'est pas dans les repos mais dans le <b>groupe parent</b> : ${inherited.length} accès sur ${total} sont hérités${distinctInhOwners.size ? `, dont ${distinctInhOwners.size} Owner(s) distinct(s) collés au niveau du groupe et qui ruissellent sur tous les projets` : ''}. À traiter au niveau du groupe, pas repo par repo.` });
+    }
+    const expPct = pct(noExpiry.length);
+    if (expPct >= 50) {
+        findings.push({ sev: 'warn', icon: '♾️', title: `Aucune expiration sur ${expPct}% des accès`, count: noExpiry.length, pairs: [],
+            desc: `${noExpiry.length} accès sur ${total} n'ont pas de date d'expiration : aucune revue périodique. Ces droits restent en place indéfiniment jusqu'à retrait manuel — qui n'arrive jamais. Poser des dates d'expiration + une revue trimestrielle.` });
+    }
+    if (serviceHigh.length > serviceOwner.length) {
+        const rest = serviceHigh.filter(p => p.m.access_level < 50);
+        findings.push({ sev: 'warn', icon: '🤖', title: 'Comptes de service en Maintainer', count: rest.length, pairs: rest,
+            desc: 'Comptes techniques avec droit d\'admin (Maintainer). À vérifier : un bot a rarement besoin de gérer les membres ; Developer suffit souvent.' });
+    }
+
+    return { total, inherited, noExpiry, blocked, ownersPairs, service, serviceHigh, serviceOwner, findings, pct,
+        distinctOwners: new Set(ownersPairs.map(p => p.m.username)),
+        errored: model.errored };
+}
+
+function pairListHtml(pairs, max) {
+    max = max || 15;
+    const items = pairs.slice(0, max).map(p => `
+        <li>
+            <b>${esc(p.m.name)}</b> <span class="muted">@${esc(p.m.username)}</span>
+            <span class="role-badge sm lvl-${p.m.access_level}">${esc(p.m.role)}</span>
+            <span class="chip">${esc(p.repo)}</span>${p.m.inherited ? ' <span class="pill pill-inherited sm">hérité</span>' : ''}${isBlockedState(p.m.state) ? ` <span class="pill pill-blocked">${esc(p.m.state)}</span>` : ''}${!p.m.expires_at ? ' <span class="pill pill-direct">sans expiration</span>' : ''}
+        </li>`).join('');
+    const more = pairs.length > max ? `<li class="muted">… et ${pairs.length - max} autre(s)</li>` : '';
+    return `<ul class="rpt-list">${items}${more}</ul>`;
+}
+
+function renderReport(model) {
+    const view = document.getElementById('reportView');
+    if (!view) return;
+    const rep = computeReport(model);
+    lastReport = rep;
+
+    if (!rep.total) {
+        view.innerHTML = '<div class="muted" style="padding:20px;">Aucun accès lisible sur les repos du workspace.</div>';
+        return;
+    }
+
+    const kpis = [
+        { label: 'Accès totaux', value: rep.total, meta: `${model.repos.length} repos`, tone: '' },
+        { label: 'Hérités du groupe', value: rep.pct(rep.inherited.length) + '%', meta: `${rep.inherited.length} accès`, tone: rep.pct(rep.inherited.length) >= 50 ? 'bad' : '' },
+        { label: 'Sans expiration', value: rep.pct(rep.noExpiry.length) + '%', meta: `${rep.noExpiry.length} accès`, tone: rep.pct(rep.noExpiry.length) >= 50 ? 'bad' : '' },
+        { label: 'Comptes bloqués', value: rep.blocked.length, meta: 'encore listés', tone: rep.blocked.length ? 'bad' : 'good' },
+        { label: 'Service en rôle élevé', value: rep.serviceHigh.length, meta: `dont ${rep.serviceOwner.length} Owner`, tone: rep.serviceOwner.length ? 'bad' : (rep.serviceHigh.length ? 'warn' : 'good') },
+        { label: 'Owners distincts', value: rep.distinctOwners.size, meta: `${rep.ownersPairs.length} accès Owner`, tone: rep.distinctOwners.size > 10 ? 'bad' : '' }
+    ];
+    const kpiHtml = `<div class="rpt-kpis">` + kpis.map(k => `
+        <div class="rpt-kpi">
+            <div class="rpt-kpi-label">${k.label}</div>
+            <div class="rpt-kpi-value ${k.tone}">${k.value}</div>
+            <div class="rpt-kpi-meta">${k.meta}</div>
+        </div>`).join('') + `</div>`;
+
+    const findingsHtml = rep.findings.length
+        ? rep.findings.map(f => `
+            <div class="rpt-finding sev-${f.sev}">
+                <div class="rpt-finding-head">${f.icon} <b>${esc(f.title)}</b> <span class="rpt-count">${f.count}</span></div>
+                <div class="rpt-finding-desc">${f.desc}</div>
+                ${f.pairs.length ? pairListHtml(f.pairs) : ''}
+            </div>`).join('')
+        : '<div class="wl-ok">✅ Aucun signal de dette d\'accès majeur détecté.</div>';
+
+    const reco = `
+        <div class="rpt-reco">
+            <div class="rpt-reco-title">🧭 Par où commencer</div>
+            <ol>
+                ${rep.serviceOwner.length ? '<li><b>Dégrader les comptes de service en Owner</b> → Maintainer ou moins (onglet Conformité pour les Maintainers directs).</li>' : ''}
+                ${rep.blocked.length ? '<li><b>Purger les comptes bloqués</b> encore listés — retirer l\'accès, ne pas juste compter sur le blocage LDAP.</li>' : ''}
+                ${rep.pct(rep.inherited.length) >= 50 ? '<li><b>Attaquer la racine au niveau du groupe parent</b> : réduire la liste des Owners de groupe plutôt que corriger repo par repo.</li>' : ''}
+                ${rep.pct(rep.noExpiry.length) >= 50 ? '<li><b>Poser des dates d\'expiration</b> et instaurer une revue trimestrielle des accès.</li>' : ''}
+                <li>Définir la <b>liste blanche des Maintainers autorisés</b> (onglet Conformité) pour détecter automatiquement les prochains écarts.</li>
+            </ol>
+        </div>`;
+
+    const head = `
+        <div class="rpt-head">
+            <div>
+                <div class="rpt-title">📋 Rapport de gouvernance des accès</div>
+                <div class="rpt-sub">${esc(currentWorkspace.name)} · ${model.repos.length} repos · ${rep.total} accès${rep.errored.length ? ` · ${rep.errored.length} repo(s) non lus` : ''}</div>
+            </div>
+            <button class="btn-ghost" onclick="downloadReport()">⬇️ Télécharger (HTML)</button>
+        </div>`;
+
+    view.innerHTML = head + kpiHtml + '<div class="block-title" style="margin-top:8px;">🚩 Signaux de dette d\'accès</div>' + findingsHtml + reco;
+}
+
+// Rapport téléchargeable autonome (HTML autoportant, styles inline).
+function downloadReport() {
+    if (!lastReport || !lastModel) return;
+    const rep = lastReport;
+    const date = new Date().toISOString().slice(0, 10);
+    const kpiRow = [
+        ['Accès totaux', rep.total], ['Hérités', rep.pct(rep.inherited.length) + '% (' + rep.inherited.length + ')'],
+        ['Sans expiration', rep.pct(rep.noExpiry.length) + '% (' + rep.noExpiry.length + ')'],
+        ['Comptes bloqués', rep.blocked.length], ['Service en rôle élevé', rep.serviceHigh.length + ' (dont ' + rep.serviceOwner.length + ' Owner)'],
+        ['Owners distincts', rep.distinctOwners.size]
+    ].map(([l, v]) => `<td><div class="l">${l}</div><div class="v">${v}</div></td>`).join('');
+    const findingBlocks = rep.findings.map(f => {
+        const li = f.pairs.map(p => `<li>${esc(p.m.name)} (@${esc(p.m.username)}) — ${esc(p.m.role)} · ${esc(p.repo)}${p.m.inherited ? ' [hérité]' : ''}${isBlockedState(p.m.state) ? ' [' + esc(p.m.state) + ']' : ''}</li>`).join('');
+        return `<div class="f sev-${f.sev}"><h3>${f.icon} ${esc(f.title)} — ${f.count}</h3><p>${f.desc}</p>${li ? '<ul>' + li + '</ul>' : ''}</div>`;
+    }).join('');
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport accès — ${esc(currentWorkspace.name)} — ${date}</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#0f1117;color:#e6e8ee;margin:0;padding:32px;}
+h1{font-size:22px;margin:0 0 4px;} .sub{color:#9aa0ae;font-size:13px;margin-bottom:24px;}
+table.kpi{width:100%;border-collapse:collapse;margin-bottom:28px;} table.kpi td{background:#171a23;border:1px solid #262a36;border-radius:10px;padding:14px;text-align:center;}
+table.kpi .l{font-size:11px;color:#9aa0ae;text-transform:uppercase;letter-spacing:.04em;} table.kpi .v{font-size:24px;font-weight:700;margin-top:6px;}
+.f{background:#171a23;border:1px solid #262a36;border-left-width:4px;border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.f.sev-critical{border-left-color:#ef4444;} .f.sev-warn{border-left-color:#fb923c;}
+.f h3{margin:0 0 6px;font-size:15px;} .f p{margin:0 0 10px;color:#c3c8d4;font-size:13px;line-height:1.5;}
+.f ul{margin:0;padding-left:20px;font-size:13px;color:#c3c8d4;} .f li{margin:2px 0;}
+.foot{margin-top:24px;color:#6b7280;font-size:11px;}
+</style></head><body>
+<h1>📋 Rapport de gouvernance des accès</h1>
+<div class="sub">${esc(currentWorkspace.name)} · ${lastModel.repos.length} repos · ${rep.total} accès · généré le ${date}</div>
+<table class="kpi"><tr>${kpiRow}</tr></table>
+<h2 style="font-size:16px;">🚩 Signaux de dette d'accès</h2>
+${findingBlocks || '<p>Aucun signal majeur.</p>'}
+<div class="foot">Généré par Salsifi — Accès &amp; Rôles. Les comptes « de service » sont détectés par heuristique (à vérifier).</div>
+</body></html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = (currentWorkspace.name || 'workspace').replace(/[^a-z0-9_-]+/gi, '_').toLowerCase();
+    a.href = url;
+    a.download = `rapport-acces-${safe}-${date}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ Rapport téléchargé');
 }
 
 // ═══════════════════════════════════════════════════

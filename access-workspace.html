@@ -42,15 +42,21 @@
 
         <!-- Onglets -->
         <div class="tabs" id="tabs">
-            <button class="tab is-active" data-tab="repos">📦 Par repo</button>
+            <button class="tab is-active" data-tab="report">📋 Rapport</button>
+            <button class="tab" data-tab="repos">📦 Par repo</button>
             <button class="tab" data-tab="people">👤 Par personne</button>
             <button class="tab" data-tab="admins">👑 Maintainers &amp; Owners</button>
             <button class="tab" data-tab="compliance">🛡️ Conformité</button>
             <button class="tab" data-tab="history">📜 Historique (30 j)</button>
         </div>
 
+        <!-- Vue Rapport (synthèse gouvernance) -->
+        <div class="tab-panel is-active" id="panel-report">
+            <div id="reportView"></div>
+        </div>
+
         <!-- Vue Par repo -->
-        <div class="tab-panel is-active" id="panel-repos">
+        <div class="tab-panel" id="panel-repos">
             <div id="reposView"></div>
         </div>
 
