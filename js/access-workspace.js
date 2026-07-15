@@ -10,8 +10,15 @@
 // ═══════════════════════════════════════════════════
 
 let GITLAB_URL = null, token = null, currentWorkspace = null;
+let myUsername = '';    // utilisateur connecté (auteur des modifications de liste blanche)
 let lastModel = null;   // dernier modèle calculé (pour export / re-render)
 let historyLoaded = false;   // chargement paresseux de l'onglet Historique
+
+// Liste blanche des Maintainers autorisés (portée workspace).
+// Stockée en variable projet GitLab partagée (écriture = droit Maintainer),
+// avec repli localStorage personnel pour la lecture/écriture non partagée.
+const ALLOWLIST_VAR = 'SALSIFI_ROLE_ALLOWLIST';
+let allowlist = { usernames: [], shared: false, updatedBy: null, updatedAt: null };
 
 const HUB_URL = 'hub.html';
 
@@ -57,6 +64,7 @@ async function init() {
     }
     GITLAB_URL = _auth.gitlabUrl;
     token = _auth.token;
+    myUsername = _auth.username || '';
 
     const wsJson = sessionStorage.getItem('current_workspace');
     if (!wsJson) {
@@ -73,6 +81,7 @@ async function init() {
     }
     document.getElementById('workspaceName').textContent =
         `🗂️ ${currentWorkspace.name} (${currentWorkspace.repositories.length} repos)`;
+    await loadAllowlist();
     await loadAccessData();
 }
 
@@ -246,6 +255,7 @@ function render(model) {
     renderReposView(model.repos, model.errored);
     renderPeopleTable(model.peopleList);
     renderAdmins(model.admins);
+    renderCompliance(model);
 }
 
 function renderSummary(model) {
@@ -356,6 +366,235 @@ function renderAdmins(admins) {
             </div>`;
         }).join('') +
         `</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// CONFORMITÉ — liste blanche des Maintainers + rétrogradation semi-auto
+// ───────────────────────────────────────────────────
+// Le token de session écrit : PUT /projects/:id/members/:user_id
+// access_level=30 rétrograde un Maintainer en Developer. L'action n'est
+// JAMAIS silencieuse : détection à l'ouverture, correction sur clic.
+// Garde-fous : on ne touche jamais un Owner (impossible avec un token
+// Maintainer) ni un accès hérité (à corriger au niveau du groupe).
+// ═══════════════════════════════════════════════════
+
+function lsKey() { return 'salsifi_role_allowlist:' + (currentWorkspace.id || currentWorkspace.name || 'ws'); }
+
+function parseAllowlistValue(str) {
+    try {
+        const j = JSON.parse(str);
+        if (Array.isArray(j)) return { usernames: j, updatedBy: null, updatedAt: null };
+        return { usernames: Array.isArray(j.usernames) ? j.usernames : [], updatedBy: j.updatedBy || null, updatedAt: j.updatedAt || null };
+    } catch { return null; }
+}
+
+// Lit une variable projet GitLab (null si absente / non lisible).
+async function gitlabVarGet(projectId, key) {
+    try {
+        const r = await window.Salsifi.gitlabFetch(GITLAB_URL, token, `/projects/${projectId}/variables/${key}`);
+        if (!r.ok) return null;
+        const j = await r.json();
+        return (j && typeof j.value === 'string') ? j.value : null;
+    } catch { return null; }
+}
+
+// Écrit une variable projet (PUT, puis POST si elle n'existe pas). Renvoie true si OK.
+async function gitlabVarSet(projectId, key, value) {
+    const common = { headers: { 'Content-Type': 'application/json' } };
+    try {
+        let r = await window.Salsifi.gitlabFetch(GITLAB_URL, token, `/projects/${projectId}/variables/${key}`, {
+            ...common, method: 'PUT', body: JSON.stringify({ value })
+        });
+        if (r.status === 404) {
+            r = await window.Salsifi.gitlabFetch(GITLAB_URL, token, `/projects/${projectId}/variables`, {
+                ...common, method: 'POST', body: JSON.stringify({ key, value, masked: false, protected: false })
+            });
+        }
+        return r.ok;
+    } catch { return false; }
+}
+
+async function loadAllowlist() {
+    // 1) Variable partagée : on scanne les repos, le premier trouvé gagne.
+    for (const repo of currentWorkspace.repositories) {
+        const val = await gitlabVarGet(repo.id, ALLOWLIST_VAR);
+        if (val != null) {
+            const parsed = parseAllowlistValue(val);
+            if (parsed) { allowlist = { ...parsed, shared: true }; return; }
+        }
+    }
+    // 2) Repli localStorage personnel.
+    try {
+        const raw = localStorage.getItem(lsKey());
+        if (raw) { const p = parseAllowlistValue(raw); if (p) { allowlist = { ...p, shared: false }; return; } }
+    } catch { /* ignore */ }
+    allowlist = { usernames: [], shared: false, updatedBy: null, updatedAt: null };
+}
+
+async function saveAllowlist(usernames) {
+    allowlist.usernames = usernames;
+    allowlist.updatedAt = new Date().toISOString();
+    allowlist.updatedBy = myUsername || null;
+    const payload = JSON.stringify({ usernames, updatedAt: allowlist.updatedAt, updatedBy: allowlist.updatedBy });
+    // Miroir local systématique (cache + repli).
+    try { localStorage.setItem(lsKey(), payload); } catch { /* ignore */ }
+    // Partage : écrit la variable sur tous les repos du workspace (best effort).
+    const tasks = currentWorkspace.repositories.map(r => () => gitlabVarSet(r.id, ALLOWLIST_VAR, payload));
+    const settled = await window.Salsifi.runWithConcurrency(tasks, 4);
+    const okCount = settled.filter(s => s.status === 'fulfilled' && s.value === true).length;
+    allowlist.shared = okCount > 0;
+    return { okCount, total: currentWorkspace.repositories.length };
+}
+
+function allowedSet() { return new Set(allowlist.usernames.map(u => String(u).toLowerCase())); }
+
+// Écarts = membres Maintainer/Owner (directs ou hérités) hors liste blanche.
+function computeViolations(model) {
+    const wl = allowedSet();
+    const list = [];
+    for (const repo of model.repos) {
+        for (const m of repo.members) {
+            if (m.access_level < 40) continue;
+            if (wl.has(String(m.username).toLowerCase())) continue;
+            if (m.state === 'blocked') continue;   // déjà inactif
+            let kind;
+            if (m.inherited) kind = 'inherited';           // → à traiter au niveau du groupe
+            else if (m.access_level >= 50) kind = 'owner';  // → intouchable par un token Maintainer
+            else kind = 'demotable';                         // Maintainer direct → rétrogradable
+            list.push({ repoId: repo.id, repoName: repo.name, userId: m.id, username: m.username, name: m.name, level: m.access_level, role: m.role, kind });
+        }
+    }
+    return list;
+}
+
+function currentTextareaUsernames() {
+    const ta = document.getElementById('wlTextarea');
+    if (!ta) return allowlist.usernames.slice();
+    return Array.from(new Set(ta.value.split(/[\n,;]+/).map(s => s.trim().replace(/^@/, '')).filter(Boolean)));
+}
+
+async function onSaveAllowlist() {
+    const usernames = currentTextareaUsernames();
+    showToast('Enregistrement…');
+    const res = await saveAllowlist(usernames);
+    if (res.okCount > 0) showToast(`✓ Liste partagée (${res.okCount}/${res.total} repos)`);
+    else showToast('✓ Enregistrée en local — partage impossible (droit Maintainer requis)');
+    renderCompliance(lastModel);
+}
+
+function onSeedMaintainers() {
+    if (!lastModel) return;
+    const current = new Set(currentTextareaUsernames());
+    for (const p of lastModel.admins) current.add(p.username);
+    const ta = document.getElementById('wlTextarea');
+    if (ta) ta.value = Array.from(current).join('\n');
+    showToast('Maintainers/Owners actuels ajoutés — pense à Enregistrer');
+}
+
+async function putMemberLevel(projectId, userId, level) {
+    try {
+        const r = await window.Salsifi.gitlabFetch(GITLAB_URL, token, `/projects/${projectId}/members/${userId}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ access_level: level })
+        });
+        return r.ok;
+    } catch { return false; }
+}
+
+async function demoteMember(repoId, userId) {
+    const repo = lastModel.repos.find(r => r.id === repoId);
+    const m = repo && repo.members.find(x => x.id === userId);
+    if (!repo || !m) return;
+    if (!confirm(`Rétrograder ${m.name} (@${m.username}) en Developer sur « ${repo.name} » ?`)) return;
+    const ok = await putMemberLevel(repoId, userId, 30);
+    if (ok) { showToast(`✓ ${m.name} rétrogradé en Developer`); await reloadAfterChange(); }
+    else showToast('Échec — droit Maintainer requis sur ce repo ?', true);
+}
+
+async function fixAllViolations() {
+    const demotable = computeViolations(lastModel).filter(v => v.kind === 'demotable');
+    if (!demotable.length) return;
+    if (!confirm(`Rétrograder ${demotable.length} Maintainer(s) non autorisé(s) en Developer ?\n\n` +
+        demotable.map(v => `• ${v.name} sur ${v.repoName}`).join('\n'))) return;
+    let ok = 0, fail = 0;
+    for (const v of demotable) {
+        (await putMemberLevel(v.repoId, v.userId, 30)) ? ok++ : fail++;
+    }
+    showToast(`✓ ${ok} rétrogradé(s)${fail ? ` · ${fail} échec(s)` : ''}`, fail > 0);
+    await reloadAfterChange();
+}
+
+async function reloadAfterChange() {
+    await loadAccessData();   // recharge le roster + re-render (dont Conformité)
+    switchTab('compliance');
+}
+
+function renderCompliance(model) {
+    const view = document.getElementById('complianceView');
+    if (!view) return;
+    const banner = allowlist.shared
+        ? '<div class="wl-banner wl-shared">🌐 Liste <b>partagée</b> (variable GitLab du workspace) — visible par toute l\'équipe.</div>'
+        : '<div class="wl-banner wl-personal">👤 Liste <b>personnelle</b> (ton navigateur). Enregistre en tant que Maintainer pour la partager.</div>';
+
+    const editor = `
+        <div class="chart-card wl-editor">
+            <div class="wl-title">✅ Maintainers autorisés — portée workspace</div>
+            <p class="wl-help">Un <b>username GitLab</b> par ligne. Ces personnes ont le droit d'être Maintainer/Owner sur les repos du workspace.</p>
+            ${banner}
+            <textarea id="wlTextarea" class="wl-textarea" spellcheck="false" placeholder="alice&#10;bob&#10;charlie">${esc(allowlist.usernames.join('\n'))}</textarea>
+            <div class="wl-actions">
+                <button class="btn-refresh" onclick="onSaveAllowlist()">💾 Enregistrer</button>
+                <button class="btn-ghost" onclick="onSeedMaintainers()">➕ Ajouter les Maintainers/Owners actuels</button>
+                ${allowlist.updatedAt ? `<span class="wl-meta">MàJ ${esc(allowlist.updatedAt.slice(0, 10))}${allowlist.updatedBy ? ' par @' + esc(allowlist.updatedBy) : ''}</span>` : ''}
+            </div>
+        </div>`;
+
+    if (!allowlist.usernames.length) {
+        view.innerHTML = editor + '<div class="muted" style="padding:20px;">Définis la liste des Maintainers autorisés pour activer la détection des écarts.</div>';
+        return;
+    }
+
+    const wl = allowedSet();
+    const viol = computeViolations(model);
+    const demotable = viol.filter(v => v.kind === 'demotable');
+    const okAdmins = model.admins.filter(p => wl.has(p.username.toLowerCase()));
+
+    const head = `
+        <div class="summary" style="margin-bottom:20px;">
+            <div class="summary-card"><div class="summary-label">Admins conformes</div><div class="summary-value">${okAdmins.length}</div><div class="summary-trend trend-flat">Dans la liste</div></div>
+            <div class="summary-card"><div class="summary-label">Écarts détectés</div><div class="summary-value" style="color:${viol.length ? '#fca5a5' : '#5eead4'}">${viol.length}</div><div class="summary-trend trend-flat">Hors liste</div></div>
+            <div class="summary-card"><div class="summary-label">Corrigeables en 1 clic</div><div class="summary-value">${demotable.length}</div><div class="summary-trend trend-flat">Maintainer direct</div></div>
+            <div class="summary-card"><div class="summary-label">À traiter à la main</div><div class="summary-value">${viol.length - demotable.length}</div><div class="summary-trend trend-flat">Owner / hérité</div></div>
+        </div>`;
+
+    if (!viol.length) {
+        view.innerHTML = editor + head + '<div class="wl-ok">✅ Tous les Maintainers/Owners sont dans la liste blanche. Aucun écart.</div>';
+        return;
+    }
+
+    const rows = viol.map(v => {
+        let action;
+        if (v.kind === 'demotable') {
+            action = `<button class="btn-danger" onclick="demoteMember(${v.repoId}, ${v.userId})">⬇️ Rétrograder en Developer</button>`;
+        } else if (v.kind === 'owner') {
+            action = '<span class="viol-manual">Owner — à retirer à la main (un token Maintainer ne peut pas rétrograder un Owner).</span>';
+        } else {
+            action = '<span class="viol-manual">Accès hérité — à corriger au niveau du groupe parent.</span>';
+        }
+        return `
+            <div class="viol-row">
+                <div class="viol-who">
+                    <div class="m-name">${esc(v.name)} <span class="role-badge lvl-${v.level}">${esc(v.role)}</span></div>
+                    <div class="m-user">@${esc(v.username)} · <span class="chip">${esc(v.repoName)}</span>${v.kind === 'inherited' ? ' <span class="pill pill-inherited">hérité</span>' : ''}</div>
+                </div>
+                <div class="viol-action">${action}</div>
+            </div>`;
+    }).join('');
+
+    const bulk = demotable.length
+        ? `<div class="wl-bulk"><button class="btn-fix" onclick="fixAllViolations()">🛡️ Tout corriger (${demotable.length} rétrogradation${demotable.length > 1 ? 's' : ''})</button><span class="wl-meta">Ne touche que les Maintainers directs. Owners et accès hérités exclus.</span></div>`
+        : '';
+
+    view.innerHTML = editor + head + '<div class="block-title" style="margin-top:6px;">🚩 Écarts à traiter</div>' + bulk + `<div class="viol-list">${rows}</div>`;
 }
 
 // ═══════════════════════════════════════════════════
