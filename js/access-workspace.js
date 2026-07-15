@@ -20,6 +20,7 @@ let lastHistory = null;      // derniers résultats d'historique (pour re-filtre
 let repoFilter = 'all';      // all | admin | owner | maintainer
 let peopleFilter = 'all';    // all | admin | owner | maintainer
 let historyFilter = 'all';   // all | role | membership
+let reportScope = 'all';     // 'all' (workspace) ou id de repo — périmètre du Rapport
 
 // Liste blanche des Maintainers autorisés (portée workspace).
 // Stockée en variable projet GitLab partagée (écriture = droit Maintainer),
@@ -436,6 +437,18 @@ function computeReport(model) {
     const serviceOwner = service.filter(p => p.m.access_level >= 50);
     const pct = n => total ? Math.round((n / total) * 100) : 0;
 
+    // Vue « par identité » (dédup username) pour le chemin d'attaque.
+    const byUser = new Map();
+    for (const p of pairs) {
+        const cur = byUser.get(p.m.username) || { maxLevel: 0 };
+        if (p.m.access_level > cur.maxLevel) cur.maxLevel = p.m.access_level;
+        byUser.set(p.m.username, cur);
+    }
+    const distinctPeople = byUser.size;
+    const distinctAdmins = [...byUser.values()].filter(x => x.maxLevel >= 40).length;
+    const adminPeoplePct = distinctPeople ? Math.round((distinctAdmins / distinctPeople) * 100) : 0;
+    const blockedAdmin = blocked.filter(p => p.m.access_level >= 40);
+
     const findings = [];
     if (serviceOwner.length) {
         findings.push({ sev: 'critical', icon: '💣', title: 'Comptes de service / techniques en Owner', count: serviceOwner.length, pairs: serviceOwner,
@@ -462,9 +475,33 @@ function computeReport(model) {
             desc: 'Comptes techniques avec droit d\'admin (Maintainer). À vérifier : un bot a rarement besoin de gérer les membres ; Developer suffit souvent.' });
     }
 
-    return { total, inherited, noExpiry, blocked, ownersPairs, service, serviceHigh, serviceOwner, findings, pct,
+    return { total, inherited, noExpiry, blocked, blockedAdmin, ownersPairs, service, serviceHigh, serviceOwner, findings, pct,
         distinctOwners: new Set(ownersPairs.map(p => p.m.username)),
+        distinctPeople, distinctAdmins, adminPeoplePct,
         errored: model.errored };
+}
+
+// Lecture « chemin d'attaque » — traduit les chiffres en risque concret.
+// Réutilisée à l'écran ET dans le rapport téléchargé (mêmes phrases).
+function riskNarrative(rep) {
+    const lines = [];
+    lines.push(`<b>${rep.distinctAdmins}</b> identité(s) sur ${rep.distinctPeople} peuvent <b>administrer</b> ce périmètre — soit <b>${rep.adminPeoplePct}%</b> de tout le monde (gérer les membres, les protections de branche, la CI).`);
+    if (rep.serviceOwner.length) {
+        lines.push(`<b>${rep.serviceOwner.length}</b> compte(s) technique(s) sont <b>Owner</b> (bots, root…). Un token qui fuit = Owner complet, <b>sans exploiter la moindre CVE</b> — c'est le scénario SolarWinds / CircleCI.`);
+    }
+    if (rep.blockedAdmin.length) {
+        lines.push(`<b>${rep.blockedAdmin.length}</b> compte(s) <b>bloqués LDAP</b> gardent un rôle d'admin (partis / suspendus). Le blocage LDAP est la seule barrière — s'il saute, l'accès est intact.`);
+    }
+    const inhPct = rep.pct(rep.inherited.length);
+    if (inhPct >= 50) {
+        lines.push(`<b>${inhPct}%</b> des accès sont <b>hérités du groupe parent</b> : la racine n'est pas dans le repo, tout le monde est Owner du groupe « pour simplifier ».`);
+    }
+    return lines;
+}
+function rssiSentence(rep) {
+    return `${rep.distinctAdmins} identités peuvent administrer ce périmètre` +
+        (rep.serviceOwner.length ? ` et ${rep.serviceOwner.length} comptes techniques sont Owner` : '') +
+        `. Si l'un de ces tokens fuite, l'attaquant est Owner sur un composant de prod — sans exploiter la moindre CVE. C'est le scénario SolarWinds, ouvert aujourd'hui.`;
 }
 
 function pairListHtml(pairs, max) {
@@ -479,24 +516,43 @@ function pairListHtml(pairs, max) {
     return `<ul class="rpt-list">${items}${more}</ul>`;
 }
 
+function setReportScope(v) { reportScope = v; renderReport(lastModel); }
+
 function renderReport(model) {
     const view = document.getElementById('reportView');
     if (!view) return;
-    const rep = computeReport(model);
+
+    // Périmètre : tout le workspace, ou un repo précis (« ses conclusions direct sur le repo »).
+    if (reportScope !== 'all' && !model.repos.some(r => String(r.id) === String(reportScope))) {
+        reportScope = 'all';   // le repo sélectionné n'existe plus après un rechargement
+    }
+    const scoped = reportScope === 'all'
+        ? model
+        : { repos: model.repos.filter(r => String(r.id) === String(reportScope)), errored: [] };
+
+    const rep = computeReport(scoped);
+    rep.scopeLabel = reportScope === 'all' ? currentWorkspace.name : (scoped.repos[0] ? scoped.repos[0].name : 'repo');
+    rep.repoCount = scoped.repos.length;
     lastReport = rep;
 
+    const scopeSelect = `<select class="rpt-scope-select" onchange="setReportScope(this.value)">
+        <option value="all"${reportScope === 'all' ? ' selected' : ''}>🗂️ Tout le workspace (${model.repos.length} repos)</option>
+        ${model.repos.map(r => `<option value="${r.id}"${String(reportScope) === String(r.id) ? ' selected' : ''}>📦 ${esc(r.name)}</option>`).join('')}
+    </select>`;
+
     if (!rep.total) {
-        view.innerHTML = '<div class="muted" style="padding:20px;">Aucun accès lisible sur les repos du workspace.</div>';
+        view.innerHTML = `<div class="rpt-head"><div><div class="rpt-title">📋 Rapport de gouvernance des accès</div><div class="rpt-sub">${scopeSelect}</div></div></div><div class="muted" style="padding:20px;">Aucun accès lisible sur ce périmètre.</div>`;
         return;
     }
 
     const kpis = [
-        { label: 'Accès totaux', value: rep.total, meta: `${model.repos.length} repos`, tone: '' },
+        { label: 'Peuvent administrer', value: rep.distinctAdmins, meta: `${rep.adminPeoplePct}% des identités`, tone: rep.adminPeoplePct >= 30 ? 'bad' : (rep.adminPeoplePct >= 15 ? 'warn' : '') },
+        { label: 'Owners distincts', value: rep.distinctOwners.size, meta: `${rep.ownersPairs.length} accès Owner`, tone: rep.distinctOwners.size > 10 ? 'bad' : '' },
+        { label: 'Techniques en Owner', value: rep.serviceOwner.length, meta: `${rep.serviceHigh.length} en rôle élevé`, tone: rep.serviceOwner.length ? 'bad' : (rep.serviceHigh.length ? 'warn' : 'good') },
+        { label: 'Comptes bloqués', value: rep.blocked.length, meta: `dont ${rep.blockedAdmin.length} admin`, tone: rep.blocked.length ? 'bad' : 'good' },
         { label: 'Hérités du groupe', value: rep.pct(rep.inherited.length) + '%', meta: `${rep.inherited.length} accès`, tone: rep.pct(rep.inherited.length) >= 50 ? 'bad' : '' },
         { label: 'Sans expiration', value: rep.pct(rep.noExpiry.length) + '%', meta: `${rep.noExpiry.length} accès`, tone: rep.pct(rep.noExpiry.length) >= 50 ? 'bad' : '' },
-        { label: 'Comptes bloqués', value: rep.blocked.length, meta: 'encore listés', tone: rep.blocked.length ? 'bad' : 'good' },
-        { label: 'Service en rôle élevé', value: rep.serviceHigh.length, meta: `dont ${rep.serviceOwner.length} Owner`, tone: rep.serviceOwner.length ? 'bad' : (rep.serviceHigh.length ? 'warn' : 'good') },
-        { label: 'Owners distincts', value: rep.distinctOwners.size, meta: `${rep.ownersPairs.length} accès Owner`, tone: rep.distinctOwners.size > 10 ? 'bad' : '' }
+        { label: 'Accès totaux', value: rep.total, meta: `${model.repos.length} repos`, tone: '' }
     ];
     const kpiHtml = `<div class="rpt-kpis">` + kpis.map(k => `
         <div class="rpt-kpi">
@@ -530,12 +586,22 @@ function renderReport(model) {
         <div class="rpt-head">
             <div>
                 <div class="rpt-title">📋 Rapport de gouvernance des accès</div>
-                <div class="rpt-sub">${esc(currentWorkspace.name)} · ${model.repos.length} repos · ${rep.total} accès${rep.errored.length ? ` · ${rep.errored.length} repo(s) non lus` : ''}</div>
+                <div class="rpt-sub" style="margin-top:8px;">${scopeSelect}<span>${esc(rep.scopeLabel)} · ${rep.repoCount} repo(s) · ${rep.total} accès${rep.errored.length ? ` · ${rep.errored.length} non lus` : ''}</span></div>
             </div>
             <button class="btn-ghost" onclick="downloadReport()">⬇️ Télécharger (HTML)</button>
         </div>`;
 
-    view.innerHTML = head + kpiHtml + '<div class="block-title" style="margin-top:8px;">🚩 Signaux de dette d\'accès</div>' + findingsHtml + reco;
+    const riskHtml = `
+        <div class="rpt-risk">
+            <div class="rpt-risk-title">🎯 Lecture risque — chemin d'attaque</div>
+            <ul class="rpt-risk-list">${riskNarrative(rep).map(l => `<li>${l}</li>`).join('')}</ul>
+            <div class="rpt-rssi">
+                <div class="rpt-rssi-label">📣 Phrase pour le RSSI</div>
+                <div class="rpt-rssi-text">« ${esc(rssiSentence(rep))} »</div>
+            </div>
+        </div>`;
+
+    view.innerHTML = head + kpiHtml + riskHtml + '<div class="block-title" style="margin-top:8px;">🚩 Signaux de dette d\'accès</div>' + findingsHtml + reco;
 }
 
 // Rapport téléchargeable autonome (HTML autoportant, styles inline).
@@ -544,16 +610,19 @@ function downloadReport() {
     const rep = lastReport;
     const date = new Date().toISOString().slice(0, 10);
     const kpiRow = [
-        ['Accès totaux', rep.total], ['Hérités', rep.pct(rep.inherited.length) + '% (' + rep.inherited.length + ')'],
-        ['Sans expiration', rep.pct(rep.noExpiry.length) + '% (' + rep.noExpiry.length + ')'],
-        ['Comptes bloqués', rep.blocked.length], ['Service en rôle élevé', rep.serviceHigh.length + ' (dont ' + rep.serviceOwner.length + ' Owner)'],
-        ['Owners distincts', rep.distinctOwners.size]
+        ['Peuvent administrer', rep.distinctAdmins + ' (' + rep.adminPeoplePct + '%)'],
+        ['Owners distincts', rep.distinctOwners.size],
+        ['Techniques en Owner', rep.serviceOwner.length],
+        ['Comptes bloqués', rep.blocked.length + ' (dont ' + rep.blockedAdmin.length + ' admin)'],
+        ['Hérités', rep.pct(rep.inherited.length) + '% (' + rep.inherited.length + ')'],
+        ['Sans expiration', rep.pct(rep.noExpiry.length) + '% (' + rep.noExpiry.length + ')']
     ].map(([l, v]) => `<td><div class="l">${l}</div><div class="v">${v}</div></td>`).join('');
+    const riskLi = riskNarrative(rep).map(l => `<li>${l}</li>`).join('');
     const findingBlocks = rep.findings.map(f => {
         const li = f.pairs.map(p => `<li>${esc(p.m.name)} (@${esc(p.m.username)}) — ${esc(p.m.role)} · ${esc(p.repo)}${p.m.inherited ? ' [hérité]' : ''}${isBlockedState(p.m.state) ? ' [' + esc(p.m.state) + ']' : ''}</li>`).join('');
         return `<div class="f sev-${f.sev}"><h3>${f.icon} ${esc(f.title)} — ${f.count}</h3><p>${f.desc}</p>${li ? '<ul>' + li + '</ul>' : ''}</div>`;
     }).join('');
-    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport accès — ${esc(currentWorkspace.name)} — ${date}</title>
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport accès — ${esc(rep.scopeLabel || currentWorkspace.name)} — ${date}</title>
 <style>
 body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#0f1117;color:#e6e8ee;margin:0;padding:32px;}
 h1{font-size:22px;margin:0 0 4px;} .sub{color:#9aa0ae;font-size:13px;margin-bottom:24px;}
@@ -563,11 +632,17 @@ table.kpi .l{font-size:11px;color:#9aa0ae;text-transform:uppercase;letter-spacin
 .f.sev-critical{border-left-color:#ef4444;} .f.sev-warn{border-left-color:#fb923c;}
 .f h3{margin:0 0 6px;font-size:15px;} .f p{margin:0 0 10px;color:#c3c8d4;font-size:13px;line-height:1.5;}
 .f ul{margin:0;padding-left:20px;font-size:13px;color:#c3c8d4;} .f li{margin:2px 0;}
+.risk{background:#1a1420;border:1px solid #4c2a3a;border-radius:12px;padding:18px 20px;margin-bottom:24px;}
+.risk h2{margin:0 0 10px;font-size:16px;} .risk ul{margin:0;padding-left:20px;} .risk li{margin:6px 0;font-size:13px;line-height:1.55;color:#e6d5dd;}
+.rssi{margin-top:14px;background:#221018;border:1px solid #5a2333;border-radius:10px;padding:12px 14px;}
+.rssi .lab{font-size:11px;color:#f9a8b4;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;} .rssi .txt{font-size:14px;font-style:italic;color:#fecdd3;}
 .foot{margin-top:24px;color:#6b7280;font-size:11px;}
 </style></head><body>
 <h1>📋 Rapport de gouvernance des accès</h1>
-<div class="sub">${esc(currentWorkspace.name)} · ${lastModel.repos.length} repos · ${rep.total} accès · généré le ${date}</div>
+<div class="sub">${esc(rep.scopeLabel || currentWorkspace.name)} · ${rep.repoCount != null ? rep.repoCount : lastModel.repos.length} repo(s) · ${rep.total} accès · généré le ${date}</div>
 <table class="kpi"><tr>${kpiRow}</tr></table>
+<div class="risk"><h2>🎯 Lecture risque — chemin d'attaque</h2><ul>${riskLi}</ul>
+<div class="rssi"><div class="lab">📣 Phrase pour le RSSI</div><div class="txt">« ${esc(rssiSentence(rep))} »</div></div></div>
 <h2 style="font-size:16px;">🚩 Signaux de dette d'accès</h2>
 ${findingBlocks || '<p>Aucun signal majeur.</p>'}
 <div class="foot">Généré par Salsifi — Accès &amp; Rôles. Les comptes « de service » sont détectés par heuristique (à vérifier).</div>
@@ -575,7 +650,7 @@ ${findingBlocks || '<p>Aucun signal majeur.</p>'}
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const safe = (currentWorkspace.name || 'workspace').replace(/[^a-z0-9_-]+/gi, '_').toLowerCase();
+    const safe = (rep.scopeLabel || currentWorkspace.name || 'workspace').replace(/[^a-z0-9_-]+/gi, '_').toLowerCase();
     a.href = url;
     a.download = `rapport-acces-${safe}-${date}.html`;
     document.body.appendChild(a);

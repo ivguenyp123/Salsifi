@@ -152,7 +152,7 @@ tbody tr:hover { background:var(--ov-03); }
 .rpt-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
 .rpt-title { font-family:var(--font-display); font-size:18px; font-weight:700; letter-spacing:-0.02em; }
 .rpt-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
-.rpt-kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:26px; }
+.rpt-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:26px; }
 .rpt-kpi { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:14px; padding:14px; }
 .rpt-kpi-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
 .rpt-kpi-value { font-family:var(--font-display); font-size:26px; font-weight:700; margin:6px 0 2px; }
@@ -168,6 +168,22 @@ tbody tr:hover { background:var(--ov-03); }
 .rpt-list { margin:12px 0 0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
 .rpt-list li { font-size:13px; color:var(--text-secondary); padding:6px 10px; background:var(--ov-03); border-radius:8px; }
 .rpt-list li b { color:var(--text-primary); }
+
+/* Lecture risque — chemin d'attaque */
+.rpt-risk { background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.28); border-radius:14px; padding:18px 20px; margin-bottom:24px; }
+.rpt-risk-title { font-family:var(--font-display); font-size:15px; font-weight:600; margin-bottom:10px; }
+.rpt-risk-list { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:7px; }
+.rpt-risk-list li { font-size:13.5px; color:var(--text-secondary); line-height:1.55; }
+.rpt-risk-list li b { color:var(--text-primary); }
+.rpt-rssi { margin-top:14px; background:rgba(239,68,68,0.10); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:12px 14px; }
+.rpt-rssi-label { font-size:11px; color:#fca5a5; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+.rpt-rssi-text { font-size:14px; font-style:italic; color:var(--text-primary); line-height:1.5; }
+
+.rpt-scope-select {
+    padding:8px 12px; border-radius:10px; background:var(--ov-06); border:1px solid var(--border-strong);
+    color:var(--text-primary); font-family:var(--font-body); font-size:13px; cursor:pointer; margin-right:10px;
+}
+.rpt-scope-select option { background:var(--bg-mid); }
 
 .rpt-reco { background:rgba(124,92,255,0.08); border:1px solid rgba(124,92,255,0.28); border-radius:14px; padding:18px 20px; margin-top:20px; }
 .rpt-reco-title { font-family:var(--font-display); font-size:15px; font-weight:600; margin-bottom:10px; }
