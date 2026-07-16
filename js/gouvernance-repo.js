@@ -14,6 +14,12 @@
   // (surface/historique/supply/CIS) ne portent QUE sur ce repo.
   let monoRepoId = null;
 
+  // Mode workspace : ?scope=workspace + sessionStorage.current_workspace →
+  // même moteur, mais restreint aux repos CHOISIS du workspace (ni 1, ni tous).
+  let workspaceMode = false;
+  let workspaceRepos = [];
+  let workspaceName = '';
+
   let aborted = false;
   let running = false;
   let results = [];   // { repo, res }
@@ -53,6 +59,20 @@
     const rid = new URLSearchParams(location.search).get('repo');
     monoRepoId = rid && /^\d+$/.test(rid) ? rid : null;
 
+    // Mode workspace (carte « Gouvernance Workspace » du hub → ?scope=workspace).
+    // On force le mode dès que le scope est demandé : ainsi, si le workspace est
+    // introuvable, on scanne 0 repo (message d'erreur) — JAMAIS "tous les repos".
+    if (!monoRepoId && new URLSearchParams(location.search).get('scope') === 'workspace') {
+      workspaceMode = true;
+      try {
+        const ws = JSON.parse(sessionStorage.getItem('current_workspace') || 'null');
+        if (ws && Array.isArray(ws.repositories)) {
+          workspaceRepos = ws.repositories;
+          workspaceName = ws.name || 'workspace';
+        }
+      } catch { /* current_workspace illisible → workspaceRepos reste vide */ }
+    }
+
     document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
     const pill = document.getElementById('userPill');
     if (pill) pill.textContent = username ? `👤 ${username}` : '🔓 connecté';
@@ -65,6 +85,9 @@
           if (wb) wb.textContent = `📦 ${p.path_with_namespace}`;
         }
       }).catch(() => {});
+    } else if (workspaceMode) {
+      const wb = document.getElementById('userPill');
+      if (wb) wb.textContent = `🗂️ ${workspaceName} (${workspaceRepos.length} repos)`;
     }
 
     // Pas de scan auto au chargement : on choisit un mode puis on lance.
@@ -74,8 +97,12 @@
       show('resultsSection', true);
       const bar = document.getElementById('summaryBar'); if (bar) bar.style.display = 'none';
       const exp = document.getElementById('exportRow'); if (exp) exp.style.display = 'none';
-      const scope = monoRepoId ? 'ce repo' : 'tous tes repos';
-      grid.innerHTML = `<div class="state-box"><div class="icon">🛡️</div><h3>Choisis un mode et lance un scan</h3><p>Analyse de <strong>${scope}</strong> — 🌊 Surface · 🕳️ Historique · 📦 Supply-chain · 🛡️ CIS. Chacun a son bouton de lancement.</p></div>`;
+      if (workspaceMode && !workspaceRepos.length) {
+        grid.innerHTML = `<div class="state-box"><div class="icon">🗂️</div><h3>Aucun repo de workspace à analyser</h3><p>Ouvre ce module depuis le hub : choisis une tribu (workspace) puis clique sur Gouvernance Workspace. <br><a href="${HUB_URL}" style="color:#a78bfa;">← Retour au hub</a></p></div>`;
+      } else {
+        const scope = monoRepoId ? 'ce repo' : (workspaceMode ? `les ${workspaceRepos.length} repos du workspace « ${workspaceName} »` : 'tous tes repos');
+        grid.innerHTML = `<div class="state-box"><div class="icon">🛡️</div><h3>Choisis un mode et lance un scan</h3><p>Analyse de <strong>${scope}</strong> — 🌊 Surface · 🕳️ Historique · 📦 Supply-chain · 🛡️ CIS. Chacun a son bouton de lancement.</p></div>`;
+      }
     }
   });
 
@@ -120,6 +147,21 @@
       if (!p || !p.id) { if (onProgress) onProgress(0); return []; }
       if (onProgress) onProgress(1);
       return [{ id: p.id, name: p.name, path: p.path_with_namespace || p.name, url: p.web_url || '', defaultBranch: p.default_branch || 'main' }];
+    }
+    // Mode workspace : on résout uniquement les repos choisis du workspace.
+    // Chaque repo est ré-interrogé pour obtenir default_branch (absent du storage).
+    if (workspaceMode) {
+      const out = [];
+      for (const r of workspaceRepos) {
+        if (aborted) break;
+        const p = await fetchGL(`/projects/${r.id}`);
+        if (p && p.id && p.default_branch) {  // repos vides / non initialisés ignorés
+          out.push({ id: p.id, name: p.name, path: p.path_with_namespace || p.name, url: p.web_url || '', defaultBranch: p.default_branch });
+        }
+        if (onProgress) onProgress(out.length);
+        if (limit && out.length >= limit) return out;
+      }
+      return out;
     }
     const out = [];
     let next = `${GITLAB_URL}/api/v4/projects?membership=true&simple=true&archived=false&per_page=100&pagination=keyset&order_by=id&sort=asc`;
