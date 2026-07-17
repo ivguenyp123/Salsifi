@@ -54,6 +54,9 @@
   const MR_FILE = 'SECURITY-SCAN.md';
   const MR_CONC = 3;          // repos traités en parallèle (POST throttle vite)
   let mrCreating = false;     // garde anti-relance pendant la création
+  // Création auto de MR en fin de scan. La popup d'entrée peut la couper
+  // (scan-only) ; en scan manuel, elle reste à true (comportement historique).
+  let autoMR = true;
 
   // ── Init : auth lue du hub, puis démarrage auto (le clic sur le service = le déclencheur) ──
   document.addEventListener('DOMContentLoaded', () => {
@@ -110,7 +113,9 @@
         grid.innerHTML = `<div class="state-box"><div class="icon">🗂️</div><h3>Aucun repo de workspace à analyser</h3><p>Ouvre ce module depuis le hub : choisis une tribu (workspace) puis clique sur Gouvernance Workspace. <br><a href="${HUB_URL}" style="color:#a78bfa;">← Retour au hub</a></p></div>`;
       } else {
         const scope = monoRepoId ? 'ce repo' : (workspaceMode ? `les ${workspaceRepos.length} repos du workspace « ${workspaceName} »` : 'tous tes repos');
-        grid.innerHTML = `<div class="state-box"><div class="icon">🛡️</div><h3>Choisis un mode et lance un scan</h3><p>Analyse de <strong>${scope}</strong> — 🌊 Surface · 🕳️ Historique · 📦 Supply-chain · 🛡️ CIS. Chacun a son bouton de lancement.</p></div>`;
+        grid.innerHTML = `<div class="state-box"><div class="icon">🛡️</div><h3>Choisis tes vérifications</h3><p>Analyse de <strong>${scope}</strong> — 🌊 Surface · 🕳️ Historique · 📦 Supply-chain · 🛡️ CIS.<br>Clique <strong>▶️ Vérifier</strong> pour choisir un ou plusieurs contrôles et tout lancer d'un coup, ou utilise le mode-bar pour un scan isolé.</p></div>`;
+        // Popup d'entrée : « tu veux vérifier quoi ? » (multi-sélection, puis tout lancer)
+        openLaunchModal();
       }
     }
   });
@@ -785,6 +790,76 @@
     }
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // POPUP D'ENTRÉE + orchestration « lance tout » (analyse → MR → rapport)
+  // ══════════════════════════════════════════════════════════════════════
+  function launchScopeLabel() {
+    return monoRepoId ? 'ce repo'
+      : (workspaceMode ? `${workspaceRepos.length} repo(s) du workspace « ${workspaceName} »`
+        : 'tous tes repos accessibles');
+  }
+  function openLaunchModal() {
+    const el = document.getElementById('launchScope');
+    if (el) el.textContent = 'Portée : ' + launchScopeLabel();
+    const m = document.getElementById('launchModal');
+    if (m) m.style.display = 'flex';
+  }
+  function closeLaunchModal() {
+    const m = document.getElementById('launchModal');
+    if (m) m.style.display = 'none';
+  }
+  function toggleAllChecks() {
+    const ids = ['lc-surface', 'lc-history', 'lc-supply', 'lc-cis'];
+    const allOn = ids.every(id => document.getElementById(id) && document.getElementById(id).checked);
+    ids.forEach(id => { const c = document.getElementById(id); if (c) c.checked = !allOn; });
+  }
+  function launchSelected() {
+    if (running || mrCreating) { showToast('Un scan est déjà en cours.', 'info'); return; }
+    const checks = [];
+    if (document.getElementById('lc-surface').checked) checks.push('surface');
+    if (document.getElementById('lc-history').checked) checks.push('history');
+    if (document.getElementById('lc-supply').checked) checks.push('supply');
+    if (document.getElementById('lc-cis').checked) checks.push('cis');
+    if (!checks.length) { showToast('Choisis au moins une vérification.', 'error'); return; }
+    const opts = {
+      mr: document.getElementById('lc-mr').checked,
+      report: document.getElementById('lc-report').checked,
+    };
+    closeLaunchModal();
+    runSelectedChecks(checks, opts);
+  }
+
+  // Attend qu'un scan ET sa création de MR soient terminés (les MR lisent
+  // `results`, que le scan suivant réinitialise → on sérialise strictement).
+  async function _govWaitIdle() {
+    let guard = 0;
+    while ((running || mrCreating) && guard < 100000) { await sleep(200); guard++; }
+  }
+  // Enchaîne les vérifications choisies puis enregistre le rapport.
+  async function runSelectedChecks(checks, opts) {
+    opts = opts || {};
+    autoMR = opts.mr !== false;           // coupe/active la création de MR pour toute la série
+    aborted = false;
+    const order = ['surface', 'history', 'supply', 'cis'].filter(c => checks.includes(c));
+    for (const c of order) {
+      await _govWaitIdle();
+      if (aborted) break;
+      if (c === 'surface') { setMode('surface'); run(); }
+      else if (c === 'history') {
+        setMode('history');
+        const v = parseInt((document.getElementById('histCount') || {}).value, 10);
+        runHistory(Number.isFinite(v) && v > 0 ? v : null);
+      } else if (c === 'supply') { setMode('supply'); runSupply(); }
+      else if (c === 'cis') { setMode('cis'); runCIS(); }
+      await _govWaitIdle();
+    }
+    autoMR = true;                        // retour au défaut (scans manuels)
+    if (opts.report !== false && (scannedSecrets || scannedSupply || scannedCIS)) {
+      exportReport();                     // « enregistrement du rapport »
+    }
+    showToast('✅ Vérification terminée', 'success');
+  }
+
   let currentTypeFilter = null;
   let liveCount = 0;
   const RENDER_CAP = 400; // au-delà : on garde tout en mémoire/Excel, mais on n'inonde pas le DOM
@@ -915,7 +990,7 @@
     // Asynchrone (ne bloque pas l'affichage). aborted a pu être mis par un Stop
     // pendant le scan : on le remet à false pour ce nouveau geste (la création
     // a son propre garde-fou forbidden). Une MR = proposition, jamais mergée.
-    if (totalFindings > 0) {
+    if (totalFindings > 0 && autoMR) {
       aborted = false;
       createReportMRs();
     }
@@ -1678,7 +1753,7 @@ if(document.getElementById('supTable')) renderSup();
 
     // MR pour tout repo ayant au moins un écart CIS (check ko), quel que soit le score.
     const withGaps = enriched.filter(r => r.checks.some(c => c.state === 'ko')).length;
-    if (withGaps > 0) { aborted = false; createCISMRs(); }
+    if (withGaps > 0 && autoMR) { aborted = false; createCISMRs(); }
   }
 
   let cisFilter = 'all';
@@ -2220,4 +2295,8 @@ if(document.getElementById('supTable')) renderSup();
   window.exportReport = exportReport;
   window.showInfo = showInfo;
   window.closeInfo = closeInfo;
+  window.openLaunchModal = openLaunchModal;
+  window.closeLaunchModal = closeLaunchModal;
+  window.toggleAllChecks = toggleAllChecks;
+  window.launchSelected = launchSelected;
 })();

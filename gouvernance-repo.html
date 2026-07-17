@@ -22,7 +22,34 @@
       <div class="user-pill" id="userPill">🔓 connecté</div>
       <button class="info-btn" onclick="showInfo()">?</button>
     </div>
-    <button class="ghost-btn" onclick="startScan()">↻ Relancer</button>
+    <div class="header-right">
+      <button class="scan-btn" onclick="openLaunchModal()">▶️ Vérifier</button>
+      <button class="ghost-btn" onclick="startScan()">↻ Relancer</button>
+    </div>
+  </div>
+
+  <!-- Popup d'entrée : choix des vérifications à lancer (multi-sélection) -->
+  <div class="launch-overlay" id="launchModal" style="display:none;" onclick="if(event.target===this) closeLaunchModal()">
+    <div class="launch-box">
+      <div class="launch-title">🛡️ Que veux-tu vérifier ?</div>
+      <div class="launch-sub" id="launchScope"></div>
+      <div class="launch-checks">
+        <label class="launch-check"><input type="checkbox" id="lc-surface" checked><span class="lc-ic">🌊</span><span class="lc-txt"><b>Surface</b><small>Secrets dans l'état actuel (HEAD)</small></span></label>
+        <label class="launch-check"><input type="checkbox" id="lc-history"><span class="lc-ic">🕳️</span><span class="lc-txt"><b>Historique</b><small>Secrets dans les commits &amp; diffs (plus long)</small></span></label>
+        <label class="launch-check"><input type="checkbox" id="lc-supply" checked><span class="lc-ic">📦</span><span class="lc-txt"><b>Supply-chain</b><small>Dépendances &amp; CI (npm, Maven, Docker…)</small></span></label>
+        <label class="launch-check"><input type="checkbox" id="lc-cis" checked><span class="lc-ic">🛡️</span><span class="lc-txt"><b>Conformité CIS</b><small>Branch protection, approvals, CODEOWNERS…</small></span></label>
+      </div>
+      <div class="launch-opts">
+        <label><input type="checkbox" id="lc-mr" checked> Créer les MR (rapport &amp; mise en conformité)</label>
+        <label><input type="checkbox" id="lc-report" checked> Enregistrer le rapport HTML à la fin</label>
+      </div>
+      <div class="launch-actions">
+        <button class="ghost-btn" onclick="toggleAllChecks()">Tout sélectionner</button>
+        <span class="launch-spacer"></span>
+        <button class="ghost-btn" onclick="closeLaunchModal()">Fermer</button>
+        <button class="scan-btn" onclick="launchSelected()">🚀 Lancer</button>
+      </div>
+    </div>
   </div>
 
   <!-- Mode : Surface (HEAD) vs Historique (commits + diffs) -->
