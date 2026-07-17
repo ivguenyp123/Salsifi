@@ -568,3 +568,36 @@ body::after {
     outline-offset: 3px;
     border-radius: 4px;
 }
+
+/* ── Panneau capacités : « ce que ton dépôt peut exploiter » ──────────── */
+.cap-panel { background: var(--card-6, rgba(28,20,50,0.6)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 20px; padding: 22px 24px; margin: 24px 0 30px; }
+.cap-panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.cap-panel-title { font-family: var(--font-display, 'Bricolage Grotesque', sans-serif); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.cap-panel-sub { font-size: 12px; color: var(--text-muted, #9a8fc0); }
+.cap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.cap-card { background: var(--ov-04, rgba(255,255,255,0.04)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-left-width: 4px; border-radius: 14px; padding: 16px 18px; }
+.cap-card.ready { border-left-color: #34d399; }
+.cap-card.almost { border-left-color: #fbbf24; }
+.cap-card.far, .cap-card.gated { border-left-color: var(--ov-18, rgba(255,255,255,0.18)); }
+.cap-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.cap-ic { font-size: 20px; }
+.cap-name { font-weight: 700; font-size: 15px; flex: 1; min-width: 0; }
+.cap-pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.cap-pill.ready { background: rgba(52,211,153,0.16); color: #6ee7b7; }
+.cap-pill.almost { background: rgba(251,191,36,0.16); color: #fcd34d; }
+.cap-pill.far, .cap-pill.gated { background: var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-muted, #9a8fc0); }
+.cap-enables { font-size: 13px; color: var(--text-secondary, #c3bce0); line-height: 1.55; margin-bottom: 12px; }
+.cap-modules { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+.cap-mod { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 10px; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); text-decoration: none; color: inherit; transition: .15s; }
+.cap-mod:hover { border-color: var(--accent, #7c5cff); background: rgba(124,92,255,0.12); }
+.cap-mod-n { font-weight: 600; font-size: 13px; }
+.cap-mod-w { flex: 1; font-size: 11px; color: var(--text-muted, #9a8fc0); }
+.cap-mod-go { font-size: 11px; font-weight: 700; color: var(--accent, #a78bfa); white-space: nowrap; }
+.cap-advice { font-size: 12px; color: var(--text-secondary, #c3bce0); line-height: 1.5; padding-top: 10px; border-top: 1px dashed var(--ov-08, rgba(255,255,255,0.08)); }
+.cap-advice b { color: var(--text-primary, #f5f1ff); }
+.cap-ready { font-size: 12px; color: #6ee7b7; padding-top: 10px; border-top: 1px dashed rgba(52,211,153,0.25); }
+.cap-next { margin-top: 16px; background: rgba(124,92,255,0.10); border: 1px solid rgba(124,92,255,0.3); border-radius: 14px; padding: 15px 18px; }
+.cap-next-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a78bfa; font-weight: 700; }
+.cap-next-name { font-family: var(--font-display, 'Bricolage Grotesque', sans-serif); font-size: 17px; font-weight: 700; margin: 4px 0 4px; }
+.cap-next-prog { font-size: 13px; color: var(--text-secondary, #c3bce0); line-height: 1.5; }
+.cap-next-prog b { color: var(--text-primary, #f5f1ff); }

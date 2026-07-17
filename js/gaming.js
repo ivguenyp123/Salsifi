@@ -1269,6 +1269,108 @@
         //  AFFICHAGE
         // ══════════════════════════════════════════════════════════════════
 
+        // ══════════════════════════════════════════════════════════════════
+        //  CAPACITÉS — ce que le dépôt peut « exploiter » selon ses badges.
+        //  Principe : JAMAIS bloquant. Le module reste toujours ouvrable ; on
+        //  conseille seulement ce qu'il faudrait gagner pour bien l'exploiter.
+        //  Chaque capacité = un jeu de badges prérequis + de vrais modules.
+        // ══════════════════════════════════════════════════════════════════
+        const CAPABILITIES = [
+            {
+                id: 'golden-path', icon: '🛤️', name: 'Golden path de livraison standard',
+                requires: ['pipeline_as_code', 'branch_protection', 'automated_tests', 'lock_files_present'],
+                enables: 'Ton dépôt est prêt pour le pipeline de livraison standard : génération complète, déploiement de test, feature flags, release notes et un score DORA fiable.',
+                modules: [
+                    ['Pipeline Generator', 'pipeline-generator.html', 'générer le pipeline complet'],
+                    ['Feature Flag Manager', 'feature-flag-manager.html', 'piloter les feature flags'],
+                    ['Release Notes', 'release-notes.html', 'release notes automatiques'],
+                    ['DORA Insights', 'insights.html', 'score DORA fiable'],
+                ],
+            },
+            {
+                id: 'controlled-delivery', icon: '🎛️', name: 'Livraison contrôlée', dependsOn: 'golden-path',
+                requires: ['env_separation', 'rollback_ready', 'high_stability', 'approval_rules'],
+                enables: 'Tu peux viser le déploiement progressif : canary, progressive delivery, vérification post-déploiement, rollback automatique.',
+                modules: [
+                    ['Pipeline Generator', 'pipeline-generator.html', 'ajouter canary & rollback au pipeline'],
+                ],
+            },
+            {
+                id: 'lifecycle', icon: '🧹', name: 'Cycle de vie du dépôt maîtrisé',
+                requires: ['merged_branches_cleaned', 'no_zombie_mrs', 'essential_files', 'clean_repo'],
+                enables: 'Base saine : moins de bruit, dépôt propre — le terrain idéal pour automatiser sans surprise.',
+                modules: [
+                    ['Branch Monitor', 'branch-cleaner.html', 'nettoyer les branches mergées'],
+                    ['Repo Analyzer', 'repo-analyzer.html', 'analyser la santé du dépôt'],
+                ],
+            },
+        ];
+        const BADGE_BY_ID = {};
+        BADGES.forEach(b => { BADGE_BY_ID[b.id] = b; });
+        function badgeName(id) { return BADGE_BY_ID[id] ? BADGE_BY_ID[id].name : id; }
+
+        // Rend le panneau « Ce que ton dépôt peut exploiter » (soft, non bloquant).
+        function renderCapabilities(unlockedSet) {
+            const cont = document.getElementById('capabilitiesContainer');
+            if (!cont) return;
+            const ready = new Set();
+            const rows = CAPABILITIES.map(cap => {
+                const parentReady = !cap.dependsOn || ready.has(cap.dependsOn);
+                const missing = cap.requires.filter(id => !unlockedSet.has(id));
+                const isReady = parentReady && missing.length === 0;
+                if (isReady) ready.add(cap.id);
+                const status = isReady ? 'ready' : (!parentReady ? 'gated' : (missing.length <= 2 ? 'almost' : 'far'));
+                return { cap, parentReady, missing, isReady, status };
+            });
+
+            const pill = { ready: '✅ prêt', almost: '🟠 presque', far: '⚪ à préparer', gated: '⚪ à préparer' };
+            const cards = rows.map(({ cap, parentReady, missing, isReady, status }) => {
+                const mods = cap.modules.map(([n, url, why]) =>
+                    `<a class="cap-mod" href="${url}?repo=${encodeURIComponent(projectId)}"><span class="cap-mod-n">${escapeHtml(n)}</span><span class="cap-mod-w">${escapeHtml(why)}</span><span class="cap-mod-go">Ouvrir ↗</span></a>`
+                ).join('');
+                let advice;
+                if (isReady) {
+                    advice = `<div class="cap-ready">✅ Prêt — tu peux l'exploiter à fond.</div>`;
+                } else {
+                    const missTxt = missing.map(id => `<b>${escapeHtml(badgeName(id))}</b>`).join(', ');
+                    const parentTxt = !parentReady ? ` — d'abord « ${escapeHtml(CAPABILITIES.find(c => c.id === cap.dependsOn).name)} »` : '';
+                    advice = `<div class="cap-advice">💡 Ouvrable dès maintenant. Pour <b>bien l'exploiter</b>, il te faudrait : ${missTxt || '—'}${parentTxt}.</div>`;
+                }
+                return `
+                    <div class="cap-card ${status}">
+                        <div class="cap-head"><span class="cap-ic">${cap.icon}</span><span class="cap-name">${escapeHtml(cap.name)}</span><span class="cap-pill ${status}">${pill[status]}</span></div>
+                        <div class="cap-enables">${escapeHtml(cap.enables)}</div>
+                        <div class="cap-modules">${mods}</div>
+                        ${advice}
+                    </div>`;
+            }).join('');
+
+            // « Ta prochaine capacité » : la plus proche parmi celles dont le prérequis parent est satisfait.
+            const candidates = rows.filter(r => !r.isReady && r.parentReady).sort((a, b) => a.missing.length - b.missing.length);
+            let next = '';
+            if (candidates.length) {
+                const c = candidates[0];
+                const total = c.cap.requires.length;
+                const have = total - c.missing.length;
+                next = `
+                    <div class="cap-next">
+                        <div class="cap-next-label">🎯 Ta prochaine capacité</div>
+                        <div class="cap-next-name">${escapeHtml(c.cap.icon)} ${escapeHtml(c.cap.name)}</div>
+                        <div class="cap-next-prog">Tu as déjà <b>${have}/${total}</b> prérequis. Il ne manque que : ${c.missing.map(id => `<b>${escapeHtml(badgeName(id))}</b>`).join(', ')}.</div>
+                    </div>`;
+            }
+            const readyCount = rows.filter(r => r.isReady).length;
+            cont.innerHTML = `
+                <div class="cap-panel">
+                    <div class="cap-panel-head">
+                        <div class="cap-panel-title">🚀 Ce que ton dépôt peut exploiter</div>
+                        <div class="cap-panel-sub">${readyCount}/${CAPABILITIES.length} capacités prêtes · les modules restent toujours ouvrables</div>
+                    </div>
+                    <div class="cap-grid">${cards}</div>
+                    ${next}
+                </div>`;
+        }
+
         function renderBadges() {
             // Charger l'historique des badges déjà débloqués
             const storageKey = `devops_badges_v2_${projectId}`;
@@ -1283,6 +1385,9 @@
                 if (isUnlocked) currentlyUnlocked.push(b.id);
                 return { badge: b, isUnlocked, isLost, wasUnlocked };
             });
+
+            // Panneau capacités (soft) — au-dessus des badges.
+            renderCapabilities(new Set(currentlyUnlocked));
 
             // Sauvegarder les badges débloqués (inclure les anciens pour track les perdus)
             const allUnlocked = [...new Set([...previouslyUnlocked, ...currentlyUnlocked])];
