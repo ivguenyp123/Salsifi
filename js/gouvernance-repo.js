@@ -829,31 +829,36 @@
     runSelectedChecks(checks, opts);
   }
 
-  // Attend qu'un scan ET sa création de MR soient terminés (les MR lisent
-  // `results`, que le scan suivant réinitialise → on sérialise strictement).
-  async function _govWaitIdle() {
-    let guard = 0;
-    while ((running || mrCreating) && guard < 100000) { await sleep(200); guard++; }
-  }
-  // Enchaîne les vérifications choisies puis enregistre le rapport.
+  // Enchaîne les vérifications choisies EN SÉRIE, puis enregistre le rapport.
+  // On attend (await) chaque scan jusqu'au bout, puis sa création de MR — les
+  // deux sont sérialisés explicitement, donc pas de course sur `results` ni de
+  // blocage. autoMR=false coupe l'auto-MR de finishScan : on la pilote ici.
   async function runSelectedChecks(checks, opts) {
     opts = opts || {};
-    autoMR = opts.mr !== false;           // coupe/active la création de MR pour toute la série
+    const wantMR = opts.mr !== false;
+    autoMR = false;
     aborted = false;
     const order = ['surface', 'history', 'supply', 'cis'].filter(c => checks.includes(c));
-    for (const c of order) {
-      await _govWaitIdle();
-      if (aborted) break;
-      if (c === 'surface') { setMode('surface'); run(); }
-      else if (c === 'history') {
-        setMode('history');
-        const v = parseInt((document.getElementById('histCount') || {}).value, 10);
-        runHistory(Number.isFinite(v) && v > 0 ? v : null);
-      } else if (c === 'supply') { setMode('supply'); runSupply(); }
-      else if (c === 'cis') { setMode('cis'); runCIS(); }
-      await _govWaitIdle();
+    try {
+      for (const c of order) {
+        if (aborted) break;
+        if (c === 'surface') { setMode('surface'); await run(); }
+        else if (c === 'history') {
+          setMode('history');
+          const v = parseInt((document.getElementById('histCount') || {}).value, 10);
+          await runHistory(Number.isFinite(v) && v > 0 ? v : null);
+        } else if (c === 'supply') { setMode('supply'); await runSupply(); }
+        else if (c === 'cis') { setMode('cis'); await runCIS(); }
+        // MR de CE scan, résultats encore intacts (le scan suivant n'a pas démarré).
+        if (wantMR) {
+          aborted = false;
+          try { if (c === 'cis') await createCISMRs(); else await createReportMRs(); }
+          catch (e) { console.warn('Création MR échouée pour', c, e); }
+        }
+      }
+    } finally {
+      autoMR = true;                      // retour au défaut (scans manuels)
     }
-    autoMR = true;                        // retour au défaut (scans manuels)
     if (opts.report !== false && (scannedSecrets || scannedSupply || scannedCIS)) {
       exportReport();                     // « enregistrement du rapport »
     }
@@ -1580,7 +1585,7 @@ if(document.getElementById('supTable')) renderSup();
   }
 
   function runCIS() {
-    runGeneric({
+    return runGeneric({
       label: 'CIS',
       liveNoun: n => `🛡️ score moyen ${n}`,
       scanOne: (repo) => scanCIS(repo),
