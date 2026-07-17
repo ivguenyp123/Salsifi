@@ -10,6 +10,15 @@
   let GITLAB_URL = '', token = '', username = '';
   const HUB_URL = 'hub.html';
 
+  // Domaines internes de confiance (Artifactory / registries LCL-CAGIP). Un
+  // registry HTTPS sur ces domaines n'est PAS un « registry tiers » : c'est
+  // notre miroir contrôlé, pas un acteur externe. Le HTTP reste flaggé (MITM).
+  // NB : « interne » protège la disponibilité/le contrôle, PAS la provenance —
+  // un repo *-remote proxifie le registre public (dependency-confusion possible).
+  const INTERNAL_REGISTRY_RX = /(^|\.)cagip\.group\.gca$/i;
+  function _registryHost(u) { try { return new URL(u).hostname; } catch { return ''; } }
+  function isInternalRegistry(u) { const h = _registryHost(u); return !!h && INTERNAL_REGISTRY_RX.test(h); }
+
   // Mode mono-repo : ?repo=<id> passé par le hub. Si présent, tous les scans
   // (surface/historique/supply/CIS) ne portent QUE sur ce repo.
   let monoRepoId = null;
@@ -444,7 +453,7 @@
         const m = ln.match(/registry\s*=\s*(\S+)/i); if (!m) return;
         const url = m[1];
         if (/^http:\/\//i.test(url)) push('red', 'npm', 'Registry HTTP (non chiffré)', i + 1, ln);
-        else if (/^https?:/i.test(url) && !/registry\.npmjs\.org/i.test(url)) push('orange', 'npm', 'Registry npm tiers', i + 1, ln);
+        else if (/^https?:/i.test(url) && !/registry\.npmjs\.org/i.test(url) && !isInternalRegistry(url)) push('orange', 'npm', 'Registry npm tiers', i + 1, ln);
       });
     } else if (eco === 'ci') {
       content.split('\n').forEach((ln, i) => {
