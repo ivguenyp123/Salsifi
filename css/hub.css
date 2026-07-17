@@ -1198,8 +1198,11 @@
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Quand la vue workspace est active, on cache tout le reste sous .container */
-        body.is-workspace-mode > .container > *:not(header):not(.view-workspace):not(.ws-toast) {
+        /* Quand la vue workspace est active, on cache tout le reste sous .container.
+           EXCEPTION : les overlays modaux (.ws-modal-overlay) restent pilotables —
+           ils sont display:none par défaut et passent en flex à l'ouverture ; sans
+           cette exception, le !important les gardait invisibles (modale « repos »). */
+        body.is-workspace-mode > .container > *:not(header):not(.view-workspace):not(.ws-toast):not(.ws-modal-overlay) {
             display: none !important;
         }
 
