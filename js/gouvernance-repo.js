@@ -1059,15 +1059,19 @@
     // Lit les accumulateurs (cumul Surface+Historique côté secrets, dédoublonnés).
     const secRows = Array.from(reportSecrets.values());
     const supRows = Array.from(reportSupply.values());
+    const cisRows = Array.from(reportCIS.values());
 
-    if (!scannedSecrets && !scannedSupply) { showToast('Lance un scan avant de générer un rapport.', 'error'); return; }
+    if (!scannedSecrets && !scannedSupply && !scannedCIS) { showToast('Lance un scan avant de générer un rapport.', 'error'); return; }
 
     const sev = {};
     [...secRows, ...supRows].forEach(r => { sev[r.Type] = severityForType(r.Type); });
 
-    const html = renderReportHTML({ secRows, supRows, hasSec: scannedSecrets, hasSup: scannedSupply, sev });
-    const isGlobal = scannedSecrets && scannedSupply;
-    const name = isGlobal ? 'rapport-securite-global.html' : (scannedSupply ? 'rapport-supply-chain.html' : 'rapport-secrets.html');
+    const html = renderReportHTML({ secRows, supRows, cisRows, hasSec: scannedSecrets, hasSup: scannedSupply, hasCis: scannedCIS, sev });
+    const parts = [];
+    if (scannedSecrets) parts.push('secrets');
+    if (scannedSupply) parts.push('supply');
+    if (scannedCIS) parts.push('cis');
+    const name = parts.length > 1 ? 'rapport-securite-global.html' : `rapport-${parts[0]}.html`;
     download(name, html, 'text/html');
     showToast('📑 Rapport généré ✅', 'success');
   }
@@ -1164,13 +1168,37 @@
     <div class="tbl-wrap"><table id="supTable"><thead><tr><th>Risque</th><th>Repo</th><th>Fichier</th><th>Type</th><th>Éco</th><th>Aperçu</th></tr></thead><tbody></tbody></table></div>
   </div>` : '';
 
-    const kpis = `
-  <div class="kpis">
-    <div class="kpi red"><div class="n">${d.secRows.length}</div><div class="l">🔑 Secrets exposés</div></div>
-    <div class="kpi violet"><div class="n">${nbRepos(d.secRows)}</div><div class="l">Repos touchés (secrets)</div></div>
-    <div class="kpi orange"><div class="n">${d.supRows.length}</div><div class="l">📦 Alertes supply-chain</div></div>
-    <div class="kpi cyan"><div class="n">${nbRepos(d.supRows)}</div><div class="l">Repos touchés (supply)</div></div>
-  </div>`;
+    // Agrégats CIS
+    const cisRows = d.cisRows || [];
+    const cisNon = cisRows.filter(r => r.Status === 'nonconform');
+    const cisGaps = cisRows.reduce((s, r) => s + (r.gaps ? r.gaps.length : 0), 0);
+    const cisScoreBadge = (sc) => { const c = sc >= 80 ? '#34d399' : sc >= 50 ? '#fbbf24' : '#f87171'; return `<span style="font-family:var(--fm);font-weight:700;color:${c}">${sc}</span>`; };
+
+    // KPIs dynamiques : seulement les familles réellement scannées.
+    const kpiCards = [];
+    if (d.hasSec) {
+      kpiCards.push(`<div class="kpi red"><div class="n">${d.secRows.length}</div><div class="l">🔑 Secrets exposés</div></div>`);
+      kpiCards.push(`<div class="kpi violet"><div class="n">${nbRepos(d.secRows)}</div><div class="l">Repos touchés (secrets)</div></div>`);
+    }
+    if (d.hasSup) {
+      kpiCards.push(`<div class="kpi orange"><div class="n">${d.supRows.length}</div><div class="l">📦 Alertes supply-chain</div></div>`);
+      kpiCards.push(`<div class="kpi cyan"><div class="n">${nbRepos(d.supRows)}</div><div class="l">Repos touchés (supply)</div></div>`);
+    }
+    if (d.hasCis) {
+      kpiCards.push(`<div class="kpi red"><div class="n">${cisNon.length}</div><div class="l">🛡️ CIS non conformes</div></div>`);
+      kpiCards.push(`<div class="kpi orange"><div class="n">${cisGaps}</div><div class="l">Écarts CIS</div></div>`);
+    }
+    const kpis = `<div class="kpis">${kpiCards.join('')}</div>`;
+
+    const cisSection = d.hasCis ? `
+  <div class="section">
+    <div class="section-h">🛡️ Conformité CIS GitLab <span class="pill">${cisNon.length} non conforme(s) · ${cisGaps} écart(s) · ${cisRows.length} repos</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Repo</th><th>Score</th><th>Contrôle CIS</th><th>Écart constaté</th></tr></thead><tbody>
+      ${cisRows.filter(r => r.gaps && r.gaps.length).sort((a, b) => a.Score - b.Score).flatMap(r => r.gaps.map((g, i) =>
+        `<tr><td class="t-repo" title="${esc(r.Repo)}">${i === 0 ? esc(r.Repo) : ''}</td><td>${i === 0 ? cisScoreBadge(r.Score) : ''}</td><td style="font-family:var(--fm);font-size:11px;color:var(--ts)">CIS ${esc(g.cis)} — ${esc(g.label)}</td><td style="color:#fca5a5">${esc(g.detail)}</td></tr>`
+      )).join('') || '<tr><td colspan="4" class="empty">Tous les repos scannés sont conformes ✅</td></tr>'}
+    </tbody></table></div>
+  </div>` : '';
 
     return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1178,7 +1206,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:var(--bg-deep);--bg2:var(--bg-mid);--card:var(--card-6);--bd:var(--ov-08);--bd2:var(--ov-18);
+:root{--bg:#0f0a1f;--bg2:#1a1230;--card:rgba(28,20,50,0.6);--bd:rgba(255,255,255,0.08);--bd2:rgba(255,255,255,0.18);--ov-06:rgba(255,255,255,0.06);
 --tp:#f5f1ff;--ts:#b8aed8;--tm:#7a6fa3;--measure:#7c5cff;--inspect:#fb923c;--deliver:#2dd4bf;--collab:#f472b6;
 --red:#f87171;--orange:#fb923c;--ok:#34d399;--fd:'Bricolage Grotesque',sans-serif;--fb:'Manrope',sans-serif;--fm:'JetBrains Mono',monospace}
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;padding:28px;
@@ -1189,7 +1217,7 @@ background-image:radial-gradient(ellipse 700px 500px at 12% 5%,rgba(251,146,60,.
 .head .sub{color:var(--ts);font-size:14px;margin-top:4px}
 .head .meta{color:var(--tm);font-size:13px;font-family:var(--fm);text-align:right}
 .divider{height:1px;background:linear-gradient(90deg,var(--inspect),transparent);margin:18px 0 28px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:30px}
 .kpi{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--bd);border-radius:18px;padding:22px}
 .kpi .n{font-family:var(--fd);font-size:42px;font-weight:800;line-height:1;letter-spacing:-.03em}
 .kpi .l{color:var(--tm);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px}
@@ -1237,14 +1265,15 @@ tr:hover td{background:rgba(124,92,255,.05)}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
   <div class="head">
-    <div><h1>🛡️ Rapport Sécurité</h1><div class="sub">Secrets exposés &amp; risques supply-chain — scan de tous les repos accessibles</div></div>
+    <div><h1>🛡️ Rapport Sécurité</h1><div class="sub">${[d.hasSec ? 'secrets exposés' : '', d.hasSup ? 'risques supply-chain' : '', d.hasCis ? 'conformité CIS' : ''].filter(Boolean).join(' · ')} — Inspecter &amp; Sécuriser</div></div>
     <div class="meta">DevOps Hub · Inspecter &amp; Sécuriser<br>Généré le ${dateStr}</div>
   </div>
   <div class="divider"></div>
 ${kpis}
 ${secSection}
 ${supSection}
-  <div class="foot">Rapport généré par DevOps Hub · Secrets Scanner · Valeurs sensibles censurées (aucune valeur complète exposée)</div>
+${cisSection}
+  <div class="foot">Rapport généré par DevOps Hub · Inspecter &amp; Sécuriser · Valeurs sensibles censurées (aucune valeur complète exposée)</div>
 </div>
 <script>
 const D = ${dataJson};
@@ -1611,6 +1640,13 @@ if(document.getElementById('supTable')) renderSup();
 
   function finishScanCIS(done, total, extraSub) {
     scannedCIS = true;
+    // Accumulation CIS pour le rapport (1 entrée par repo, le dernier scan gagne).
+    for (const { repo, res } of results) {
+      reportCIS.set(repo.path, {
+        Repo: repo.path, Score: res.score, Status: res.status, url: repo.url,
+        gaps: (res.checks || []).filter(c => c.state === 'ko').map(c => ({ cis: c.cis, label: c.label, detail: c.detail }))
+      });
+    }
     const enriched = results.map(r => r.res);
     const avg = enriched.length ? Math.round(enriched.reduce((s, r) => s + r.score, 0) / enriched.length) : 100;
     const nonconform = enriched.filter(r => r.status === 'nonconform').length;
