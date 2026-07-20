@@ -1,24 +1,24 @@
 # Salsifi — DevOps Hub · Notes de version
 
-## v1.5.0 — 2026-07-20 · Salsi, résumé d'analyse à la demande (hub)
+## v1.5.0 — 2026-07-20 · Salsi, bilan cross-modules à la demande (hub)
 
 On entre sur le hub **normalement** (aucune popup à l'arrivée). Le bouton **🌱 Salsi**
-du header ouvre Salsi **quand on veut** : il fait le **résumé des modules d'un repo**
-et affiche ses **5 priorités**. 100 % déterministe, aucune IA.
+du header ouvre Salsi **quand on veut** : il fait une **vraie analyse d'UN repo** en
+tirant une priorité de **chaque module**, et affiche les **5 priorités — sécurité en tête**.
 
-- **À la demande, pas d'auto-popup** : le repo se choisit *après*, dans le hub. Salsi
-  cible le **repo sélectionné** (sinon le mieux suivi) et n'en présume aucun de force.
-- **Axe analyse, pas seulement les reculs** : le résumé mêle l'état ET les mouvements —
-  métriques DORA faibles (Low/Medium/High) **à pousser**, paliers **retombés**, niveau
-  global en baisse, **badges perdus / à décrocher**. Un item par sujet (une métrique
-  faible *et* en recul → une seule ligne, la plus forte).
-- **Top 5 priorisé** : classé par gravité (recul récent > état faible), chaque point
-  **cliquable** vers le bon module.
-- **Honnête à l'échelle** : même avec 1000 repos accessibles, Salsi n'analyse que les
-  **repos que tu suis** (ceux qui ont des mesures : compagnons DORA/gaming en
-  localStorage) ; il ne prétend jamais avoir scanné tout le parc.
-- **États clairs** : rien de suivi → « choisis un repo, je te fais le résumé » ; repo
-  au propre → « rien de prioritaire, beau boulot ».
+- **Cross-modules** : 🔒 Sécurité (branche protégée, approbations, SECURITY.md/CODEOWNERS,
+  visibilité), 🚌 Bus factor (concentration des commits), 🩺 Repo Analyzer (inactivité,
+  branches mortes), 📆 Activité/Daily (pipelines en échec récents), 🚩 Feature Flags,
+  📊 DORA (cache) et 🎮 Achievements (cache).
+- **Sécurité en tête** : le scoring place les manques de sécu au-dessus de tout — une
+  branche non protégée passe avant un CFR faible.
+- **Check léger LIVE** sur le **repo sélectionné** (un seul repo → quelques appels via
+  `Salsifi.gitlabFetch/gitlabPaginate`, mini-loader « Analyse en cours… »). Un item par
+  sujet, top 5 classé par gravité, chaque point **cliquable** vers le bon module.
+- **Honnête** : 403 → « 🔒 non vérifiable », jamais compté à charge. Ne scanne qu'**un**
+  repo à la fois (pas les 1000). Si le live échoue, on garde au moins le cache DORA/gaming.
+- **États clairs** : aucun repo → « choisis un repo » ; repo au propre → « rien de
+  prioritaire, beau boulot ».
 - Réutilise la **popup Atelier partagée** ; tout en `try/catch`, ne bloque jamais le hub.
   Nouveau `js/hub/salsi-brief.js`, pastille dans `.header-actions` (aucune modif du cœur du hub).
 
