@@ -70,8 +70,14 @@
     async function d_branches(n) {
         var c = repoCtx(); if (c.err) return c.err;
         var arr = await Salsifi.gitlabPaginate(c.auth.gitlabUrl, c.auth.token, `/projects/${c.pid}/repository/branches`, { maxPages: 3 }).catch(function () { return []; });
-        var dead = arr.filter(function (b) { if (['main', 'master', 'develop', 'dev'].indexOf(b.name) >= 0) return false; return b.commit && b.commit.committed_date && (Date.now() - Date.parse(b.commit.committed_date)) / DAY > 60; }).length;
-        return { html: `🌿 <b>${dead}</b> branche(s) morte(s) (60 j+) sur <b>${esc(c.name)}</b>, sur ${arr.length} au total.` };
+        var dead = arr.filter(function (b) { if (['main', 'master', 'develop', 'dev'].indexOf(b.name) >= 0) return false; return b.commit && b.commit.committed_date && (Date.now() - Date.parse(b.commit.committed_date)) / DAY > 60; });
+        // « nom / liste / lesquelles » → on cite les branches, sinon on compte.
+        if (/nom|liste|lesquel|laquelle|lequel|montre|affiche|donne/.test(n)) {
+            if (!dead.length) return { html: `🌿 Aucune branche morte (60 j+) sur <b>${esc(c.name)}</b>.` };
+            var names = dead.slice(0, 12).map(function (b) { return `<code>${esc(b.name)}</code>`; }).join(', ');
+            return { html: `🌿 Branche(s) morte(s) sur <b>${esc(c.name)}</b> : ${names}${dead.length > 12 ? ` … (+${dead.length - 12})` : ''}.` };
+        }
+        return { html: `🌿 <b>${dead.length}</b> branche(s) morte(s) (60 j+) sur <b>${esc(c.name)}</b>, sur ${arr.length} au total.` };
     }
     async function d_bus(n) {
         var c = repoCtx(); if (c.err) return c.err;
@@ -167,13 +173,18 @@
     ];
     function hit(n, trig) { return trig.some(function (t) { var tn = norm(t); if (tn.length <= 3) return new RegExp('(^| )' + tn.replace(/ /g, ' ') + '( |$)').test(n); return n.indexOf(tn) >= 0; }); }
 
+    var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
     async function answer(q) {
         var n = norm(q);
         var isDef = /(c est quoi|qu est ce|c est quoi|explique|definition|ca veut dire|signifie|comprends pas|c est koi)/.test(n);
-        var isData = /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois|derni|est ce que|qui )/.test(n);
+        var isData = /(combien|nombre|mon |ma |mes |quel|quelle|\bnom\b|liste|lesquel|laquelle|lequel|montre|affiche|donne|aujourd|semaine|mois|derni|est ce que|qui )/.test(n);
         var intent = null;
         for (var i = 0; i < INTENTS.length; i++) { if (hit(n, INTENTS[i].trig)) { intent = INTENTS[i]; break; } }
+        // Suivi : pas d'intention trouvée mais une demande de donnée (« lesquelles ? »,
+        // « leur nom ? ») → on réutilise la dernière intention avec données.
+        if (!intent && isData && _lastIntent && _lastIntent.data && /nom|liste|lesquel|laquelle|lequel|lesquelles|montre|affiche|donne|detail/.test(n)) intent = _lastIntent;
         if (!intent) return { html: `Je ne réponds que sur la <b>plateforme</b> 🌱 — les concepts (« c'est quoi le bus factor ? ») et tes résultats (pipelines, MR, bus factor, DORA, sécu…). Reformule, ou essaie : « combien de FF ? », « c'est quoi le CFR ? ».` };
+        if (intent.data) _lastIntent = intent;
         if (isDef && intent.def) return { html: `<b>${esc(G[intent.def].t)}</b> — ${esc(G[intent.def].x)}` };
         if (isData && intent.data) return await intent.data(n);
         if (intent.data && !intent.def) return await intent.data(n);
