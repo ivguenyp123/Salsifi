@@ -99,8 +99,9 @@
         var c = repoCtx(); if (c.err) return c.err;
         var DH = Salsifi.doraHistory, h = DH ? DH.read(c.pid) : [];
         if (!h || !h.length) return { html: `Je n'ai pas encore de mesure DORA pour <b>${esc(c.name)}</b> — ouvre <b>DORA Insights</b> une fois et je saurai répondre.` };
-        var lv = h[h.length - 1].levels || {};
-        return { html: `📊 <b>${esc(c.name)}</b> : 🔧 CFR <b>${esc(lv.cfr || '—')}</b> · ⚡ lead time <b>${esc(lv.lt || '—')}</b> · 🚀 déploiement <b>${esc(lv.df || '—')}</b> · ⏱️ MTTR <b>${esc(lv.mttr || '—')}</b>.` };
+        var last = h[h.length - 1], lv = last.levels || {}, sc = last.metrics && last.metrics.doraScore;
+        var head = (typeof sc === 'number') ? ` — score <b>${Math.round(sc)}/100</b>` : '';
+        return { html: `📊 <b>${esc(c.name)}</b>${head} : 🔧 CFR <b>${esc(lv.cfr || '—')}</b> · ⚡ lead time <b>${esc(lv.lt || '—')}</b> · 🚀 déploiement <b>${esc(lv.df || '—')}</b> · ⏱️ MTTR <b>${esc(lv.mttr || '—')}</b>.` };
     }
     async function d_badges(n) {
         var c = repoCtx(); if (c.err) return c.err;
@@ -150,9 +151,10 @@
         { k: 'pipelines', trig: ['pipeline', 'pipelines', 'ci', 'build', 'job', 'jobs'], data: d_pipelines },
         { k: 'merge_requests', trig: ['merge request', 'mr', 'pr', 'revue', 'review', 'demande de fusion'], data: d_mr },
         { k: 'deploiements', trig: ['deploiement', 'deployment', 'deploy', 'mise en prod'], data: d_deploy },
+        // sécurité AVANT branches : « ma branche est protégée ? » doit gagner sur « branche »
+        { k: 'securite', trig: ['securite', 'protege', 'protegee', 'protection', 'approbation', 'approbations', 'approval', 'approvals', 'codeowners', 'security md'], data: d_secu },
         { k: 'branches', trig: ['branche', 'branches', 'branche morte', 'stale branch'], def: 'branches', data: d_branches },
         { k: 'bus_factor', trig: ['bus factor', 'busfactor', 'facteur de bus', 'qui commit', 'qui contribue', 'contributeur'], def: 'bus_factor', data: d_bus },
-        { k: 'securite', trig: ['securite', 'protegee', 'protection', 'approbation', 'approvals', 'codeowners', 'security md'], data: d_secu },
         { k: 'secrets', trig: ['secret', 'secrets', 'token expose', 'cle expose', 'mot de passe'], def: 'secrets', data: d_secrets },
         { k: 'cis', trig: ['cis', 'conformite', 'benchmark', 'bonnes pratiques'], def: 'cis' },
         { k: 'blast_radius', trig: ['blast radius', 'supply chain', 'compromission'], def: 'blast_radius' },
