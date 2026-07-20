@@ -2226,7 +2226,22 @@ if(document.getElementById('supTable')) renderSup();
     resolved:  { p: 'P2', label: 'Exposition probable (lockfile, sans exécution)', tone: 'p2' },
     present:   { p: 'P3', label: 'Présence historique (manifeste, sans lockfile)', tone: 'p3' }
   };
-  function brScore(exp) { return BR_LEVEL_META[brEvidenceLevel(exp)]; }
+  // ── PUR : le job exposé pouvait-il faire des dégâts ? (tranche privilèges) ──
+  function brExecuted(exp) { const l = brEvidenceLevel(exp); return l === 'confirmed' || l === 'executed'; }
+  function brP0Reasons(exp) {
+    const r = []; const p = exp.priv;
+    if (!brExecuted(exp) || !p) return r;
+    if (p.hasSecrets) r.push('secrets accessibles');
+    if (p.writeCapable) r.push('droits d\'écriture (registry / job token sortant)');
+    if (p.sharedRunner) r.push('runner partagé/persistant');
+    return r;
+  }
+  // ── PUR : priorité P0→P3 (P0 = exécuté ET pouvait atteindre secrets/écriture/runner) ──
+  function brScore(exp) {
+    const meta = BR_LEVEL_META[brEvidenceLevel(exp)];
+    if (brP0Reasons(exp).length) return { p: 'P0', label: 'Compromission critique — ' + meta.label, tone: 'p0' };
+    return { p: meta.p, label: meta.label, tone: meta.tone };
+  }
 
   // ── PUR : disposition de la timeline (positions en %) ──
   function brLayout(exposures, t0, t1) {
@@ -2340,9 +2355,11 @@ if(document.getElementById('supTable')) renderSup();
   }
 
   // ── Exécution : les commits exposés ont-ils déclenché des pipelines / SBOM ? ──
+  //  Capture aussi les RUNNERS des jobs exposés (input de la tranche privilèges).
   async function brExecution(exp, ioc) {
     if (!exp.commits.length) return;
-    const seenPipe = new Set();
+    exp.runners = exp.runners || [];
+    const seenPipe = new Set(), seenRunner = new Set();
     for (const sha of exp.commits.slice(0, 6)) {
       if (aborted) break;
       if (sha === 'HEAD' || sha === exp.repo.defaultBranch) continue;
@@ -2353,21 +2370,55 @@ if(document.getElementById('supTable')) renderSup();
         exp.pipelines++;
         const at = p.created_at ? Date.parse(p.created_at) : (exp.introducedAt || null);
         exp.execs.push({ at: at, level: 'executed', pipeline: p.id, status: p.status });
-        // SBOM : chercher un artefact CycloneDX dans les jobs du pipeline.
-        if (!exp.sbomConfirmed) {
-          const jobs = await fetchGL(`/projects/${exp.repo.id}/pipelines/${p.id}/jobs?per_page=100`);
-          if (Array.isArray(jobs)) {
-            for (const job of jobs) {
-              const arts = job.artifacts || [];
-              const sbomArt = arts.find(a => a.file_type === 'cyclonedx' || (a.filename && BR_SBOM_RE.test(a.filename)));
-              if (!sbomArt) continue;
+        const jobs = await fetchGL(`/projects/${exp.repo.id}/pipelines/${p.id}/jobs?per_page=100`);
+        if (!Array.isArray(jobs)) continue;
+        for (const job of jobs) {
+          // Runner du job exposé (métadonnées API ; privileged/socket = infra, hors API).
+          if (job.runner && !seenRunner.has(job.runner.id)) {
+            seenRunner.add(job.runner.id);
+            exp.runners.push({ id: job.runner.id, description: job.runner.description || ('runner ' + job.runner.id), is_shared: !!job.runner.is_shared, runner_type: job.runner.runner_type || '', tags: job.runner.tag_list || [] });
+          }
+          // SBOM : artefact CycloneDX → preuve « Confirmé ».
+          if (!exp.sbomConfirmed) {
+            const arts = job.artifacts || [];
+            const sbomArt = arts.find(a => a.file_type === 'cyclonedx' || (a.filename && BR_SBOM_RE.test(a.filename)));
+            if (sbomArt) {
               const txt = await brFetchText(`/projects/${exp.repo.id}/jobs/${job.id}/artifacts/${encodeURIComponent(sbomArt.filename)}`);
-              if (txt) { try { if (brSbomHasComponent(JSON.parse(txt), ioc.name, ioc.version)) { exp.sbomConfirmed = true; exp.execs[exp.execs.length - 1].level = 'confirmed'; break; } } catch {} }
+              if (txt) { try { if (brSbomHasComponent(JSON.parse(txt), ioc.name, ioc.version)) { exp.sbomConfirmed = true; exp.execs[exp.execs.length - 1].level = 'confirmed'; } } catch {} }
             }
           }
         }
       }
     }
+  }
+
+  // ── PRIVILÈGES (tranche 2) — qu'est-ce que les jobs exposés pouvaient atteindre ? ──
+  //  Métadonnées SEULEMENT (jamais les valeurs de variables). État ACTUEL, pas au
+  //  moment du job → confidence: current_state_only + privilege_snapshot_at.
+  const _privCache = new Map();   // repo.id → privilèges projet (mutualisé entre expositions)
+  async function brProjectPrivileges(repo) {
+    if (_privCache.has(repo.id)) return _privCache.get(repo.id);
+    const out = { secrets: [], secretsForbidden: false, jobToken: null, registry: false, snapshotAt: new Date().toISOString(), confidence: 'current_state_only' };
+    // Variables CI/CD du projet : l'API renvoie la valeur → on la JETTE, on ne
+    // garde que les métadonnées de protection.
+    const vr = await fetchGLStatus(`/projects/${repo.id}/variables?per_page=100`);
+    if (vr.status === 403) out.secretsForbidden = true;
+    else if (Array.isArray(vr.data)) out.secrets = vr.data.map(v => ({ key: v.key, type: v.variable_type || 'env_var', protected: !!v.protected, masked: !!v.masked, scope: v.environment_scope || '*' }));
+    // Portée du CI_JOB_TOKEN (peut ouvrir l'accès à d'autres projets).
+    const jt = await fetchGLStatus(`/projects/${repo.id}/job_token_scope`);
+    if (jt.status >= 200 && jt.status < 300 && jt.data) out.jobToken = { inbound: !!jt.data.inbound_enabled, outbound: !!jt.data.outbound_enabled };
+    // Registry conteneur présent → un job peut y pousser via CI_REGISTRY_* (write).
+    const reg = await fetchGLStatus(`/projects/${repo.id}/registry/repositories?per_page=1`);
+    out.registry = Array.isArray(reg.data) && reg.data.length > 0;
+    _privCache.set(repo.id, out);
+    return out;
+  }
+  async function brPrivileges(exp) {
+    const p = await brProjectPrivileges(exp.repo);
+    const hasSecrets = !p.secretsForbidden && p.secrets.length > 0;
+    const writeCapable = !!(p.registry || (p.jobToken && p.jobToken.outbound));
+    const sharedRunner = (exp.runners || []).some(r => r.is_shared || r.runner_type === 'instance_type');
+    exp.priv = Object.assign({}, p, { hasSecrets, writeCapable, sharedRunner, runners: exp.runners || [] });
   }
 
   // ── Orchestration ──
@@ -2401,6 +2452,7 @@ if(document.getElementById('supTable')) renderSup();
           for (const e of exps) {
             setStatus(`Exécution : ${repo.path}`);
             try { await brExecution(e, ioc); } catch {}
+            if (e.pipelines > 0) { setStatus(`Privilèges : ${repo.path}`); try { await brPrivileges(e); } catch {} }
             exposures.push(e);
             _brState.exposures = exposures;
             brRender(host, ioc, exposures, false);
@@ -2443,26 +2495,41 @@ if(document.getElementById('supTable')) renderSup();
     return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
   }
 
+  // Puces de privilèges d'une exposition (métadonnées only ; honnête sur l'inconnu).
+  function brPrivChips(e) {
+    if (!e.pipelines) return '<span class="br-muted">—</span>';
+    if (!e.priv) return '<span class="br-chip br-unk">⏳ …</span>';
+    const p = e.priv, chips = [];
+    if (p.secretsForbidden) chips.push('<span class="br-chip br-unk" title="Droits insuffisants pour lister les variables">🔒 secrets non vérifiables</span>');
+    else if (p.hasSecrets) chips.push(`<span class="br-chip br-hot" title="Variables CI/CD du projet (noms only)">🔑 ${fmt(p.secrets.length)} secret(s)</span>`);
+    if (p.writeCapable) chips.push('<span class="br-chip br-hot" title="Registry conteneur et/ou job token sortant">✍️ écriture</span>');
+    if (p.sharedRunner) chips.push('<span class="br-chip br-hot" title="Runner partagé/instance — privileged/socket = infra, hors API">🏃 runner partagé</span>');
+    if (!chips.length) chips.push('<span class="br-chip">rien de notable</span>');
+    return chips.join(' ');
+  }
+
   function brRender(host, ioc, exposures, done) {
-    // Comptes P1/P2/P3.
-    const counts = { P1: 0, P2: 0, P3: 0 };
-    let executed = 0, confirmed = 0, reposSet = new Set();
+    // Comptes P0/P1/P2/P3.
+    const counts = { P0: 0, P1: 0, P2: 0, P3: 0 };
+    let executed = 0, confirmed = 0, withSecrets = 0, reposSet = new Set();
     exposures.forEach(e => {
       const s = brScore(e); counts[s.p]++;
       if (e.sbomConfirmed) confirmed++; if (e.pipelines > 0) executed++;
+      if (e.priv && e.priv.hasSecrets) withSecrets++;
       reposSet.add(e.repo.id);
     });
     const sumEl = host.querySelector('#brSummary');
     if (sumEl) sumEl.innerHTML = [
       ['Repos exposés', fmt(reposSet.size)],
       ['Expositions', fmt(exposures.length)],
+      ['P0 · critique', fmt(counts.P0)],
       ['P1 · exécution', fmt(counts.P1)],
       ['P2 · probable', fmt(counts.P2)],
       ['P3 · présence', fmt(counts.P3)],
-      ['Pipelines exécutés', fmt(executed)],
+      ['Jobs avec secrets', fmt(withSecrets)],
       ['Preuve SBOM', fmt(confirmed)]
-    ].map(([k, v]) => `<div class="br-cell"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
-      + `<div class="br-p0note">P0 (compromission critique) = tranche privilèges/propagation à venir.</div>`;
+    ].map(([k, v]) => `<div class="br-cell${k.startsWith('P0') && counts.P0 ? ' br-cell-p0' : ''}"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
+      + `<div class="br-p0note">🔓 <b>P0 calculé</b> (tranche privilèges) : exécuté <b>et</b> pouvait atteindre secrets / écriture / runner partagé. Privilèges = <b>état actuel</b> des variables, pas au moment du job (<code>confidence: current_state_only</code>). Propagation (artefacts publiés/déployés) → tranche 3.</div>`;
 
     // Timeline.
     const tl = host.querySelector('#brTimeline');
@@ -2498,17 +2565,17 @@ if(document.getElementById('supTable')) renderSup();
     if (tb) {
       if (!exposures.length) tb.innerHTML = done ? '<div class="br-empty">✅ Aucune trace du composant sur le périmètre scanné.</div>' : '';
       else tb.innerHTML = `<table class="br-tbl"><thead><tr>
-          <th>Repo</th><th>Fichier</th><th>Version résolue</th><th>Portée</th><th>Introduit</th><th>Pipelines</th><th>Preuve</th><th>Priorité</th>
+          <th>Repo</th><th>Fichier</th><th>Version résolue</th><th>Introduit</th><th>Pipelines</th><th>Preuve</th><th>Atteignable (jobs exposés)</th><th>Priorité</th>
         </tr></thead><tbody>${exposures.map(e => {
           const s = brScore(e), lvl = brEvidenceLevel(e);
           return `<tr>
             <td class="br-td-repo">${e.repo.url ? `<a href="${e.repo.url}" target="_blank" rel="noopener">${escH(e.repo.path)}</a>` : escH(e.repo.path)}</td>
             <td><code>${escH(e.file)}</code>${e.direct ? '' : ' <span class="br-tag">transitif</span>'}${e.scope === 'dev' ? ' <span class="br-tag">dev</span>' : ''}</td>
             <td>${escH(e.version || '—')}</td>
-            <td>${e.scope}</td>
             <td>${brFrDateTime(e.introducedAt)}</td>
             <td>${fmt(e.pipelines)}</td>
             <td><span class="br-ev ${s.tone}">${escH(BR_LEVEL_META[lvl].label)}</span></td>
+            <td>${brPrivChips(e)}</td>
             <td><span class="br-pri ${s.tone}">${s.p}</span></td>
           </tr>`;
         }).join('')}</tbody></table>`;
@@ -2522,17 +2589,25 @@ if(document.getElementById('supTable')) renderSup();
   function brBuildPlan() {
     const { exposures, ioc } = _brState;
     const byRepo = {}; exposures.forEach(e => { (byRepo[e.repo.path] = byRepo[e.repo.path] || []).push(e); });
+    const PRANK = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    const p0 = exposures.filter(e => brScore(e).p === 'P0');
     const p1 = exposures.filter(e => brScore(e).p === 'P1');
+    const secretsRepos = exposures.filter(e => e.priv && e.priv.hasSecrets);
     const lines = [];
     lines.push(`# Plan d'action — ${ioc.name}@${ioc.version}`, '', `IOC : ${ioc.purl}`, ioc.from ? `Fenêtre : ${ioc.from} → ${ioc.to || 'maintenant'}` : '', '');
-    lines.push(`## Synthèse`, `- Repos exposés : ${Object.keys(byRepo).length}`, `- Expositions : ${exposures.length}`, `- Exécution confirmée/très probable (P1) : ${p1.length}`, '');
+    lines.push(`## Synthèse`, `- Repos exposés : ${Object.keys(byRepo).length}`, `- Expositions : ${exposures.length}`, `- P0 (exécuté + pouvait atteindre secrets/écriture/runner) : ${p0.length}`, `- P1 (exécution avérée) : ${p1.length}`, '');
+    if (p0.length) lines.push(`## 🔴 P0 — à traiter en premier`, ...p0.map(e => {
+      const reasons = brP0Reasons(e).join(', ');
+      return `- [ ] ${e.repo.path} — ${e.pipelines} pipeline(s) exposé(s) ; ${reasons}`;
+    }), '');
     lines.push(`## À corriger (dépôts)`, ...Object.keys(byRepo).map(r => {
-      const worst = byRepo[r].reduce((a, e) => Math.min(a, brScore(e).p === 'P1' ? 1 : brScore(e).p === 'P2' ? 2 : 3), 3);
+      const worst = byRepo[r].reduce((a, e) => Math.min(a, PRANK[brScore(e).p]), 3);
       return `- [ ] ${r} — retirer ${ioc.name}@${ioc.version}, régénérer le lockfile (priorité P${worst})`;
     }), '');
+    if (secretsRepos.length) lines.push(`## 🔑 Secrets à tourner (jobs exposés y avaient accès — état actuel)`, ...secretsRepos.map(e => `- [ ] ${e.repo.path} — ${fmt(e.priv.secrets.length)} variable(s) CI/CD : ${e.priv.secrets.slice(0, 8).map(s => s.key).join(', ')}${e.priv.secrets.length > 8 ? '…' : ''}`), '');
     if (p1.length) lines.push(`## Pipelines à examiner (exécution avérée)`, ...p1.map(e => `- [ ] ${e.repo.path} — ${e.pipelines} pipeline(s) sur commit(s) exposé(s)${e.sbomConfirmed ? ' · SBOM confirme le composant' : ''}`), '');
-    lines.push(`## Étapes suivantes (tranches à venir)`, `- [ ] Privilèges : secrets/permissions accessibles par les jobs exposés (→ P0)`, `- [ ] Propagation : artefacts/images/déploiements produits`, `- [ ] Rotation des secrets concernés`, '');
-    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée._');
+    lines.push(`## Étape suivante (tranche 3)`, `- [ ] Propagation : artefacts/images/déploiements produits par les jobs exposés`, '');
+    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée. Privilèges = état actuel des variables (confidence: current_state_only)._');
     return lines.filter(l => l !== null).join('\n');
   }
   function brExportPlan() { download(`plan-action-${_brState.ioc.name}-${_brState.ioc.version}.md`, brBuildPlan(), 'text/markdown'); }
@@ -2736,7 +2811,7 @@ if(document.getElementById('supTable')) renderSup();
   }
 
   // Exposé pour tests headless (mock fetch) — le vrai flux reste piloté par l'UI.
-  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brLayout, brParseIOC, runBlastRadius, osvSeverity, runDiscover };
+  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brP0Reasons, brLayout, brParseIOC, runBlastRadius, osvSeverity, runDiscover, brBuildPlan };
 
   window.rescan = rescan;
   window.setMode = setMode;

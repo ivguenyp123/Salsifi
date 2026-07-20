@@ -23,7 +23,15 @@ seul (pas de loader global).
   - **Exécution** — a-t-il tourné : commits → pipelines/jobs, **SBOM CycloneDX si
     présent** (artefact `cyclonedx`/`*.cdx.json`, **tier-agnostique** — pas l'API
     Dependency List Ultimate). 4 niveaux de preuve, dégradation propre.
-  - **Score P1→P3** (P0 = tranche privilèges/propagation, annoncé explicitement).
+  - **Score P0→P3**. **Tranche 2 (Privilèges)** : pour chaque exposition qui a
+    tourné, la plateforme calcule ce que le job **pouvait atteindre** — **secrets**
+    (métadonnées seulement : nom, `protected`/`masked`/`environment_scope` — **jamais
+    la valeur**, jetée à la lecture), **droits d'écriture** (registry conteneur /
+    `job_token_scope` sortant), **runner partagé/persistant**. Un job **exécuté +
+    au moins un de ces accès → P0** (compromission critique). Caveat temporel
+    assumé : privilèges = **état actuel** des variables (`confidence:
+    current_state_only`), 403 → « non vérifiable » (jamais compté à charge).
+    Le plan d'action liste les **secrets à tourner** (par clé). Propagation → tranche 3.
   - **Présentation timeline** : axe temporel, une barre d'exposition par repo
     colorée par priorité, points d'exécution (violet = pipeline, vert = SBOM).
   - **Rapport d'incident HTML + plan d'action exportable** (« à corriger / à
