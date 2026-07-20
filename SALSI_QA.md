@@ -8,6 +8,44 @@
 > **À valider ici AVANT de coder** : garde-t-on tout ? On élague ? Les formulations
 > et les seuils te vont-ils ?
 
+## Reconnaissance des formulations (déclencheurs)
+
+Salsi ne devine pas : il matche des **déclencheurs** curés, après **normalisation**
+(minuscules, accents retirés, ponctuation ignorée). « combien de **FF** » = « combien
+de **feature flag** » parce que `ff` est un déclencheur de l'intention *feature flags*.
+
+- **Marqueur de type** : *combien / mon / ma / quel / aujourd'hui / cette semaine* →
+  **donnée** ; *c'est quoi / qu'est-ce / explique / ça veut dire / définition* → **définition**.
+- **Abréviations courtes** matchées avec frontières de mots (`\bff\b`, `\bmr\b`, `\bci\b`)
+  pour ne pas matcher dans `effort`, `diff`, `merci`…
+- **Aucun déclencheur trouvé** → refus honnête + « voici ce que je sais faire ».
+
+| Intention | Déclencheurs (synonymes / abréviations) |
+|---|---|
+| feature_flags | feature flag, feature-flag, feature flags, `ff`, flag, flags, drapeau |
+| pipelines | pipeline, pipelines, `ci`, build, job, jobs |
+| merge_requests | merge request, merge requests, `mr`, `pr`, revue, review, demande de fusion |
+| deploiements | déploiement, deploy, deployment, mise en prod, prod |
+| branches | branche, branches, branche morte, stale branch |
+| bus_factor | bus factor, bus-factor, busfactor, facteur de bus |
+| contributeurs | contributeur, contributrice, qui commit, qui contribue |
+| dora | dora, score dora, niveau dora |
+| deploy_freq | fréquence de déploiement, `df`, deployment frequency |
+| lead_time | lead time, lead-time, `lt`, délai de livraison |
+| cfr | cfr, taux d'échec, change failure rate, échec de changement |
+| mttr | mttr, temps de restauration, time to restore, temps de reprise |
+| securite | sécurité, protégée, protection, approbation, approvals, security.md, codeowners |
+| secrets | secret, secrets, token exposé, clé exposée, mot de passe |
+| cis | cis, conformité, benchmark, bonnes pratiques |
+| blast_radius | blast radius, ioc, sbom, compromission, supply chain, `p0`, `p1`, `p2`, `p3` |
+| badges | badge, badges, achievement, achievements, succès |
+| acces_roles | accès, rôle, role, owner, maintainer, droits, permissions |
+
+> À compléter/élaguer : ajoute les formulations réelles de ton équipe (jargon interne,
+> anglicismes, fautes fréquentes). Chaque ligne ajoutée = une question de plus comprise.
+
+---
+
 ## Comment ça marche (règles du jeu)
 
 - **Deux familles de questions**
