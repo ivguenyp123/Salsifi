@@ -202,6 +202,21 @@ de **feature flag** » parce que `ff` est un déclencheur de l'intention *featur
 
 ---
 
+## 🎓 Ateliers (référentiel de 205 actions)
+
+Salsi est relié au référentiel `Salsifi.workshops` (les ateliers/capsules
+d'accompagnement + leur lien Confluence). Une **question d'amélioration**
+recommande les 3 ateliers les plus proches.
+
+- **Déclencheurs** : `atelier`, `workshop`, `optimiser`, `améliorer`, `réduire`,
+  `progresser`, `comment faire`… → recherche par mots-clés dans titre + action + axe.
+- **Synonymes DevOps** : `flow` → flux/livraison/pipeline/goulot/dépendance ;
+  `pipeline` → ci/cd/échec/build ; `incident` → post-mortem/MTTR ; etc.
+- **Réponse** : 3 ateliers max, chacun avec son **lien Confluence** (ou « pas encore
+  de page »), sa description et son axe/niveau. Aucun résultat → invite à un mot-clé.
+- Exemples : « atelier pour optimiser mon flow », « comment réduire mes échecs de
+  pipeline ? », « atelier rituels », « progresser sur la dette ».
+
 ## 🌱 Méta (Salsi & la plateforme)
 
 | Question | Réponse (fixe) |

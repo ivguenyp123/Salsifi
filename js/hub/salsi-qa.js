@@ -127,6 +127,46 @@
     }
     function d_secrets() { return { html: `🔎 Pour les <b>secrets exposés</b>, c'est un scan à part (lourd) : ouvre le <b>Secrets Scanner</b> / la <b>Gouvernance</b>. Je ne le lance pas en direct ici.` }; }
 
+    // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
+    var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
+    var ATL_SYN = {
+        flow: ['flux', 'livraison', 'delivery', 'pipeline', 'lead time', 'cycle', 'goulot', 'dependance', 'wip', 'valeur'],
+        flux: ['flow', 'livraison', 'goulot', 'dependance'],
+        pipeline: ['pipeline', 'ci', 'cd', 'echec', 'build', 'automatis'],
+        dette: ['dette', 'technique', 'refactor', 'backlog'],
+        securite: ['securite', 'secret', 'vulnerabilite', 'scan', 'supply'],
+        test: ['test', 'couverture', 'qualite', 'tdd'],
+        incident: ['incident', 'post mortem', 'mttr', 'crise', 'blame'],
+        rituel: ['rituel', 'daily', 'retro', 'ceremonie', 'standup'],
+        dependance: ['dependance', 'couplage', 'inter squad', 'synchro'],
+        deploiement: ['deploiement', 'deploy', 'release', 'livraison'],
+        monitoring: ['monitoring', 'alerting', 'observabilite', 'metrique']
+    };
+    function atlExpand(kws) {
+        var out = {}; kws.forEach(function (w) { out[w] = 1; (ATL_SYN[w] || []).forEach(function (s) { out[s] = 1; }); });
+        return Object.keys(out);
+    }
+    function searchAteliers(n) {
+        var W = Salsifi.workshops; if (!W || !W.actions) return { html: 'Le référentiel d\'ateliers n\'est pas chargé.' };
+        var kws = n.split(' ').filter(function (w) { return w.length > 2 && !ATL_STOP[w]; });
+        if (!kws.length) return { html: `Sur quel sujet veux-tu progresser ? 🌱 Essaie : « atelier <b>flow</b> », « atelier <b>pipeline</b> », « atelier <b>dette</b> », « <b>incidents</b> », « <b>sécurité</b> », « <b>rituels</b> », « <b>dépendances</b> ».` };
+        var terms = atlExpand(kws), scored = [];
+        Object.keys(W.actions).forEach(function (k) {
+            var a = W.actions[k], txt = norm((a.action || '') + ' ' + (a.titre || '') + ' ' + (a.axeLabel || ''));
+            var score = 0; terms.forEach(function (t) { if (txt.indexOf(t) >= 0) score += (t.length > 4 ? 2 : 1); });
+            if (score > 0) scored.push({ a: a, score: score });
+        });
+        scored.sort(function (x, y) { return y.score - x.score; });
+        var top = scored.slice(0, 3);
+        if (!top.length) return { html: `Je n'ai pas trouvé d'atelier pile sur « ${esc(kws.join(' '))} » 🌱 Essaie un mot-clé plus large : flow, pipeline, dette, incidents, sécurité, rituels, dépendances.` };
+        var items = top.map(function (s) {
+            var a = s.a, desc = a.action || a.titre, title = a.page || a.titre;
+            var head = a.lien ? `<a href="${esc(a.lien)}" target="_blank" rel="noopener">🎓 ${esc(title)} ↗</a>` : `🎓 ${esc(title)} <span class="sqa-hint">(pas encore de page)</span>`;
+            return `<div class="sqa-atl">${head}<div class="sqa-atl-d">${esc(desc)}</div><div class="sqa-atl-x">${esc(a.axeLabel || '')} · niv. ${esc(a.niveau)}</div></div>`;
+        }).join('');
+        return { html: `🎓 Les ateliers les plus proches :${items}` };
+    }
+
     // ── Glossaire (définitions fixes) ──
     var G = {
         bus_factor: { t: 'Bus factor', x: 'Le nombre de personnes qui peuvent disparaître (« passer sous un bus ») avant que le projet soit bloqué. Bus factor 1 = savoir détenu par une seule personne → risque critique.' },
@@ -176,6 +216,11 @@
     var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
     async function answer(q) {
         var n = norm(q);
+        // Ateliers : question d'amélioration → on recommande un atelier (avant tout le reste).
+        // « atelier … », « comment optimiser/améliorer/réduire … », « progresser sur … ».
+        if (/\batelier|workshop|accompagnement|optimiser|ameliorer|\breduire\b|progresser|muscler|comment (faire|reduire|ameliorer|optimiser)/.test(n)) {
+            var atl = searchAteliers(n); if (atl) return atl;
+        }
         var isDef = /(c est quoi|qu est ce|c est quoi|explique|definition|ca veut dire|signifie|comprends pas|c est koi)/.test(n);
         var isData = /(combien|nombre|mon |ma |mes |quel|quelle|\bnom\b|liste|lesquel|laquelle|lequel|montre|affiche|donne|aujourd|semaine|mois|derni|est ce que|qui )/.test(n);
         var intent = null;
