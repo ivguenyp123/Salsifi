@@ -1473,11 +1473,25 @@
             const history = GH.record(projectId, snap);   // écrit l'histoire (1 point/jour)
 
             if (history.length < 2) {
+                // Jour 1 : pas d'histoire à raconter, mais on fait une VRAIE première
+                // analyse — état actuel + un badge facile à décrocher tout de suite.
+                const unlockedSet = new Set(unlocked);
+                const EASY = ['essential_files', 'lock_files_present', 'ci_versioned', 'pipeline_as_code', 'branch_protection', 'semver', 'tagged_releases', 'merged_branches_cleaned', 'automated_tests', 'multi_stage_pipeline'];
+                let win = EASY.map(id => BADGE_BY_ID[id]).find(b => b && !unlockedSet.has(b.id));
+                if (!win) win = BADGES.find(b => !unlockedSet.has(b.id) && b.tip);
+                const earned = BADGES.filter(b => unlockedSet.has(b.id)).sort((a, b) => (b.xp || 0) - (a.xp || 0));
+                const bubble = unlocked.length
+                    ? `Salut ! Moi c'est <b>Salsi</b> 🌱 J'ai regardé ton dépôt : tu as déjà <b>${unlocked.length} badge${unlocked.length > 1 ? 's' : ''}</b>.`
+                    : `Salut ! Moi c'est <b>Salsi</b> 🌱 J'ai regardé ton dépôt — on part d'une page blanche, parfait pour progresser vite.`;
+                const winLine = win ? `<div class="cmp-onb-win">🎯 Un que tu peux décrocher <b>facilement</b> : <b>${escapeHtml(win.name)}</b> — ${escapeHtml(win.tip)}</div>` : '';
+                const earnedLine = earned.length ? `<div class="cmp-onb-earned">✅ Déjà en poche : ${earned.slice(0, 3).map(b => escapeHtml(b.name)).join(', ')}${earned.length > 3 ? ` <span class="muted">+${earned.length - 3}</span>` : ''}</div>` : '';
                 cont.innerHTML = `<div class="cmp-panel"><div class="cmp-top">
                     <div class="cmp-mascot mood-happy">${mascotSVG('happy')}</div>
                     <div class="cmp-top-main">
-                        <div class="cmp-bubble">Salut ! Moi c'est <b>Salsi</b> 🌱 Je commence à mémoriser ton dépôt (${unlocked.length} badge(s) aujourd'hui).</div>
-                        <div class="cmp-phase-sub">Reviens plus tard — je te raconterai ce qui a changé : records, rechutes, retours, et où tu en es.</div>
+                        <div class="cmp-bubble">${bubble}</div>
+                        ${winLine}
+                        ${earnedLine}
+                        <div class="cmp-phase-sub">À partir d'aujourd'hui je mémorise — dès ton prochain passage, je te raconte ce qui a bougé (records, rechutes, retours).</div>
                     </div>
                 </div></div>`;
                 return;
