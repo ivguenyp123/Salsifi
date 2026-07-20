@@ -1,5 +1,27 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.4.0-test — 2026-07-20 · Blast Radius (banc d'essai)
+
+Nouveau module **« Secret Scanner Test »** (`secret-scanner-test.html`) — une
+**copie** du Secret Scanner, isolée : le vrai module n'est pas touché. On y
+expérimente le **Blast Radius** d'un IOC sans risque, et chaque scan se lance
+seul (pas de loader global).
+
+- **Entrée = un IOC** : composant npm + version + fenêtre d'incident.
+- **Tranche 1, 100 % lecture seule** :
+  - **Présence historique** — où le composant était : lockfiles (`package-lock.json`
+    v1/v2/v3, `yarn.lock`), **version résolue**, intégrité, direct/transitif,
+    prod/dev, date d'introduction, commits & branches. Fallback lecture-au-SHA.
+  - **Exécution** — a-t-il tourné : commits → pipelines/jobs, **SBOM CycloneDX si
+    présent** (artefact `cyclonedx`/`*.cdx.json`, **tier-agnostique** — pas l'API
+    Dependency List Ultimate). 4 niveaux de preuve, dégradation propre.
+  - **Score P1→P3** (P0 = tranche privilèges/propagation, annoncé explicitement).
+  - **Présentation timeline** : axe temporel, une barre d'exposition par repo
+    colorée par priorité, points d'exécution (violet = pipeline, vert = SBOM).
+  - **Rapport d'incident HTML + plan d'action exportable** (« à corriger / à
+    examiner / étapes suivantes »).
+- Rien n'est modifié : la plateforme **qualifie et route**, l'humain décide.
+
 ## v1.3.0 — 2026-07-20 · Compagnon temporel DORA
 
 Le **compagnon temporel** — snapshot → journal → régime → trajectoire → voix,

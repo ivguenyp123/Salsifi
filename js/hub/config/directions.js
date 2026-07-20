@@ -100,7 +100,8 @@
                     { icon: '🛡️', name: 'Security Scanner', desc: 'Conformité CIS GitLab : branch protection, approvals, lock files, secrets. Note A→F.' },
                     { icon: '🥗', name: 'Repo Diet', desc: 'Détecte fichiers binaires, archives, logs. Génère un .gitignore.' },
                     { icon: '🌳', name: 'Branch Monitor', desc: 'Détecte et nettoie les branches obsolètes : âge, statut mergé, branches protégées.' },
-                    { icon: '🔑', name: 'Secrets Scanner', desc: 'Scanne les secrets exposés dans TOUS tes repos accessibles. Fichier, ligne, type, ref CIS — preview censurée.' }
+                    { icon: '🔑', name: 'Secrets Scanner', desc: 'Scanne les secrets exposés dans TOUS tes repos accessibles. Fichier, ligne, type, ref CIS — preview censurée.' },
+                    { icon: '🧪', name: 'Secret Scanner Test', desc: 'Banc d\'essai. Blast Radius d\'un IOC (package compromis) : où il était, s\'il a tourné, ce qu\'il pouvait atteindre. Read-only, avec timeline.' }
                 ]
             },
             collab: {

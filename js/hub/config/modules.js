@@ -18,7 +18,8 @@
             'MR Reviewer AI': 'mr-reviewer.html',
             'Auto Retro': 'autoretro.html',
             'Smart Estimate': 'smart-estimate.html',
-            'Secrets Scanner': 'secrets-scanner.html'
+            'Secrets Scanner': 'secrets-scanner.html',
+            'Secret Scanner Test': 'secret-scanner-test.html'
             // Les autres seront ajoutés au fur et à mesure du portage
         };
         // Modules migrés au modèle plateforme : ils lisent le repo via ?repo=<id>
