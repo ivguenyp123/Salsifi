@@ -630,12 +630,62 @@ const DORA_META = {
     cfr:  { emoji: '🔧', label: 'Change Failure Rate' },
     mttr: { emoji: '⏱️', label: 'Temps de restauration' }
 };
-// Un conseil court par métrique non-Elite (la « voix », non répétée dans le temps).
-const DORA_ADVICE = {
-    df:   'Automatise le déploiement (CD) et découpe en plus petites MR pour livrer plus souvent.',
-    lt:   'Raccourcis le cycle : MR plus petites, review plus rapide, merge dès que le pipeline est vert.',
-    cfr:  'Renforce les quality gates avant prod (tests, lint, review obligatoire) pour casser moins souvent.',
-    mttr: 'Prépare le rollback automatique et des alertes pour restaurer le service plus vite après un échec.'
+// ── Contenu du coach : un vrai plan par métrique DORA (pas un one-liner).
+//    Chaque levier a un id stable (rotation/escalade), un effort et un impact.
+//    `measure` = ce qui bouge quand tu progresses ; `traps` = les fausses bonnes idées.
+const DORA_COACH = {
+    df: {
+        emoji: '🚀', label: 'Fréquence de déploiement', targetTxt: '≥ 7 déploiements/sem (Elite)',
+        stakes: 'Déployer souvent, c\'est livrer par petits lots : moins de risque à chaque mise en prod, un retour terrain rapide, et la fin des « big bang » stressants. Un déploiement rare concentre tout le risque sur un seul moment.',
+        levers: [
+            { id: 'df.cd', title: 'Automatiser le déploiement (CD)', detail: 'Un merge sur la branche par défaut doit déclencher le déploiement, sans geste manuel. Tant qu\'un humain doit « lancer » la prod, la fréquence plafonne.', effort: 'moyen', impact: 'fort', module: { name: 'Pipeline Generator', page: 'pipeline-generator.html' } },
+            { id: 'df.small', title: 'Découper en petites MR', detail: 'Plus tu fusionnes petit et souvent, plus tu déploies. Vise des MR sous ~200 lignes : elles se relisent et se mergent dans la journée.', effort: 'faible', impact: 'fort' },
+            { id: 'df.flags', title: 'Feature flags', detail: 'Déploie du code inactif derrière un flag pour découpler « déployer » de « activer ». Tu livres en continu sans exposer l\'inachevé.', effort: 'moyen', impact: 'moyen', module: { name: 'Feature Flag Manager', page: 'feature-flag-manager.html' } },
+            { id: 'df.trunk', title: 'Branches courtes (trunk-based)', detail: 'Des branches qui vivent des semaines finissent en gros merges rares. Rapproche-toi du trunk : branche → merge en quelques jours max.', effort: 'moyen', impact: 'moyen' },
+            { id: 'df.fastci', title: 'Pipeline rapide et fiable', detail: 'Si le pipeline est lent ou instable, personne ne déploie souvent. Un CI vert en quelques minutes, c\'est ce qui rend le déploiement fréquent tenable.', effort: 'moyen', impact: 'moyen' }
+        ],
+        measure: 'Je te sais en progrès quand le nombre de pipelines réussis par semaine (sur ta fenêtre 30 j) grimpe.',
+        traps: ['« Déployer souvent » ne veut pas dire « déployer n\'importe quoi » : garde un œil sur ton CFR en parallèle.', 'Compter les déploiements manuels : si tu ne peux pas les mesurer, tu ne peux pas les augmenter.']
+    },
+    lt: {
+        emoji: '⚡', label: 'Lead Time', targetTxt: '≤ 24 h premier commit → prod (Elite)',
+        stakes: 'Le Lead Time, c\'est le délai entre « le dev commence » et « c\'est en prod ». Long, il veut dire de la valeur qui dort, des reviews qui traînent et du contexte perdu entre l\'écriture et la livraison.',
+        levers: [
+            { id: 'lt.small', title: 'Réduire la taille des MR', detail: 'Une petite MR se relit en minutes ; une grosse traîne des jours et décourage les revieweurs. C\'est le levier n°1 sur le lead time.', effort: 'faible', impact: 'fort', module: { name: 'MR Reviewer', page: 'mr-reviewer.html' } },
+            { id: 'lt.sla', title: 'Un SLA de review', detail: 'Fixe une attente d\'équipe (ex. première review < 4 h ouvrées), avec des revieweurs désignés et des notifications. La review qui dort est souvent le plus gros du délai.', effort: 'faible', impact: 'fort' },
+            { id: 'lt.merge', title: 'Merger dès que c\'est vert', detail: 'Une MR approuvée et au pipeline vert ne devrait pas attendre. Traque les MR « prêtes mais pas mergées ».', effort: 'faible', impact: 'moyen' },
+            { id: 'lt.wip', title: 'Limiter le travail en cours', detail: 'Trop de MR ouvertes en parallèle = rien n\'avance vraiment. Fini d\'abord, commence ensuite.', effort: 'moyen', impact: 'moyen' },
+            { id: 'lt.autochecks', title: 'Automatiser les checks bloquants', detail: 'Lint, format, tests : si un humain doit signaler ces détails à la main, la review s\'éternise. Laisse le CI le faire.', effort: 'moyen', impact: 'moyen' }
+        ],
+        measure: 'Ta progression se lit sur la médiane premier commit → merge de tes MR fusionnées.',
+        traps: ['Raccourcir le lead time en sautant la review : tu ne fais que déplacer le problème sur le CFR.', 'Optimiser une MR géante « vite mergée » : c\'est la taille qu\'il faut réduire, pas la vigilance.']
+    },
+    cfr: {
+        emoji: '🔧', label: 'Change Failure Rate', targetTxt: '≤ 5 % de déploiements en échec (Elite)',
+        stakes: 'Le CFR, c\'est la part de tes livraisons prod qui cassent. Trop haut, il signale que tu vas vite mais que tu casses souvent : rollbacks, stress, et une confiance qui s\'érode à chaque incident.',
+        levers: [
+            { id: 'cfr.gates', title: 'Quality gates avant merge', detail: 'Pipeline vert obligatoire, review obligatoire, branche par défaut protégée : rendre le merge d\'un changement non vérifié tout simplement impossible.', effort: 'faible', impact: 'fort', module: { name: 'Gouvernance repo', page: 'gouvernance-repo.html' } },
+            { id: 'cfr.tests', title: 'Tests automatisés sur les chemins critiques', detail: 'Sans filet, chaque déploiement est un pari. Couvre d\'abord les parcours qui font mal quand ils cassent.', effort: 'fort', impact: 'fort' },
+            { id: 'cfr.staging', title: 'Un staging représentatif', detail: 'Tester « comme en prod » avant la prod attrape les surprises de config et d\'environnement avant qu\'elles ne cassent les utilisateurs.', effort: 'moyen', impact: 'moyen' },
+            { id: 'cfr.small', title: 'Des changements plus petits', detail: 'Un petit changement casse moins souvent et se diagnostique en minutes. La taille des MR est aussi une affaire de stabilité.', effort: 'faible', impact: 'moyen' },
+            { id: 'cfr.review', title: 'Deux paires d\'yeux sur les zones sensibles', detail: 'Sur le code critique, exige une vraie revue (pas un rubber-stamp). Le coût d\'une review est très inférieur au coût d\'un rollback.', effort: 'faible', impact: 'moyen' }
+        ],
+        measure: 'Ta progression se lit sur le pourcentage de pipelines prod (main/master) en échec, pondéré vers le récent.',
+        traps: ['Masquer les échecs par des retries aveugles : ça cache le CFR, ça ne le baisse pas.', 'Blâmer les personnes plutôt que le process : un CFR élevé est presque toujours un problème de garde-fous, pas de talent.']
+    },
+    mttr: {
+        emoji: '⏱️', label: 'Temps de restauration', targetTxt: '≤ 1 h pour restaurer le service (Elite)',
+        stakes: 'Quand ça casse — et ça finira par casser — combien de temps pour revenir à la normale ? Un MTTR long, c\'est un incident qui dure, donc de l\'impact utilisateur. La résilience compte autant que la vitesse.',
+        levers: [
+            { id: 'mttr.rollback', title: 'Rollback en un geste', detail: 'Pouvoir revenir à la version précédente en une commande (ou un clic) est ce qui transforme un incident d\'une heure en incident de cinq minutes.', effort: 'moyen', impact: 'fort' },
+            { id: 'mttr.detect', title: 'Détecter vite', detail: 'Alerting sur les pipelines/déploiements en échec et monitoring des symptômes : on ne restaure pas ce qu\'on n\'a pas vu tomber.', effort: 'moyen', impact: 'fort' },
+            { id: 'mttr.small', title: 'Déployer petit et souvent', detail: 'Un petit changement est plus facile à annuler et à diagnostiquer : la fréquence de déploiement sert aussi la restauration.', effort: 'faible', impact: 'moyen' },
+            { id: 'mttr.flags', title: 'Couper via un feature flag', detail: 'Désactiver la fonctionnalité fautive sans redéployer : la remédiation la plus rapide qui soit.', effort: 'moyen', impact: 'moyen', module: { name: 'Feature Flag Manager', page: 'feature-flag-manager.html' } },
+            { id: 'mttr.runbook', title: 'Des runbooks', detail: 'Une procédure écrite pour les incidents fréquents évite d\'improviser sous pression et fait gagner de précieuses minutes.', effort: 'faible', impact: 'moyen' }
+        ],
+        measure: 'Ta progression se lit sur le temps médian entre un pipeline en échec et le succès qui restaure, sur main/master.',
+        traps: ['Un MTTR « N/A » (aucun échec observé) n\'est pas un blanc-seing : configure la mesure sur tes pipelines prod pour être prêt le jour J.', 'Optimiser la détection sans préparer la remédiation : voir vite ne sert à rien si on ne sait pas revenir vite.']
+    }
 };
 
 function esc(s) { return (window.Salsifi && window.Salsifi.escapeHtml) ? window.Salsifi.escapeHtml(String(s)) : String(s); }
@@ -702,7 +752,9 @@ function renderDoraCompanion(vals, state, scoreInfo) {
                 </div>
             </div>
             <div class="dc-firstrun">À ta prochaine analyse, je te raconte ce qui a bougé : paliers DORA franchis (Low→High…), nouveaux records et régressions — comparés à <b>ta</b> normale, pas à un seuil abstrait.</div>
-        </div>`;
+        </div>
+        <div id="doraCoachPanel"></div>`;
+        renderDoraCoach(vals, state);
         return;
     }
 
@@ -740,22 +792,6 @@ function renderDoraCompanion(vals, state, scoreInfo) {
             return `<span class="dc-reg ${better ? 'above' : 'below'}">${better ? '⚡' : '🐢'} ${m.emoji} ${esc(m.label)} ${better ? 'meilleur' : 'moins bon'} que ta normale (${r.delta > 0 ? '+' : ''}${Math.round(r.delta * 100)}%)</span>`;
         }).join('');
 
-    // ── Voix : prochain conseil parmi les métriques non-Elite, non répété ──
-    const cand = ['df', 'lt', 'cfr', 'mttr'].filter(k => {
-        const L = levels[k]; return L && L.level && L.level !== 'N/A' && L.level !== 'Elite' && DORA_ADVICE[k];
-    });
-    const adviceLog = DH.adviceRead(projectId);
-    const pick = DH.pickAdvice(cand, adviceLog);
-    let voice = '';
-    if (pick) {
-        DH.adviceRecord(projectId, pick.id, today);
-        const m = DORA_META[pick.id];
-        const esca = pick.escalate ? `<div class="dc-voice-esc">Je te l'ai déjà soufflé ${pick.count} fois — c'est peut-être le moment de s'y mettre.</div>` : '';
-        voice = `<div class="dc-voice"><div class="dc-voice-h">🗣️ Le conseil du moment — ${m.emoji} ${esc(m.label)}</div>
-            <div class="dc-voice-b">${esc(DORA_ADVICE[pick.id])}</div>${esca}
-            <a class="dc-voice-a" href="#quickwins">💡 Voir les actions détaillées</a></div>`;
-    }
-
     cont.innerHTML = `
     <div class="dc-panel">
         <div class="dc-head">${trajHtml}</div>
@@ -767,10 +803,180 @@ function renderDoraCompanion(vals, state, scoreInfo) {
             <div class="dc-col">
                 <div class="dc-col-h">📊 Ton régime</div>
                 <div class="dc-regime">${regChips || '<span class="dc-muted">Tes métriques sont dans ta normale habituelle.</span>'}</div>
-                ${voice}
             </div>
         </div>
+    </div>
+    <div id="doraCoachPanel"></div>`;
+
+    // Le conseil n'est plus un one-liner passif : c'est le Coach Salsi (interactif,
+    // orienté objectif, qui évolue avec tes mesures). Rendu dans son propre nœud.
+    renderDoraCoach(vals, state);
+}
+
+// ════════════════════════════════════════════════════════════
+//  COACH SALSI  (sur quelle des 4 mesures veux-tu progresser ?)
+//  Interactif + évolutif : on retient le cap choisi, on compare la mesure au
+//  moment du choix, et on fait tourner les leviers (escalade si ça ne bouge pas).
+// ════════════════════════════════════════════════════════════
+let _doraCoachCtx = null;   // { vals, state } — pour re-render sur clic sans refetch
+
+function doraCurrentValue(vals, m) {
+    return m === 'mttr' ? vals.mttr : vals[m];
+}
+function doraProgressVerdict(m, startValue, curValue) {
+    // Direction-aware : df up (mieux = plus haut), lt/cfr/mttr down (mieux = plus bas).
+    if (startValue == null || curValue == null) return null;
+    const up = m === 'df';
+    const diff = curValue - startValue;
+    const rel = startValue !== 0 ? Math.abs(diff) / Math.abs(startValue) : 0;
+    if (rel < 0.05) return { dir: 'flat' };
+    const better = up ? diff > 0 : diff < 0;
+    return { dir: better ? 'up' : 'down', startValue, curValue, rel };
+}
+
+function renderDoraCoach(vals, state) {
+    _doraCoachCtx = { vals, state };
+    const host = document.getElementById('doraCoachPanel');
+    const DH = window.Salsifi && window.Salsifi.doraHistory;
+    if (!host || !DH) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
+    const coach = DH.readCoach(projectId);
+
+    // ── Pas de cap choisi → le chooser « sur quoi veux-tu progresser ? » ──
+    if (!coach || !coach.focus || !DORA_COACH[coach.focus]) {
+        // Salsi suggère la métrique la plus faible (hors N/A) pour amorcer.
+        const rank = { Low: 0, Medium: 1, High: 2, Elite: 3 };
+        let weakest = null;
+        ['df', 'lt', 'cfr', 'mttr'].forEach(k => {
+            const lv = levels[k] && levels[k].level; if (!lv || lv === 'N/A') return;
+            if (!weakest || rank[lv] < rank[weakest.lv]) weakest = { k, lv };
+        });
+        const cards = ['df', 'lt', 'cfr', 'mttr'].map(k => {
+            const c = DORA_COACH[k], L = levels[k] || {};
+            const lvl = L.level || 'N/A';
+            const cls = L.cls || 'na';
+            const suggested = weakest && weakest.k === k;
+            return `<button class="coach-pick ${suggested ? 'suggested' : ''}" onclick="doraCoachFocus('${k}')">
+                <div class="coach-pick-top"><span class="coach-pick-emoji">${c.emoji}</span>
+                    <span class="coach-pick-lvl ${cls}">${esc(lvl)}</span></div>
+                <div class="coach-pick-label">${esc(c.label)}</div>
+                <div class="coach-pick-target">Cap : ${esc(c.targetTxt)}</div>
+                ${suggested ? '<div class="coach-pick-sug">👉 Salsi te suggère de commencer ici</div>' : ''}
+            </button>`;
+        }).join('');
+        host.innerHTML = `
+        <div class="coach-panel">
+            <div class="coach-head">
+                <span class="coach-avatar">🌱</span>
+                <div><div class="coach-title">Coach Salsi</div>
+                <div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Je te construis un plan et je te suis dans le temps.</div></div>
+            </div>
+            <div class="coach-picks">${cards}</div>
+        </div>`;
+        return;
+    }
+
+    // ── Un cap est choisi → plan profond + suivi de la mesure ──
+    const focus = coach.focus;
+    const c = DORA_COACH[focus];
+    const L = levels[focus] || {};
+    const curVal = doraCurrentValue(vals, focus);
+    const curLvl = L.level || 'N/A';
+    const atGoal = curLvl === 'Elite';
+
+    // Suivi : la mesure a-t-elle bougé depuis que tu as pris ce cap ?
+    const verdict = doraProgressVerdict(focus, coach.startValue, curVal);
+    let progressHtml = '';
+    if (verdict) {
+        const fmtS = esc(doraFmt(focus, coach.startValue)), fmtC = esc(doraFmt(focus, curVal));
+        if (verdict.dir === 'up') progressHtml = `<div class="coach-prog up">📈 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} est passé de <b>${fmtS}</b> à <b>${fmtC}</b> — ça marche, on continue.</div>`;
+        else if (verdict.dir === 'down') progressHtml = `<div class="coach-prog down">📉 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} a glissé de <b>${fmtS}</b> à <b>${fmtC}</b> — on ajuste l'angle.</div>`;
+        else progressHtml = `<div class="coach-prog flat">➡️ Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} n'a pas vraiment bougé (${fmtC}) — essayons un autre levier.</div>`;
+    } else if (coach.startValue == null && curVal != null) {
+        progressHtml = `<div class="coach-prog flat">🧭 On part de <b>${esc(doraFmt(focus, curVal))}</b> — c'est ta ligne de base pour ce cap.</div>`;
+    }
+
+    // Levier « du moment » : rotation via le registre de conseils, escalade si ça
+    // n'a pas bougé (mesure flat/down) ou si le levier a déjà été répété.
+    const leverIds = c.levers.map(l => l.id);
+    const adviceLog = DH.adviceRead(projectId);
+    const pick = DH.pickAdvice(leverIds, adviceLog);
+    let currentLever = c.levers[0], escalate = false;
+    if (pick) {
+        currentLever = c.levers.find(l => l.id === pick.id) || c.levers[0];
+        escalate = pick.escalate || (verdict && verdict.dir !== 'up' && pick.count >= 1);
+        DH.adviceRecord(projectId, pick.id, today);
+    }
+
+    const chip = (lbl, val, kind) => `<span class="coach-chip ${kind}-${val}">${lbl} ${val}</span>`;
+    const leverModule = currentLever.module ? `<a class="coach-lever-mod" href="${currentLever.module.page}">🧰 ${esc(currentLever.module.name)} peut t'aider →</a>` : '';
+    const escaHtml = escalate ? `<div class="coach-lever-esc">On y revient : si ça coince, prends 30 min cette semaine pour attaquer ce point — c'est lui qui débloque la suite.</div>` : '';
+
+    const allLevers = c.levers.map((l, i) => `
+        <li class="coach-lever-row ${l.id === currentLever.id ? 'is-current' : ''}">
+            <div class="coach-lever-n">${i + 1}</div>
+            <div class="coach-lever-main">
+                <div class="coach-lever-t">${esc(l.title)} ${l.id === currentLever.id ? '<span class="coach-lever-now">à faire maintenant</span>' : ''}</div>
+                <div class="coach-lever-d">${esc(l.detail)}</div>
+                <div class="coach-lever-chips">${chip('effort', l.effort, 'effort')} ${chip('impact', l.impact, 'impact')}${l.module ? ` <a class="coach-lever-modlink" href="${l.module.page}">🧰 ${esc(l.module.name)}</a>` : ''}</div>
+            </div>
+        </li>`).join('');
+
+    const traps = c.traps.map(t => `<li>${esc(t)}</li>`).join('');
+
+    host.innerHTML = `
+    <div class="coach-panel focused">
+        <div class="coach-head">
+            <span class="coach-avatar">🌱</span>
+            <div class="coach-head-main">
+                <div class="coach-title">Coach Salsi — cap : ${c.emoji} ${esc(c.label)}</div>
+                <div class="coach-sub">Objectif : ${esc(c.targetTxt)} · tu es à <b>${esc(curVal != null ? doraFmt(focus, curVal) : 'N/A')}</b> (${esc(curLvl)})</div>
+            </div>
+            <button class="coach-change" onclick="doraCoachReset()">↺ Changer de cap</button>
+        </div>
+
+        ${atGoal ? `<div class="coach-prog up">🏆 Tu es au niveau <b>Elite</b> sur cette mesure — tiens le cap, et surveille de ne pas le payer sur une autre métrique. Tu peux viser une autre mesure quand tu veux.</div>` : progressHtml}
+
+        <div class="coach-stakes">${esc(c.stakes)}</div>
+
+        <div class="coach-now">
+            <div class="coach-now-h">🎯 Le mouvement du moment</div>
+            <div class="coach-now-t">${esc(currentLever.title)}</div>
+            <div class="coach-now-d">${esc(currentLever.detail)}</div>
+            ${leverModule}${escaHtml}
+        </div>
+
+        <details class="coach-more">
+            <summary>Tous les leviers pour cette mesure (${c.levers.length})</summary>
+            <ol class="coach-levers">${allLevers}</ol>
+            <div class="coach-measure">📏 <b>Comment je saurai que tu progresses :</b> ${esc(c.measure)}</div>
+            <div class="coach-traps"><b>⚠️ Pièges à éviter</b><ul>${traps}</ul></div>
+            <a class="coach-qw" href="#quickwins">💡 Voir aussi les Quick Wins branchés sur tes résultats</a>
+        </details>
     </div>`;
+}
+
+// Handlers (portée globale — scripts classiques).
+function doraCoachFocus(m) {
+    const DH = window.Salsifi && window.Salsifi.doraHistory;
+    if (!DH || !_doraCoachCtx || !DORA_COACH[m]) return;
+    const { vals, state } = _doraCoachCtx;
+    const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
+    const today = new Date().toISOString().slice(0, 10);
+    const curVal = doraCurrentValue(vals, m);
+    const L = levels[m] || {};
+    DH.writeCoach(projectId, { focus: m, startedAt: today, startValue: (typeof curVal === 'number' ? curVal : null), startLevel: L.level || null });
+    renderDoraCoach(vals, state);
+    const host = document.getElementById('doraCoachPanel');
+    if (host && host.scrollIntoView) host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function doraCoachReset() {
+    const DH = window.Salsifi && window.Salsifi.doraHistory;
+    if (!DH || !_doraCoachCtx) return;
+    DH.writeCoach(projectId, null);
+    renderDoraCoach(_doraCoachCtx.vals, _doraCoachCtx.state);
 }
 
 // ════════════════════════════════════════════════════════════

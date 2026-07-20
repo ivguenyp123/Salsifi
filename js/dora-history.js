@@ -169,6 +169,22 @@
         return candidates && candidates.length ? { id: candidates[0], count: 0, escalate: false } : null;
     };
 
+    // ── COACH : cap choisi par l'équipe (sur quelle mesure progresser) ─────
+    // On mémorise la métrique visée + sa valeur/niveau AU MOMENT du choix, pour
+    // pouvoir dire plus tard « depuis que tu suis ce cap, ça a bougé de tant ».
+    function coachKey(pid) { return 'salsifi_dora_coach_' + pid; }
+    DH.readCoach = function (pid) {
+        try { var r = global.localStorage && global.localStorage.getItem(coachKey(pid)); return r ? JSON.parse(r) : null; }
+        catch (e) { return null; }
+    };
+    DH.writeCoach = function (pid, state) {
+        try {
+            if (state == null) { global.localStorage && global.localStorage.removeItem(coachKey(pid)); }
+            else { global.localStorage && global.localStorage.setItem(coachKey(pid), JSON.stringify(state)); }
+        } catch (e) { /* indispo */ }
+        return state;
+    };
+
     if (typeof module !== 'undefined' && module.exports) module.exports = DH;
 
 })(typeof window !== 'undefined' ? window : this);

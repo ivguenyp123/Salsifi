@@ -17,13 +17,23 @@ compare pas à un seuil abstrait mais à **ta** normale, et on raconte ce qui a 
     plus les records et régressions de chaque métrique, datés.
   - **Régime** : écart de chaque métrique à la **baseline glissante propre à l'équipe**
     (« ton CFR est meilleur que ta normale de −58 % »).
-  - **Voix** : le conseil du moment sur une métrique non-Elite, **non répété** dans
-    le temps, avec escalade s'il reste ignoré, relié aux Quick Wins.
+- **Coach Salsi (nouveau, remplace la « voix »)** : au lieu d'un conseil que tu
+  subis, le coach te demande **« sur quelle des 4 mesures veux-tu progresser ? »**
+  et construit un **vrai plan profond**, orienté objectif et **évolutif** :
+  - Un **chooser** des 4 métriques avec ton niveau actuel ; Salsi **suggère la plus
+    faible** pour amorcer.
+  - Un **plan par mesure** : enjeu, **leviers priorisés** (5 par métrique, avec
+    effort/impact et le module Salsifi qui aide), le **mouvement du moment**, la
+    **mesure qui prouve la progression**, et les **pièges** à éviter.
+  - **Il évolue** : on retient le cap et la valeur **au moment du choix**, puis on
+    compare (« depuis ton cap, ton CFR est passé de 18 % à 6 % — ça marche »), et
+    on **fait tourner les leviers** (escalade si la mesure ne bouge pas).
 - **Moteur mutualisé** : `js/dora-history.js` réutilise les fonctions pures de
   `js/gaming-history.js` (baselines, records/régressions) et n'ajoute que la
-  logique propre à DORA (paliers Low↔Elite). Testé hors-ligne via `require()`.
-- **Jour 1** : première mesure → état posé + cap annoncé, **sans** la phrase
-  « je mémorise » (elle cassait l'illusion du suivi).
+  logique propre à DORA (paliers Low↔Elite) + l'état du coach. Testé hors-ligne
+  via `require()`.
+- **Jour 1** : première mesure → état posé + coach déjà disponible, **sans** la
+  phrase « je mémorise » (elle cassait l'illusion du suivi).
 
 ## v1.2.0 — 2026-07-20 · Sécurité & Gouvernance
 

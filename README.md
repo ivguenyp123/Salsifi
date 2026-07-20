@@ -63,7 +63,7 @@ js/<module>.js                               ← logique par page
 
 | Module | Page | Rôle |
 |---|---|---|
-| **DORA Insights** | `insights.html` | Les 4 métriques DORA d'un repo + niveaux (Elite→Low), avec un **compagnon temporel** : journal des paliers franchis, régime vs baseline de l'équipe, trajectoire (voir plus bas). |
+| **DORA Insights** | `insights.html` | Les 4 métriques DORA d'un repo + niveaux (Elite→Low), avec un **compagnon temporel** (journal des paliers, régime vs baseline, trajectoire) et le **Coach Salsi** : choisis une mesure à améliorer, reçois un plan profond qui évolue avec tes résultats (voir plus bas). |
 | **DevOps Assessment** | `maturity.html` | Auto-évaluation de maturité connectée aux ateliers Confluence. |
 | **Achievements (Salsi)** | `gaming.html` | Gamification **compagnon** : 47 badges, mémoire, phases, mascotte Salsi, atelier « comment on fait » (voir plus bas). |
 | **Bus Factor** | `bus-factor.html` | Concentration du savoir dans l'équipe. |
@@ -121,7 +121,10 @@ temporel**, entièrement **déterministe (aucune IA)**.
 Le **même moteur temporel** (fonctions pures de `js/gaming-history.js`) alimente
 aussi le module **DORA Insights** via `js/dora-history.js` : là, l'événement phare
 n'est pas un badge mais une **transition de palier DORA** (Low↔…↔Elite), avec le
-même journal / régime / trajectoire / voix. Un seul système, deux modules.
+même journal / régime / trajectoire. À la place d'une « voix » passive, Insights a
+un **Coach Salsi** : tu choisis **une des 4 mesures** à améliorer, il te donne un
+plan profond (enjeu, leviers priorisés, mouvement du moment, pièges) qui **évolue**
+en comparant ta mesure au moment où tu as pris le cap. Un seul système, deux modules.
 
 ---
 
