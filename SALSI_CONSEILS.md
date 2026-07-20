@@ -2,6 +2,7 @@
 
 Relis chaque conseil et coche-le quand il te va. Généré depuis `js/gaming-recipes.js` (fidèle à la prod). 47 badges.
 
+> Régénérer après modif des recettes : `node scripts/gen-salsi-conseils.js`
 
 ---
 
@@ -390,7 +391,7 @@ test:
 - **Note** : Je crée le `README.md` ; ajoute ensuite `.gitignore` / `LICENSE`.
 - **Modèle** :
 
-```yaml
+````markdown
 # {{PROJECT}}
 
 Description courte du projet.
@@ -404,7 +405,7 @@ Description courte du projet.
 ## Contact
 
 Équipe …
-```
+````
 
 ### Branch Protection  <sub>`branch_protection` · ⚙️ réglage GitLab</sub>
 
@@ -627,7 +628,7 @@ deploy:
 ### Environment Separation  <sub>`env_separation` · 📋 modèle à coller</sub>
 
 - [ ] **Validé**
-- **Objectif** : Variables d\ (cible Séparés)
+- **Objectif** : Variables d'environnement par env (cible Séparés)
 - **Pourquoi** : Séparer les **environnements** (test / prod) évite le pire : tester sans risquer la prod, et déployer en prod en connaissance de cause. GitLab suit alors « quoi est déployé où », ce qui fiabilise ton score DORA.
 - **Comment on fait** :
   1. Déclare des `environment:` distincts (test, production).

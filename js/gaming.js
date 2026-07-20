@@ -1372,6 +1372,15 @@
         //  COMPAGNON TEMPOREL — phase, journal, régime, voix (déterministe).
         //  S'appuie sur js/gaming-history.js (snapshot + moteur de journal).
         // ══════════════════════════════════════════════════════════════════
+        // Badges MÉCANIQUEMENT couplés (même seuil sous-jacent) : le secondaire
+        // pointe vers le canonique. Le JOURNAL n'émet qu'un événement par groupe
+        // (les badges restent distincts par ailleurs). Évite « 2 perdus » pour un
+        // seul événement réel.
+        const SALSI_ALIAS = {
+            stable_build: 'green_pipeline',       // successRate > 90
+            quick_fix: 'recovery_master',         // mttr < 2h
+            pipeline_resilient: 'no_failed_streak' // max 1 échec consécutif
+        };
         const METRIC_LABELS = {
             successRate: 'taux de succès', weeklyDeploys: 'déploiements/sem', reviewedMRRate: 'MR relues',
             activeContributors: 'contributeurs actifs', distinctReviewers: 'relecteurs distincts',
@@ -1601,7 +1610,7 @@
 
             const total = BADGES.length;
             const phase = GH.computePhase(history, total);
-            const events = GH.deriveEvents(history);
+            const events = GH.deriveEvents(history, { aliasOf: SALSI_ALIAS });
             const baselines = GH.metricBaselines(history);
 
             const recent = events.slice().sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 8);

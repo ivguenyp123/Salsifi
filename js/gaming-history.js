@@ -65,6 +65,7 @@
     GH.deriveEvents = function (history, opts) {
         opts = opts || {};
         var minDrop = opts.minDropPct != null ? opts.minDropPct : 0.10; // 10 % de régression relative
+        var aliasOf = opts.aliasOf || {};   // badge secondaire → badge canonique
         var events = [];
         var sorted = (history || []).slice().sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : 0; });
         var lostCount = {};   // nb de pertes par badge (récurrence)
@@ -75,23 +76,29 @@
             var prev = i > 0 ? sorted[i - 1] : null;
 
             // ── Badges ──
+            // aliasOf : badges MÉCANIQUEMENT couplés (même seuil) → on n'émet
+            // qu'UN événement pour le groupe, sinon le journal dirait « 2 perdus »
+            // pour un seul événement réel. L'id émis est le badge canonique.
             if (prev) {
                 var pu = {}; prev.unlocked.forEach(function (id) { pu[id] = true; });
                 var cu = {}; cur.unlocked.forEach(function (id) { cu[id] = true; });
+                var seen = {};   // dédup par (type|canon|jour)
                 // gagnés (ou re-gagnés après une perte)
                 cur.unlocked.forEach(function (id) {
-                    if (!pu[id]) {
-                        if (lostCount[id]) events.push({ at: cur.at, type: 'recovered', kind: 'badge', id: id });
-                        else events.push({ at: cur.at, type: 'unlocked', kind: 'badge', id: id });
-                    }
+                    if (pu[id]) return;
+                    var canon = aliasOf[id] || id;
+                    var type = lostCount[canon] ? 'recovered' : 'unlocked';
+                    var key = type + '|' + canon; if (seen[key]) return; seen[key] = true;
+                    events.push({ at: cur.at, type: type, kind: 'badge', id: canon });
                 });
                 // perdus
                 prev.unlocked.forEach(function (id) {
-                    if (!cu[id]) {
-                        lostCount[id] = (lostCount[id] || 0) + 1;
-                        events.push({ at: cur.at, type: 'lost', kind: 'badge', id: id, times: lostCount[id] });
-                        if (lostCount[id] >= 2) events.push({ at: cur.at, type: 'recurrence', kind: 'badge', id: id, times: lostCount[id] });
-                    }
+                    if (cu[id]) return;
+                    var canon = aliasOf[id] || id;
+                    var key = 'lost|' + canon; if (seen[key]) return; seen[key] = true;
+                    lostCount[canon] = (lostCount[canon] || 0) + 1;
+                    events.push({ at: cur.at, type: 'lost', kind: 'badge', id: canon, times: lostCount[canon] });
+                    if (lostCount[canon] >= 2) events.push({ at: cur.at, type: 'recurrence', kind: 'badge', id: canon, times: lostCount[canon] });
                 });
             }
 
