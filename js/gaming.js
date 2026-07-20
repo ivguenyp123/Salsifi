@@ -1468,39 +1468,12 @@
         //  Chaque conseil peut ouvrir une popup : étapes concrètes + modèle,
         //  et création de MR quand c'est un fichier (jamais d'écrasement).
         // ══════════════════════════════════════════════════════════════════
-        const SALSI_RECIPES = {
-            pipeline_as_code: {
-                mode: 'create-file', filePath: '.gitlab-ci.yml', title: 'Créer ton pipeline',
-                steps: ['Ajoute un fichier <code>.gitlab-ci.yml</code> à la racine du dépôt.', 'Il décrit tes étapes (build, test…).', 'Au commit, le pipeline se lance tout seul.'],
-                template: 'stages:\n  - build\n  - test\n\nbuild:\n  stage: build\n  script:\n    - echo "TODO: build"\n\ntest:\n  stage: test\n  script:\n    - echo "TODO: tests"\n',
-                commitMsg: 'ci: ajoute un pipeline de base (.gitlab-ci.yml)'
-            },
-            essential_files: {
-                mode: 'create-file', filePath: 'README.md', title: 'Documenter le dépôt',
-                steps: ['Ajoute au moins un <code>README.md</code>.', 'Pense aussi à <code>.gitignore</code> et <code>LICENSE</code>.', 'Décris le projet, comment le lancer, qui contacter.'],
-                template: '# {{PROJECT}}\n\nDescription courte du projet.\n\n## Lancer en local\n\n```bash\n# ...\n```\n\n## Contact\n\nÉquipe …\n',
-                commitMsg: 'docs: ajoute un README', note: 'Je crée le <code>README.md</code> ; ajoute ensuite <code>.gitignore</code> / <code>LICENSE</code>.'
-            },
-            automated_tests: {
-                mode: 'template', title: 'Ajouter des tests automatiques',
-                steps: ['Ajoute un job <code>test</code> dans ton <code>.gitlab-ci.yml</code>.', 'Fais-le tourner à chaque merge request.'],
-                template: 'test:\n  stage: test\n  script:\n    - # lance ta suite de tests ici\n    - echo "TODO: tests"\n',
-                note: 'Ton <code>.gitlab-ci.yml</code> existe déjà — colle ce job dedans (je ne l\'écrase pas automatiquement).'
-            },
-            lock_files_present: {
-                mode: 'coaching', title: 'Figer les dépendances (lock file)',
-                steps: ['Génère le lock avec ton gestionnaire :', 'npm → <code>npm install</code> (package-lock.json)', 'Python → <code>poetry lock</code> ou <code>pip freeze &gt; requirements.txt</code>', 'Maven → versions fixes dans le <code>pom.xml</code>', 'Commit le fichier généré.']
-            },
-            branch_protection: {
-                mode: 'setting', title: 'Protéger la branche principale',
-                steps: ['GitLab → <b>Settings → Repository → Protected branches</b>.', 'Protège <code>main</code> : seuls les Maintainers peuvent push/merge.', 'Interdit le force-push.'],
-                note: 'C\'est un réglage projet (pas un fichier) — l\'application se fait côté GitLab.'
-            }
-        };
         function salsiRecipe(id) {
-            if (SALSI_RECIPES[id]) return SALSI_RECIPES[id];
+            const map = (window.Salsifi && window.Salsifi.gamingRecipes) || {};
+            if (map[id]) return map[id];
+            // Repli : n'importe quel badge reste « explicable » via son conseil.
             const b = BADGE_BY_ID[id];
-            return b ? { mode: 'coaching', title: b.name, steps: [b.tip || 'Vise cet objectif : ' + (b.criteria || b.name) + '.'] } : null;
+            return b ? { mode: 'coaching', why: b.criteria ? ('Objectif : ' + escapeHtml(b.criteria) + '.') : '', steps: [b.tip || ('Vise : ' + (b.criteria || b.name) + '.')] } : null;
         }
 
         function salsiExplain(id) {
@@ -1508,21 +1481,38 @@
             const r = salsiRecipe(id);
             let ov = document.getElementById('salsiModal');
             if (!ov) { ov = document.createElement('div'); ov.id = 'salsiModal'; ov.className = 'salsi-overlay'; document.body.appendChild(ov); }
+
+            // Analyse réelle du repo pour CE badge : où on en est vs l'objectif.
+            let curVal = '';
+            try { curVal = b.value ? String(b.value()) : ''; } catch (e) { curVal = ''; }
+            const analysis = `<div class="salsi-analysis">
+                <span class="salsi-an">📊 Chez toi : <b>${escapeHtml(curVal || '—')}</b></span>
+                <span class="salsi-an">🎯 Objectif : <b>${escapeHtml(b.target || b.criteria || '—')}</b></span>
+            </div>`;
+
+            const why = r.why ? `<div class="salsi-why">${r.why}</div>` : '';
             const steps = (r.steps || []).map(s => `<li>${s}</li>`).join('');
-            const tpl = r.template ? `<div class="salsi-tpl-h">Modèle</div><pre class="salsi-tpl" id="salsiTpl">${escapeHtml(r.template)}</pre>` : '';
+            const stepsBlock = steps ? `<div class="salsi-sec-h">Comment on fait</div><ol class="salsi-steps">${steps}</ol>` : '';
+            const tpl = r.template ? `<div class="salsi-tpl-h">Modèle prêt à copier</div><pre class="salsi-tpl" id="salsiTpl">${escapeHtml(r.template)}</pre>` : '';
+
             let actions = '';
             if (r.mode === 'create-file') actions += `<button class="salsi-btn primary" id="salsiMrBtn" onclick="salsiCreateMR('${id}')">🚀 Crée-moi la MR</button>`;
             if (r.template) actions += `<button class="salsi-btn" onclick="salsiCopyTemplate()">📋 Copier le modèle</button>`;
+            if (r.module && r.module.url) actions += `<a class="salsi-btn" href="${escapeHtml(r.module.url)}?repo=${encodeURIComponent(projectId)}">🧰 Ouvrir ${escapeHtml(r.module.name)} ↗</a>`;
             actions += `<button class="salsi-btn ghost" onclick="salsiClose()">Fermer</button>`;
+
+            const modeTag = { 'create-file': '📄 fichier', 'template': '📋 modèle', 'setting': '⚙️ réglage GitLab', 'coaching': '🧭 démarche' }[r.mode] || '';
             ov.innerHTML = `<div class="salsi-modal" onclick="event.stopPropagation()">
                 <div class="salsi-modal-head">
                     <div class="salsi-modal-mascot mood-proud">${mascotSVG('proud')}</div>
-                    <div><div class="salsi-modal-title">${escapeHtml(r.title || b.name)}</div>
-                    <div class="salsi-modal-badge">→ badge « ${escapeHtml(b.name)} »</div></div>
+                    <div><div class="salsi-modal-title">${escapeHtml(b.name)}</div>
+                    <div class="salsi-modal-badge">badge à débloquer ${modeTag ? '· <span class="salsi-mode">' + modeTag + '</span>' : ''}</div></div>
                     <button class="salsi-x" onclick="salsiClose()">✕</button>
                 </div>
-                <div class="salsi-bubble2">Pas de souci, je te montre. Voici comment on fait 👇</div>
-                <ol class="salsi-steps">${steps}</ol>
+                <div class="salsi-bubble2">Pas de souci, je te montre — et je t'explique <b>pourquoi</b> ça compte 👇</div>
+                ${analysis}
+                ${why}
+                ${stepsBlock}
                 ${tpl}
                 ${r.note ? `<div class="salsi-note">💡 ${r.note}</div>` : ''}
                 <div class="salsi-result" id="salsiResult"></div>
