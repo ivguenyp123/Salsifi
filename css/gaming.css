@@ -648,3 +648,35 @@ body::after {
 .cmp-onb-win { font-size: 13.5px; color: var(--text-secondary, #c3bce0); line-height: 1.5; margin-bottom: 6px; background: rgba(124,92,255,0.10); border: 1px solid rgba(124,92,255,0.3); border-radius: 10px; padding: 8px 12px; }
 .cmp-onb-win b { color: var(--text-primary, #f5f1ff); }
 .cmp-onb-earned { font-size: 13px; color: #6ee7b7; margin-bottom: 8px; }
+
+/* ── Bouton « explique-moi » + Atelier Salsi (popup) ──────────────────── */
+.cmp-explain { margin-top: 8px; padding: 7px 13px; border-radius: 20px; background: var(--accent, #7c5cff); border: none; color: #fff; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: .15s; }
+.cmp-explain:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.cmp-onb-win .cmp-explain { margin-top: 0; margin-left: 4px; padding: 4px 11px; font-size: 12px; vertical-align: middle; }
+
+.salsi-overlay { display: none; position: fixed; inset: 0; z-index: 500; align-items: center; justify-content: center; padding: 24px; background: rgba(10,7,20,0.72); backdrop-filter: blur(8px); }
+.salsi-modal { width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; background: var(--bg-mid, #1a1230); border: 1px solid var(--ov-18, rgba(255,255,255,0.18)); border-radius: 20px; padding: 22px 24px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+.salsi-modal-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.salsi-modal-mascot { width: 58px; height: 58px; flex-shrink: 0; }
+.salsi-modal-mascot .mascot-svg { width: 58px; height: 58px; }
+.salsi-modal-title { font-family: var(--font-display, 'Bricolage Grotesque', sans-serif); font-size: 19px; font-weight: 700; }
+.salsi-modal-badge { font-size: 12px; color: var(--accent, #a78bfa); font-weight: 600; }
+.salsi-x { margin-left: auto; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-secondary, #c3bce0); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 14px; }
+.salsi-bubble2 { background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 12px; padding: 10px 13px; font-size: 14px; color: var(--text-primary, #f5f1ff); margin: 8px 0 14px; }
+.salsi-steps { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.salsi-steps li { font-size: 13.5px; color: var(--text-secondary, #c3bce0); line-height: 1.5; }
+.salsi-steps code, .salsi-note code, .salsi-steps b { color: var(--text-primary, #f5f1ff); }
+.salsi-steps code { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 5px; font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; }
+.salsi-tpl-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted, #9a8fc0); margin-bottom: 6px; }
+.salsi-tpl { background: rgba(0,0,0,0.35); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 10px; padding: 12px 14px; font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; color: #d7cffb; white-space: pre; overflow-x: auto; margin-bottom: 12px; line-height: 1.5; }
+.salsi-note { font-size: 12.5px; color: var(--text-secondary, #c3bce0); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; }
+.salsi-result { margin-bottom: 10px; }
+.salsi-ok { font-size: 13px; color: #6ee7b7; background: rgba(52,211,153,0.10); border: 1px solid rgba(52,211,153,0.3); border-radius: 10px; padding: 10px 12px; line-height: 1.5; }
+.salsi-ok a { color: #6ee7b7; font-weight: 700; }
+.salsi-err { font-size: 13px; color: #fca5a5; background: rgba(248,113,113,0.10); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 10px 12px; }
+.salsi-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.salsi-btn { padding: 10px 16px; border-radius: 12px; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-primary, #f5f1ff); font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: .15s; }
+.salsi-btn:hover { border-color: var(--accent, #7c5cff); }
+.salsi-btn.primary { background: var(--accent, #7c5cff); border-color: var(--accent, #7c5cff); color: #fff; }
+.salsi-btn.ghost { background: transparent; }
+.salsi-btn:disabled { opacity: .6; cursor: default; }

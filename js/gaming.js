@@ -1463,6 +1463,118 @@
             </svg>`;
         }
 
+        // ══════════════════════════════════════════════════════════════════
+        //  ATELIER SALSI — « tu veux que je t'explique comment on fait ? »
+        //  Chaque conseil peut ouvrir une popup : étapes concrètes + modèle,
+        //  et création de MR quand c'est un fichier (jamais d'écrasement).
+        // ══════════════════════════════════════════════════════════════════
+        const SALSI_RECIPES = {
+            pipeline_as_code: {
+                mode: 'create-file', filePath: '.gitlab-ci.yml', title: 'Créer ton pipeline',
+                steps: ['Ajoute un fichier <code>.gitlab-ci.yml</code> à la racine du dépôt.', 'Il décrit tes étapes (build, test…).', 'Au commit, le pipeline se lance tout seul.'],
+                template: 'stages:\n  - build\n  - test\n\nbuild:\n  stage: build\n  script:\n    - echo "TODO: build"\n\ntest:\n  stage: test\n  script:\n    - echo "TODO: tests"\n',
+                commitMsg: 'ci: ajoute un pipeline de base (.gitlab-ci.yml)'
+            },
+            essential_files: {
+                mode: 'create-file', filePath: 'README.md', title: 'Documenter le dépôt',
+                steps: ['Ajoute au moins un <code>README.md</code>.', 'Pense aussi à <code>.gitignore</code> et <code>LICENSE</code>.', 'Décris le projet, comment le lancer, qui contacter.'],
+                template: '# {{PROJECT}}\n\nDescription courte du projet.\n\n## Lancer en local\n\n```bash\n# ...\n```\n\n## Contact\n\nÉquipe …\n',
+                commitMsg: 'docs: ajoute un README', note: 'Je crée le <code>README.md</code> ; ajoute ensuite <code>.gitignore</code> / <code>LICENSE</code>.'
+            },
+            automated_tests: {
+                mode: 'template', title: 'Ajouter des tests automatiques',
+                steps: ['Ajoute un job <code>test</code> dans ton <code>.gitlab-ci.yml</code>.', 'Fais-le tourner à chaque merge request.'],
+                template: 'test:\n  stage: test\n  script:\n    - # lance ta suite de tests ici\n    - echo "TODO: tests"\n',
+                note: 'Ton <code>.gitlab-ci.yml</code> existe déjà — colle ce job dedans (je ne l\'écrase pas automatiquement).'
+            },
+            lock_files_present: {
+                mode: 'coaching', title: 'Figer les dépendances (lock file)',
+                steps: ['Génère le lock avec ton gestionnaire :', 'npm → <code>npm install</code> (package-lock.json)', 'Python → <code>poetry lock</code> ou <code>pip freeze &gt; requirements.txt</code>', 'Maven → versions fixes dans le <code>pom.xml</code>', 'Commit le fichier généré.']
+            },
+            branch_protection: {
+                mode: 'setting', title: 'Protéger la branche principale',
+                steps: ['GitLab → <b>Settings → Repository → Protected branches</b>.', 'Protège <code>main</code> : seuls les Maintainers peuvent push/merge.', 'Interdit le force-push.'],
+                note: 'C\'est un réglage projet (pas un fichier) — l\'application se fait côté GitLab.'
+            }
+        };
+        function salsiRecipe(id) {
+            if (SALSI_RECIPES[id]) return SALSI_RECIPES[id];
+            const b = BADGE_BY_ID[id];
+            return b ? { mode: 'coaching', title: b.name, steps: [b.tip || 'Vise cet objectif : ' + (b.criteria || b.name) + '.'] } : null;
+        }
+
+        function salsiExplain(id) {
+            const b = BADGE_BY_ID[id]; if (!b) return;
+            const r = salsiRecipe(id);
+            let ov = document.getElementById('salsiModal');
+            if (!ov) { ov = document.createElement('div'); ov.id = 'salsiModal'; ov.className = 'salsi-overlay'; document.body.appendChild(ov); }
+            const steps = (r.steps || []).map(s => `<li>${s}</li>`).join('');
+            const tpl = r.template ? `<div class="salsi-tpl-h">Modèle</div><pre class="salsi-tpl" id="salsiTpl">${escapeHtml(r.template)}</pre>` : '';
+            let actions = '';
+            if (r.mode === 'create-file') actions += `<button class="salsi-btn primary" id="salsiMrBtn" onclick="salsiCreateMR('${id}')">🚀 Crée-moi la MR</button>`;
+            if (r.template) actions += `<button class="salsi-btn" onclick="salsiCopyTemplate()">📋 Copier le modèle</button>`;
+            actions += `<button class="salsi-btn ghost" onclick="salsiClose()">Fermer</button>`;
+            ov.innerHTML = `<div class="salsi-modal" onclick="event.stopPropagation()">
+                <div class="salsi-modal-head">
+                    <div class="salsi-modal-mascot mood-proud">${mascotSVG('proud')}</div>
+                    <div><div class="salsi-modal-title">${escapeHtml(r.title || b.name)}</div>
+                    <div class="salsi-modal-badge">→ badge « ${escapeHtml(b.name)} »</div></div>
+                    <button class="salsi-x" onclick="salsiClose()">✕</button>
+                </div>
+                <div class="salsi-bubble2">Pas de souci, je te montre. Voici comment on fait 👇</div>
+                <ol class="salsi-steps">${steps}</ol>
+                ${tpl}
+                ${r.note ? `<div class="salsi-note">💡 ${r.note}</div>` : ''}
+                <div class="salsi-result" id="salsiResult"></div>
+                <div class="salsi-actions">${actions}</div>
+            </div>`;
+            ov.style.display = 'flex';
+            ov.onclick = salsiClose;
+        }
+        function salsiClose() { const ov = document.getElementById('salsiModal'); if (ov) ov.style.display = 'none'; }
+        function salsiCopyTemplate() {
+            const el = document.getElementById('salsiTpl'); if (!el) return;
+            const txt = el.textContent;
+            if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => salsiToast('Modèle copié 📋'), () => salsiToast('Copie impossible'));
+            else salsiToast('Copie non supportée');
+        }
+        function salsiToast(msg) { const r = document.getElementById('salsiResult'); if (r) r.innerHTML = `<div class="salsi-ok">${escapeHtml(msg)}</div>`; }
+
+        async function salsiCreateMR(id) {
+            const r = salsiRecipe(id), b = BADGE_BY_ID[id];
+            if (!r || r.mode !== 'create-file') return;
+            const btn = document.getElementById('salsiMrBtn'); const res = document.getElementById('salsiResult');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Je prépare la MR…'; }
+            try {
+                const proj = await fetchGitLab(`/projects/${projectId}`);
+                if (!proj || !proj.id) throw new Error('Projet illisible');
+                const def = proj.default_branch || 'main';
+                const branch = 'salsi/' + id;
+                const content = r.template.replace(/{{PROJECT}}/g, proj.name || 'projet');
+                // branche (ignore l'erreur si elle existe déjà)
+                await postGitLab(`/projects/${projectId}/repository/branches?branch=${encodeURIComponent(branch)}&ref=${encodeURIComponent(def)}`);
+                // commit du fichier (création)
+                const commit = await postGitLab(`/projects/${projectId}/repository/commits`, {
+                    branch, commit_message: r.commitMsg,
+                    actions: [{ action: 'create', file_path: r.filePath, content }]
+                });
+                if (!commit) throw new Error('Le fichier existe peut-être déjà, ou droits insuffisants.');
+                // merge request
+                const mr = await postGitLab(`/projects/${projectId}/merge_requests`, {
+                    source_branch: branch, target_branch: def,
+                    title: r.commitMsg, description: `Proposé par Salsi 🌱 pour t'aider à débloquer le badge « ${b.name} ». À relire puis merger (je ne merge jamais tout seul).`
+                });
+                const url = mr && mr.web_url;
+                if (res) res.innerHTML = url
+                    ? `<div class="salsi-ok">✅ MR prête ! <a href="${escapeHtml(url)}" target="_blank" rel="noopener">Ouvrir la MR ↗</a><br><span class="muted">Relis-la et merge — je ne merge jamais tout seul.</span></div>`
+                    : `<div class="salsi-ok">✅ Branche <code>${escapeHtml(branch)}</code> + fichier créés. Ouvre GitLab pour finaliser la MR.</div>`;
+                if (btn) btn.style.display = 'none';
+            } catch (e) {
+                if (res) res.innerHTML = `<div class="salsi-err">😅 ${escapeHtml(e.message || 'Échec')} — tu peux copier le modèle et le poser à la main.</div>`;
+                if (btn) { btn.disabled = false; btn.textContent = '🚀 Crée-moi la MR'; }
+            }
+        }
+
         function renderCompanion(unlocked, statsObj) {
             const cont = document.getElementById('companionContainer');
             const GH = window.Salsifi && window.Salsifi.gamingHistory;
@@ -1483,7 +1595,7 @@
                 const bubble = unlocked.length
                     ? `Salut ! Moi c'est <b>Salsi</b> 🌱 J'ai regardé ton dépôt : tu as déjà <b>${unlocked.length} badge${unlocked.length > 1 ? 's' : ''}</b>.`
                     : `Salut ! Moi c'est <b>Salsi</b> 🌱 J'ai regardé ton dépôt — on part d'une page blanche, parfait pour progresser vite.`;
-                const winLine = win ? `<div class="cmp-onb-win">🎯 Un que tu peux décrocher <b>facilement</b> : <b>${escapeHtml(win.name)}</b> — ${escapeHtml(win.tip)}</div>` : '';
+                const winLine = win ? `<div class="cmp-onb-win">🎯 Un que tu peux décrocher <b>facilement</b> : <b>${escapeHtml(win.name)}</b> — ${escapeHtml(win.tip)} <button class="cmp-explain" onclick="salsiExplain('${win.id}')">✨ Tu veux que je t'explique&nbsp;?</button></div>` : '';
                 const earnedLine = earned.length ? `<div class="cmp-onb-earned">✅ Déjà en poche : ${earned.slice(0, 3).map(b => escapeHtml(b.name)).join(', ')}${earned.length > 3 ? ` <span class="muted">+${earned.length - 3}</span>` : ''}</div>` : '';
                 cont.innerHTML = `<div class="cmp-panel"><div class="cmp-top">
                     <div class="cmp-mascot mood-happy">${mascotSVG('happy')}</div>
@@ -1522,6 +1634,7 @@
                     <div class="cmp-voice-h">${pick.escalate ? '🔁 On y revient' : '🎯 Prochain pas'}</div>
                     <div class="cmp-voice-b">${pick.escalate ? 'Ça fait plusieurs passages que je te le glisse : ' : ''}${escapeHtml(b.tip)}</div>
                     <div class="cmp-voice-badge">→ ${escapeHtml(b.name)}</div>
+                    <button class="cmp-explain" onclick="salsiExplain('${pick.id}')">✨ Tu veux que je t'explique&nbsp;?</button>
                 </div>`;
             }
 
