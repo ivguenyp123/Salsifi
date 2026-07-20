@@ -834,149 +834,138 @@ function doraProgressVerdict(m, startValue, curValue) {
     return { dir: better ? 'up' : 'down', startValue, curValue, rel };
 }
 
+// Le coach = point d'entrée sobre (Salsi te demande sur quoi progresser), et le
+// PLAN complet s'ouvre dans la MÊME popup « Atelier Salsi » que les achievements.
 function renderDoraCoach(vals, state) {
     _doraCoachCtx = { vals, state };
     const host = document.getElementById('doraCoachPanel');
     const DH = window.Salsifi && window.Salsifi.doraHistory;
     if (!host || !DH) return;
 
-    const today = new Date().toISOString().slice(0, 10);
     const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
     const coach = DH.readCoach(projectId);
 
-    // ── Pas de cap choisi → le chooser « sur quoi veux-tu progresser ? » ──
-    if (!coach || !coach.focus || !DORA_COACH[coach.focus]) {
-        // Salsi suggère la métrique la plus faible (hors N/A) pour amorcer.
-        const rank = { Low: 0, Medium: 1, High: 2, Elite: 3 };
-        let weakest = null;
-        ['df', 'lt', 'cfr', 'mttr'].forEach(k => {
-            const lv = levels[k] && levels[k].level; if (!lv || lv === 'N/A') return;
-            if (!weakest || rank[lv] < rank[weakest.lv]) weakest = { k, lv };
-        });
-        const cards = ['df', 'lt', 'cfr', 'mttr'].map(k => {
-            const c = DORA_COACH[k], L = levels[k] || {};
-            const lvl = L.level || 'N/A';
-            const cls = L.cls || 'na';
-            const suggested = weakest && weakest.k === k;
-            return `<button class="coach-pick ${suggested ? 'suggested' : ''}" onclick="doraCoachFocus('${k}')">
-                <div class="coach-pick-top"><span class="coach-pick-emoji">${c.emoji}</span>
-                    <span class="coach-pick-lvl ${cls}">${esc(lvl)}</span></div>
-                <div class="coach-pick-label">${esc(c.label)}</div>
-                <div class="coach-pick-target">Cap : ${esc(c.targetTxt)}</div>
-                ${suggested ? '<div class="coach-pick-sug">👉 Salsi te suggère de commencer ici</div>' : ''}
-            </button>`;
-        }).join('');
-        host.innerHTML = `
-        <div class="coach-panel">
-            <div class="coach-head">
-                <span class="coach-avatar">🌱</span>
-                <div><div class="coach-title">Coach Salsi</div>
-                <div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Je te construis un plan et je te suis dans le temps.</div></div>
-            </div>
-            <div class="coach-picks">${cards}</div>
-        </div>`;
-        return;
-    }
+    // Salsi suggère la métrique la plus faible (hors N/A) pour amorcer.
+    const rank = { Low: 0, Medium: 1, High: 2, Elite: 3 };
+    let weakest = null;
+    ['df', 'lt', 'cfr', 'mttr'].forEach(k => {
+        const lv = levels[k] && levels[k].level; if (!lv || lv === 'N/A') return;
+        if (!weakest || rank[lv] < rank[weakest.lv]) weakest = { k, lv };
+    });
 
-    // ── Un cap est choisi → plan profond + suivi de la mesure ──
-    const focus = coach.focus;
-    const c = DORA_COACH[focus];
-    const L = levels[focus] || {};
-    const curVal = doraCurrentValue(vals, focus);
+    const cards = ['df', 'lt', 'cfr', 'mttr'].map(k => {
+        const c = DORA_COACH[k], L = levels[k] || {};
+        const lvl = L.level || 'N/A';
+        const cls = L.cls || 'na';
+        const suggested = weakest && weakest.k === k && !(coach && coach.focus);
+        const isCap = coach && coach.focus === k;
+        return `<button class="coach-pick ${suggested ? 'suggested' : ''} ${isCap ? 'is-cap' : ''}" onclick="doraCoachOpen('${k}')">
+            <div class="coach-pick-top"><span class="coach-pick-emoji">${c.emoji}</span>
+                <span class="coach-pick-lvl ${cls}">${esc(lvl)}</span></div>
+            <div class="coach-pick-label">${esc(c.label)}</div>
+            <div class="coach-pick-target">Cap : ${esc(c.targetTxt)}</div>
+            ${suggested ? '<div class="coach-pick-sug">👉 Salsi te suggère de commencer ici</div>' : ''}
+            ${isCap ? '<div class="coach-pick-sug">⭐ Ton cap actuel — clique pour ton plan</div>' : ''}
+        </button>`;
+    }).join('');
+
+    const sub = coach && coach.focus && DORA_COACH[coach.focus]
+        ? `Ton cap : <b>${DORA_COACH[coach.focus].emoji} ${esc(DORA_COACH[coach.focus].label)}</b>. Clique une mesure pour (r)ouvrir ton plan — je te suis dans le temps.`
+        : `Sur quelle des 4 mesures veux-tu progresser ? Clique-en une : je te fais un <b>plan complet</b> et je te suis dans le temps.`;
+
+    host.innerHTML = `
+    <div class="coach-panel">
+        <div class="coach-head">
+            <span class="coach-avatar">${(window.Salsifi && window.Salsifi.mascotSVG) ? window.Salsifi.mascotSVG('happy') : '🌱'}</span>
+            <div><div class="coach-title">Coach Salsi</div>
+            <div class="coach-sub">${sub}</div></div>
+        </div>
+        <div class="coach-picks">${cards}</div>
+    </div>`;
+}
+
+// Ouvre le plan complet dans la popup Atelier Salsi (même UX que les badges).
+function doraCoachOpen(m) {
+    const DH = window.Salsifi && window.Salsifi.doraHistory;
+    if (!DH || !_doraCoachCtx || !DORA_COACH[m] || !window.Salsifi.openSalsiAtelier) return;
+    const { vals, state } = _doraCoachCtx;
+    const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
+    const today = new Date().toISOString().slice(0, 10);
+    const c = DORA_COACH[m];
+    const L = levels[m] || {};
+    const curVal = doraCurrentValue(vals, m);
     const curLvl = L.level || 'N/A';
     const atGoal = curLvl === 'Elite';
 
-    // Suivi : la mesure a-t-elle bougé depuis que tu as pris ce cap ?
-    const verdict = doraProgressVerdict(focus, coach.startValue, curVal);
-    let progressHtml = '';
-    if (verdict) {
-        const fmtS = esc(doraFmt(focus, coach.startValue)), fmtC = esc(doraFmt(focus, curVal));
-        if (verdict.dir === 'up') progressHtml = `<div class="coach-prog up">📈 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} est passé de <b>${fmtS}</b> à <b>${fmtC}</b> — ça marche, on continue.</div>`;
-        else if (verdict.dir === 'down') progressHtml = `<div class="coach-prog down">📉 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} a glissé de <b>${fmtS}</b> à <b>${fmtC}</b> — on ajuste l'angle.</div>`;
-        else progressHtml = `<div class="coach-prog flat">➡️ Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} n'a pas vraiment bougé (${fmtC}) — essayons un autre levier.</div>`;
-    } else if (coach.startValue == null && curVal != null) {
-        progressHtml = `<div class="coach-prog flat">🧭 On part de <b>${esc(doraFmt(focus, curVal))}</b> — c'est ta ligne de base pour ce cap.</div>`;
+    // Cap : on garde la ligne de base si c'est déjà le cap suivi, sinon on la (re)pose.
+    let coach = DH.readCoach(projectId);
+    if (!coach || coach.focus !== m) {
+        coach = { focus: m, startedAt: today, startValue: (typeof curVal === 'number' ? curVal : null), startLevel: L.level || null };
+        DH.writeCoach(projectId, coach);
     }
 
-    // Levier « du moment » : rotation via le registre de conseils, escalade si ça
-    // n'a pas bougé (mesure flat/down) ou si le levier a déjà été répété.
-    const leverIds = c.levers.map(l => l.id);
-    const adviceLog = DH.adviceRead(projectId);
-    const pick = DH.pickAdvice(leverIds, adviceLog);
-    let currentLever = c.levers[0], escalate = false;
+    // Évolution depuis le cap.
+    const verdict = doraProgressVerdict(m, coach.startValue, curVal);
+    let progress = null;
+    if (atGoal) {
+        progress = { cls: 'up', html: `🏆 Tu es au niveau <b>Elite</b> sur cette mesure — tiens le cap, et veille à ne pas le payer sur une autre métrique.` };
+    } else if (verdict) {
+        const fmtS = esc(doraFmt(m, coach.startValue)), fmtC = esc(doraFmt(m, curVal));
+        if (verdict.dir === 'up') progress = { cls: 'up', html: `📈 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} est passé de <b>${fmtS}</b> à <b>${fmtC}</b> — ça marche, on continue.` };
+        else if (verdict.dir === 'down') progress = { cls: 'down', html: `📉 Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} a glissé de <b>${fmtS}</b> à <b>${fmtC}</b> — on ajuste l'angle.` };
+        else progress = { cls: 'flat', html: `➡️ Depuis ton cap (${esc(doraFrDate(coach.startedAt))}), ${esc(c.label)} n'a pas vraiment bougé (${fmtC}) — essayons un autre levier.` };
+    } else if (curVal != null) {
+        progress = { cls: 'flat', html: `🧭 On part de <b>${esc(doraFmt(m, curVal))}</b> — c'est ta ligne de base pour ce cap.` };
+    }
+
+    // Levier « à faire maintenant » : rotation via le registre, escalade si la
+    // mesure ne bouge pas ou si le levier a déjà été proposé.
+    const pick = DH.pickAdvice(c.levers.map(l => l.id), DH.adviceRead(projectId));
+    let nowId = c.levers[0].id, escalate = false;
     if (pick) {
-        currentLever = c.levers.find(l => l.id === pick.id) || c.levers[0];
+        nowId = pick.id;
         escalate = pick.escalate || (verdict && verdict.dir !== 'up' && pick.count >= 1);
         DH.adviceRecord(projectId, pick.id, today);
     }
 
-    const chip = (lbl, val, kind) => `<span class="coach-chip ${kind}-${val}">${lbl} ${val}</span>`;
-    const leverModule = currentLever.module ? `<a class="coach-lever-mod" href="${currentLever.module.page}">🧰 ${esc(currentLever.module.name)} peut t'aider →</a>` : '';
-    const escaHtml = escalate ? `<div class="coach-lever-esc">On y revient : si ça coince, prends 30 min cette semaine pour attaquer ce point — c'est lui qui débloque la suite.</div>` : '';
+    // Le PLAN = les leviers ordonnés, en <li> riches, avec le mouvement du moment
+    // mis en avant (même liste .salsi-steps que « Comment on fait » du gaming).
+    const chipCls = { faible: 'good', moyen: 'warn', fort: 'bad' };       // effort : moins c'est mieux
+    const impCls = { faible: 'bad', moyen: 'warn', fort: 'good' };        // impact : plus c'est mieux
+    // Ordre naturel (déjà priorisé du plus rentable au moins urgent) ; on tague
+    // seulement le levier « à faire maintenant » choisi par la rotation.
+    const stepsHtml = c.levers.map(l => {
+        const isNow = l.id === nowId;
+        const mod = l.module ? ` <a class="salsi-chip mod" href="${l.module.page}?repo=${encodeURIComponent(projectId)}">🧰 ${esc(l.module.name)}</a>` : '';
+        const chips = `<span class="salsi-lever-chips"><span class="salsi-chip ${chipCls[l.effort] || ''}">effort ${esc(l.effort)}</span><span class="salsi-chip ${impCls[l.impact] || ''}">impact ${esc(l.impact)}</span>${mod}</span>`;
+        return `<li class="${isNow ? 'is-now' : ''}"><span class="salsi-lever-t">${esc(l.title)}${isNow ? '<span class="salsi-now-tag">à faire maintenant</span>' : ''}</span><span class="salsi-lever-d">${esc(l.detail)}</span>${chips}</li>`;
+    });
 
-    const allLevers = c.levers.map((l, i) => `
-        <li class="coach-lever-row ${l.id === currentLever.id ? 'is-current' : ''}">
-            <div class="coach-lever-n">${i + 1}</div>
-            <div class="coach-lever-main">
-                <div class="coach-lever-t">${esc(l.title)} ${l.id === currentLever.id ? '<span class="coach-lever-now">à faire maintenant</span>' : ''}</div>
-                <div class="coach-lever-d">${esc(l.detail)}</div>
-                <div class="coach-lever-chips">${chip('effort', l.effort, 'effort')} ${chip('impact', l.impact, 'impact')}${l.module ? ` <a class="coach-lever-modlink" href="${l.module.page}">🧰 ${esc(l.module.name)}</a>` : ''}</div>
-            </div>
-        </li>`).join('');
+    const escaExtra = escalate ? [{ kind: 'note', html: `⏳ On y revient : si ça coince, bloque 30 min cette semaine pour attaquer le mouvement du moment — c'est lui qui débloque la suite.` }] : [];
+    const extras = escaExtra
+        .concat([{ kind: 'measure', html: `📏 <b>Comment je saurai que tu progresses :</b> ${esc(c.measure)}` }])
+        .concat([{ kind: 'trap', html: `⚠️ <b>Pièges à éviter</b><br>• ${c.traps.map(esc).join('<br>• ')}` }]);
 
-    const traps = c.traps.map(t => `<li>${esc(t)}</li>`).join('');
+    const actions = [{ label: '💡 Voir les Quick Wins de ce repo', onclick: "Salsifi.closeSalsiAtelier(); location.hash='#quickwins';" }];
 
-    host.innerHTML = `
-    <div class="coach-panel focused">
-        <div class="coach-head">
-            <span class="coach-avatar">🌱</span>
-            <div class="coach-head-main">
-                <div class="coach-title">Coach Salsi — cap : ${c.emoji} ${esc(c.label)}</div>
-                <div class="coach-sub">Objectif : ${esc(c.targetTxt)} · tu es à <b>${esc(curVal != null ? doraFmt(focus, curVal) : 'N/A')}</b> (${esc(curLvl)})</div>
-            </div>
-            <button class="coach-change" onclick="doraCoachReset()">↺ Changer de cap</button>
-        </div>
-
-        ${atGoal ? `<div class="coach-prog up">🏆 Tu es au niveau <b>Elite</b> sur cette mesure — tiens le cap, et surveille de ne pas le payer sur une autre métrique. Tu peux viser une autre mesure quand tu veux.</div>` : progressHtml}
-
-        <div class="coach-stakes">${esc(c.stakes)}</div>
-
-        <div class="coach-now">
-            <div class="coach-now-h">🎯 Le mouvement du moment</div>
-            <div class="coach-now-t">${esc(currentLever.title)}</div>
-            <div class="coach-now-d">${esc(currentLever.detail)}</div>
-            ${leverModule}${escaHtml}
-        </div>
-
-        <details class="coach-more">
-            <summary>Tous les leviers pour cette mesure (${c.levers.length})</summary>
-            <ol class="coach-levers">${allLevers}</ol>
-            <div class="coach-measure">📏 <b>Comment je saurai que tu progresses :</b> ${esc(c.measure)}</div>
-            <div class="coach-traps"><b>⚠️ Pièges à éviter</b><ul>${traps}</ul></div>
-            <a class="coach-qw" href="#quickwins">💡 Voir aussi les Quick Wins branchés sur tes résultats</a>
-        </details>
-    </div>`;
-}
-
-// Handlers (portée globale — scripts classiques).
-function doraCoachFocus(m) {
-    const DH = window.Salsifi && window.Salsifi.doraHistory;
-    if (!DH || !_doraCoachCtx || !DORA_COACH[m]) return;
-    const { vals, state } = _doraCoachCtx;
-    const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
-    const today = new Date().toISOString().slice(0, 10);
-    const curVal = doraCurrentValue(vals, m);
-    const L = levels[m] || {};
-    DH.writeCoach(projectId, { focus: m, startedAt: today, startValue: (typeof curVal === 'number' ? curVal : null), startLevel: L.level || null });
-    renderDoraCoach(vals, state);
-    const host = document.getElementById('doraCoachPanel');
-    if (host && host.scrollIntoView) host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-function doraCoachReset() {
-    const DH = window.Salsifi && window.Salsifi.doraHistory;
-    if (!DH || !_doraCoachCtx) return;
-    DH.writeCoach(projectId, null);
-    renderDoraCoach(_doraCoachCtx.vals, _doraCoachCtx.state);
+    window.Salsifi.openSalsiAtelier({
+        title: c.label,
+        subtitle: 'cap DORA à améliorer',
+        modeTag: '🎯 plan de progression',
+        mood: atGoal ? 'proud' : 'happy',
+        bubble: `Ok, on bosse <b>${esc(c.label)}</b> 💪 Je t'explique <b>pourquoi</b> ça compte, puis je te donne le plan — du plus rentable au moins urgent.`,
+        analysis: [
+            { label: '📊 Chez toi :', value: curVal != null ? doraFmt(m, curVal) + ' (' + curLvl + ')' : 'N/A' },
+            { label: '🎯 Objectif :', value: c.targetTxt }
+        ],
+        progress: progress,
+        why: esc(c.stakes),
+        planTitle: 'Le plan pour progresser',
+        steps: stepsHtml,
+        extras: extras,
+        actions: actions
+    });
+    renderDoraCoach(vals, state);   // rafraîchit le point d'entrée (marque le cap)
 }
 
 // ════════════════════════════════════════════════════════════

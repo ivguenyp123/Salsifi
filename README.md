@@ -124,7 +124,9 @@ n'est pas un badge mais une **transition de palier DORA** (Low↔…↔Elite), a
 même journal / régime / trajectoire. À la place d'une « voix » passive, Insights a
 un **Coach Salsi** : tu choisis **une des 4 mesures** à améliorer, il te donne un
 plan profond (enjeu, leviers priorisés, mouvement du moment, pièges) qui **évolue**
-en comparant ta mesure au moment où tu as pris le cap. Un seul système, deux modules.
+en comparant ta mesure au moment où tu as pris le cap — présenté dans **la même
+popup « Atelier Salsi »** que les badges (extraite dans `js/salsi-atelier.js` +
+`css/salsi-atelier.css`, réutilisable partout). Un seul système, deux modules.
 
 ---
 

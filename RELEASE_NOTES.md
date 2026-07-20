@@ -19,15 +19,21 @@ compare pas à un seuil abstrait mais à **ta** normale, et on raconte ce qui a 
     (« ton CFR est meilleur que ta normale de −58 % »).
 - **Coach Salsi (nouveau, remplace la « voix »)** : au lieu d'un conseil que tu
   subis, le coach te demande **« sur quelle des 4 mesures veux-tu progresser ? »**
-  et construit un **vrai plan profond**, orienté objectif et **évolutif** :
-  - Un **chooser** des 4 métriques avec ton niveau actuel ; Salsi **suggère la plus
-    faible** pour amorcer.
-  - Un **plan par mesure** : enjeu, **leviers priorisés** (5 par métrique, avec
-    effort/impact et le module Salsifi qui aide), le **mouvement du moment**, la
-    **mesure qui prouve la progression**, et les **pièges** à éviter.
+  et construit un **vrai plan profond**, orienté objectif et **évolutif** — présenté
+  dans **la même popup « Atelier Salsi » que les achievements** (même mascotte, même
+  UX/UI) :
+  - Un **point d'entrée sobre** : les 4 métriques avec ton niveau actuel ; Salsi
+    **suggère la plus faible** pour amorcer. Un clic ouvre l'atelier.
+  - Un **plan par mesure dans l'atelier** : analyse « chez toi / objectif », enjeu,
+    **leviers priorisés** (5 par métrique, avec effort/impact et le module Salsifi
+    qui aide), le **mouvement du moment**, la **mesure qui prouve la progression**,
+    et les **pièges** à éviter.
   - **Il évolue** : on retient le cap et la valeur **au moment du choix**, puis on
     compare (« depuis ton cap, ton CFR est passé de 18 % à 6 % — ça marche »), et
     on **fait tourner les leviers** (escalade si la mesure ne bouge pas).
+- **Atelier Salsi mutualisé** : la popup est extraite dans `js/salsi-atelier.js` +
+  `css/salsi-atelier.css` (mascotte + `openSalsiAtelier`), pour une **UX identique**
+  entre gaming et DORA — une seule source de vérité.
 - **Moteur mutualisé** : `js/dora-history.js` réutilise les fonctions pures de
   `js/gaming-history.js` (baselines, records/régressions) et n'ajoute que la
   logique propre à DORA (paliers Low↔Elite) + l'état du coach. Testé hors-ligne

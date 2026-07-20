@@ -1,0 +1,69 @@
+/* ═══════════════════════════════════════════════════════════════
+   Atelier Salsi — popup partagée (identique au module Achievements)
+   Utilisée par gaming ET DORA Insights → une seule source de vérité UX.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Mascotte + animations */
+.mascot-svg { width: 78px; height: 78px; display: block; animation: salsi-bob 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+.mood-proud .mascot-svg { animation: salsi-hop 1.6s ease-in-out infinite; }
+.mood-worried .mascot-svg { animation: salsi-bob 4.5s ease-in-out infinite; }
+@keyframes salsi-bob { 0%,100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-4px) rotate(1.5deg); } }
+@keyframes salsi-hop { 0%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } 45% { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .mascot-svg { animation: none !important; } }
+
+/* Overlay + carte */
+.salsi-overlay { display: none; position: fixed; inset: 0; z-index: 500; align-items: center; justify-content: center; padding: 24px; background: rgba(10,7,20,0.72); backdrop-filter: blur(8px); }
+.salsi-modal { width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; background: var(--bg-mid, #1a1230); border: 1px solid var(--ov-18, rgba(255,255,255,0.18)); border-radius: 20px; padding: 22px 24px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+.salsi-modal-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.salsi-modal-mascot { width: 58px; height: 58px; flex-shrink: 0; }
+.salsi-modal-mascot .mascot-svg { width: 58px; height: 58px; }
+.salsi-modal-title { font-family: var(--font-display, 'Bricolage Grotesque', sans-serif); font-size: 19px; font-weight: 700; color: var(--text-primary, #f5f1ff); }
+.salsi-modal-badge { font-size: 12px; color: var(--accent, #a78bfa); font-weight: 600; }
+.salsi-x { margin-left: auto; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-secondary, #c3bce0); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 14px; }
+
+/* Corps */
+.salsi-bubble2 { background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 12px; padding: 10px 13px; font-size: 14px; color: var(--text-primary, #f5f1ff); margin: 8px 0 14px; }
+.salsi-analysis { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.salsi-an { font-size: 12.5px; color: var(--text-secondary, #c3bce0); background: var(--ov-04, rgba(255,255,255,0.04)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 20px; padding: 5px 12px; }
+.salsi-an b { color: var(--text-primary, #f5f1ff); }
+.salsi-why { font-size: 13.5px; color: var(--text-secondary, #c3bce0); line-height: 1.6; background: rgba(124,92,255,0.08); border-left: 3px solid var(--accent, #7c5cff); border-radius: 8px; padding: 11px 14px; margin-bottom: 14px; }
+.salsi-why b { color: var(--text-primary, #f5f1ff); }
+.salsi-sec-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted, #9a8fc0); margin-bottom: 8px; font-weight: 700; }
+.salsi-steps { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.salsi-steps li { font-size: 13.5px; color: var(--text-secondary, #c3bce0); line-height: 1.5; }
+.salsi-steps code, .salsi-note code, .salsi-steps b { color: var(--text-primary, #f5f1ff); }
+.salsi-steps code { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 5px; font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; }
+.salsi-note { font-size: 12.5px; color: var(--text-secondary, #c3bce0); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; line-height: 1.5; }
+.salsi-result { margin-bottom: 10px; }
+.salsi-ok { font-size: 13px; color: #6ee7b7; background: rgba(52,211,153,0.10); border: 1px solid rgba(52,211,153,0.3); border-radius: 10px; padding: 10px 12px; line-height: 1.5; }
+.salsi-ok a { color: #6ee7b7; font-weight: 700; }
+.salsi-err { font-size: 13px; color: #fca5a5; background: rgba(248,113,113,0.10); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 10px 12px; }
+.salsi-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.salsi-btn { padding: 10px 16px; border-radius: 12px; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-primary, #f5f1ff); font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: .15s; text-decoration: none; display: inline-flex; align-items: center; }
+.salsi-btn:hover { border-color: var(--accent, #7c5cff); }
+.salsi-btn.primary { background: var(--accent, #7c5cff); border-color: var(--accent, #7c5cff); color: #fff; }
+.salsi-btn.ghost { background: transparent; }
+.salsi-btn:disabled { opacity: .6; cursor: default; }
+.salsi-mode { color: var(--text-muted, #9a8fc0); }
+
+/* ── Ajouts pour le plan DORA (évolution + leviers riches + mesure) ── */
+.salsi-prog { font-size: 13px; line-height: 1.5; border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); }
+.salsi-prog b { color: var(--text-primary, #f5f1ff); }
+.salsi-prog.up   { background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.35); color: var(--text-secondary, #c3bce0); }
+.salsi-prog.down { background: rgba(239,68,68,0.10);  border-color: rgba(239,68,68,0.35);  color: var(--text-secondary, #c3bce0); }
+.salsi-prog.flat { background: var(--ov-06, rgba(255,255,255,0.06)); color: var(--text-secondary, #c3bce0); }
+
+.salsi-plan li { padding: 2px 0; }
+.salsi-plan li.is-now { padding: 10px 12px; background: linear-gradient(135deg, rgba(124,92,255,0.12), rgba(45,212,191,0.06)); border: 1px solid rgba(124,92,255,0.32); border-radius: 11px; }
+.salsi-plan li.is-now::marker { color: #c9b6ff; font-weight: 700; }
+.salsi-lever-t { font-weight: 700; color: var(--text-primary, #f5f1ff); font-size: 13.5px; }
+.salsi-now-tag { font-size: 10.5px; font-weight: 700; color: #c9b6ff; background: rgba(124,92,255,0.18); padding: 1px 7px; border-radius: 6px; margin-left: 6px; }
+.salsi-lever-d { display: block; margin-top: 3px; }
+.salsi-lever-chips { margin-top: 6px; display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.salsi-chip { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 6px; background: var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-secondary, #c3bce0); }
+.salsi-chip.good { background: rgba(16,185,129,0.15); color: #34d399; }
+.salsi-chip.warn { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.salsi-chip.bad  { background: rgba(239,68,68,0.14); color: #f87171; }
+.salsi-chip.mod  { background: rgba(124,92,255,0.16); color: #c9b6ff; }
+.salsi-measure { font-size: 12.5px; color: var(--text-secondary, #c3bce0); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.28); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; line-height: 1.5; }
+.salsi-measure b, .salsi-measure strong { color: var(--text-primary, #f5f1ff); }
