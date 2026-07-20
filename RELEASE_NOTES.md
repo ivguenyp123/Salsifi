@@ -1,5 +1,70 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.2.0 — 2026-07-20 · Sécurité & Gouvernance
+
+Gros travail sur le pôle **« Inspecter & Sécuriser »** : un nouveau module de
+gouvernance des accès, et une refonte du scanner sécurité vers un flux
+« produit ». Tout reste statique (`<script src>`, marche servi **et** en
+`file://`), zéro token stocké côté service.
+
+### 🔑 Accès & Rôles (nouveau module de workspace)
+
+Auditer les droits GitLab des repos d'une tribu — `access-workspace.html`.
+Rien n'est stocké : tout est recalculé à l'ouverture depuis le token de session.
+
+- **Rapport de gouvernance** (vue par défaut) : KPIs (qui peut administrer,
+  Owners distincts, comptes techniques en Owner, comptes bloqués, % hérités,
+  % sans expiration), signaux de dette d'accès classés par gravité, et une
+  **lecture « chemin d'attaque »** + une phrase prête pour le RSSI. Périmètre
+  réglable (tout le workspace ou un repo précis) et **rapport HTML téléchargeable**.
+- **Par repo / Par personne** : rôle **actuel** (plus de « rôle max » trompeur),
+  distinction accès **direct vs hérité**, filtres par rôle, et **nom cliquable**
+  qui ouvre la page Membres du repo dans GitLab.
+- **Maintainers & Owners** : cartes des administrateurs et leur périmètre.
+- **Historique (30 j)** : mouvements d'accès via **Audit Events** (Premium) avec
+  repli **arrivées/départs** (API Events) sur les repos CE, et un indicateur de
+  couverture explicite.
+- **Conformité** : liste blanche des Maintainers autorisés (variable projet
+  GitLab partagée `SALSIFI_ROLE_ALLOWLIST`, repli localStorage) + **rétrogradation
+  semi-automatique** en 1 clic des Maintainers hors liste. Jamais silencieux ;
+  Owners et accès hérités exclus de l'auto-fix, signalés à traiter à la main.
+- Câblé au hub : carte **🔑 Accès & Rôles** dans la vue workspace.
+
+### 🛡️ Scanner sécurité — flux unifié « une intention → la plateforme gère »
+
+Les trois portes d'entrée (repo seul, tous les repos, **workspace**) partagent
+désormais le même parcours — `gouvernance-repo.html`.
+
+- **Mode workspace** (`?scope=workspace`) : les 4 scans (Surface, Historique,
+  Supply-chain, CIS) ne portent que sur les **repos choisis** de la tribu ; garde-fou
+  qui interdit de retomber sur « tous les repos » si le workspace est introuvable.
+- **Popup d'intention** : on coche les contrôles voulus (un / plusieurs / tous),
+  la plateforme **enchaîne tout** — analyse → MR → rapport. La **barre de modes
+  manuelle a été retirée**.
+- **Loader unique** pendant le run (spinner + phase en cours + étapes ✓/⏳/○) :
+  fini les grilles par-scan qui clignotent.
+- **Résultats consolidés** à la fin : une seule vue **par repo**, classée du plus
+  risqué au moins risqué (secrets + supply + CIS réunis, liens `fichier:ligne`).
+
+### 🐛 Correctifs & précisions sécurité
+
+- **Rapport HTML illisible** (fond blanc / texte clair) : la passe theming avait
+  laissé des tokens (`--bg-deep`, `--card-6`, `--ov-*`) indéfinis dans le fichier
+  autonome → valeurs concrètes réintégrées, rapport **self-contained** de nouveau.
+- **CIS absent du rapport** : l'export ne lisait que secrets + supply → les
+  résultats de l'audit CIS sont accumulés et une **section Conformité CIS** +
+  une **priorisation « repos les plus à risque »** ont été ajoutées.
+- **Registry Artifactory interne** (`*.cagip.group.gca`) n'est plus classé
+  « registry npm tiers » : liste blanche de domaines internes (le HTTP reste
+  signalé, les vrais registries publics aussi ; regex ancrée anti-spoofing).
+- **Enchaînement des scans** : sérialisation par `await` (scan puis sa MR) — un
+  bug de v1 ne lançait qu'un seul scan quand le premier trouvait des findings.
+- **Modale « Ajouter / Modifier les repos »** (hub) : ne s'ouvrait plus en vue
+  workspace (une règle `display:none !important` masquait aussi les overlays) →
+  overlays exclus de la règle.
+
+---
+
 ## v1.1.0 — 2026-07-07 · Platform Concierge & Générateur de rapport
 
 Deux nouveaux services, sans casser l'existant (tout reste en `<script src>`
