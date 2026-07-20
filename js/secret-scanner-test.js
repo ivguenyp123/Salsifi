@@ -2229,11 +2229,19 @@ if(document.getElementById('supTable')) renderSup();
   // ── PUR : le job exposé pouvait-il faire des dégâts ? (tranche privilèges) ──
   function brExecuted(exp) { const l = brEvidenceLevel(exp); return l === 'confirmed' || l === 'executed'; }
   function brP0Reasons(exp) {
-    const r = []; const p = exp.priv;
-    if (!brExecuted(exp) || !p) return r;
-    if (p.hasSecrets) r.push('secrets accessibles');
-    if (p.writeCapable) r.push('droits d\'écriture (registry / job token sortant)');
-    if (p.sharedRunner) r.push('runner partagé/persistant');
+    const r = [];
+    if (!brExecuted(exp)) return r;
+    const p = exp.priv;
+    if (p) {
+      if (p.hasSecrets) r.push('secrets accessibles');
+      if (p.writeCapable) r.push('droits d\'écriture (registry / job token sortant)');
+      if (p.sharedRunner) r.push('runner partagé/persistant');
+    }
+    const pr = exp.prop;
+    if (pr) {
+      if (pr.published) r.push('a publié un package');
+      if (pr.prodDeployed) r.push('déployé en production');
+    }
     return r;
   }
   // ── PUR : priorité P0→P3 (P0 = exécuté ET pouvait atteindre secrets/écriture/runner) ──
@@ -2421,6 +2429,53 @@ if(document.getElementById('supTable')) renderSup();
     exp.priv = Object.assign({}, p, { hasSecrets, writeCapable, sharedRunner, runners: exp.runners || [] });
   }
 
+  // ── PROPAGATION (tranche 3) — qu'est-ce que les jobs exposés ont fabriqué ? ──
+  //  Packages publiés, images registry, déploiements (jusqu'où en prod), et
+  //  pipelines consommateurs (récursif borné, profondeur 2, marqueur de troncature).
+  //  Les caches sont opaques côté API → non calculés (heuristique à brancher sur la config).
+  const _propCache = new Map();   // repo.id → sorties projet (packages/images/deployments/env)
+  async function brProjectOutputs(repo) {
+    if (_propCache.has(repo.id)) return _propCache.get(repo.id);
+    const out = { packages: [], images: [], deployments: [], environments: [] };
+    const pk = await fetchGL(`/projects/${repo.id}/packages?per_page=100`); if (Array.isArray(pk)) out.packages = pk;
+    const im = await fetchGL(`/projects/${repo.id}/registry/repositories?per_page=100`); if (Array.isArray(im)) out.images = im;
+    const dep = await fetchGL(`/projects/${repo.id}/deployments?per_page=100&order_by=created_at&sort=desc`); if (Array.isArray(dep)) out.deployments = dep;
+    const env = await fetchGL(`/projects/${repo.id}/environments?per_page=100`); if (Array.isArray(env)) out.environments = env;
+    _propCache.set(repo.id, out);
+    return out;
+  }
+  // Pipelines consommateurs via les bridges (child + multi-projets), profondeur bornée.
+  async function brDownstream(exp) {
+    const consumers = new Set(); let truncated = false;
+    const MAX_DEPTH = 2, MAX_SEED = 4; let budget = 30;
+    const queue = (exp.execs || []).filter(x => x.pipeline).slice(0, MAX_SEED).map(x => ({ pid: x.pipeline, projId: exp.repo.id, depth: 0 }));
+    while (queue.length && budget-- > 0 && !aborted) {
+      const { pid, projId, depth } = queue.shift();
+      const bridges = await fetchGL(`/projects/${projId}/pipelines/${pid}/bridges?per_page=50`);
+      if (!Array.isArray(bridges)) continue;
+      for (const b of bridges) {
+        const dp = b.downstream_pipeline; if (!dp) continue;
+        if (dp.project_id && dp.project_id !== exp.repo.id) consumers.add(dp.project_id);
+        if (depth + 1 < MAX_DEPTH) queue.push({ pid: dp.id, projId: dp.project_id, depth: depth + 1 });
+        else truncated = true;
+      }
+    }
+    return { consumers: [...consumers], truncated };
+  }
+  async function brPropagation(exp) {
+    const sinceMs = exp.introducedAt || (exp.execs[0] && exp.execs[0].at) || 0;
+    const o = await brProjectOutputs(exp.repo);
+    const after = iso => { const t = Date.parse(iso); return isFinite(t) ? t >= sinceMs : true; };
+    const packages = (o.packages || []).filter(p => after(p.created_at));
+    const deployments = (o.deployments || []).filter(d => after(d.created_at));
+    const isProd = name => /prod/i.test(name || '');
+    const prodEnvs = (o.environments || []).filter(e => e.tier === 'production' || isProd(e.name));
+    const prodActive = prodEnvs.some(e => e.state === 'available' && e.last_deployment && after(e.last_deployment.created_at));
+    const prodDeployed = prodActive || deployments.some(d => isProd(d.environment && d.environment.name));
+    const ds = await brDownstream(exp);
+    exp.prop = { packages, images: o.images || [], deployments, published: packages.length > 0, prodDeployed, prodActive, downstream: ds.consumers, truncated: ds.truncated };
+  }
+
   // ── Orchestration ──
   let _brState = { exposures: [], ioc: null };
   async function runBlastRadius() {
@@ -2428,6 +2483,7 @@ if(document.getElementById('supTable')) renderSup();
     const ioc = brParseIOC();
     if (!ioc.name || !ioc.version) { showToast('Renseigne au moins le composant et la version.', 'error'); return; }
     running = true; aborted = false; apiCalls = 0; throttles = 0; runStart = Date.now();
+    _privCache.clear(); _propCache.clear();   // pas de données inter-run périmées
     _brState = { exposures: [], ioc };
     const host = document.getElementById('brSection');
     show('brSection', true);
@@ -2452,7 +2508,10 @@ if(document.getElementById('supTable')) renderSup();
           for (const e of exps) {
             setStatus(`Exécution : ${repo.path}`);
             try { await brExecution(e, ioc); } catch {}
-            if (e.pipelines > 0) { setStatus(`Privilèges : ${repo.path}`); try { await brPrivileges(e); } catch {} }
+            if (e.pipelines > 0) {
+              setStatus(`Privilèges : ${repo.path}`); try { await brPrivileges(e); } catch {}
+              setStatus(`Propagation : ${repo.path}`); try { await brPropagation(e); } catch {}
+            }
             exposures.push(e);
             _brState.exposures = exposures;
             brRender(host, ioc, exposures, false);
@@ -2508,28 +2567,44 @@ if(document.getElementById('supTable')) renderSup();
     return chips.join(' ');
   }
 
+  // Puces de propagation : ce que les jobs exposés ont fabriqué / propagé.
+  function brPropChips(e) {
+    if (!e.pipelines) return '<span class="br-muted">—</span>';
+    if (!e.prop) return '<span class="br-chip br-unk">⏳ …</span>';
+    const p = e.prop, chips = [];
+    if (p.published) chips.push(`<span class="br-chip br-hot" title="Packages publiés depuis l'exposition">📦 ${fmt(p.packages.length)} package(s)</span>`);
+    if (p.images && p.images.length) chips.push(`<span class="br-chip" title="Images dans le registry du projet (datation limitée)">🐳 ${fmt(p.images.length)} image(s)</span>`);
+    if (p.prodDeployed) chips.push(`<span class="br-chip br-hot" title="Déploiement en environnement de production">🚀 prod${p.prodActive ? ' · actif' : ''}</span>`);
+    else if (p.deployments && p.deployments.length) chips.push(`<span class="br-chip">🚀 ${fmt(p.deployments.length)} déploiement(s)</span>`);
+    if (p.downstream && p.downstream.length) chips.push(`<span class="br-chip" title="Projets consommateurs via pipelines aval (profondeur 2)">↘️ ${fmt(p.downstream.length)} conso.${p.truncated ? '+' : ''}</span>`);
+    if (!chips.length) chips.push('<span class="br-chip">rien de produit détecté</span>');
+    return chips.join(' ');
+  }
+
   function brRender(host, ioc, exposures, done) {
     // Comptes P0/P1/P2/P3.
     const counts = { P0: 0, P1: 0, P2: 0, P3: 0 };
-    let executed = 0, confirmed = 0, withSecrets = 0, reposSet = new Set();
+    let executed = 0, withSecrets = 0, published = 0, prodActive = 0, reposSet = new Set();
     exposures.forEach(e => {
       const s = brScore(e); counts[s.p]++;
-      if (e.sbomConfirmed) confirmed++; if (e.pipelines > 0) executed++;
+      if (e.pipelines > 0) executed++;
       if (e.priv && e.priv.hasSecrets) withSecrets++;
+      if (e.prop && e.prop.published) published++;
+      if (e.prop && e.prop.prodActive) prodActive++;
       reposSet.add(e.repo.id);
     });
     const sumEl = host.querySelector('#brSummary');
     if (sumEl) sumEl.innerHTML = [
       ['Repos exposés', fmt(reposSet.size)],
-      ['Expositions', fmt(exposures.length)],
       ['P0 · critique', fmt(counts.P0)],
       ['P1 · exécution', fmt(counts.P1)],
       ['P2 · probable', fmt(counts.P2)],
       ['P3 · présence', fmt(counts.P3)],
       ['Jobs avec secrets', fmt(withSecrets)],
-      ['Preuve SBOM', fmt(confirmed)]
-    ].map(([k, v]) => `<div class="br-cell${k.startsWith('P0') && counts.P0 ? ' br-cell-p0' : ''}"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
-      + `<div class="br-p0note">🔓 <b>P0 calculé</b> (tranche privilèges) : exécuté <b>et</b> pouvait atteindre secrets / écriture / runner partagé. Privilèges = <b>état actuel</b> des variables, pas au moment du job (<code>confidence: current_state_only</code>). Propagation (artefacts publiés/déployés) → tranche 3.</div>`;
+      ['Packages publiés', fmt(published)],
+      ['Actif en prod', fmt(prodActive)]
+    ].map(([k, v]) => `<div class="br-cell${(k.startsWith('P0') && counts.P0) || (k === 'Actif en prod' && prodActive) ? ' br-cell-p0' : ''}"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
+      + `<div class="br-p0note">🔓 <b>P0 calculé</b> : exécuté <b>et</b> (secrets / écriture / runner partagé <b>ou</b> package publié / déployé en prod). Privilèges = <b>état actuel</b> des variables (<code>confidence: current_state_only</code>). Caches non calculés (opaques côté API). Le dernier chiffre — <b>actif en prod</b> — est le plus important.</div>`;
 
     // Timeline.
     const tl = host.querySelector('#brTimeline');
@@ -2565,17 +2640,17 @@ if(document.getElementById('supTable')) renderSup();
     if (tb) {
       if (!exposures.length) tb.innerHTML = done ? '<div class="br-empty">✅ Aucune trace du composant sur le périmètre scanné.</div>' : '';
       else tb.innerHTML = `<table class="br-tbl"><thead><tr>
-          <th>Repo</th><th>Fichier</th><th>Version résolue</th><th>Introduit</th><th>Pipelines</th><th>Preuve</th><th>Atteignable (jobs exposés)</th><th>Priorité</th>
+          <th>Repo</th><th>Fichier</th><th>Version</th><th>Pipelines</th><th>Preuve</th><th>Atteignable</th><th>Produit / propagé</th><th>Priorité</th>
         </tr></thead><tbody>${exposures.map(e => {
           const s = brScore(e), lvl = brEvidenceLevel(e);
           return `<tr>
             <td class="br-td-repo">${e.repo.url ? `<a href="${e.repo.url}" target="_blank" rel="noopener">${escH(e.repo.path)}</a>` : escH(e.repo.path)}</td>
             <td><code>${escH(e.file)}</code>${e.direct ? '' : ' <span class="br-tag">transitif</span>'}${e.scope === 'dev' ? ' <span class="br-tag">dev</span>' : ''}</td>
             <td>${escH(e.version || '—')}</td>
-            <td>${brFrDateTime(e.introducedAt)}</td>
             <td>${fmt(e.pipelines)}</td>
             <td><span class="br-ev ${s.tone}">${escH(BR_LEVEL_META[lvl].label)}</span></td>
             <td>${brPrivChips(e)}</td>
+            <td>${brPropChips(e)}</td>
             <td><span class="br-pri ${s.tone}">${s.p}</span></td>
           </tr>`;
         }).join('')}</tbody></table>`;
@@ -2606,8 +2681,16 @@ if(document.getElementById('supTable')) renderSup();
     }), '');
     if (secretsRepos.length) lines.push(`## 🔑 Secrets à tourner (jobs exposés y avaient accès — état actuel)`, ...secretsRepos.map(e => `- [ ] ${e.repo.path} — ${fmt(e.priv.secrets.length)} variable(s) CI/CD : ${e.priv.secrets.slice(0, 8).map(s => s.key).join(', ')}${e.priv.secrets.length > 8 ? '…' : ''}`), '');
     if (p1.length) lines.push(`## Pipelines à examiner (exécution avérée)`, ...p1.map(e => `- [ ] ${e.repo.path} — ${e.pipelines} pipeline(s) sur commit(s) exposé(s)${e.sbomConfirmed ? ' · SBOM confirme le composant' : ''}`), '');
-    lines.push(`## Étape suivante (tranche 3)`, `- [ ] Propagation : artefacts/images/déploiements produits par les jobs exposés`, '');
-    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée. Privilèges = état actuel des variables (confidence: current_state_only)._');
+    const propagated = exposures.filter(e => e.prop && (e.prop.published || e.prop.prodDeployed || (e.prop.downstream && e.prop.downstream.length)));
+    if (propagated.length) lines.push(`## 📦 Propagation à contenir`, ...propagated.map(e => {
+      const p = e.prop, bits = [];
+      if (p.published) bits.push(`${p.packages.length} package(s) publié(s)`);
+      if (p.images && p.images.length) bits.push(`${p.images.length} image(s) registry`);
+      if (p.prodDeployed) bits.push(`déployé en prod${p.prodActive ? ' (toujours actif)' : ''}`);
+      if (p.downstream && p.downstream.length) bits.push(`${p.downstream.length} projet(s) consommateur(s)${p.truncated ? '+' : ''}`);
+      return `- [ ] ${e.repo.path} — ${bits.join(' · ')}`;
+    }), '');
+    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée. Privilèges = état actuel des variables (confidence: current_state_only) ; caches non calculés (opaques côté API)._');
     return lines.filter(l => l !== null).join('\n');
   }
   function brExportPlan() { download(`plan-action-${_brState.ioc.name}-${_brState.ioc.version}.md`, brBuildPlan(), 'text/markdown'); }

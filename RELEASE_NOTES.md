@@ -31,7 +31,15 @@ seul (pas de loader global).
     au moins un de ces accès → P0** (compromission critique). Caveat temporel
     assumé : privilèges = **état actuel** des variables (`confidence:
     current_state_only`), 403 → « non vérifiable » (jamais compté à charge).
-    Le plan d'action liste les **secrets à tourner** (par clé). Propagation → tranche 3.
+    Le plan d'action liste les **secrets à tourner** (par clé).
+  - **Tranche 3 (Propagation)** : ce que les jobs exposés ont **fabriqué** —
+    **packages publiés**, **images** registry, **déploiements** (jusqu'où, et
+    **toujours actif en prod ?**), et **pipelines consommateurs** via les bridges
+    (récursif borné, profondeur 2, **marqueur de troncature**). Autre voie vers le
+    **P0** : exécuté **et** (package publié **ou** déployé en prod). Les **caches**
+    restent non calculés (opaques côté API) — annoncé. Le chiffre phare : **artefact
+    toujours actif en prod**. La chaîne est complète : « entrée ici → a tourné là →
+    pouvait atteindre ceci → a produit cela → voilà ce qui reste à nettoyer ».
   - **Présentation timeline** : axe temporel, une barre d'exposition par repo
     colorée par priorité, points d'exécution (violet = pipeline, vert = SBOM).
   - **Rapport d'incident HTML + plan d'action exportable** (« à corriger / à
