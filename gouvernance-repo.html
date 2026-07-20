@@ -57,6 +57,15 @@
   <input type="hidden" id="histCount" value="">
   <div class="instr-panel" id="histStats" style="display:none;"></div>
 
+  <!-- Loader unique du flux guidé (une intention → la plateforme gère) -->
+  <div class="orch-loader" id="orchLoader" style="display:none;">
+    <div class="orch-spinner"></div>
+    <div class="orch-title" id="orchTitle">Analyse de sécurité en cours…</div>
+    <div class="orch-sub" id="orchSub">Préparation…</div>
+    <div class="orch-steps" id="orchSteps"></div>
+    <button class="stop-btn" onclick="stopScan()" style="margin-top:18px;">⏹ Arrêter</button>
+  </div>
+
   <!-- 1) Énumération -->
   <div class="loading-section" id="enumSection">
     <div class="loading-spinner"></div>

@@ -57,6 +57,10 @@
   // Création auto de MR en fin de scan. La popup d'entrée peut la couper
   // (scan-only) ; en scan manuel, elle reste à true (comportement historique).
   let autoMR = true;
+  // Pendant le flux guidé : on n'affiche QU'un loader propre. Les UI par-scan
+  // (énumération, progression, résultats intermédiaires) sont masquées ; la vue
+  // consolidée n'apparaît qu'à la toute fin.
+  let orchestrating = false;
 
   // ── Init : auth lue du hub, puis démarrage auto (le clic sur le service = le déclencheur) ──
   document.addEventListener('DOMContentLoaded', () => {
@@ -833,15 +837,34 @@
   // On attend (await) chaque scan jusqu'au bout, puis sa création de MR — les
   // deux sont sérialisés explicitement, donc pas de course sur `results` ni de
   // blocage. autoMR=false coupe l'auto-MR de finishScan : on la pilote ici.
+  const CHECK_LABEL = { surface: 'Secrets (surface)', history: 'Secrets (historique)', supply: 'Supply-chain', cis: 'Conformité CIS' };
+  function orchSetPhase(order, i, extra) {
+    const el = document.getElementById('orchTitle'); const sub = document.getElementById('orchSub'); const steps = document.getElementById('orchSteps');
+    if (el) el.textContent = 'Analyse de sécurité en cours…';
+    if (sub) sub.textContent = i < order.length ? `${CHECK_LABEL[order[i]]} — étape ${i + 1}/${order.length}${extra ? ' · ' + extra : ''}` : 'Consolidation…';
+    if (steps) steps.innerHTML = order.map((c, k) =>
+      `<span class="orch-step ${k < i ? 'done' : (k === i ? 'active' : '')}">${k < i ? '✓' : (k === i ? '⏳' : '○')} ${CHECK_LABEL[c]}</span>`).join('');
+  }
+
   async function runSelectedChecks(checks, opts) {
     opts = opts || {};
     const wantMR = opts.mr !== false;
     autoMR = false;
     aborted = false;
     const order = ['surface', 'history', 'supply', 'cis'].filter(c => checks.includes(c));
+
+    // Flux guidé : on masque tout et on n'affiche que le loader propre.
+    orchestrating = true;
+    document.getElementById('resultsSection').style.display = 'none';
+    show('enumSection', false); show('scanSection', false);
+    const loader = document.getElementById('orchLoader'); if (loader) loader.style.display = 'flex';
+    orchSetPhase(order, 0);
+
     try {
-      for (const c of order) {
+      for (let i = 0; i < order.length; i++) {
+        const c = order[i];
         if (aborted) break;
+        orchSetPhase(order, i);
         if (c === 'surface') { setMode('surface'); await run(); }
         else if (c === 'history') {
           setMode('history');
@@ -850,15 +873,20 @@
         } else if (c === 'supply') { setMode('supply'); await runSupply(); }
         else if (c === 'cis') { setMode('cis'); await runCIS(); }
         // MR de CE scan, résultats encore intacts (le scan suivant n'a pas démarré).
-        if (wantMR) {
+        if (wantMR && !aborted) {
           aborted = false;
+          orchSetPhase(order, i, 'création des MR');
           try { if (c === 'cis') await createCISMRs(); else await createReportMRs(); }
           catch (e) { console.warn('Création MR échouée pour', c, e); }
         }
       }
     } finally {
-      autoMR = true;                      // retour au défaut (scans manuels)
+      autoMR = true;                      // retour au défaut
+      orchestrating = false;              // on ré-autorise l'affichage des sections
+      const l = document.getElementById('orchLoader'); if (l) l.style.display = 'none';
+      resetMrPanel();                     // le panneau MR transitoire n'apparaît pas dans la vue finale
     }
+
     // Une seule vue finale : tous les résultats consolidés PAR REPO, priorisés.
     renderConsolidated();
     if (opts.report !== false && (scannedSecrets || scannedSupply || scannedCIS)) {
@@ -1507,7 +1535,12 @@ if(document.getElementById('supTable')) renderSup();
   }
 
   // ── Helpers ──
-  function show(id, on) { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; }
+  function show(id, on) {
+    // En flux guidé, les sections transitoires restent masquées : seul le
+    // loader unique est visible jusqu'à l'affichage final des résultats.
+    if (orchestrating && (id === 'enumSection' || id === 'scanSection' || id === 'resultsSection')) return;
+    const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none';
+  }
   function toggleCard(id) { const c = document.getElementById(id)?.closest('.repo-card'); if (c) c.classList.toggle('expanded'); }
   function fmt(n) { return new Intl.NumberFormat('fr-FR').format(n); }
   function escH(t) { if (t == null) return ''; const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML; }
