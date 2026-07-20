@@ -1310,7 +1310,11 @@
         function badgeName(id) { return BADGE_BY_ID[id] ? BADGE_BY_ID[id].name : id; }
 
         // Rend le panneau « Ce que ton dépôt peut exploiter » (soft, non bloquant).
+        let capSelected = null;          // capacité dépliée (progressive disclosure)
+        let _capUnlocked = new Set();     // dernier set de badges débloqués (pour re-render au clic)
+
         function renderCapabilities(unlockedSet) {
+            _capUnlocked = unlockedSet;
             const cont = document.getElementById('capabilitiesContainer');
             if (!cont) return;
             const ready = new Set();
@@ -1319,57 +1323,50 @@
                 const missing = cap.requires.filter(id => !unlockedSet.has(id));
                 const isReady = parentReady && missing.length === 0;
                 if (isReady) ready.add(cap.id);
-                const status = isReady ? 'ready' : (!parentReady ? 'gated' : (missing.length <= 2 ? 'almost' : 'far'));
-                return { cap, parentReady, missing, isReady, status };
+                const total = cap.requires.length, have = total - missing.length;
+                const status = isReady ? 'ready' : (missing.length <= 2 ? 'almost' : 'far');
+                return { cap, parentReady, missing, isReady, have, total, status };
             });
 
-            const pill = { ready: '✅ prêt', almost: '🟠 presque', far: '⚪ à préparer', gated: '⚪ à préparer' };
-            const cards = rows.map(({ cap, parentReady, missing, isReady, status }) => {
-                const mods = cap.modules.map(([n, url, why]) =>
-                    `<a class="cap-mod" href="${url}?repo=${encodeURIComponent(projectId)}"><span class="cap-mod-n">${escapeHtml(n)}</span><span class="cap-mod-w">${escapeHtml(why)}</span><span class="cap-mod-go">Ouvrir ↗</span></a>`
-                ).join('');
-                let advice;
-                if (isReady) {
-                    advice = `<div class="cap-ready">✅ Prêt — tu peux l'exploiter à fond.</div>`;
-                } else {
-                    const missTxt = missing.map(id => `<b>${escapeHtml(badgeName(id))}</b>`).join(', ');
-                    const parentTxt = !parentReady ? ` — d'abord « ${escapeHtml(CAPABILITIES.find(c => c.id === cap.dependsOn).name)} »` : '';
-                    advice = `<div class="cap-advice">💡 Ouvrable dès maintenant. Pour <b>bien l'exploiter</b>, il te faudrait : ${missTxt || '—'}${parentTxt}.</div>`;
-                }
-                return `
-                    <div class="cap-card ${status}">
-                        <div class="cap-head"><span class="cap-ic">${cap.icon}</span><span class="cap-name">${escapeHtml(cap.name)}</span><span class="cap-pill ${status}">${pill[status]}</span></div>
-                        <div class="cap-enables">${escapeHtml(cap.enables)}</div>
-                        <div class="cap-modules">${mods}</div>
-                        ${advice}
-                    </div>`;
+            // Focus par défaut : la prochaine capacité atteignable (moins de prérequis manquants).
+            const nextCand = rows.filter(r => !r.isReady && r.parentReady).sort((a, b) => a.missing.length - b.missing.length)[0];
+            if (!capSelected || !rows.some(r => r.cap.id === capSelected)) capSelected = nextCand ? nextCand.cap.id : rows[0].cap.id;
+
+            // Ligne compacte de chips (une par capacité) — clic = déplie le détail.
+            const dot = { ready: '🟢', almost: '🟠', far: '⚪' };
+            const chips = rows.map(r => {
+                const pct = Math.round(r.have / r.total * 100);
+                return `<button class="cap-chip ${r.status}${capSelected === r.cap.id ? ' sel' : ''}" onclick="capSelect('${r.cap.id}')">
+                    <span class="cap-chip-ic">${r.cap.icon}</span>
+                    <span class="cap-chip-main"><span class="cap-chip-name">${escapeHtml(r.cap.name)}</span><span class="cap-chip-bar"><i style="width:${pct}%"></i></span></span>
+                    <span class="cap-chip-frac">${dot[r.status]} ${r.have}/${r.total}</span>
+                </button>`;
             }).join('');
 
-            // « Ta prochaine capacité » : la plus proche parmi celles dont le prérequis parent est satisfait.
-            const candidates = rows.filter(r => !r.isReady && r.parentReady).sort((a, b) => a.missing.length - b.missing.length);
-            let next = '';
-            if (candidates.length) {
-                const c = candidates[0];
-                const total = c.cap.requires.length;
-                const have = total - c.missing.length;
-                next = `
-                    <div class="cap-next">
-                        <div class="cap-next-label">🎯 Ta prochaine capacité</div>
-                        <div class="cap-next-name">${escapeHtml(c.cap.icon)} ${escapeHtml(c.cap.name)}</div>
-                        <div class="cap-next-prog">Tu as déjà <b>${have}/${total}</b> prérequis. Il ne manque que : ${c.missing.map(id => `<b>${escapeHtml(badgeName(id))}</b>`).join(', ')}.</div>
-                    </div>`;
+            // Détail d'UNE capacité (la sélectionnée) — jamais un mur.
+            const sel = rows.find(r => r.cap.id === capSelected) || rows[0];
+            const mods = sel.cap.modules.map(([n, url]) =>
+                `<a class="cap-mod2" href="${url}?repo=${encodeURIComponent(projectId)}">${escapeHtml(n)} <span>↗</span></a>`).join('');
+            let body;
+            if (sel.isReady) {
+                body = `<div class="cap-line ok">✅ Prête — tu peux l'exploiter à fond.</div>`;
+            } else {
+                const tags = sel.missing.map(id => `<span class="cap-tag">${escapeHtml(badgeName(id))}</span>`).join('');
+                const dep = !sel.parentReady ? `<span class="cap-tag dep">d'abord « ${escapeHtml(CAPABILITIES.find(c => c.id === sel.cap.dependsOn).name)} »</span>` : '';
+                body = `<div class="cap-line">Il te manque ${tags}${dep}</div>`;
             }
-            const readyCount = rows.filter(r => r.isReady).length;
             cont.innerHTML = `
-                <div class="cap-panel">
-                    <div class="cap-panel-head">
-                        <div class="cap-panel-title">🚀 Ce que ton dépôt peut exploiter</div>
-                        <div class="cap-panel-sub">${readyCount}/${CAPABILITIES.length} capacités prêtes · les modules restent toujours ouvrables</div>
+                <div class="cap-panel2">
+                    <div class="cap-panel2-head"><span class="cap-panel2-title">🚀 Capacités du dépôt</span><span class="cap-panel2-sub">${ready.size}/${rows.length} prête(s) · modules toujours ouvrables</span></div>
+                    <div class="cap-chips">${chips}</div>
+                    <div class="cap-detail">
+                        <div class="cap-det-desc">${escapeHtml(sel.cap.icon)} <b>${escapeHtml(sel.cap.name)}</b> — ${escapeHtml(sel.cap.enables)}</div>
+                        ${body}
+                        <div class="cap-det-mods">${mods}</div>
                     </div>
-                    <div class="cap-grid">${cards}</div>
-                    ${next}
                 </div>`;
         }
+        function capSelect(id) { capSelected = id; renderCapabilities(_capUnlocked); }
 
         function renderBadges() {
             // Charger l'historique des badges déjà débloqués
