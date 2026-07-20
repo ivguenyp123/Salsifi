@@ -391,21 +391,19 @@ test:
 - **Note** : Je crée le `README.md` ; ajoute ensuite `.gitignore` / `LICENSE`.
 - **Modèle** :
 
-````markdown
+```markdown
 # {{PROJECT}}
 
 Description courte du projet.
 
 ## Lancer en local
 
-```bash
-# ...
-```
+    # commande pour lancer le projet en local
 
 ## Contact
 
 Équipe …
-````
+```
 
 ### Branch Protection  <sub>`branch_protection` · ⚙️ réglage GitLab</sub>
 

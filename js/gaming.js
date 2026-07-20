@@ -1602,7 +1602,6 @@
                         <div class="cmp-bubble">${bubble}</div>
                         ${winLine}
                         ${earnedLine}
-                        <div class="cmp-phase-sub">À partir d'aujourd'hui je mémorise — dès ton prochain passage, je te raconte ce qui a bougé (records, rechutes, retours).</div>
                     </div>
                 </div></div>`;
                 return;
@@ -1660,6 +1659,23 @@
                 </div>`;
         }
 
+        // ── Éligibilité : ne pas féliciter du vide ─────────────────────────
+        // Certains badges « d'absence » (0 échec, 0 MR sans approbation…) sont
+        // vrais quand le DÉNOMINATEUR est nul : un repo qui ne fait rien ne
+        // casse rien. On les neutralise (« en attente de données ») tant qu'il
+        // n'y a pas un minimum de signal observé, sinon un repo mort finit mieux
+        // noté qu'un repo vivant qui rencontre de vrais problèmes.
+        function pipelinesObserved(s) { return (s.avgPipelineTime !== null) || ((s.totalDeploys || 0) > 0); }
+        function mrsObserved(s) { return (s.avgMRSize !== null) || (s.avgMRFiles !== null) || ((s.reviewedMRRate || 0) > 0); }
+        const BADGE_ELIGIBLE = {
+            no_failed_streak: pipelinesObserved,
+            pipeline_resilient: pipelinesObserved,
+            no_merge_without_approval: mrsObserved,
+            no_zombie_mrs: mrsObserved
+        };
+        function badgeEligible(id) { const f = BADGE_ELIGIBLE[id]; return f ? !!f(stats) : true; }
+        function badgeUnlocked(b) { return badgeEligible(b.id) && b.check(); }
+
         function renderBadges() {
             // Charger l'historique des badges déjà débloqués
             const storageKey = `devops_badges_v2_${projectId}`;
@@ -1668,11 +1684,14 @@
             // Évaluer l'état actuel de chaque badge
             const currentlyUnlocked = [];
             const badgeStates = BADGES.map(b => {
-                const isUnlocked = b.check();
+                const eligible = badgeEligible(b.id);
+                const passed = b.check();
+                const isUnlocked = eligible && passed;
+                const isNA = !eligible && passed;   // rempli mécaniquement, mais pas assez de données
                 const wasUnlocked = previouslyUnlocked.includes(b.id);
-                const isLost = wasUnlocked && !isUnlocked;
+                const isLost = wasUnlocked && !isUnlocked && !isNA;
                 if (isUnlocked) currentlyUnlocked.push(b.id);
-                return { badge: b, isUnlocked, isLost, wasUnlocked };
+                return { badge: b, isUnlocked, isLost, isNA, wasUnlocked };
             });
 
             // Compagnon temporel (phase / journal / régime / voix).
@@ -1729,6 +1748,9 @@
                         cssClass = 'unlocked';
                         statusHtml = '<div class="badge-status">✓ DÉBLOQUÉ</div>';
                         xpClass = 'positive';
+                    } else if (state.isNA) {
+                        cssClass = 'na';
+                        statusHtml = '<div class="badge-status">⏳ EN ATTENTE DE DONNÉES</div>';
                     } else if (state.isLost) {
                         cssClass = 'lost';
                         statusHtml = '<div class="badge-status">📉 PERDU</div>';
@@ -1737,7 +1759,9 @@
                     }
 
                     let tipHtml = '';
-                    if (!state.isUnlocked && badge.tip) {
+                    if (state.isNA) {
+                        tipHtml = `<div class="badge-tip na-tip">Pas encore assez d'activité (pipelines / MR) pour juger. Ce badge se débloquera quand il y aura de quoi mesurer — un repo qui ne tourne pas ne « réussit » pas par défaut.</div>`;
+                    } else if (!state.isUnlocked && badge.tip) {
                         const tipClass = state.isLost ? 'badge-tip lost-tip' : 'badge-tip';
                         const tipText = state.isLost ? `Pour le récupérer : ${badge.tip}` : `💡 ${badge.tip}`;
                         tipHtml = `<div class="${tipClass}">${escapeHtml(tipText)}</div>`;
@@ -1778,13 +1802,14 @@
             let lostCount = 0;
 
             for (const badge of BADGES) {
-                const isUnlocked = badge.check();
+                const isUnlocked = badgeUnlocked(badge);     // éligibilité incluse (pas de vide félicité)
+                const isNA = !badgeEligible(badge.id) && badge.check();
                 const wasUnlocked = previouslyUnlocked.includes(badge.id);
 
                 if (isUnlocked) {
                     totalXP += badge.xp;
                     unlockedCount++;
-                } else if (wasUnlocked) {
+                } else if (wasUnlocked && !isNA) {
                     lostCount++;
                 }
             }

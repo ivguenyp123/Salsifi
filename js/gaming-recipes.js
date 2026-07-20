@@ -324,7 +324,7 @@
                 "Ajoute un <code>.gitignore</code> adapté à ta stack (évite de committer build/secrets).",
                 "Ajoute un <code>LICENSE</code> si le contexte l'exige."
             ],
-            template: "# {{PROJECT}}\n\nDescription courte du projet.\n\n## Lancer en local\n\n```bash\n# ...\n```\n\n## Contact\n\nÉquipe …\n",
+            template: "# {{PROJECT}}\n\nDescription courte du projet.\n\n## Lancer en local\n\n    # commande pour lancer le projet en local\n\n## Contact\n\nÉquipe …\n",
             note: "Je crée le <code>README.md</code> ; ajoute ensuite <code>.gitignore</code> / <code>LICENSE</code>."
         },
         branch_protection: {

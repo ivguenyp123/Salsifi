@@ -691,3 +691,8 @@ body::after {
 .salsi-sec-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted, #9a8fc0); margin-bottom: 8px; font-weight: 700; }
 .salsi-mode { color: var(--text-muted, #9a8fc0); }
 a.salsi-btn { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* ── Badge « en attente de données » (ni acquis, ni perdu) ────────────── */
+.badge-card.na { opacity: 0.72; border-style: dashed; }
+.badge-card.na .badge-status { color: var(--text-muted, #9a8fc0); background: var(--ov-06, rgba(255,255,255,0.06)); }
+.badge-tip.na-tip { color: var(--text-muted, #9a8fc0); font-style: italic; }
