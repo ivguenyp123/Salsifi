@@ -1,21 +1,24 @@
 # Salsifi — DevOps Hub · Notes de version
 
-## v1.5.0 — 2026-07-20 · Salsi, diagnostic à la demande (hub)
+## v1.5.0 — 2026-07-20 · Salsi, résumé d'analyse à la demande (hub)
 
 On entre sur le hub **normalement** (aucune popup à l'arrivée). Le bouton **🌱 Salsi**
-du header ouvre Salsi **quand on veut** : il **analyse** ce qu'il peut vraiment voir
-et dit **« où ça coince »**. 100 % déterministe, aucune IA.
+du header ouvre Salsi **quand on veut** : il fait le **résumé des modules d'un repo**
+et affiche ses **5 priorités**. 100 % déterministe, aucune IA.
 
-- **À la demande, pas d'auto-popup** : le repo se choisit *après*, dans le hub — Salsi
-  ne présume donc aucun repo « courant ». Il n'y a pas d'écran qui te saute dessus.
-- **Honnête à l'échelle** : même avec 1000 repos accessibles, Salsi regarde les
+- **À la demande, pas d'auto-popup** : le repo se choisit *après*, dans le hub. Salsi
+  cible le **repo sélectionné** (sinon le mieux suivi) et n'en présume aucun de force.
+- **Axe analyse, pas seulement les reculs** : le résumé mêle l'état ET les mouvements —
+  métriques DORA faibles (Low/Medium/High) **à pousser**, paliers **retombés**, niveau
+  global en baisse, **badges perdus / à décrocher**. Un item par sujet (une métrique
+  faible *et* en recul → une seule ligne, la plus forte).
+- **Top 5 priorisé** : classé par gravité (recul récent > état faible), chaque point
+  **cliquable** vers le bon module.
+- **Honnête à l'échelle** : même avec 1000 repos accessibles, Salsi n'analyse que les
   **repos que tu suis** (ceux qui ont des mesures : compagnons DORA/gaming en
-  localStorage) — il ne prétend jamais avoir scanné tout le parc.
-- **« Où ça coince »** : liste des **reculs réels** (palier DORA retombé, niveau global
-  en baisse, métrique qui se dégrade, badge perdu), gravité puis date. Chaque point est
-  **cliquable** pour aller le traiter.
-- **États honnêtes** : rien de suivi encore → « ouvre un repo, je te dirai où ça coince » ;
-  suivi mais rien à signaler → « rien d'alarmant, tiens le cap ».
+  localStorage) ; il ne prétend jamais avoir scanné tout le parc.
+- **États clairs** : rien de suivi → « choisis un repo, je te fais le résumé » ; repo
+  au propre → « rien de prioritaire, beau boulot ».
 - Réutilise la **popup Atelier partagée** ; tout en `try/catch`, ne bloque jamais le hub.
   Nouveau `js/hub/salsi-brief.js`, pastille dans `.header-actions` (aucune modif du cœur du hub).
 
