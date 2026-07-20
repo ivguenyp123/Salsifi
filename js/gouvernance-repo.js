@@ -1148,7 +1148,7 @@
     const sev = {};
     [...secRows, ...supRows].forEach(r => { sev[r.Type] = severityForType(r.Type); });
 
-    const html = renderReportHTML({ secRows, supRows, cisRows, hasSec: scannedSecrets, hasSup: scannedSupply, hasCis: scannedCIS, sev });
+    const html = renderReportHTML({ secRows, supRows, cisRows, hasSec: scannedSecrets, hasSup: scannedSupply, hasCis: scannedCIS, sev, consolidated: buildConsolidated() });
     const parts = [];
     if (scannedSecrets) parts.push('secrets');
     if (scannedSupply) parts.push('supply');
@@ -1367,6 +1367,22 @@
     }
     const kpis = `<div class="kpis">${kpiCards.join('')}</div>`;
 
+    // Priorisation : repos les plus à risque (secrets + supply + CIS combinés).
+    const cons = d.consolidated || { rows: [] };
+    const rankRows = cons.rows.slice(0, 40).map((r, i) => `<tr>
+        <td style="font-family:var(--fm);font-weight:700;color:var(--measure)">#${i + 1}</td>
+        <td class="t-repo" title="${esc(r.path)}">${esc(r.path)}</td>
+        <td>${r.secrets.length ? '🔑 ' + r.secrets.length : '—'}</td>
+        <td>${r.supply.length ? '📦 ' + r.supply.length : '—'}</td>
+        <td>${r.cisGaps ? '🛡️ ' + r.cisGaps + (r.cis ? ' · score ' + r.cis.Score : '') : '—'}</td>
+        <td><b style="color:#fca5a5">${r.risk}</b></td>
+    </tr>`).join('');
+    const rankSection = cons.rows.length ? `
+  <div class="section">
+    <div class="section-h">🎯 Repos les plus à risque <span class="pill">${cons.rows.length} repos · à traiter du haut vers le bas</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Rang</th><th>Repo</th><th>Secrets</th><th>Supply</th><th>CIS</th><th>Risque</th></tr></thead><tbody>${rankRows}</tbody></table></div>
+  </div>` : '';
+
     const cisSection = d.hasCis ? `
   <div class="section">
     <div class="section-h">🛡️ Conformité CIS GitLab <span class="pill">${cisNon.length} non conforme(s) · ${cisGaps} écart(s) · ${cisRows.length} repos</span></div>
@@ -1447,6 +1463,7 @@ tr:hover td{background:rgba(124,92,255,.05)}
   </div>
   <div class="divider"></div>
 ${kpis}
+${rankSection}
 ${secSection}
 ${supSection}
 ${cisSection}
