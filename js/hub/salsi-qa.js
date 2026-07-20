@@ -126,6 +126,10 @@
         return { html: `🔒 <b>${esc(c.name)}</b> : ${bits.join(' · ') || 'rien à signaler'}.` };
     }
     function d_secrets() { return { html: `🔎 Pour les <b>secrets exposés</b>, c'est un scan à part (lourd) : ouvre le <b>Secrets Scanner</b> / la <b>Gouvernance</b>. Je ne le lance pas en direct ici.` }; }
+    function d_etat() {
+        try { if (typeof window.salsiBriefShow === 'function') { window.salsiBriefShow(); return { html: `📋 J'ouvre le <b>bilan complet</b> de ton repo (sécurité, bus factor, activité, DORA…) — regarde la fenêtre qui s'affiche. 👉` }; } } catch (e) { }
+        return { html: `Ouvre le <b>bilan</b> via la pastille 🌱 Salsi en haut du hub (sélectionne d'abord un repo).` };
+    }
 
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
@@ -189,6 +193,7 @@
 
     // ── Intentions : déclencheurs + (def et/ou data). Ordre = priorité de match. ──
     var INTENTS = [
+        { k: 'etat_repo', trig: ['etat', 'bilan', 'sante', 'diagnostic', 'comment va', 'ca va mon', 'resume de mon repo', 'ou ca coince'], data: d_etat },
         { k: 'cfr', trig: ['cfr', 'taux d echec', 'change failure rate', 'echec de changement'], def: 'cfr', data: d_dora },
         { k: 'mttr', trig: ['mttr', 'temps de restauration', 'time to restore', 'temps de reprise'], def: 'mttr', data: d_dora },
         { k: 'lead_time', trig: ['lead time', 'delai de livraison'], def: 'lead_time', data: d_dora },
@@ -213,30 +218,51 @@
     ];
     function hit(n, trig) { return trig.some(function (t) { var tn = norm(t); if (tn.length <= 3) return new RegExp('(^| )' + tn.replace(/ /g, ' ') + '( |$)').test(n); return n.indexOf(tn) >= 0; }); }
 
+    // ── Journal des questions (socle pour « l'IA en dernier recours ») ──
+    // Trace question + date/heure + contexte (repo) + intention (ou « unknown »).
+    // Quand l'IA arrivera en fallback, ce journal dira quelles questions inconnues
+    // folder dans le déterministe → on appelle l'IA de moins en moins.
+    function logQ(q, intentKey) {
+        try {
+            var raw = lsGet('salsifi_qa_log'); var arr = raw ? JSON.parse(raw) : [];
+            arr.push({ q: q, at: new Date().toISOString(), repo: targetRepo() || null, intent: intentKey || 'unknown' });
+            if (arr.length > 800) arr = arr.slice(arr.length - 800);
+            localStorage.setItem('salsifi_qa_log', JSON.stringify(arr));
+        } catch (e) { /* quota / indispo */ }
+    }
+    function defHtml(k, hint) { return `<b>${esc(G[k].t)}</b> — ${esc(G[k].x)}` + (hint ? `<br><span class="sqa-hint">(pour tes chiffres, ajoute « combien… » ou « mon… »)</span>` : ''); }
+
     var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
     async function answer(q) {
         var n = norm(q);
         // Ateliers : question d'amélioration → on recommande un atelier (avant tout le reste).
-        // « atelier … », « comment optimiser/améliorer/réduire … », « progresser sur … ».
         if (/\batelier|workshop|accompagnement|optimiser|ameliorer|\breduire\b|progresser|muscler|comment (faire|reduire|ameliorer|optimiser)/.test(n)) {
-            var atl = searchAteliers(n); if (atl) return atl;
+            var atl = searchAteliers(n); if (atl) { atl.intent = 'atelier'; return atl; }
         }
         var isDef = /(c est quoi|qu est ce|c est quoi|explique|definition|ca veut dire|signifie|comprends pas|c est koi)/.test(n);
         var isData = /(combien|nombre|mon |ma |mes |quel|quelle|\bnom\b|liste|lesquel|laquelle|lequel|montre|affiche|donne|aujourd|semaine|mois|derni|est ce que|qui )/.test(n);
         var intent = null;
         for (var i = 0; i < INTENTS.length; i++) { if (hit(n, INTENTS[i].trig)) { intent = INTENTS[i]; break; } }
-        // Suivi : pas d'intention trouvée mais une demande de donnée (« lesquelles ? »,
-        // « leur nom ? ») → on réutilise la dernière intention avec données.
+        // Suivi : pas d'intention trouvée mais une demande de donnée → dernière intention.
         if (!intent && isData && _lastIntent && _lastIntent.data && /nom|liste|lesquel|laquelle|lequel|lesquelles|montre|affiche|donne|detail/.test(n)) intent = _lastIntent;
-        if (!intent) return { html: `Je ne réponds que sur la <b>plateforme</b> 🌱 — les concepts (« c'est quoi le bus factor ? ») et tes résultats (pipelines, MR, bus factor, DORA, sécu…). Reformule, ou essaie : « combien de FF ? », « c'est quoi le CFR ? ».` };
+        if (!intent) return { html: `Je ne réponds que sur la <b>plateforme</b> 🌱 — les concepts (« c'est quoi le bus factor ? »), tes résultats (pipelines, MR, bus factor, DORA, sécu…) et les ateliers (« atelier pour optimiser mon flow »). Reformule, ou essaie : « l'état de mon repo », « combien de FF ? ».`, intent: 'unknown' };
         if (intent.data) _lastIntent = intent;
-        if (isDef && intent.def) return { html: `<b>${esc(G[intent.def].t)}</b> — ${esc(G[intent.def].x)}` };
-        if (isData && intent.data) return await intent.data(n);
-        if (intent.data && !intent.def) return await intent.data(n);
-        if (intent.def && !intent.data) return { html: `<b>${esc(G[intent.def].t)}</b> — ${esc(G[intent.def].x)}` };
-        // les deux, sans marqueur clair → définition + invite
-        return { html: `<b>${esc(G[intent.def].t)}</b> — ${esc(G[intent.def].x)}<br><span class="sqa-hint">(pour tes chiffres, ajoute « combien… » ou « mon… »)</span>` };
+        var r;
+        if (isDef && intent.def) r = { html: defHtml(intent.def) };
+        else if (isData && intent.data) r = await intent.data(n);
+        else if (intent.data && !intent.def) r = await intent.data(n);
+        else if (intent.def && !intent.data) r = { html: defHtml(intent.def) };
+        else r = { html: defHtml(intent.def, true) };
+        r.intent = intent.k;
+        return r;
     }
+    // Export du journal (téléchargement .jsonl) pour l'analyse hors-ligne.
+    window.salsiQaExport = function () {
+        var raw = lsGet('salsifi_qa_log'); var arr = raw ? JSON.parse(raw) : [];
+        var body = arr.map(function (e) { return JSON.stringify(e); }).join('\n');
+        var blob = new Blob([body], { type: 'application/x-ndjson' }); var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'salsi-qa-log.jsonl'; a.click(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    };
 
     // ── UI : icône flottante + panneau chat ──
     var msgsEl;
@@ -250,7 +276,8 @@
         if (!q) return;
         addMsg('user', esc(q));
         var pending = addMsg('salsi', '⏳ …');
-        var r; try { r = await answer(q); } catch (e) { r = { html: '😅 Je n\'ai pas pu répondre — réessaie.' }; }
+        var r; try { r = await answer(q); } catch (e) { r = { html: '😅 Je n\'ai pas pu répondre — réessaie.', intent: 'error' }; }
+        logQ(q, r && r.intent);   // trace : question + heure + contexte + intention (socle IA-fallback)
         if (pending) pending.innerHTML = r.html;
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
