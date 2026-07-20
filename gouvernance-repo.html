@@ -24,7 +24,6 @@
     </div>
     <div class="header-right">
       <button class="scan-btn" onclick="openLaunchModal()">▶️ Vérifier</button>
-      <button class="ghost-btn" onclick="startScan()">↻ Relancer</button>
     </div>
   </div>
 
@@ -52,34 +51,10 @@
     </div>
   </div>
 
-  <!-- Mode : Surface (HEAD) vs Historique (commits + diffs) -->
-  <div class="mode-bar">
-    <span class="mode-label">Mode :</span>
-    <button class="mode-btn active" id="btnSurface" onclick="setMode('surface')">🌊 Surface <small>(état actuel)</small></button>
-    <button class="mode-btn" id="btnHistory" onclick="setMode('history')">🕳️ Historique <small>(commits + diffs)</small></button>
-    <button class="mode-btn" id="btnSupply" onclick="setMode('supply')">📦 Supply-chain <small>(deps & CI)</small></button>
-    <button class="mode-btn" id="btnCIS" onclick="setMode('cis')">🛡️ CIS <small>(conformité)</small></button>
-    <div class="hist-controls" id="surfaceControls">
-      <button class="scan-btn" onclick="startScan()">🚀 Lancer le scan surface</button>
-      <span class="hist-hint">Scanne l'état actuel (HEAD) de tous tes repos accessibles à la recherche de secrets exposés.</span>
-    </div>
-    <div class="hist-controls" id="histControls" style="display:none;">
-      <label>Repos à scanner&nbsp;
-        <input type="number" id="histCount" placeholder="tous" min="1" max="100000" step="10">
-      </label>
-      <button class="scan-btn" onclick="startScan()">🚀 Lancer le scan historique</button>
-      <button class="ghost-btn" onclick="resetHistory()">🗑️ Réinitialiser</button>
-      <span class="hist-hint">Laisse vide pour tout scanner. Reprise automatique : si ça coupe, relance et ça repart où ça s'est arrêté (seuls les nouveaux commits sont scannés).</span>
-    </div>
-    <div class="hist-controls" id="supplyControls" style="display:none;">
-      <button class="scan-btn" onclick="startScan()">🚀 Lancer le scan supply-chain</button>
-      <span class="hist-hint">Analyse les manifestes (npm, Maven, Gradle, pip), Dockerfile et CI de tous tes repos accessibles — état actuel. 🔴 = exécution / 🟠 = version non figée.</span>
-    </div>
-    <div class="hist-controls" id="cisControls" style="display:none;">
-      <button class="scan-btn" onclick="startScan()">🚀 Lancer l'audit CIS</button>
-      <span class="hist-hint">Vérifie la conformité CIS GitLab de tous tes repos (branch protection, approvals, SECURITY.md, CODEOWNERS, webhooks, mainteneurs, lock files…). Score /100 par repo. 🔴 critique (&lt;50) → une MR de mise en conformité est proposée. 🔒 = non vérifiable (droits insuffisants), jamais compté comme non conforme.</span>
-    </div>
-  </div>
+  <!-- Champ historique (repos à scanner) — conservé caché : lu par le mode
+       historique quand il est choisi dans la popup. Plus de barre manuelle :
+       une intention se choisit dans « ▶️ Vérifier », la plateforme gère. -->
+  <input type="hidden" id="histCount" value="">
   <div class="instr-panel" id="histStats" style="display:none;"></div>
 
   <!-- 1) Énumération -->

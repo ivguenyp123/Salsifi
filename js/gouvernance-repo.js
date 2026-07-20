@@ -762,24 +762,24 @@
     }
   }
 
+  // Ne sert plus qu'à porter la variable `mode` (lue par finishScan pour les
+  // titres). La barre de modes a été retirée → tout est null-safe.
   function setMode(m) {
     mode = m;
-    document.getElementById('btnSurface').classList.toggle('active', m === 'surface');
-    document.getElementById('btnHistory').classList.toggle('active', m === 'history');
-    const bs = document.getElementById('btnSupply'); if (bs) bs.classList.toggle('active', m === 'supply');
-    const bc = document.getElementById('btnCIS'); if (bc) bc.classList.toggle('active', m === 'cis');
+    const tog = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('active', on); };
+    tog('btnSurface', m === 'surface'); tog('btnHistory', m === 'history');
+    tog('btnSupply', m === 'supply'); tog('btnCIS', m === 'cis');
     show('surfaceControls', m === 'surface');
     show('histControls', m === 'history');
     show('supplyControls', m === 'supply');
     show('cisControls', m === 'cis');
-    // En mono-repo, le champ "nombre de repos" de l'historique n'a aucun sens.
-    if (monoRepoId) { const hc = document.getElementById('histCount'); if (hc) hc.closest('label').style.display = 'none'; }
+    if (monoRepoId) { const hc = document.getElementById('histCount'); if (hc && hc.closest('label')) hc.closest('label').style.display = 'none'; }
   }
 
   function startScan() {
     if (running) { showToast('Un scan est déjà en cours.', 'info'); return; }
     if (mode === 'history') {
-      const v = parseInt(document.getElementById('histCount').value, 10);
+      const v = parseInt((document.getElementById('histCount') || {}).value, 10);
       runHistory(Number.isFinite(v) && v > 0 ? v : null); // vide / 0 → tous les repos
     } else if (mode === 'supply') {
       runSupply();
