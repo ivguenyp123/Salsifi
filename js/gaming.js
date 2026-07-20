@@ -1368,6 +1368,104 @@
         }
         function capSelect(id) { capSelected = id; renderCapabilities(_capUnlocked); }
 
+        // ══════════════════════════════════════════════════════════════════
+        //  COMPAGNON TEMPOREL — phase, journal, régime, voix (déterministe).
+        //  S'appuie sur js/gaming-history.js (snapshot + moteur de journal).
+        // ══════════════════════════════════════════════════════════════════
+        const METRIC_LABELS = {
+            successRate: 'taux de succès', weeklyDeploys: 'déploiements/sem', reviewedMRRate: 'MR relues',
+            activeContributors: 'contributeurs actifs', distinctReviewers: 'relecteurs distincts',
+            avgPipelineTime: 'durée pipeline', mttr: 'MTTR', staleBranches: 'branches mortes',
+            zombieMRs: 'MR zombies', mergedBranchesNotDeleted: 'branches mergées non supprimées',
+            maxFailedStreak: 'série d\'échecs', avgMRCycleTime: 'cycle MR', topContributorShare: 'part du top contributeur'
+        };
+        function metricLabel(k) { return METRIC_LABELS[k] || k; }
+        function frDate(iso) { try { return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } }
+        function fmtMetric(k, v) {
+            if (k === 'avgPipelineTime' || k === 'avgReviewTime') return formatDuration(v);
+            if (k === 'mttr' || k === 'avgMRCycleTime') return Math.round(v) + (k === 'mttr' ? 'h' : 'j');
+            if (k === 'successRate' || k === 'reviewedMRRate' || k === 'topContributorShare') return Math.round(v) + '%';
+            return String(v);
+        }
+        function evIcon(ev) { return ({ unlocked: '🎉', lost: '📉', recovered: '🔄', recurrence: '🔁', record: '🏆', regression: '⚠️' })[ev.type] || '•'; }
+        function evText(ev) {
+            if (ev.kind === 'badge') {
+                const n = escapeHtml(badgeName(ev.id));
+                if (ev.type === 'unlocked') return `<b>${n}</b> débloqué`;
+                if (ev.type === 'lost') return `<b>${n}</b> perdu`;
+                if (ev.type === 'recovered') return `<b>${n}</b> retrouvé`;
+                if (ev.type === 'recurrence') return `<b>${n}</b> reperdu (${ev.times}ᵉ fois)`;
+            } else {
+                const l = escapeHtml(metricLabel(ev.metric));
+                if (ev.type === 'record') return `record — <b>${l}</b> à ${fmtMetric(ev.metric, ev.value)}`;
+                if (ev.type === 'regression') return `<b>${l}</b> en recul (${fmtMetric(ev.metric, ev.prev)} → ${fmtMetric(ev.metric, ev.value)})`;
+            }
+            return escapeHtml(ev.type);
+        }
+
+        function renderCompanion(unlocked, statsObj) {
+            const cont = document.getElementById('companionContainer');
+            const GH = window.Salsifi && window.Salsifi.gamingHistory;
+            if (!cont || !GH) return;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const snap = GH.buildSnapshot(unlocked, statsObj, today);
+            const history = GH.record(projectId, snap);   // écrit l'histoire (1 point/jour)
+
+            if (history.length < 2) {
+                cont.innerHTML = `<div class="cmp-panel"><div class="cmp-onboard">🧭 <b>Compagnon activé.</b> Je commence à mémoriser l'état de ton dépôt (aujourd'hui : ${unlocked.length} badge(s) débloqué(s)). Reviens plus tard — je te raconterai ce qui a changé : records, rechutes, retours, et où tu en es dans ta progression.</div></div>`;
+                return;
+            }
+
+            const total = BADGES.length;
+            const phase = GH.computePhase(history, total);
+            const events = GH.deriveEvents(history);
+            const baselines = GH.metricBaselines(history);
+
+            const recent = events.slice().sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 8);
+            const journal = recent.map(ev => `<li class="cmp-ev ${ev.type}">${evIcon(ev)} ${evText(ev)} <span class="cmp-date">${frDate(ev.at)}</span></li>`).join('')
+                || '<li class="muted">Rien de neuf depuis le dernier passage.</li>';
+
+            const regime = Object.keys(baselines).map(k => baselines[k].status !== 'normal' ? Object.assign({ k }, baselines[k]) : null).filter(Boolean)
+                .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 3)
+                .map(r => `<span class="cmp-reg ${r.status}">${r.status === 'above' ? '⚡' : '🐢'} ${escapeHtml(metricLabel(r.k))} ${r.status === 'above' ? 'meilleur' : 'moins bon'} que ta normale (${(r.delta > 0 ? '+' : '') + Math.round(r.delta * 100)}%)</span>`).join('');
+
+            // Voix : prochain conseil parmi les badges verrouillés, non-répété.
+            const lockedTips = BADGES.filter(b => !unlocked.includes(b.id) && b.tip);
+            const adviceLog = GH.adviceRead(projectId);
+            const pick = GH.pickAdvice(lockedTips.map(b => b.id), adviceLog);
+            let voice = '';
+            if (pick) {
+                const b = BADGE_BY_ID[pick.id];
+                if (!adviceLog[pick.id] || adviceLog[pick.id].lastAt !== today) GH.adviceRecord(projectId, pick.id, today);
+                voice = `<div class="cmp-voice ${pick.escalate ? 'esc' : ''}">
+                    <div class="cmp-voice-h">${pick.escalate ? '🔁 On y revient' : '🎯 Prochain pas'}</div>
+                    <div class="cmp-voice-b">${pick.escalate ? 'Ça fait plusieurs passages que je te le glisse : ' : ''}${escapeHtml(b.tip)}</div>
+                    <div class="cmp-voice-badge">→ ${escapeHtml(b.name)}</div>
+                </div>`;
+            }
+
+            const demote = phase.demotionPending > 0 ? ` <span class="cmp-warn">⚠️ vigilance : ${phase.demotionPending} jour(s) en repli</span>` : '';
+            cont.innerHTML = `
+                <div class="cmp-panel">
+                    <div class="cmp-phase">
+                        <div class="cmp-phase-emoji">${phase.emoji}</div>
+                        <div class="cmp-phase-txt">
+                            <div class="cmp-phase-name">Phase : ${escapeHtml(phase.label)}${demote}</div>
+                            <div class="cmp-phase-sub">${Math.round(phase.progress * 100)}% des badges · depuis le ${frDate(phase.since)}</div>
+                        </div>
+                        ${regime ? `<div class="cmp-regs">${regime}</div>` : ''}
+                    </div>
+                    <div class="cmp-cols">
+                        <div class="cmp-journal">
+                            <div class="cmp-h">📖 Ce qui s'est passé</div>
+                            <ul class="cmp-ev-list">${journal}</ul>
+                        </div>
+                        <div class="cmp-side">${voice}</div>
+                    </div>
+                </div>`;
+        }
+
         function renderBadges() {
             // Charger l'historique des badges déjà débloqués
             const storageKey = `devops_badges_v2_${projectId}`;
@@ -1383,7 +1481,8 @@
                 return { badge: b, isUnlocked, isLost, wasUnlocked };
             });
 
-            // Panneau capacités (soft) — au-dessus des badges.
+            // Compagnon temporel (phase / journal / régime / voix) + capacités.
+            renderCompanion(currentlyUnlocked, stats);
             renderCapabilities(new Set(currentlyUnlocked));
 
             // Sauvegarder les badges débloqués (inclure les anciens pour track les perdus)

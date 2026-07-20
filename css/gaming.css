@@ -597,3 +597,34 @@ body::after {
 .cap-mod2 { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9px; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); color: var(--text-secondary, #c3bce0); text-decoration: none; transition: .15s; }
 .cap-mod2:hover { border-color: var(--accent, #7c5cff); color: var(--text-primary, #f5f1ff); background: rgba(124,92,255,0.12); }
 .cap-mod2 span { color: var(--accent, #a78bfa); }
+
+/* ── Compagnon temporel : phase · journal · régime · voix ─────────────── */
+.cmp-panel { background: var(--card-6, rgba(28,20,50,0.6)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 18px; padding: 20px 22px; margin: 22px 0 26px; }
+.cmp-onboard { font-size: 14px; color: var(--text-secondary, #c3bce0); line-height: 1.6; }
+.cmp-onboard b { color: var(--text-primary, #f5f1ff); }
+.cmp-phase { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--ov-08, rgba(255,255,255,0.08)); flex-wrap: wrap; }
+.cmp-phase-emoji { font-size: 32px; }
+.cmp-phase-txt { flex: 1; min-width: 160px; }
+.cmp-phase-name { font-family: var(--font-display, 'Bricolage Grotesque', sans-serif); font-size: 18px; font-weight: 700; }
+.cmp-phase-sub { font-size: 12px; color: var(--text-muted, #9a8fc0); margin-top: 2px; }
+.cmp-warn { font-size: 11px; font-weight: 600; color: #fcd34d; background: rgba(251,191,36,0.14); padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+.cmp-regs { display: flex; gap: 8px; flex-wrap: wrap; }
+.cmp-reg { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.cmp-reg.above { background: rgba(52,211,153,0.14); color: #6ee7b7; }
+.cmp-reg.below { background: rgba(251,146,60,0.14); color: #fdba74; }
+.cmp-cols { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+.cmp-h { font-size: 13px; font-weight: 600; color: var(--text-secondary, #c3bce0); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+.cmp-ev-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.cmp-ev { font-size: 13px; color: var(--text-secondary, #c3bce0); display: flex; align-items: baseline; gap: 8px; line-height: 1.4; }
+.cmp-ev b { color: var(--text-primary, #f5f1ff); }
+.cmp-ev.lost, .cmp-ev.regression { color: #fca5a5; }
+.cmp-ev.recurrence { color: #f9a8b4; }
+.cmp-ev.record, .cmp-ev.unlocked, .cmp-ev.recovered { color: #6ee7b7; }
+.cmp-date { margin-left: auto; font-size: 11px; color: var(--text-muted, #9a8fc0); white-space: nowrap; }
+.cmp-voice { background: rgba(124,92,255,0.10); border: 1px solid rgba(124,92,255,0.3); border-radius: 14px; padding: 15px 16px; }
+.cmp-voice.esc { background: rgba(251,146,60,0.10); border-color: rgba(251,146,60,0.35); }
+.cmp-voice-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a78bfa; font-weight: 700; }
+.cmp-voice.esc .cmp-voice-h { color: #fdba74; }
+.cmp-voice-b { font-size: 13px; color: var(--text-secondary, #c3bce0); line-height: 1.5; margin: 6px 0 8px; }
+.cmp-voice-badge { font-size: 12px; font-weight: 600; color: var(--text-primary, #f5f1ff); }
+@media (max-width: 760px) { .cmp-cols { grid-template-columns: 1fr; } }

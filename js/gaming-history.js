@@ -115,6 +115,96 @@
         return events;
     };
 
+    // ── PHASES DE MATURATION (machine à états + hystérésis) ────────────────
+    GH.PHASES = [
+        { id: 'discovery', label: 'Découverte', emoji: '🌱' },
+        { id: 'structuring', label: 'Structuration', emoji: '🧱' },
+        { id: 'reliability', label: 'Fiabilisation', emoji: '🛡️' },
+        { id: 'optimizing', label: 'Optimisation', emoji: '⚙️' },
+        { id: 'excellence', label: 'Excellence', emoji: '🏆' }
+    ];
+    // Seuils de PROMOTION (fraction de badges) pour atteindre la phase i+1.
+    GH.PHASE_UP = [0.15, 0.40, 0.65, 0.85];
+
+    // Rejoue l'historique et maintient la phase avec hystérésis : on monte vite,
+    // on ne redescend qu'après une régression SOUTENUE (pas sur un mauvais jour).
+    GH.computePhase = function (history, total, opts) {
+        opts = opts || {};
+        var margin = opts.margin != null ? opts.margin : 0.07;
+        var need = opts.demoteDays != null ? opts.demoteDays : 2;
+        var sorted = (history || []).slice().sort(function (a, b) { return a.at < b.at ? -1 : 1; });
+        var phase = 0, since = sorted.length ? sorted[0].at : null, below = 0, progress = 0;
+        for (var i = 0; i < sorted.length; i++) {
+            progress = total ? sorted[i].unlocked.length / total : 0;
+            while (phase < 4 && progress >= GH.PHASE_UP[phase]) { phase++; since = sorted[i].at; below = 0; }
+            if (phase > 0 && progress < GH.PHASE_UP[phase - 1] - margin) {
+                below++;
+                if (below >= need) { phase--; since = sorted[i].at; below = 0; }
+            } else { below = 0; }
+        }
+        var meta = GH.PHASES[phase];
+        return { index: phase, id: meta.id, label: meta.label, emoji: meta.emoji, since: since, progress: progress, demotionPending: below };
+    };
+
+    // ── RÉGIME : baseline glissante propre à l'équipe (pas de seuil global) ─
+    function median(arr) {
+        if (!arr.length) return null;
+        var s = arr.slice().sort(function (a, b) { return a - b; });
+        var m = Math.floor(s.length / 2);
+        return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    }
+    GH.metricBaselines = function (history, opts) {
+        opts = opts || {};
+        var window = opts.window || 14;
+        var tol = opts.tol != null ? opts.tol : 0.10;
+        var sorted = (history || []).slice().sort(function (a, b) { return a.at < b.at ? -1 : 1; });
+        if (!sorted.length) return {};
+        var cur = sorted[sorted.length - 1];
+        var past = sorted.slice(Math.max(0, sorted.length - 1 - window), sorted.length - 1);
+        var out = {};
+        Object.keys(cur.metrics || {}).forEach(function (k) {
+            var dir = GH.METRIC_DIR[k]; if (!dir) return;
+            var vals = past.map(function (s) { return s.metrics ? s.metrics[k] : null; }).filter(function (v) { return typeof v === 'number'; });
+            if (vals.length < 3) return;
+            var base = median(vals), v = cur.metrics[k];
+            var delta = base ? (v - base) / Math.abs(base) : 0;
+            var status = 'normal';
+            if (Math.abs(delta) >= tol) { status = (dir === 'up' ? delta > 0 : delta < 0) ? 'above' : 'below'; }
+            out[k] = { baseline: base, current: v, delta: delta, status: status };
+        });
+        return out;
+    };
+
+    // ── VOIX : registre des conseils (non-répétition, escalade si ignoré) ──
+    function adviceKey(pid) { return 'salsifi_gaming_advice_' + pid; }
+    GH.adviceRead = function (pid) {
+        try { var r = global.localStorage && global.localStorage.getItem(adviceKey(pid)); return r ? JSON.parse(r) : {}; }
+        catch (e) { return {}; }
+    };
+    GH.adviceRecord = function (pid, id, dateStr) {
+        var log = GH.adviceRead(pid);
+        var e = log[id] || { count: 0, firstAt: dateStr, lastAt: dateStr };
+        e.count += 1; e.lastAt = dateStr; if (!e.firstAt) e.firstAt = dateStr;
+        log[id] = e;
+        try { global.localStorage && global.localStorage.setItem(adviceKey(pid), JSON.stringify(log)); } catch (x) { /* indispo */ }
+        return log;
+    };
+    // Choisit le prochain conseil : priorité aux inédits, sinon le moins
+    // récemment donné ; signale une escalade si déjà répété (= conseil ignoré).
+    GH.pickAdvice = function (candidates, log, opts) {
+        opts = opts || {}; log = log || {};
+        var esc = opts.escalateAfter || 3;
+        if (!candidates || !candidates.length) return null;
+        var fresh = candidates.filter(function (id) { return !log[id]; });
+        var pool = (fresh.length ? fresh : candidates).slice().sort(function (a, b) {
+            var la = log[a] ? log[a].lastAt : ''; var lb = log[b] ? log[b].lastAt : '';
+            return la < lb ? -1 : la > lb ? 1 : 0;
+        });
+        var id = pool[0];
+        var count = log[id] ? log[id].count : 0;
+        return { id: id, count: count, escalate: count >= esc };
+    };
+
     if (typeof module !== 'undefined' && module.exports) module.exports = GH;
 
 })(typeof window !== 'undefined' ? window : this);
