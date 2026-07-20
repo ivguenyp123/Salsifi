@@ -859,8 +859,10 @@
     } finally {
       autoMR = true;                      // retour au défaut (scans manuels)
     }
+    // Une seule vue finale : tous les résultats consolidés PAR REPO, priorisés.
+    renderConsolidated();
     if (opts.report !== false && (scannedSecrets || scannedSupply || scannedCIS)) {
-      exportReport();                     // « enregistrement du rapport »
+      exportReport();                     // le même contenu, en fichier téléchargeable
     }
     showToast('✅ Vérification terminée', 'success');
   }
@@ -1154,6 +1156,101 @@
     const name = parts.length > 1 ? 'rapport-securite-global.html' : `rapport-${parts[0]}.html`;
     download(name, html, 'text/html');
     showToast('📑 Rapport généré ✅', 'success');
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // RÉSULTATS CONSOLIDÉS — vue PAR REPO + priorisation, depuis les accumulateurs.
+  // Une intention → la plateforme scanne tout → ici on réunit secrets + supply +
+  // CIS par dépôt et on classe du plus risqué au moins risqué.
+  // ══════════════════════════════════════════════════════════════════════
+  function buildConsolidated() {
+    const byRepo = new Map();
+    const get = (path) => { if (!byRepo.has(path)) byRepo.set(path, { path, url: '', secrets: [], supply: [], cis: null }); return byRepo.get(path); };
+    for (const r of reportSecrets.values()) get(r.Repo).secrets.push(r);
+    for (const r of reportSupply.values()) get(r.Repo).supply.push(r);
+    for (const r of reportCIS.values()) { const e = get(r.Repo); e.cis = r; if (r.url) e.url = r.url; }
+    const rows = [...byRepo.values()].map(e => {
+      const supRed = e.supply.filter(s => severityForType(s.Type) === 'red').length;
+      const supOrange = e.supply.length - supRed;
+      const cisGaps = e.cis ? e.cis.gaps.length : 0;
+      // Pondération : un secret exposé pèse plus qu'une alerte version, etc.
+      const risk = e.secrets.length * 10 + supRed * 5 + cisGaps * 3 + supOrange * 2;
+      return Object.assign(e, { supRed, supOrange, cisGaps, risk });
+    }).sort((a, b) => b.risk - a.risk);
+    const totals = {
+      repos: rows.length,
+      secrets: reportSecrets.size,
+      supply: reportSupply.size,
+      cisGaps: rows.reduce((s, r) => s + r.cisGaps, 0),
+      cisRepos: reportCIS.size,
+    };
+    return { rows, totals };
+  }
+
+  function _consRow(icon, file, line, link, type, preview, tag, valClass) {
+    const loc = line ? ':' + line : '';
+    const fileCell = link
+      ? `<a href="${link}" target="_blank" rel="noopener" class="f-file">${escH(file)}${loc}</a>`
+      : `<span class="f-file">${escH(file)}${loc}</span>`;
+    return `<div class="diag-row"><span class="icon">${icon}</span><span class="label">${fileCell}</span><span class="${valClass}">${escH(type)}</span><span class="cis-tag">${escH(tag)}</span><code class="f-prev">${escH(preview)}</code></div>`;
+  }
+  function _consSection(title, rows) {
+    return `<div class="diag-section"><div class="diag-section-header red"><span>${title}</span></div><div class="diag-body">${rows}</div></div>`;
+  }
+
+  function renderConsolidated() {
+    const model = buildConsolidated();
+    const t = model.totals;
+
+    // Barre de synthèse
+    const bar = document.getElementById('summaryBar');
+    if (bar) {
+      bar.style.display = 'grid';
+      const ring = t.repos ? 'var(--err)' : 'var(--ok)';
+      bar.innerHTML = `
+        <div class="score-circle" style="background:radial-gradient(circle at 30% 30%, ${ring}, rgba(0,0,0,0.2));"><div class="num">${fmt(t.repos)}</div><div class="denom">repos à traiter</div></div>
+        <div class="score-info">
+          <div class="score-title">Résultats consolidés${aborted ? ' (partiel)' : ''}</div>
+          <div class="score-sub">🔑 ${fmt(t.secrets)} secrets · 📦 ${fmt(t.supply)} alertes supply-chain · 🛡️ ${fmt(t.cisGaps)} écarts CIS · ${fmt(t.cisRepos)} repos audités CIS</div>
+          <div class="type-pills"><span class="type-pill all active">Classés du plus risqué au moins risqué ↓</span></div>
+        </div>`;
+    }
+
+    // Grille : un bloc par repo, trié par risque.
+    const grid = document.getElementById('findingsGrid');
+    if (!grid) return;
+    if (!model.rows.length) {
+      grid.innerHTML = `<div class="state-box"><div class="icon">✅</div><h3>Aucun problème détecté</h3><p>Rien à signaler sur le périmètre scanné.</p></div>`;
+      return;
+    }
+    grid.innerHTML = model.rows.map((r, i) => {
+      const id = 'cons' + i;
+      const secRows = r.secrets.map(s => _consRow('🔑', s.Fichier, s.Ligne, s.Lien, s.Type, s['Aperçu'], s['Catégorie'], 'val-ko')).join('');
+      const supRows = r.supply.map(s => { const red = severityForType(s.Type) === 'red'; return _consRow(red ? '🔴' : '🟠', s.Fichier, s.Ligne, s.Lien, s.Type, s['Aperçu'], s['Catégorie'], red ? 'val-ko' : 'val-warn'); }).join('');
+      const cisRows = r.cis ? r.cis.gaps.map(g => `<div class="diag-row"><span class="icon">🛡️</span><span class="label">${escH(g.label)}</span><span class="val-ko">${escH(g.detail)}</span><span class="cis-tag">CIS ${escH(g.cis)}</span></div>`).join('') : '';
+      const pills = [];
+      if (r.secrets.length) pills.push(`<span class="check-pill check-ko">🔑 ${fmt(r.secrets.length)}</span>`);
+      if (r.supply.length) pills.push(`<span class="check-pill">📦 ${fmt(r.supply.length)}</span>`);
+      if (r.cisGaps) pills.push(`<span class="check-pill">🛡️ ${fmt(r.cisGaps)}${r.cis ? ' · score ' + r.cis.Score : ''}</span>`);
+      const repoName = r.path.split('/').pop();
+      return `<div class="repo-card critical">
+        <div class="repo-header" onclick="toggleCard('${id}')">
+          <div class="cons-rank">#${i + 1}</div>
+          <div class="repo-meta"><div class="repo-name">${escH(repoName)}</div><div class="repo-path">${escH(r.path)}</div></div>
+          <div class="repo-checks">${pills.join('')}<span class="cons-risk" title="Score de risque combiné">risque ${fmt(r.risk)}</span></div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="diagnostic" id="${id}">
+          ${secRows ? _consSection('🔑 Secrets exposés', secRows) : ''}
+          ${supRows ? _consSection('📦 Supply-chain', supRows) : ''}
+          ${cisRows ? _consSection('🛡️ Conformité CIS', cisRows) : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    const cp = document.getElementById('chartsPanel'); if (cp) cp.style.display = 'none';
+    document.getElementById('exportRow').style.display = 'flex';
+    show('resultsSection', true);
   }
 
   function renderReportHTML(d) {
