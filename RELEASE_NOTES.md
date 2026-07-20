@@ -7,7 +7,15 @@ Nouveau module **« Secret Scanner Test »** (`secret-scanner-test.html`) — un
 expérimente le **Blast Radius** d'un IOC sans risque, et chaque scan se lance
 seul (pas de loader global).
 
-- **Entrée = un IOC** : composant npm + version + fenêtre d'incident.
+- **Découverte (OSV.dev)** — pour le cas « je ne connais pas l'IOC » : la plateforme
+  **inventorie les composants résolus** de tous les repos (lockfiles) et les **croise
+  avec OSV.dev** (vulnérabilités + **packages malveillants** `MAL-`). Composants
+  signalés classés par gravité (☣️ malveillant en tête), liens vers les avis, nb de
+  repos concernés, et un bouton **🎯 Tracer** qui lance le Blast Radius sur le
+  composant choisi. Seuls des **noms de packages publics** sont envoyés à OSV —
+  jamais de code ni de secret.
+- **Entrée manuelle = un IOC** (conservée) : composant npm + version + fenêtre, pour
+  les alertes CERT/presse où le composant est déjà connu.
 - **Tranche 1, 100 % lecture seule** :
   - **Présence historique** — où le composant était : lockfiles (`package-lock.json`
     v1/v2/v3, `yarn.lock`), **version résolue**, intégrité, direct/transitif,

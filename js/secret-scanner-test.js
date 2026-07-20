@@ -60,7 +60,7 @@
       const exp = document.getElementById('exportRow'); if (exp) exp.style.display = 'none';
       grid.innerHTML = `<div class="state-box"><div class="icon">🧪</div><h3>Banc d'essai — choisis un mode</h3><p>🎯 <b>Blast Radius</b> (nouveau) · 🌊 Surface · 🕳️ Historique · 📦 Supply-chain · 🛡️ CIS — chacun se lance seul, pas de loader global. Le vrai Secret Scanner n'est pas touché.</p></div>`;
     }
-    setMode('blast');   // le banc d'essai s'ouvre directement sur le nouveau module
+    setMode('discover');   // on s'ouvre sur la Découverte : « ai-je un problème ? » sans connaître l'IOC
   });
 
   // ── Fetch résilient : retry backoff sur 429 / 5xx / erreur réseau, 401 → login ──
@@ -690,14 +690,17 @@
     const bs = document.getElementById('btnSupply'); if (bs) bs.classList.toggle('active', m === 'supply');
     const bc = document.getElementById('btnCIS'); if (bc) bc.classList.toggle('active', m === 'cis');
     const bb = document.getElementById('btnBlast'); if (bb) bb.classList.toggle('active', m === 'blast');
+    const bd = document.getElementById('btnDiscover'); if (bd) bd.classList.toggle('active', m === 'discover');
     show('surfaceControls', m === 'surface');
     show('histControls', m === 'history');
     show('supplyControls', m === 'supply');
     show('cisControls', m === 'cis');
     show('blastControls', m === 'blast');
-    // Blast Radius a sa propre zone ; on masque le flux de scan classique quand on y est.
-    if (m === 'blast') { show('resultsSection', false); show('brSection', true); }
-    else { show('brSection', false); }
+    show('discoverControls', m === 'discover');
+    // Découverte & Blast Radius ont leurs propres zones ; on masque le flux classique.
+    show('brSection', m === 'blast');
+    show('discSection', m === 'discover');
+    if (m === 'blast' || m === 'discover') show('resultsSection', false);
   }
 
   function startScan() {
@@ -711,6 +714,8 @@
       runCIS();
     } else if (mode === 'blast') {
       runBlastRadius();
+    } else if (mode === 'discover') {
+      runDiscover();
     } else {
       run();
     }
@@ -2543,8 +2548,195 @@ if(document.getElementById('supTable')) renderSup();
     download(`rapport-incident-${ioc.name}-${ioc.version}.html`, html, 'text/html');
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  //  DÉCOUVERTE (OSV.dev) — « ai-je un problème ? » sans connaître l'IOC.
+  //  Inventaire des composants résolus → croisement OSV → composants signalés
+  //  → un clic lance le Blast Radius sur le composant choisi.
+  //  Seuls des NOMS DE PACKAGES PUBLICS quittent le navigateur (jamais de code/secret).
+  // ══════════════════════════════════════════════════════════════════════
+  const OSV_BASE = 'https://api.osv.dev';
+  const OSV_ECO = { npm: 'npm' };   // écosystème Salsifi → écosystème OSV
+
+  async function osvPost(pathAbs, body) {
+    for (let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch(OSV_BASE + pathAbs, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (r.status === 429 || r.status >= 500) { await sleep(1000 * (i + 1)); continue; }
+        if (!r.ok) return null;
+        return await r.json();
+      } catch { await sleep(1000 * (i + 1)); }
+    }
+    return null;
+  }
+  async function osvGet(pathAbs) {
+    for (let i = 0; i < 3; i++) {
+      try {
+        const r = await fetch(OSV_BASE + pathAbs);
+        if (r.status === 429 || r.status >= 500) { await sleep(1000 * (i + 1)); continue; }
+        if (!r.ok) return null;
+        return await r.json();
+      } catch { await sleep(1000 * (i + 1)); }
+    }
+    return null;
+  }
+
+  // ── PUR : gravité d'un avis OSV (packages malveillants prioritaires) ──
+  function osvSeverity(id, detail) {
+    if (String(id).startsWith('MAL-')) return { label: 'MALVEILLANT', rank: 5, tone: 'p1' };
+    const ds = (detail && detail.database_specific && detail.database_specific.severity) || '';
+    const s = String(ds).toUpperCase();
+    if (s.includes('CRIT')) return { label: 'CRITIQUE', rank: 4, tone: 'p1' };
+    if (s.includes('HIGH') || s.includes('ÉLEV')) return { label: 'ÉLEVÉ', rank: 3, tone: 'p1' };
+    if (s.includes('MOD') || s.includes('MED')) return { label: 'MOYEN', rank: 2, tone: 'p2' };
+    if (s.includes('LOW')) return { label: 'FAIBLE', rank: 1, tone: 'p3' };
+    return { label: 'Vulnérable', rank: 0, tone: 'p2' };
+  }
+
+  // ── Inventaire : composants résolus de tous les repos (HEAD) ──
+  async function discInventory(eco, limit, onProg) {
+    const repos = await listAccessibleRepos(n => onProg(`Énumération… ${fmt(n)} repos`), limit);
+    const inv = new Map();   // "name@version" → { name, version, dev, repos:Map(id→repo) }
+    let done = 0, idx = 0; const CONC = 4;
+    async function worker() {
+      while (idx < repos.length && !aborted) {
+        const repo = repos[idx++];
+        onProg(`Inventaire : ${repo.path} (${fmt(done)}/${fmt(repos.length)})`);
+        const tree = await getFileTree(repo.id).catch(() => []);
+        const locks = (tree || []).filter(p => (BR_LOCKFILES[eco] || []).includes(p.split('/').pop().toLowerCase()));
+        for (const lock of locks) {
+          if (aborted) break;
+          const content = await getFileContent(repo.id, lock, repo.defaultBranch || 'HEAD');
+          if (!content) continue;
+          const entries = brParseLock(lock, content) || [];
+          for (const e of entries) {
+            if (!e.name || !e.version) continue;
+            const key = e.name + '@' + e.version;
+            let rec = inv.get(key);
+            if (!rec) { rec = { name: e.name, version: e.version, dev: e.dev, repos: new Map() }; inv.set(key, rec); }
+            rec.repos.set(repo.id, repo);
+          }
+        }
+        done++;
+      }
+    }
+    await Promise.all(Array.from({ length: CONC }, () => worker()));
+    return { inv, reposCount: repos.length };
+  }
+
+  // ── Croisement OSV en lots ──
+  async function discQueryOSV(components, eco, onProg) {
+    const flaggedIds = new Map();   // "name@version" → [ids]
+    const ecosystem = OSV_ECO[eco] || 'npm';
+    const CH = 500;   // OSV querybatch : 1000 max, on reste prudent
+    for (let i = 0; i < components.length && !aborted; i += CH) {
+      const chunk = components.slice(i, i + CH);
+      onProg(`Croisement OSV.dev… ${fmt(Math.min(i + CH, components.length))}/${fmt(components.length)}`);
+      const body = { queries: chunk.map(c => ({ package: { name: c.name, ecosystem }, version: c.version })) };
+      const res = await osvPost('/v1/querybatch', body);
+      const arr = (res && res.results) || [];
+      chunk.forEach((c, j) => {
+        const vulns = arr[j] && arr[j].vulns;
+        if (vulns && vulns.length) flaggedIds.set(c.name + '@' + c.version, vulns.map(v => v.id));
+      });
+    }
+    return flaggedIds;
+  }
+
+  let _discState = { flagged: [], eco: 'npm' };
+  async function runDiscover() {
+    if (running) { showToast('Un scan est déjà en cours.', 'info'); return; }
+    const eco = (document.getElementById('discEco') || {}).value || 'npm';
+    const limRaw = parseInt((document.getElementById('discLimit') || {}).value, 10);
+    const limit = Number.isFinite(limRaw) && limRaw > 0 ? limRaw : null;
+    running = true; aborted = false; apiCalls = 0; throttles = 0; runStart = Date.now();
+    const host = document.getElementById('discSection');
+    show('discSection', true);
+    host.innerHTML = discShellHTML();
+    const setStatus = (m) => { const el = document.getElementById('discStatus'); if (el) el.textContent = m; };
+
+    try {
+      const { inv, reposCount } = await discInventory(eco, limit, setStatus);
+      if (aborted) { setStatus('Interrompu.'); return; }
+      const comps = [...inv.values()];
+      setStatus(`${fmt(comps.length)} composants résolus — croisement OSV.dev…`);
+      const flaggedIds = await discQueryOSV(comps, eco, setStatus);
+
+      // Détails (gravité, résumé, malveillance) pour l'avis principal de chaque signalé.
+      const flagged = [];
+      let n = 0;
+      for (const [key, ids] of flaggedIds) {
+        if (aborted) break;
+        const rec = inv.get(key);
+        setStatus(`Détails OSV… ${fmt(++n)}/${fmt(flaggedIds.size)}`);
+        const detail = await osvGet('/v1/vulns/' + encodeURIComponent(ids[0]));
+        const malicious = ids.some(id => String(id).startsWith('MAL-'));
+        const sev = osvSeverity(malicious ? 'MAL-' : ids[0], detail);
+        flagged.push({ name: rec.name, version: rec.version, dev: rec.dev, repos: rec.repos, ids, malicious, sev, summary: (detail && detail.summary) || (detail && detail.details ? String(detail.details).slice(0, 140) : '') });
+      }
+      flagged.sort((a, b) => (b.sev.rank - a.sev.rank) || (b.repos.size - a.repos.size));
+      _discState = { flagged, eco };
+      discRender(host, comps.length, reposCount, flagged, true);
+      setStatus(aborted ? 'Interrompu — résultats partiels.' : `Terminé — ${fmt(flagged.length)} composant(s) signalé(s) sur ${fmt(comps.length)}.`);
+    } catch (e) {
+      console.error('Découverte:', e);
+      setStatus('Erreur (OSV injoignable ?) — voir la console.');
+    } finally { running = false; }
+  }
+
+  function discShellHTML() {
+    return `
+      <div class="br-head">
+        <div class="br-ioc">🔎 <b>Découverte</b> <span class="br-purl">inventaire → OSV.dev</span></div>
+        <div class="br-status" id="discStatus">Initialisation…</div>
+        <button class="stop-btn" onclick="discStop()">⏹ Stop</button>
+      </div>
+      <div class="br-summary" id="discSummary"></div>
+      <div class="br-table" id="discTable"></div>`;
+  }
+  function discStop() { aborted = true; showToast('Découverte interrompue — résultats partiels.', 'info'); }
+
+  function discRender(host, compCount, reposCount, flagged, done) {
+    const mal = flagged.filter(f => f.malicious).length;
+    const reposHit = new Set(); flagged.forEach(f => f.repos.forEach((_, id) => reposHit.add(id)));
+    const sum = host.querySelector('#discSummary');
+    if (sum) sum.innerHTML = [
+      ['Repos scannés', fmt(reposCount)],
+      ['Composants résolus', fmt(compCount)],
+      ['Signalés (OSV)', fmt(flagged.length)],
+      ['Malveillants', fmt(mal)],
+      ['Repos concernés', fmt(reposHit.size)]
+    ].map(([k, v]) => `<div class="br-cell"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('');
+
+    const tb = host.querySelector('#discTable');
+    if (!tb) return;
+    if (!flagged.length) { tb.innerHTML = done ? '<div class="br-empty">✅ Aucun composant signalé par OSV.dev sur le périmètre scanné.</div>' : ''; return; }
+    tb.innerHTML = `<table class="br-tbl"><thead><tr>
+        <th>Gravité</th><th>Composant</th><th>Version</th><th>Avis OSV</th><th>Repos</th><th></th>
+      </tr></thead><tbody>${flagged.map(f => {
+        const idsHtml = f.ids.slice(0, 3).map(id => `<a href="https://osv.dev/vulnerability/${encodeURIComponent(id)}" target="_blank" rel="noopener">${escH(id)}</a>`).join(' ') + (f.ids.length > 3 ? ` +${f.ids.length - 3}` : '');
+        const jsName = f.name.replace(/'/g, "\\'"), jsVer = f.version.replace(/'/g, "\\'");
+        return `<tr>
+          <td><span class="br-pri ${f.sev.tone}">${f.malicious ? '☣️ ' : ''}${escH(f.sev.label)}</span></td>
+          <td class="br-td-repo"><b>${escH(f.name)}</b>${f.dev ? ' <span class="br-tag">dev</span>' : ''}${f.summary ? `<div class="disc-sum">${escH(f.summary)}</div>` : ''}</td>
+          <td><code>${escH(f.version)}</code></td>
+          <td class="disc-ids">${idsHtml}</td>
+          <td>${fmt(f.repos.size)}</td>
+          <td><button class="disc-trace" onclick="brFromDiscovery('${jsName}','${jsVer}')">🎯 Tracer</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }
+
+  // Un composant signalé → pré-remplit l'IOC et lance le Blast Radius.
+  function brFromDiscovery(name, version) {
+    const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setV('brName', name); setV('brVersion', version); setV('brFrom', ''); setV('brTo', ''); setV('brLimit', '');
+    setMode('blast');
+    runBlastRadius();
+    const el = document.getElementById('brSection'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   // Exposé pour tests headless (mock fetch) — le vrai flux reste piloté par l'UI.
-  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brLayout, brParseIOC, runBlastRadius };
+  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brLayout, brParseIOC, runBlastRadius, osvSeverity, runDiscover };
 
   window.rescan = rescan;
   window.setMode = setMode;
@@ -2552,6 +2744,8 @@ if(document.getElementById('supTable')) renderSup();
   window.brStop = brStop;
   window.brExportPlan = brExportPlan;
   window.brExportReport = brExportReport;
+  window.discStop = discStop;
+  window.brFromDiscovery = brFromDiscovery;
   window.resetHistory = resetHistory;
   window.filterByType = filterByType;
   window.filterCIS = filterCIS;
