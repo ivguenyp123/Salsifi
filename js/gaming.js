@@ -1403,6 +1403,66 @@
             return escapeHtml(ev.type);
         }
 
+        // Petite mascotte « Salsi » (germe de salsifis) — son visage réagit à
+        // l'humeur, elle-même dérivée des événements récents (déterministe).
+        function plainEv(e) {
+            if (e.kind === 'badge') {
+                const n = badgeName(e.id);
+                if (e.type === 'unlocked') return `${n} débloqué`;
+                if (e.type === 'lost') return `${n} perdu`;
+                if (e.type === 'recovered') return `${n} retrouvé`;
+                if (e.type === 'recurrence') return `${n} reperdu`;
+            } else {
+                const l = metricLabel(e.metric);
+                if (e.type === 'record') return `record sur ${l}`;
+                if (e.type === 'regression') return `${l} en recul`;
+            }
+            return e.type;
+        }
+        function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+        function companionMood(recentEvents) {
+            const pos = { record: 1, unlocked: 1, recovered: 1 };
+            const neg = { lost: -1, regression: -1, recurrence: -1.5 };
+            let s = 0, bestPos = null, worstNeg = null;
+            for (const e of recentEvents) {
+                if (pos[e.type]) { s += pos[e.type]; if (!bestPos) bestPos = e; }
+                else if (neg[e.type]) { s += neg[e.type]; if (!worstNeg) worstNeg = e; }
+            }
+            let mood, line;
+            if (s >= 2) { mood = 'proud'; line = bestPos ? `${capitalize(plainEv(bestPos))} — joli, on garde le rythme !` : 'L\'équipe cartonne, bravo !'; }
+            else if (s >= 0.5) { mood = 'happy'; line = bestPos ? `${capitalize(plainEv(bestPos))} 👍` : 'Ça avance bien.'; }
+            else if (s <= -2) { mood = 'worried'; line = worstNeg ? `Aïe… ${plainEv(worstNeg)}. On remet ça d'aplomb ?` : 'Quelques reculs — on se ressaisit.'; }
+            else if (s <= -0.5) { mood = 'meh'; line = worstNeg ? `${capitalize(plainEv(worstNeg))}, à surveiller.` : 'Rien d\'alarmant, je veille.'; }
+            else { mood = 'calm'; line = 'Tranquille — l\'équipe tient son cap.'; }
+            return { mood, line };
+        }
+        function mascotSVG(mood) {
+            const ink = '#241844';
+            const eyeHappy = `<path d="M31 55 q5 -7 10 0" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/><path d="M59 55 q5 -7 10 0" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/>`;
+            const eyeDot = `<circle cx="37" cy="55" r="3.4" fill="${ink}"/><circle cx="64" cy="55" r="3.4" fill="${ink}"/>`;
+            const eyeWorried = `<circle cx="37" cy="56" r="3.4" fill="${ink}"/><circle cx="64" cy="56" r="3.4" fill="${ink}"/><path d="M31 49 l9 3" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/><path d="M70 49 l-9 3" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>`;
+            const mouthSmile = `<path d="M39 68 q11 13 22 0" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/>`;
+            const mouthTiny = `<path d="M43 70 q7 5 14 0" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+            const mouthFlat = `<line x1="42" y1="71" x2="58" y2="71" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+            const mouthFrown = `<path d="M42 73 q8 -7 16 0" fill="none" stroke="${ink}" stroke-width="3.2" stroke-linecap="round"/>`;
+            let eyes = eyeDot, mouth = mouthTiny, extra = '';
+            if (mood === 'proud') { eyes = eyeHappy; mouth = mouthSmile; extra = '<text x="76" y="34" font-size="15">✨</text>'; }
+            else if (mood === 'happy') { eyes = eyeHappy; mouth = mouthSmile; }
+            else if (mood === 'meh') { eyes = eyeDot; mouth = mouthFlat; }
+            else if (mood === 'worried') { eyes = eyeWorried; mouth = mouthFrown; }
+            return `<svg viewBox="0 0 100 100" class="mascot-svg" aria-hidden="true">
+                <path d="M50 30 C50 18 50 12 50 8" stroke="#57b877" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <path d="M50 18 C39 12 31 15 29 23 C40 25 47 22 50 18Z" fill="#57b877"/>
+                <path d="M50 13 C61 6 70 9 72 18 C61 20 53 17 50 13Z" fill="#6ed08a"/>
+                <rect x="22" y="30" width="56" height="58" rx="26" fill="url(#mgrad)"/>
+                <ellipse cx="50" cy="66" rx="19" ry="15" fill="rgba(255,255,255,0.12)"/>
+                <circle cx="33" cy="63" r="4.5" fill="rgba(244,114,182,0.55)"/>
+                <circle cx="67" cy="63" r="4.5" fill="rgba(244,114,182,0.55)"/>
+                ${eyes}${mouth}${extra}
+                <defs><linearGradient id="mgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9575ff"/><stop offset="1" stop-color="#6f4ce0"/></linearGradient></defs>
+            </svg>`;
+        }
+
         function renderCompanion(unlocked, statsObj) {
             const cont = document.getElementById('companionContainer');
             const GH = window.Salsifi && window.Salsifi.gamingHistory;
@@ -1413,7 +1473,13 @@
             const history = GH.record(projectId, snap);   // écrit l'histoire (1 point/jour)
 
             if (history.length < 2) {
-                cont.innerHTML = `<div class="cmp-panel"><div class="cmp-onboard">🧭 <b>Compagnon activé.</b> Je commence à mémoriser l'état de ton dépôt (aujourd'hui : ${unlocked.length} badge(s) débloqué(s)). Reviens plus tard — je te raconterai ce qui a changé : records, rechutes, retours, et où tu en es dans ta progression.</div></div>`;
+                cont.innerHTML = `<div class="cmp-panel"><div class="cmp-top">
+                    <div class="cmp-mascot mood-happy">${mascotSVG('happy')}</div>
+                    <div class="cmp-top-main">
+                        <div class="cmp-bubble">Salut ! Moi c'est <b>Salsi</b> 🌱 Je commence à mémoriser ton dépôt (${unlocked.length} badge(s) aujourd'hui).</div>
+                        <div class="cmp-phase-sub">Reviens plus tard — je te raconterai ce qui a changé : records, rechutes, retours, et où tu en es.</div>
+                    </div>
+                </div></div>`;
                 return;
             }
 
@@ -1446,12 +1512,14 @@
             }
 
             const demote = phase.demotionPending > 0 ? ` <span class="cmp-warn">⚠️ vigilance : ${phase.demotionPending} jour(s) en repli</span>` : '';
+            const m = companionMood(recent);
             cont.innerHTML = `
                 <div class="cmp-panel">
-                    <div class="cmp-phase">
-                        <div class="cmp-phase-emoji">${phase.emoji}</div>
-                        <div class="cmp-phase-txt">
-                            <div class="cmp-phase-name">Phase : ${escapeHtml(phase.label)}${demote}</div>
+                    <div class="cmp-top">
+                        <div class="cmp-mascot mood-${m.mood}">${mascotSVG(m.mood)}</div>
+                        <div class="cmp-top-main">
+                            <div class="cmp-bubble">${escapeHtml(m.line)}</div>
+                            <div class="cmp-phase-name">${phase.emoji} Phase : ${escapeHtml(phase.label)} · <span class="cmp-name">Salsi</span>${demote}</div>
                             <div class="cmp-phase-sub">${Math.round(phase.progress * 100)}% des badges · depuis le ${frDate(phase.since)}</div>
                         </div>
                         ${regime ? `<div class="cmp-regs">${regime}</div>` : ''}

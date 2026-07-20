@@ -628,3 +628,18 @@ body::after {
 .cmp-voice-b { font-size: 13px; color: var(--text-secondary, #c3bce0); line-height: 1.5; margin: 6px 0 8px; }
 .cmp-voice-badge { font-size: 12px; font-weight: 600; color: var(--text-primary, #f5f1ff); }
 @media (max-width: 760px) { .cmp-cols { grid-template-columns: 1fr; } }
+
+/* ── Mascotte « Salsi » + bulle ───────────────────────────────────────── */
+.cmp-top { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--ov-08, rgba(255,255,255,0.08)); flex-wrap: wrap; }
+.cmp-mascot { width: 78px; height: 78px; flex-shrink: 0; }
+.mascot-svg { width: 78px; height: 78px; display: block; animation: salsi-bob 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+.cmp-mascot.mood-proud .mascot-svg { animation: salsi-hop 1.6s ease-in-out infinite; }
+.cmp-mascot.mood-worried .mascot-svg { animation: salsi-bob 4.5s ease-in-out infinite; }
+@keyframes salsi-bob { 0%,100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-4px) rotate(1.5deg); } }
+@keyframes salsi-hop { 0%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } 45% { transform: translateY(0); } }
+.cmp-top-main { flex: 1; min-width: 200px; }
+.cmp-bubble { position: relative; display: inline-block; background: var(--ov-06, rgba(255,255,255,0.06)); border: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-radius: 14px; padding: 9px 13px; font-size: 14px; color: var(--text-primary, #f5f1ff); line-height: 1.45; margin-bottom: 8px; }
+.cmp-bubble::before { content: ''; position: absolute; left: -7px; top: 16px; width: 12px; height: 12px; background: var(--ov-06, rgba(255,255,255,0.06)); border-left: 1px solid var(--ov-08, rgba(255,255,255,0.08)); border-bottom: 1px solid var(--ov-08, rgba(255,255,255,0.08)); transform: rotate(45deg); }
+.cmp-mascot.mood-proud + .cmp-top-main .cmp-bubble { border-color: rgba(52,211,153,0.4); }
+.cmp-mascot.mood-worried + .cmp-top-main .cmp-bubble { border-color: rgba(251,146,60,0.4); }
+.cmp-name { color: var(--accent, #a78bfa); font-weight: 700; }
