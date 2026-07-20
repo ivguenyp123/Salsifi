@@ -1,5 +1,24 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.5.0 — 2026-07-20 · Salsi, brief du jour (hub)
+
+À l'arrivée sur le hub, une **popup Salsi** (1×/jour, skippable, ré-ouvrable via
+une pastille **🌱 Salsi** dans le header) résume **ce qui a bougé** et donne **le
+conseil du jour** — puis te laisse filer droit au hub. 100 % déterministe, aucune IA.
+
+- **Cache-first** : lit ce qui est **déjà mesuré** (compagnons DORA/gaming en
+  localStorage + cache repos du hub) → instantané, jamais de scan lourd au chargement.
+- **Ce qui a bougé** : agrège les événements récents des compagnons des repos suivis
+  (paliers DORA franchis, badges gagnés/perdus), reculs en premier.
+- **Conseil du jour** : ton **cap DORA en cours** si tu en as un, sinon un starter
+  déterministe, **non répété** d'un jour à l'autre.
+- **Cache vidé / première visite** : pas de brief creux ni de fausse donnée — un état
+  d'accueil honnête (périmètre depuis les repos que le hub charge de toute façon +
+  starter), **sans** dire « je mémorise ». Ça se re-remplit tout seul dès le lendemain.
+- Réutilise la **popup Atelier partagée** (`css/salsi-atelier.css` + `Salsifi.mascotSVG`).
+  Tout est en `try/catch` : le brief ne bloque jamais le hub, « Aller au hub » marche
+  toujours. Nouveau `js/hub/salsi-brief.js`.
+
 ## v1.4.0-test — 2026-07-20 · Blast Radius (banc d'essai)
 
 Nouveau module **« Secret Scanner Test »** (`secret-scanner-test.html`) — une
