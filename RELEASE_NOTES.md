@@ -40,6 +40,16 @@ seul (pas de loader global).
     restent non calculés (opaques côté API) — annoncé. Le chiffre phare : **artefact
     toujours actif en prod**. La chaîne est complète : « entrée ici → a tourné là →
     pouvait atteindre ceci → a produit cela → voilà ce qui reste à nettoyer ».
+  - **Comportement suspect (statique)** : détecte les **empreintes** des comportements
+    d'attaque dans ce que GitLab expose — le **script d'installation** du composant
+    (`hasInstallScript` du lockfile, vecteur n°1 des compromissions npm), et les motifs
+    dans les **scripts `postinstall`/CI/Dockerfile** : `curl|bash`, `base64 -d | sh`,
+    `eval`/IEX distant, reverse-shell (`/dev/tcp`, `nc -e`), fetch vers **IP brute**,
+    PowerShell encodé, `ADD` depuis URL. Colonne dédiée + décompte. **Honnête sur la
+    frontière** : ce sont des empreintes **statiques** (l'intention), **pas** de la
+    télémétrie runtime — les vrais signaux runtime (processus enfants, connexions
+    réseau, exec K8s, accès FS) demandent un agent (Falco/eBPF/audit logs), hors
+    périmètre d'un outil client-side sur l'API GitLab.
   - **Présentation timeline** : axe temporel, une barre d'exposition par repo
     colorée par priorité, points d'exécution (violet = pipeline, vert = SBOM).
   - **Rapport d'incident HTML + plan d'action exportable** (« à corriger / à

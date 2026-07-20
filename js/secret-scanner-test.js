@@ -2149,7 +2149,7 @@ if(document.getElementById('supTable')) renderSup();
         const m = key.match(/(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)$/);
         if (!m) continue;
         const v = j.packages[key] || {};
-        out.push({ name: m[1], version: v.version || null, integrity: v.integrity || null, dev: !!v.dev, direct: directNames.has(m[1]) });
+        out.push({ name: m[1], version: v.version || null, integrity: v.integrity || null, dev: !!v.dev, direct: directNames.has(m[1]), installScript: !!v.hasInstallScript });
       }
     }
     if (j.dependencies && !j.packages) {              // v1 (récursif)
@@ -2338,6 +2338,7 @@ if(document.getElementById('supTable')) renderSup();
           repo, file: lock, confidenceSource: 'lockfile',
           version: resolvedInfo.version, integrity: resolvedInfo.integrity,
           scope: resolvedInfo.dev ? 'dev' : 'prod', direct: !!resolvedInfo.direct,
+          installScript: !!resolvedInfo.installScript,
           introducedAt: firstHit, removedAt: (commits.length && !checkedHead) ? null : firstHit,
           commits: hitCommits, resolved: true, pipelines: 0, sbomConfirmed: false, execs: []
         });
@@ -2476,6 +2477,64 @@ if(document.getElementById('supTable')) renderSup();
     exp.prop = { packages, images: o.images || [], deployments, published: packages.length > 0, prodDeployed, prodActive, downstream: ds.consumers, truncated: ds.truncated };
   }
 
+  // ── COMPORTEMENT SUSPECT (statique) — empreintes, PAS de la télémétrie runtime ──
+  //  On lit ce que GitLab expose (install scripts, .gitlab-ci.yml, Dockerfile) et on
+  //  cherche les FINGERPRINTS de download-and-exec, reverse-shell, base64|sh, etc.
+  //  Le vrai runtime (processus/réseau/K8s) demande un agent (Falco/eBPF) — hors périmètre.
+  const BEHAVIOR_PATTERNS = [
+    { id: 'download-exec', sev: 'red', label: 'Téléchargement piped vers un shell (curl|bash)', re: /\b(curl|wget)\b[^\n|]*\|\s*(bash|sh|zsh|python[0-9]?|node|perl|ruby)\b/i },
+    { id: 'base64-exec', sev: 'red', label: 'Décodage base64 exécuté', re: /base64\s+(-d|--decode)\b[^\n|]*\|\s*(bash|sh|zsh)\b/i },
+    { id: 'eval-download', sev: 'red', label: 'eval/IEX sur contenu distant', re: /(\beval\b[^\n]*\b(curl|wget|fetch|https?:\/\/))|(iex\s*\()/i },
+    { id: 'rev-shell', sev: 'red', label: 'Reverse shell', re: /\/dev\/tcp\/|\b(nc|ncat)\b[^\n]*\s-e\b|bash\s+-i\s*>?&|sh\s+-i\s*>?&/i },
+    { id: 'raw-ip-fetch', sev: 'red', label: 'Fetch vers une IP brute', re: /\b(curl|wget)\b[^\n]*\bhttps?:\/\/\d{1,3}(\.\d{1,3}){3}\b/i },
+    { id: 'powershell-enc', sev: 'red', label: 'PowerShell encodé', re: /powershell[^\n]*\s-e(nc|ncodedcommand)?\b/i },
+    { id: 'chmod-exec', sev: 'orange', label: 'chmod +x puis exécution', re: /chmod\s+\+x[^\n]*&&[^\n]*(\.\/|\/tmp\/)/i },
+    { id: 'shell-spawn', sev: 'orange', label: 'Spawn de processus (child_process)', re: /child_process|execSync\s*\(|spawnSync\s*\(/i },
+    { id: 'docker-add-url', sev: 'orange', label: 'ADD depuis une URL (Dockerfile)', re: /^\s*ADD\s+https?:\/\//i }
+  ];
+  // PUR : cherche les empreintes dans un texte (par ligne → n° de ligne + extrait).
+  function brScanText(text, source) {
+    const out = [];
+    if (!text) return out;
+    const lines = String(text).split('\n');
+    for (const p of BEHAVIOR_PATTERNS) {
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].length > 2000) continue;
+        if (p.re.test(lines[i])) { out.push({ id: p.id, label: p.label, sev: p.sev, source: source, line: i + 1, sample: lines[i].trim().slice(0, 140) }); break; }
+      }
+    }
+    return out;
+  }
+  const _behCache = new Map();   // repo.id → empreintes des fichiers de config du repo
+  async function brRepoBehavior(repo) {
+    if (_behCache.has(repo.id)) return _behCache.get(repo.id);
+    const tree = await getFileTree(repo.id).catch(() => []);
+    const ref = repo.defaultBranch || 'HEAD';
+    const findings = [];
+    // 1) package.json : scripts de cycle de vie (le vecteur des postinstall malveillants)
+    const HOOKS = ['preinstall', 'install', 'postinstall', 'prepare', 'prepublish', 'prepublishOnly'];
+    for (const f of (tree || []).filter(p => p.split('/').pop() === 'package.json').slice(0, 3)) {
+      const c = await getFileContent(repo.id, f, ref); if (!c) continue;
+      try { const j = JSON.parse(c); const s = j.scripts || {}; HOOKS.forEach(h => { if (typeof s[h] === 'string') brScanText(s[h], `${f} (${h})`).forEach(x => findings.push(x)); }); } catch { /* json invalide */ }
+    }
+    // 2) .gitlab-ci.yml (+ variantes)
+    for (const f of (tree || []).filter(p => /^\.gitlab-ci(\..+)?\.ya?ml$/i.test(p.split('/').pop())).slice(0, 3)) {
+      const c = await getFileContent(repo.id, f, ref); brScanText(c, f).forEach(x => findings.push(x));
+    }
+    // 3) Dockerfile(s)
+    for (const f of (tree || []).filter(p => { const n = p.split('/').pop(); return n === 'Dockerfile' || /\.dockerfile$/i.test(n) || /^Dockerfile\./i.test(n); }).slice(0, 3)) {
+      const c = await getFileContent(repo.id, f, ref); brScanText(c, f).forEach(x => findings.push(x));
+    }
+    const res = { findings };
+    _behCache.set(repo.id, res);
+    return res;
+  }
+  async function brBehavior(exp) {
+    const r = await brRepoBehavior(exp.repo);
+    const red = r.findings.filter(f => f.sev === 'red').length;
+    exp.behavior = { installScript: !!exp.installScript, findings: r.findings, red: red, suspicious: !!exp.installScript || r.findings.length > 0 };
+  }
+
   // ── Orchestration ──
   let _brState = { exposures: [], ioc: null };
   async function runBlastRadius() {
@@ -2483,7 +2542,7 @@ if(document.getElementById('supTable')) renderSup();
     const ioc = brParseIOC();
     if (!ioc.name || !ioc.version) { showToast('Renseigne au moins le composant et la version.', 'error'); return; }
     running = true; aborted = false; apiCalls = 0; throttles = 0; runStart = Date.now();
-    _privCache.clear(); _propCache.clear();   // pas de données inter-run périmées
+    _privCache.clear(); _propCache.clear(); _behCache.clear();   // pas de données inter-run périmées
     _brState = { exposures: [], ioc };
     const host = document.getElementById('brSection');
     show('brSection', true);
@@ -2512,6 +2571,7 @@ if(document.getElementById('supTable')) renderSup();
               setStatus(`Privilèges : ${repo.path}`); try { await brPrivileges(e); } catch {}
               setStatus(`Propagation : ${repo.path}`); try { await brPropagation(e); } catch {}
             }
+            setStatus(`Comportement : ${repo.path}`); try { await brBehavior(e); } catch {}
             exposures.push(e);
             _brState.exposures = exposures;
             brRender(host, ioc, exposures, false);
@@ -2581,16 +2641,32 @@ if(document.getElementById('supTable')) renderSup();
     return chips.join(' ');
   }
 
+  // Puces de comportement suspect (empreintes STATIQUES, pas du runtime).
+  function brBehChips(e) {
+    const b = e.behavior;
+    if (!b) return '<span class="br-chip br-unk">⏳ …</span>';
+    const chips = [];
+    if (b.installScript) chips.push('<span class="br-chip br-hot" title="Le composant exécute un script d\'installation npm (postinstall…) — vecteur n°1 des compromissions">☣️ install script</span>');
+    const byId = {}; b.findings.forEach(f => { if (!byId[f.id]) byId[f.id] = f; });
+    Object.keys(byId).slice(0, 3).forEach(id => {
+      const f = byId[id];
+      chips.push(`<span class="br-chip ${f.sev === 'red' ? 'br-hot' : ''}" title="${escH(f.source)} · L${f.line} : ${escH(f.sample)}">${f.sev === 'red' ? '🚩' : '⚠️'} ${escH(f.label)}</span>`);
+    });
+    if (!chips.length) chips.push('<span class="br-chip">rien de suspect</span>');
+    return chips.join(' ');
+  }
+
   function brRender(host, ioc, exposures, done) {
     // Comptes P0/P1/P2/P3.
     const counts = { P0: 0, P1: 0, P2: 0, P3: 0 };
-    let executed = 0, withSecrets = 0, published = 0, prodActive = 0, reposSet = new Set();
+    let executed = 0, withSecrets = 0, published = 0, prodActive = 0, behavior = 0, reposSet = new Set();
     exposures.forEach(e => {
       const s = brScore(e); counts[s.p]++;
       if (e.pipelines > 0) executed++;
       if (e.priv && e.priv.hasSecrets) withSecrets++;
       if (e.prop && e.prop.published) published++;
       if (e.prop && e.prop.prodActive) prodActive++;
+      if (e.behavior && (e.behavior.installScript || e.behavior.red > 0)) behavior++;
       reposSet.add(e.repo.id);
     });
     const sumEl = host.querySelector('#brSummary');
@@ -2599,12 +2675,12 @@ if(document.getElementById('supTable')) renderSup();
       ['P0 · critique', fmt(counts.P0)],
       ['P1 · exécution', fmt(counts.P1)],
       ['P2 · probable', fmt(counts.P2)],
-      ['P3 · présence', fmt(counts.P3)],
       ['Jobs avec secrets', fmt(withSecrets)],
-      ['Packages publiés', fmt(published)],
-      ['Actif en prod', fmt(prodActive)]
-    ].map(([k, v]) => `<div class="br-cell${(k.startsWith('P0') && counts.P0) || (k === 'Actif en prod' && prodActive) ? ' br-cell-p0' : ''}"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
-      + `<div class="br-p0note">🔓 <b>P0 calculé</b> : exécuté <b>et</b> (secrets / écriture / runner partagé <b>ou</b> package publié / déployé en prod). Privilèges = <b>état actuel</b> des variables (<code>confidence: current_state_only</code>). Caches non calculés (opaques côté API). Le dernier chiffre — <b>actif en prod</b> — est le plus important.</div>`;
+      ['Actif en prod', fmt(prodActive)],
+      ['Comportement ☣️', fmt(behavior)]
+    ].map(([k, v]) => `<div class="br-cell${(k.startsWith('P0') && counts.P0) || (k === 'Actif en prod' && prodActive) || (k.startsWith('Comportement') && behavior) ? ' br-cell-p0' : ''}"><div class="br-k">${k}</div><div class="br-v">${v}</div></div>`).join('')
+      + `<div class="br-p0note">🔓 <b>P0 calculé</b> : exécuté <b>et</b> (secrets / écriture / runner partagé <b>ou</b> package publié / déployé en prod). Privilèges = <b>état actuel</b> des variables (<code>confidence: current_state_only</code>). Caches non calculés (opaques côté API). <b>Actif en prod</b> = le chiffre le plus important.</div>`
+      + `<div class="br-p0note">☣️ <b>Comportement</b> = empreintes <b>statiques</b> (install scripts, CI, Dockerfile) : détecte l'<b>intention</b> (curl|bash, base64|sh, reverse-shell, ADD depuis URL), <b>pas</b> l'événement runtime. Le vrai runtime (processus/réseau/K8s) demande un agent (Falco/eBPF) — hors périmètre de ce banc.</div>`;
 
     // Timeline.
     const tl = host.querySelector('#brTimeline');
@@ -2640,17 +2716,17 @@ if(document.getElementById('supTable')) renderSup();
     if (tb) {
       if (!exposures.length) tb.innerHTML = done ? '<div class="br-empty">✅ Aucune trace du composant sur le périmètre scanné.</div>' : '';
       else tb.innerHTML = `<table class="br-tbl"><thead><tr>
-          <th>Repo</th><th>Fichier</th><th>Version</th><th>Pipelines</th><th>Preuve</th><th>Atteignable</th><th>Produit / propagé</th><th>Priorité</th>
+          <th>Repo</th><th>Fichier</th><th>Version</th><th>Preuve</th><th>Atteignable</th><th>Produit / propagé</th><th>Comportement (statique)</th><th>Priorité</th>
         </tr></thead><tbody>${exposures.map(e => {
           const s = brScore(e), lvl = brEvidenceLevel(e);
           return `<tr>
             <td class="br-td-repo">${e.repo.url ? `<a href="${e.repo.url}" target="_blank" rel="noopener">${escH(e.repo.path)}</a>` : escH(e.repo.path)}</td>
             <td><code>${escH(e.file)}</code>${e.direct ? '' : ' <span class="br-tag">transitif</span>'}${e.scope === 'dev' ? ' <span class="br-tag">dev</span>' : ''}</td>
             <td>${escH(e.version || '—')}</td>
-            <td>${fmt(e.pipelines)}</td>
             <td><span class="br-ev ${s.tone}">${escH(BR_LEVEL_META[lvl].label)}</span></td>
             <td>${brPrivChips(e)}</td>
             <td>${brPropChips(e)}</td>
+            <td>${brBehChips(e)}</td>
             <td><span class="br-pri ${s.tone}">${s.p}</span></td>
           </tr>`;
         }).join('')}</tbody></table>`;
@@ -2690,7 +2766,15 @@ if(document.getElementById('supTable')) renderSup();
       if (p.downstream && p.downstream.length) bits.push(`${p.downstream.length} projet(s) consommateur(s)${p.truncated ? '+' : ''}`);
       return `- [ ] ${e.repo.path} — ${bits.join(' · ')}`;
     }), '');
-    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée. Privilèges = état actuel des variables (confidence: current_state_only) ; caches non calculés (opaques côté API)._');
+    const behav = exposures.filter(e => e.behavior && (e.behavior.installScript || e.behavior.red > 0));
+    if (behav.length) lines.push(`## ☣️ Comportement suspect (empreintes statiques — à confirmer par les logs/EDR)`, ...behav.map(e => {
+      const b = e.behavior, bits = [];
+      if (b.installScript) bits.push('le composant exécute un script d\'installation');
+      const labs = [...new Set(b.findings.map(f => f.label))];
+      if (labs.length) bits.push(labs.join(' ; '));
+      return `- [ ] ${e.repo.path} — ${bits.join(' · ')}`;
+    }), '');
+    lines.push('_Généré en lecture seule. Aucune action n\'a été exécutée. Privilèges = état actuel des variables (confidence: current_state_only) ; caches non calculés ; comportement = empreintes statiques, pas de télémétrie runtime._');
     return lines.filter(l => l !== null).join('\n');
   }
   function brExportPlan() { download(`plan-action-${_brState.ioc.name}-${_brState.ioc.version}.md`, brBuildPlan(), 'text/markdown'); }
@@ -2894,7 +2978,7 @@ if(document.getElementById('supTable')) renderSup();
   }
 
   // Exposé pour tests headless (mock fetch) — le vrai flux reste piloté par l'UI.
-  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brP0Reasons, brLayout, brParseIOC, runBlastRadius, osvSeverity, runDiscover, brBuildPlan };
+  window.__br = { brVersionMatch, brParseNpmLock, brParseYarnLock, brParseLock, brFindComponent, brSbomHasComponent, brEvidenceLevel, brScore, brP0Reasons, brLayout, brParseIOC, runBlastRadius, osvSeverity, runDiscover, brBuildPlan, brScanText };
 
   window.rescan = rescan;
   window.setMode = setMode;
