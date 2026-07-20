@@ -1481,9 +1481,8 @@
                 return { badge: b, isUnlocked, isLost, wasUnlocked };
             });
 
-            // Compagnon temporel (phase / journal / régime / voix) + capacités.
+            // Compagnon temporel (phase / journal / régime / voix).
             renderCompanion(currentlyUnlocked, stats);
-            renderCapabilities(new Set(currentlyUnlocked));
 
             // Sauvegarder les badges débloqués (inclure les anciens pour track les perdus)
             const allUnlocked = [...new Set([...previouslyUnlocked, ...currentlyUnlocked])];
