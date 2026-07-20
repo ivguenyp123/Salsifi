@@ -1,23 +1,23 @@
 # Salsifi — DevOps Hub · Notes de version
 
-## v1.5.0 — 2026-07-20 · Salsi, brief du jour (hub)
+## v1.5.0 — 2026-07-20 · Salsi, diagnostic à la demande (hub)
 
-À l'arrivée sur le hub, une **popup Salsi** (1×/jour, skippable, ré-ouvrable via
-une pastille **🌱 Salsi** dans le header) résume **ce qui a bougé** et donne **le
-conseil du jour** — puis te laisse filer droit au hub. 100 % déterministe, aucune IA.
+On entre sur le hub **normalement** (aucune popup à l'arrivée). Le bouton **🌱 Salsi**
+du header ouvre Salsi **quand on veut** : il **analyse** ce qu'il peut vraiment voir
+et dit **« où ça coince »**. 100 % déterministe, aucune IA.
 
-- **Cache-first** : lit ce qui est **déjà mesuré** (compagnons DORA/gaming en
-  localStorage + cache repos du hub) → instantané, jamais de scan lourd au chargement.
-- **Ce qui a bougé** : agrège les événements récents des compagnons des repos suivis
-  (paliers DORA franchis, badges gagnés/perdus), reculs en premier.
-- **Conseil du jour** : ton **cap DORA en cours** si tu en as un, sinon un starter
-  déterministe, **non répété** d'un jour à l'autre.
-- **Cache vidé / première visite** : pas de brief creux ni de fausse donnée — un état
-  d'accueil honnête (périmètre depuis les repos que le hub charge de toute façon +
-  starter), **sans** dire « je mémorise ». Ça se re-remplit tout seul dès le lendemain.
-- Réutilise la **popup Atelier partagée** (`css/salsi-atelier.css` + `Salsifi.mascotSVG`).
-  Tout est en `try/catch` : le brief ne bloque jamais le hub, « Aller au hub » marche
-  toujours. Nouveau `js/hub/salsi-brief.js`.
+- **À la demande, pas d'auto-popup** : le repo se choisit *après*, dans le hub — Salsi
+  ne présume donc aucun repo « courant ». Il n'y a pas d'écran qui te saute dessus.
+- **Honnête à l'échelle** : même avec 1000 repos accessibles, Salsi regarde les
+  **repos que tu suis** (ceux qui ont des mesures : compagnons DORA/gaming en
+  localStorage) — il ne prétend jamais avoir scanné tout le parc.
+- **« Où ça coince »** : liste des **reculs réels** (palier DORA retombé, niveau global
+  en baisse, métrique qui se dégrade, badge perdu), gravité puis date. Chaque point est
+  **cliquable** pour aller le traiter.
+- **États honnêtes** : rien de suivi encore → « ouvre un repo, je te dirai où ça coince » ;
+  suivi mais rien à signaler → « rien d'alarmant, tiens le cap ».
+- Réutilise la **popup Atelier partagée** ; tout en `try/catch`, ne bloque jamais le hub.
+  Nouveau `js/hub/salsi-brief.js`, pastille dans `.header-actions` (aucune modif du cœur du hub).
 
 ## v1.4.0-test — 2026-07-20 · Blast Radius (banc d'essai)
 
