@@ -1,5 +1,30 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.3.0 — 2026-07-20 · Compagnon temporel DORA
+
+Le **compagnon temporel** — snapshot → journal → régime → trajectoire → voix,
+100 % déterministe, aucune IA — quitte le seul module gaming pour s'appliquer aux
+**métriques DORA** (`insights.html`). Même moteur, même philosophie : on ne
+compare pas à un seuil abstrait mais à **ta** normale, et on raconte ce qui a bougé.
+
+- **Nouveau bandeau en tête d'Insights** : au lieu d'un simple instantané, le
+  module se souvient. Un point est enregistré à chaque analyse (localStorage,
+  clé dédiée `salsifi_dora_history_<repo>`), et le compagnon en dérive :
+  - **Trajectoire** globale (📈 / 📉 / ➡️) avec hystérésis — on compare le score à
+    la **médiane d'une fenêtre passée**, donc pas de bascule sur un seul mauvais jour.
+  - **Journal « ce qui a bougé »** : l'événement phare DORA, c'est la **transition
+    de palier** (Lead Time Medium→High, CFR retombé en Low, niveau global qui monte…),
+    plus les records et régressions de chaque métrique, datés.
+  - **Régime** : écart de chaque métrique à la **baseline glissante propre à l'équipe**
+    (« ton CFR est meilleur que ta normale de −58 % »).
+  - **Voix** : le conseil du moment sur une métrique non-Elite, **non répété** dans
+    le temps, avec escalade s'il reste ignoré, relié aux Quick Wins.
+- **Moteur mutualisé** : `js/dora-history.js` réutilise les fonctions pures de
+  `js/gaming-history.js` (baselines, records/régressions) et n'ajoute que la
+  logique propre à DORA (paliers Low↔Elite). Testé hors-ligne via `require()`.
+- **Jour 1** : première mesure → état posé + cap annoncé, **sans** la phrase
+  « je mémorise » (elle cassait l'illusion du suivi).
+
 ## v1.2.0 — 2026-07-20 · Sécurité & Gouvernance
 
 Gros travail sur le pôle **« Inspecter & Sécuriser »** : un nouveau module de

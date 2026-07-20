@@ -63,7 +63,7 @@ js/<module>.js                               ← logique par page
 
 | Module | Page | Rôle |
 |---|---|---|
-| **DORA Insights** | `insights.html` | Les 4 métriques DORA d'un repo + niveaux (Elite→Low). |
+| **DORA Insights** | `insights.html` | Les 4 métriques DORA d'un repo + niveaux (Elite→Low), avec un **compagnon temporel** : journal des paliers franchis, régime vs baseline de l'équipe, trajectoire (voir plus bas). |
 | **DevOps Assessment** | `maturity.html` | Auto-évaluation de maturité connectée aux ateliers Confluence. |
 | **Achievements (Salsi)** | `gaming.html` | Gamification **compagnon** : 47 badges, mémoire, phases, mascotte Salsi, atelier « comment on fait » (voir plus bas). |
 | **Bus Factor** | `bus-factor.html` | Concentration du savoir dans l'équipe. |
@@ -117,6 +117,11 @@ temporel**, entièrement **déterministe (aucune IA)**.
   popup pédagogique (pourquoi + démarche + modèle + création de MR quand c'est
   un fichier). Recettes dans `js/gaming-recipes.js` — voir
   [`SALSI_CONSEILS.md`](SALSI_CONSEILS.md).
+
+Le **même moteur temporel** (fonctions pures de `js/gaming-history.js`) alimente
+aussi le module **DORA Insights** via `js/dora-history.js` : là, l'événement phare
+n'est pas un badge mais une **transition de palier DORA** (Low↔…↔Elite), avec le
+même journal / régime / trajectoire / voix. Un seul système, deux modules.
 
 ---
 

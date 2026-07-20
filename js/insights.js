@@ -163,7 +163,8 @@ async function loadData() {
 
         // Render
         _doraState = renderDoraCards(doraValues);
-        renderGlobalScore(_doraState);
+        const scoreInfo = renderGlobalScore(_doraState);
+        renderDoraCompanion(doraValues, _doraState, scoreInfo);
         renderEvolutionChart(pipelines30, mergeRequests);
         generateQuickWins(_doraState, doraValues, pipelines30, mergeRequests, branches, contributors);
 
@@ -538,7 +539,7 @@ function renderGlobalScore(state) {
         document.getElementById('scoreLevelTitle').textContent = '⚪ Score indisponible';
         document.getElementById('scoreDesc').textContent = 'Aucune donnée suffisante pour calculer un score DORA. Vérifiez vos pipelines et merge requests sur 30 jours.';
         document.getElementById('scoreBreakdown').innerHTML = '';
-        return;
+        return { score: null, cls: null };
     }
 
     let avg = Math.round(validScores.reduce((s, m) => s + (levels[m.lvl.cls] || 0), 0) / validScores.length);
@@ -615,6 +616,161 @@ function renderGlobalScore(state) {
         </div>`;
     }).join('');
     document.getElementById('scoreBreakdown').innerHTML = breakdownHtml;
+
+    return { score: avg, cls: finalCls };
+}
+
+// ════════════════════════════════════════════════════════════
+//  COMPAGNON TEMPOREL DORA  (même système que le gaming :
+//  snapshot → journal → régime → trajectoire → voix ; 0 IA, déterministe)
+// ════════════════════════════════════════════════════════════
+const DORA_META = {
+    df:   { emoji: '🚀', label: 'Fréquence de déploiement' },
+    lt:   { emoji: '⚡', label: 'Lead Time' },
+    cfr:  { emoji: '🔧', label: 'Change Failure Rate' },
+    mttr: { emoji: '⏱️', label: 'Temps de restauration' }
+};
+// Un conseil court par métrique non-Elite (la « voix », non répétée dans le temps).
+const DORA_ADVICE = {
+    df:   'Automatise le déploiement (CD) et découpe en plus petites MR pour livrer plus souvent.',
+    lt:   'Raccourcis le cycle : MR plus petites, review plus rapide, merge dès que le pipeline est vert.',
+    cfr:  'Renforce les quality gates avant prod (tests, lint, review obligatoire) pour casser moins souvent.',
+    mttr: 'Prépare le rollback automatique et des alertes pour restaurer le service plus vite après un échec.'
+};
+
+function esc(s) { return (window.Salsifi && window.Salsifi.escapeHtml) ? window.Salsifi.escapeHtml(String(s)) : String(s); }
+function doraFrDate(at) {
+    const M = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const p = String(at).split('-'); if (p.length < 3) return at;
+    return parseInt(p[2], 10) + ' ' + (M[parseInt(p[1], 10) - 1] || '');
+}
+function doraFmt(metric, v) {
+    if (v == null) return '—';
+    if (metric === 'df') return v + '/sem';
+    if (metric === 'cfr') return v + '%';
+    // lt / mttr en heures → jours si ≥24
+    return v >= 24 ? (v / 24).toFixed(1) + 'j' : v + 'h';
+}
+function doraEvIcon(ev) {
+    if (ev.type === 'level-up' || ev.type === 'score-up') return '⬆️';
+    if (ev.type === 'level-down' || ev.type === 'score-down') return '⬇️';
+    if (ev.type === 'record') return '🏅';
+    if (ev.type === 'regression') return '⚠️';
+    return '•';
+}
+function doraEvText(ev) {
+    if (ev.kind === 'dora') {
+        const m = DORA_META[ev.metric] || { emoji: '•', label: ev.metric };
+        const verb = ev.type === 'level-up' ? 'monte' : 'retombe';
+        const cls = ev.type === 'level-up' ? 'up' : 'down';
+        return `${m.emoji} <b>${esc(m.label)}</b> ${verb} <span class="dc-lvl ${cls}">${esc(ev.from)} → ${esc(ev.to)}</span>`;
+    }
+    if (ev.kind === 'score') {
+        const names = { low: 'Low', medium: 'Medium', high: 'High', elite: 'Elite' };
+        const cls = ev.type === 'score-up' ? 'up' : 'down';
+        return `🎯 <b>Niveau DORA global</b> <span class="dc-lvl ${cls}">${names[ev.from] || ev.from} → ${names[ev.to] || ev.to}</span>`;
+    }
+    // métrique : record / régression
+    const m = DORA_META[ev.metric] || { emoji: '•', label: ev.metric };
+    if (ev.type === 'record') return `${m.emoji} <b>${esc(m.label)}</b> : nouveau record — ${esc(doraFmt(ev.metric, ev.value))}`;
+    return `${m.emoji} <b>${esc(m.label)}</b> se dégrade : ${esc(doraFmt(ev.metric, ev.prev))} → ${esc(doraFmt(ev.metric, ev.value))}`;
+}
+
+function renderDoraCompanion(vals, state, scoreInfo) {
+    const cont = document.getElementById('doraCompanion');
+    const DH = window.Salsifi && window.Salsifi.doraHistory;
+    if (!cont || !DH) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const levels = { df: state.dfLevel, lt: state.ltLevel, cfr: state.cfrLevel, mttr: state.mttrLevel };
+    const snap = DH.buildSnapshot(vals, levels, scoreInfo ? scoreInfo.score : null, scoreInfo ? scoreInfo.cls : null, today);
+    const history = DH.record(projectId, snap);
+
+    const scoreTxt = (scoreInfo && scoreInfo.score != null) ? scoreInfo.score + '/100' : '—';
+    const clsLabel = { elite: '🏆 Elite', high: '✅ High', medium: '📈 Medium', low: '⚠️ Low' };
+    const curCls = scoreInfo && scoreInfo.cls ? (clsLabel[scoreInfo.cls] || scoreInfo.cls) : '—';
+
+    // ── Jour 1 : pas d'historique à raconter — on pose l'état + un cap clair,
+    //    sans jamais dire « je mémorise » (ça casse l'illusion). ──
+    if (history.length < 2) {
+        cont.innerHTML = `
+        <div class="dc-panel">
+            <div class="dc-head">
+                <div class="dc-traj flat"><span class="dc-traj-ic">🧭</span>
+                    <div><div class="dc-traj-t">Première mesure DORA</div>
+                    <div class="dc-traj-s">Score actuel <b>${esc(scoreTxt)}</b> · ${esc(curCls)}</div></div>
+                </div>
+            </div>
+            <div class="dc-firstrun">À ta prochaine analyse, je te raconte ce qui a bougé : paliers DORA franchis (Low→High…), nouveaux records et régressions — comparés à <b>ta</b> normale, pas à un seuil abstrait.</div>
+        </div>`;
+        return;
+    }
+
+    const events = DH.deriveEvents(history);
+    const regime = DH.regime(history);
+    const traj = DH.trajectory(history);
+
+    // ── Trajectoire (bandeau) ──
+    const trajMeta = {
+        up:   { ic: '📈', t: 'En progression', cls: 'up' },
+        down: { ic: '📉', t: 'En recul', cls: 'down' },
+        flat: { ic: '➡️', t: 'Stable', cls: 'flat' }
+    }[traj.dir] || { ic: '➡️', t: 'Stable', cls: 'flat' };
+    const deltaTxt = (traj.base != null && Math.abs(traj.delta) >= 1)
+        ? ` <span class="dc-delta ${trajMeta.cls}">${traj.delta > 0 ? '+' : ''}${Math.round(traj.delta)} pts vs ta normale</span>` : '';
+    const trajHtml = `
+        <div class="dc-traj ${trajMeta.cls}"><span class="dc-traj-ic">${trajMeta.ic}</span>
+            <div><div class="dc-traj-t">${trajMeta.t} — <b>${esc(scoreTxt)}</b> · ${esc(curCls)}</div>
+            <div class="dc-traj-s">Sur ${traj.points} mesure${traj.points > 1 ? 's' : ''}${deltaTxt}</div></div>
+        </div>`;
+
+    // ── Journal (les 8 événements les plus récents) ──
+    const recent = events.slice().sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 8);
+    const journal = recent.length
+        ? recent.map(ev => `<li class="dc-ev ${ev.type}">${doraEvIcon(ev)} ${doraEvText(ev)} <span class="dc-date">${esc(doraFrDate(ev.at))}</span></li>`).join('')
+        : '<li class="dc-muted">Rien de neuf depuis ta dernière analyse — tu tiens ton cap.</li>';
+
+    // ── Régime (écarts à la baseline propre à l'équipe) ──
+    const regChips = Object.keys(regime)
+        .map(k => regime[k].status !== 'normal' ? Object.assign({ k }, regime[k]) : null).filter(Boolean)
+        .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 3)
+        .map(r => {
+            const m = DORA_META[r.k] || { emoji: '•', label: r.k };
+            const better = r.status === 'above';
+            return `<span class="dc-reg ${better ? 'above' : 'below'}">${better ? '⚡' : '🐢'} ${m.emoji} ${esc(m.label)} ${better ? 'meilleur' : 'moins bon'} que ta normale (${r.delta > 0 ? '+' : ''}${Math.round(r.delta * 100)}%)</span>`;
+        }).join('');
+
+    // ── Voix : prochain conseil parmi les métriques non-Elite, non répété ──
+    const cand = ['df', 'lt', 'cfr', 'mttr'].filter(k => {
+        const L = levels[k]; return L && L.level && L.level !== 'N/A' && L.level !== 'Elite' && DORA_ADVICE[k];
+    });
+    const adviceLog = DH.adviceRead(projectId);
+    const pick = DH.pickAdvice(cand, adviceLog);
+    let voice = '';
+    if (pick) {
+        DH.adviceRecord(projectId, pick.id, today);
+        const m = DORA_META[pick.id];
+        const esca = pick.escalate ? `<div class="dc-voice-esc">Je te l'ai déjà soufflé ${pick.count} fois — c'est peut-être le moment de s'y mettre.</div>` : '';
+        voice = `<div class="dc-voice"><div class="dc-voice-h">🗣️ Le conseil du moment — ${m.emoji} ${esc(m.label)}</div>
+            <div class="dc-voice-b">${esc(DORA_ADVICE[pick.id])}</div>${esca}
+            <a class="dc-voice-a" href="#quickwins">💡 Voir les actions détaillées</a></div>`;
+    }
+
+    cont.innerHTML = `
+    <div class="dc-panel">
+        <div class="dc-head">${trajHtml}</div>
+        <div class="dc-grid">
+            <div class="dc-col">
+                <div class="dc-col-h">📓 Ce qui a bougé</div>
+                <ul class="dc-journal">${journal}</ul>
+            </div>
+            <div class="dc-col">
+                <div class="dc-col-h">📊 Ton régime</div>
+                <div class="dc-regime">${regChips || '<span class="dc-muted">Tes métriques sont dans ta normale habituelle.</span>'}</div>
+                ${voice}
+            </div>
+        </div>
+    </div>`;
 }
 
 // ════════════════════════════════════════════════════════════

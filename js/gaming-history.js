@@ -27,7 +27,12 @@
         activeContributors: 'up', distinctReviewers: 'up',
         avgPipelineTime: 'down', mttr: 'down', staleBranches: 'down',
         zombieMRs: 'down', mergedBranchesNotDeleted: 'down',
-        maxFailedStreak: 'down', avgMRCycleTime: 'down', topContributorShare: 'down'
+        maxFailedStreak: 'down', avgMRCycleTime: 'down', topContributorShare: 'down',
+        // DORA (module Insights) — partagent le même moteur de journal/régime.
+        // df = déploiements/sem (plus haut = mieux) ; lt/cfr/mttrDora = plus bas = mieux ;
+        // doraScore = score global /100 (plus haut = mieux). Ces clés n'existent pas
+        // dans les stats du gaming : elles restent inertes côté badges.
+        df: 'up', lt: 'down', cfr: 'down', mttrDora: 'down', doraScore: 'up'
     };
 
     // ── Snapshot du jour (date sans heure : 1 point par jour) ──────────────
