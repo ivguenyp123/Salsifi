@@ -24,10 +24,14 @@ compare pas à un seuil abstrait mais à **ta** normale, et on raconte ce qui a 
   UX/UI) :
   - Un **point d'entrée sobre** : les 4 métriques avec ton niveau actuel ; Salsi
     **suggère la plus faible** pour amorcer. Un clic ouvre l'atelier.
-  - Un **plan par mesure dans l'atelier** : analyse « chez toi / objectif », enjeu,
-    **leviers priorisés** (5 par métrique, avec effort/impact et le module Salsifi
-    qui aide), le **mouvement du moment**, la **mesure qui prouve la progression**,
-    et les **pièges** à éviter.
+  - Un **plan par mesure dans l'atelier** : analyse « chez toi / objectif », un
+    **diagnostic « chez toi, concrètement »** branché sur les vraies données du
+    repo (pipelines en échec, MR sans review, grosses MR, branches mortes, bus
+    factor, croisements inter-DORA — chacun avec le module Salsifi qui aide),
+    l'enjeu, **les leviers priorisés** (5 par métrique, effort/impact + module), le
+    **mouvement du moment**, la **mesure qui prouve la progression**, et les **pièges**.
+  - **La section « Actions / Quick Wins » de la page a été supprimée** : sa
+    substance est repliée, plus travaillée, dans le coach — un seul endroit pour agir.
   - **Il évolue** : on retient le cap et la valeur **au moment du choix**, puis on
     compare (« depuis ton cap, ton CFR est passé de 18 % à 6 % — ça marche »), et
     on **fait tourner les leviers** (escalade si la mesure ne bouge pas).

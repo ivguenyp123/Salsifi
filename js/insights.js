@@ -6,6 +6,7 @@ let token = null;
 let projectId = null;
 let _charts = {};
 let _doraState = {};
+let _doraRepo = null;   // données repo réelles (pipelines/MR/branches/contrib) pour le diagnostic du coach
 
 // ════════════════════════════════════════════════════════════
 //  INIT
@@ -161,12 +162,15 @@ async function loadData() {
         // Calcul DORA maison
         const doraValues = computeDORA(pipelines30, mergeRequests, pipelines, now, defaultBranch);
 
+        // Données repo pour le diagnostic « chez toi, concrètement » du coach
+        // (les Quick Wins ont été repliés dans le Coach Salsi, plus travaillés).
+        _doraRepo = { raw: doraValues, pipelines30, mergeRequests, branches, contributors };
+
         // Render
         _doraState = renderDoraCards(doraValues);
         const scoreInfo = renderGlobalScore(_doraState);
         renderDoraCompanion(doraValues, _doraState, scoreInfo);
         renderEvolutionChart(pipelines30, mergeRequests);
-        generateQuickWins(_doraState, doraValues, pipelines30, mergeRequests, branches, contributors);
 
     } catch (err) {
         console.error(err);
@@ -946,19 +950,30 @@ function doraCoachOpen(m) {
         .concat([{ kind: 'measure', html: `📏 <b>Comment je saurai que tu progresses :</b> ${esc(c.measure)}` }])
         .concat([{ kind: 'trap', html: `⚠️ <b>Pièges à éviter</b><br>• ${c.traps.map(esc).join('<br>• ')}` }]);
 
-    const actions = [{ label: '💡 Voir les Quick Wins de ce repo', onclick: "Salsifi.closeSalsiAtelier(); location.hash='#quickwins';" }];
+    // Diagnostic « chez toi, concrètement » : les ex-Quick Wins, branchés sur les
+    // vraies données du repo, avec le module Salsifi qui aide pour chaque constat.
+    const diagItems = doraSignals(m).map(it => ({
+        tone: it.tone, icon: it.icon, text: it.text,
+        module: it.module ? { name: it.module.name, href: it.module.page + '?repo=' + encodeURIComponent(projectId) } : null
+    }));
+
+    // Action principale = ouvrir le module lié au mouvement du moment (là où on agit).
+    const nowLever = c.levers.find(l => l.id === nowId);
+    const actions = [];
+    if (nowLever && nowLever.module) actions.push({ label: `🧰 Ouvrir ${nowLever.module.name}`, kind: 'primary', href: `${nowLever.module.page}?repo=${encodeURIComponent(projectId)}` });
 
     window.Salsifi.openSalsiAtelier({
         title: c.label,
         subtitle: 'cap DORA à améliorer',
         modeTag: '🎯 plan de progression',
         mood: atGoal ? 'proud' : 'happy',
-        bubble: `Ok, on bosse <b>${esc(c.label)}</b> 💪 Je t'explique <b>pourquoi</b> ça compte, puis je te donne le plan — du plus rentable au moins urgent.`,
+        bubble: `Ok, on bosse <b>${esc(c.label)}</b> 💪 Je regarde ce qui se passe <b>chez toi</b>, je t'explique <b>pourquoi</b> ça compte, puis je te donne le plan.`,
         analysis: [
             { label: '📊 Chez toi :', value: curVal != null ? doraFmt(m, curVal) + ' (' + curLvl + ')' : 'N/A' },
             { label: '🎯 Objectif :', value: c.targetTxt }
         ],
         progress: progress,
+        diagnostic: { title: '🔎 Chez toi, concrètement', items: diagItems },
         why: esc(c.stakes),
         planTitle: 'Le plan pour progresser',
         steps: stepsHtml,
@@ -1073,250 +1088,74 @@ function renderEvolutionChart(pipelines30, mergeRequests) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  QUICK WINS — branchés sur les résultats réels
+//  DIAGNOSTIC « CHEZ TOI » — branché sur les données réelles du repo.
+//  (Remplace les anciens Quick Wins : leur substance est repliée, plus
+//   travaillée, dans le Coach Salsi — un seul endroit pour agir.)
 // ════════════════════════════════════════════════════════════
-function generateQuickWins(state, raw, pipelines30, mergeRequests, branches, contributors) {
-    const wins = [];
-    const pp   = Array.isArray(pipelines30) ? pipelines30 : [];
-    const mrs  = Array.isArray(mergeRequests) ? mergeRequests : [];
-    const br   = Array.isArray(branches) ? branches : [];
-    const contrib = Array.isArray(contributors) ? contributors : [];
-    const now  = Date.now();
+function doraSignals(metric) {
+    const R = _doraRepo || {};
+    const raw = R.raw || {};
+    const pp = Array.isArray(R.pipelines30) ? R.pipelines30 : [];
+    const mrs = Array.isArray(R.mergeRequests) ? R.mergeRequests : [];
+    const br = Array.isArray(R.branches) ? R.branches : [];
+    const contrib = Array.isArray(R.contributors) ? R.contributors : [];
+    const now = Date.now();
+    const S = _doraState || {};
+    const lvlName = k => (S[k + 'Level'] && S[k + 'Level'].level) || '';
+    const lvlCls = k => (S[k + 'Level'] && S[k + 'Level'].cls) || '';
 
-    const dfLvl  = state.dfLevel  || { cls: '' };
-    const ltLvl  = state.ltLevel  || { cls: '' };
-    const cfrLvl = state.cfrLevel || { cls: '' };
-    const mttrLvl = state.mttrLevel || { cls: '' };
+    const items = [];
+    const push = (tone, icon, text, mod) => items.push({ tone, icon, text, module: mod || null });
+    const M = { pipe: { name: 'Pipeline Generator', page: 'pipeline-generator.html' }, gov: { name: 'Gouvernance repo', page: 'gouvernance-repo.html' }, branch: { name: 'Branch Monitor', page: 'branch-cleaner.html' }, flags: { name: 'Feature Flag Manager', page: 'feature-flag-manager.html' }, mr: { name: 'MR Reviewer', page: 'mr-reviewer.html' }, bus: { name: 'Bus Factor', page: 'bus-factor.html' } };
 
-    const failedPipelines = pp.filter(p => p.status === 'failed');
-    const openMRs         = mrs.filter(m => m.state === 'opened');
-    const staleMRs        = openMRs.filter(m => (now - new Date(m.created_at).getTime()) / 86400000 > 3);
-    const mergedMRs       = mrs.filter(m => m.state === 'merged');
-    // Branches durables exclues du décompte stale : aligné avec hub.js / repo-analyzer.
-    const staleBranches   = br.filter(b => {
-        if (['main','master','develop','dev'].includes(b.name)) return false;
+    const failed = pp.filter(p => p.status === 'failed');
+    const openMRs = mrs.filter(m => m.state === 'opened');
+    const staleMRs = openMRs.filter(m => (now - new Date(m.created_at).getTime()) / 86400000 > 3);
+    const mergedMRs = mrs.filter(m => m.state === 'merged');
+    const staleBranches = br.filter(b => {
+        if (['main', 'master', 'develop', 'dev'].includes(b.name)) return false;
         return b.commit && b.commit.committed_date && (now - new Date(b.commit.committed_date).getTime()) / 86400000 > 30;
     });
-    // bigMRs : utilise `files_count` rempli par /:iid/changes (cf. loadData).
-    // Si la donnée n'a pas pu être enrichie (ex : fetch en échec), on retombe sur
-    // changes_count qui peut être 0 → la quick win ne se déclenche simplement pas.
-    const bigMRs = mergedMRs.filter(m => (m.files_count ?? m.changes_count ?? 0) > 10);
+    const bigMRs = mergedMRs.filter(m => (m.files_count != null ? m.files_count : (m.changes_count || 0)) > 10);
+    const bigShare = mergedMRs.length ? Math.round(bigMRs.length / mergedMRs.length * 100) : 0;
 
-    // ── DEPLOY FREQUENCY ──
-    if (dfLvl.cls !== 'elite') {
-        if (failedPipelines.length > 0) {
-            wins.push({ priority: 'critical', dora: 'df', icon: '🔴',
-                text: `${failedPipelines.length} pipeline${failedPipelines.length > 1 ? 's' : ''} en échec bloquent vos déploiements — les corriger est l'action la plus rapide pour remonter la DF.`,
-                link: 'Pipelines', linkUrl: 'pipeline-generator.html' });
-        }
-        if (raw.df !== null && raw.df < 1) {
-            wins.push({ priority: 'urgent', dora: 'df', icon: '🔁',
-                text: `Moins d'1 déploiement/semaine (${raw.df}/sem). Objectif immédiat : déployer chaque sprint. Découpez les features pour livrer plus souvent.`,
-                link: '', linkUrl: '' });
-        }
-        if (raw.df !== null && raw.df >= 1 && raw.df < 7) {
-            wins.push({ priority: 'important', dora: 'df', icon: '📦',
-                text: `${raw.df} deploy/sem (niveau High). Pour passer Elite (≥7/sem), automatisez les checks pré-merge et réduisez les approbations manuelles bloquantes.`,
-                link: 'Gouvernance Repo', linkUrl: 'gouvernance-repo.html' });
-        }
-        // Fallback si aucune action spécifique n'a été générée
-        if (wins.filter(w => w.dora === 'df').length === 0) {
-            wins.push({ priority: 'important', dora: 'df', icon: '📊',
-                text: `Votre fréquence de déploiement est au niveau ${dfLvl.level}. Analysez votre pipeline pour identifier les opportunités d'automatisation.`,
-                link: 'Pipelines', linkUrl: 'pipeline-generator.html' });
-        }
+    if (metric === 'df') {
+        if (failed.length) push('critical', '🔴', `${failed.length} pipeline${failed.length > 1 ? 's' : ''} en échec sur 30 j : tant qu'ils sont rouges, rien de fiable ne part en prod. Les remettre au vert est ton gain le plus rapide sur la fréquence.`, M.pipe);
+        if (raw.df !== null && raw.df < 1) push('critical', '🔁', `Moins d'un déploiement par semaine (${raw.df}/sem). Vise un objectif simple d'abord : livrer à chaque sprint, en découpant les features en incréments déployables.`);
+        else if (raw.df !== null && raw.df < 7) push('warn', '📦', `${raw.df} déploiement/sem — niveau ${lvlName('df')}. Pour viser Elite (≥7/sem), enlève les approbations manuelles bloquantes et automatise les checks pré-merge.`, M.gov);
+        if (staleBranches.length > 5) push('info', '🌿', `${staleBranches.length} branches inactives depuis 30+ j : du travail commencé mais jamais livré, qui plombe ta cadence réelle.`, M.branch);
     }
 
-    // ── LEAD TIME ──
-    if (ltLvl.cls !== 'elite') {
-        if (staleMRs.length > 0) {
-            wins.push({ priority: 'critical', dora: 'lt', icon: '⏳',
-                text: `${staleMRs.length} MR ouvertes depuis 3+ jours sans review — chaque jour de blocage s'ajoute directement à votre Lead Time (actuellement ${raw.lt !== null ? (raw.lt >= 24 ? (raw.lt/24).toFixed(1)+'j' : raw.lt+'h') : 'N/A'}).`,
-                link: 'Branch Cleaner', linkUrl: 'branch-cleaner.html' });
-        }
-        if (bigMRs.length > mergedMRs.length * 0.3) {
-            wins.push({ priority: 'urgent', dora: 'lt', icon: '✂️',
-                text: `${bigMRs.length} MR mergées avec 10+ fichiers (${mergedMRs.length > 0 ? Math.round(bigMRs.length / mergedMRs.length * 100) : 0}% du total). Les grosses MR allongent les reviews : découpez en MR atomiques.`,
-                link: '', linkUrl: '' });
-        }
-        if (staleBranches.length > 5) {
-            wins.push({ priority: 'important', dora: 'lt', icon: '🌿',
-                text: `${staleBranches.length} branches inactives depuis 30+ jours. Elles signalent du travail non livré : activez la suppression auto après merge.`,
-                link: 'Branch Cleaner', linkUrl: 'branch-cleaner.html' });
-        }
-        if (raw.lt !== null && raw.lt > 168) {
-            wins.push({ priority: 'critical', dora: 'lt', icon: '🚨',
-                text: `Lead Time médian à ${(raw.lt/24).toFixed(1)} jours (niveau Low). Cible immédiate : passer sous 7 jours. Identifiez les étapes manuelles dans votre workflow.`,
-                link: '', linkUrl: '' });
-        }
-        if (wins.filter(w => w.dora === 'lt').length === 0) {
-            wins.push({ priority: 'important', dora: 'lt', icon: '⏱️',
-                text: `Votre Lead Time est au niveau ${ltLvl.level}. Révisez votre processus de review et de merge pour accélérer la livraison.`,
-                link: '', linkUrl: '' });
-        }
+    if (metric === 'lt') {
+        if (staleMRs.length) push('critical', '⏳', `${staleMRs.length} MR ouverte${staleMRs.length > 1 ? 's' : ''} depuis 3+ jours sans review — chaque jour d'attente s'ajoute directement à ton Lead Time (aujourd'hui ${raw.lt !== null ? (raw.lt >= 24 ? (raw.lt / 24).toFixed(1) + 'j' : raw.lt + 'h') : 'N/A'}).`, M.mr);
+        if (bigMRs.length && bigShare >= 30) push('warn', '✂️', `${bigMRs.length} MR mergées à 10+ fichiers (${bigShare}% du total) : les grosses MR traînent en review. Découpe-les — c'est le levier n°1 sur le Lead Time.`, M.mr);
+        if (staleBranches.length > 5) push('info', '🌿', `${staleBranches.length} branches mortes (30+ j sans commit) : active la suppression auto après merge pour garder un dépôt lisible.`, M.branch);
+        if (raw.lt !== null && raw.lt > 168) push('critical', '🚨', `Lead Time médian à ${(raw.lt / 24).toFixed(1)} jours (Low). Cible immédiate : passer sous 7 jours en traquant les étapes manuelles du workflow.`);
     }
 
-    // ── CHANGE FAILURE RATE ──
-    if (cfrLvl.cls !== 'elite') {
-        if (raw.cfr !== null && raw.cfr > 15) {
-            wins.push({ priority: 'critical', dora: 'cfr', icon: '🛑',
-                text: `${raw.cfr}% de vos pipelines échouent (${raw.failedP}/${raw.totalP}). Au-delà de 15% vous êtes Low. Ajoutez des tests automatisés pour attraper les régressions avant le push.`,
-                link: '', linkUrl: '' });
-        }
-        if (raw.cfr !== null && raw.cfr >= 5 && raw.cfr <= 15) {
-            wins.push({ priority: 'important', dora: 'cfr', icon: '🧪',
-                text: `CFR à ${raw.cfr}% (niveau Medium/High). Pour passer Elite (<5%) : ajoutez du linting, des tests d'intégration et des quality gates bloquants dans le pipeline.`,
-                link: '', linkUrl: '' });
-        }
-        if (wins.filter(w => w.dora === 'cfr').length === 0) {
-            wins.push({ priority: 'important', dora: 'cfr', icon: '🔍',
-                text: `Votre CFR est au niveau ${cfrLvl.level}. Renforcez la qualité avec des tests automatisés dans votre CI.`,
-                link: '', linkUrl: '' });
-        }
+    if (metric === 'cfr') {
+        if (raw.cfr !== null && raw.cfr > 15) push('critical', '🛑', `${raw.cfr}% de tes pipelines prod échouent (${raw.failedP}/${raw.totalP}). Au-delà de 15% tu es Low : des tests automatisés attrapent les régressions avant le push.`, M.gov);
+        else if (raw.cfr !== null && raw.cfr >= 5) push('warn', '🧪', `CFR à ${raw.cfr}% — niveau ${lvlName('cfr')}. Pour passer Elite (<5%) : lint + tests d'intégration + quality gates bloquants dans le pipeline.`, M.gov);
+        // Croisement inter-DORA (ex-cross-wins), remonté là où il compte.
+        if (lvlCls('df') === 'elite' && (lvlCls('cfr') === 'low' || lvlCls('cfr') === 'medium')) push('warn', '⚠️', `Tu livres vite (déploiement Elite) mais tu casses souvent (CFR ${lvlName('cfr')}) : priorité aux quality gates AVANT la prod, sinon la vitesse se paie en incidents.`, M.gov);
+        if (lvlCls('lt') === 'low' && (lvlCls('cfr') === 'low' || lvlCls('cfr') === 'medium')) push('critical', '🔥', `Lead Time lent ET CFR élevé : c'est le signal d'une dette technique/process. Traite la stabilité en priorité, la vitesse suivra.`);
     }
 
-    // ── MTTR ──
-    if (mttrLvl.cls !== 'elite') {
-        const failedOld = failedPipelines.filter(p => {
+    if (metric === 'mttr') {
+        const failedOld = failed.filter(p => {
             if (p.ref !== 'main' && p.ref !== 'master') return false;
-            const age = (now - new Date(p.created_at).getTime()) / 86400000;
-            if (age <= 1) return false;
-            const laterSuccess = pp.find(n =>
-                n.ref === p.ref &&
-                n.status === 'success' &&
-                new Date(n.created_at) > new Date(p.created_at)
-            );
-            return !laterSuccess;
+            if ((now - new Date(p.created_at).getTime()) / 86400000 <= 1) return false;
+            return !pp.find(n => n.ref === p.ref && n.status === 'success' && new Date(n.created_at) > new Date(p.created_at));
         });
-        if (failedOld.length > 0) {
-            wins.push({ priority: 'critical', dora: 'mttr', icon: '🔧',
-                text: `${failedOld.length} pipeline${failedOld.length > 1 ? 's' : ''} cassé${failedOld.length > 1 ? 's' : ''} depuis plus de 24h sans correction — chaque heure allonge votre TTRS.`,
-                link: '', linkUrl: '' });
-        }
-        if (raw.mttr !== null && raw.mttr > 24) {
-            wins.push({ priority: 'urgent', dora: 'mttr', icon: '⏱️',
-                text: `TTRS médian à ${raw.mttr >= 24 ? (raw.mttr/24).toFixed(1)+'j' : raw.mttr+'h'} (${mttrLvl.level}). Automatisez la détection et le rollback pour réduire le temps de recovery.`,
-                link: '', linkUrl: '' });
-        }
-        if (contrib.length <= 1) {
-            wins.push({ priority: 'urgent', dora: 'mttr', icon: '🚌',
-                text: `1 seul contributeur actif — bus factor critique. En cas d'incident, le temps de restore dépend d'une seule personne.`,
-                link: 'Hub', linkUrl: 'hub.html' });
-        }
-        if (wins.filter(w => w.dora === 'mttr').length === 0) {
-            wins.push({ priority: 'important', dora: 'mttr', icon: '🩹',
-                text: `Votre TTRS est au niveau ${mttrLvl.level}. Mettez en place des alertes et des procédures de rollback automatisées.`,
-                link: '', linkUrl: '' });
-        }
+        if (failedOld.length) push('critical', '🔧', `${failedOld.length} pipeline${failedOld.length > 1 ? 's' : ''} cassé${failedOld.length > 1 ? 's' : ''} depuis 24h+ sur main sans correctif : chaque heure allonge ton temps de restauration.`, M.pipe);
+        if (raw.mttr !== null && raw.mttr > 24) push('warn', '⏱️', `TTRS médian à ${raw.mttr >= 24 ? (raw.mttr / 24).toFixed(1) + 'j' : raw.mttr + 'h'} (${lvlName('mttr')}). Prépare un rollback en un geste et coupe via feature flag pour restaurer plus vite.`, M.flags);
+        if (contrib.length && contrib.length <= 1) push('critical', '🚌', `Un seul contributeur actif — bus factor critique : en incident, ta restauration dépend d'une seule personne. Partage les accès et la connaissance.`, M.bus);
     }
 
-    // ── CROSS-DORA ──
-    const crossWins = [];
-
-    // Elite DF + CFR dégradé = on livre vite mais on casse
-    if (dfLvl.cls === 'elite' && (cfrLvl.cls === 'low' || cfrLvl.cls === 'medium')) {
-        crossWins.push({ icon: '⚠️',
-            text: `Deploy fréquent (Elite) + CFR élevé (${cfrLvl.level}) = vous livrez vite mais vous cassez souvent. Priorité : quality gates avant le déploiement prod.`,
-            tags: ['🚀 Deploy Freq', '🔧 CFR'] });
-    }
-    // LT Low + CFR élevé = problème systémique
-    if (ltLvl.cls === 'low' && (cfrLvl.cls === 'low' || cfrLvl.cls === 'medium')) {
-        crossWins.push({ icon: '🔥',
-            text: `Lead Time bas (${ltLvl.level}) + CFR élevé (${cfrLvl.level}) : livraison lente ET instable. C'est le signal d'une dette technique ou de processus à adresser en priorité.`,
-            tags: ['⚡ Lead Time', '🔧 CFR'] });
-    }
-    // 3/4 Elite → focus sur le dernier
-    const scored = [
-        { lvl: dfLvl,   name: '🚀 Deploy Freq' },
-        { lvl: ltLvl,   name: '⚡ Lead Time' },
-        { lvl: cfrLvl,  name: '🔧 CFR' },
-        { lvl: mttrLvl, name: '⏱️ TTRS' }
-    ];
-    const eliteCount = scored.filter(s => s.lvl && s.lvl.cls === 'elite').length;
-    if (eliteCount === 3) {
-        const missing = scored.find(s => s.lvl && s.lvl.cls !== 'elite');
-        if (missing) {
-            crossWins.push({ icon: '🏆',
-                text: `3/4 métriques en Elite ! Concentrez tout sur ${missing.name} (actuellement ${missing.lvl.level}) — vous êtes à une optimisation d'un score Elite global.`,
-                tags: [`🎯 ${missing.name}`] });
-        }
-    }
-
-    renderQuickWins(wins, crossWins);
+    if (!items.length) push('good', '✅', `Rien d'alarmant côté données pour cette mesure. Le plan ci-dessous te fait viser le cran au-dessus, proprement.`);
+    return items;
 }
 
-function renderQuickWins(wins, crossWins) {
-    const cols = [
-        { id: 'df',   icon: '🚀', name: 'Deploy Frequency', color: '#a5b4fc', state: _doraState.dfLevel  },
-        { id: 'lt',   icon: '⚡', name: 'Lead Time',         color: '#6ee7b7', state: _doraState.ltLevel  },
-        { id: 'cfr',  icon: '🔧', name: 'Change Failure Rate',color: '#fca5a5', state: _doraState.cfrLevel },
-        { id: 'mttr', icon: '⏱️', name: 'MTTR',              color: '#fcd34d', state: _doraState.mttrLevel }
-    ];
-
-    const valueMap = {
-        df:   _doraState.df   !== null ? `${_doraState.df}/sem` : 'N/A',
-        lt:   _doraState.lt   !== null ? (_doraState.lt >= 24 ? `${(_doraState.lt/24).toFixed(1)}j` : `${_doraState.lt}h`) : 'N/A',
-        cfr:  _doraState.cfr  !== null ? `${_doraState.cfr}%` : 'N/A',
-        mttr: _doraState.mttr !== null ? (_doraState.mttr >= 24 ? `${(_doraState.mttr/24).toFixed(1)}j` : `${_doraState.mttr}h`) : 'N/A'
-    };
-
-    const icons = { Elite: '🟢', High: '🔵', Medium: '🟡', Low: '🔴' };
-
-    const gridEl = document.getElementById('qwGrid');
-    gridEl.innerHTML = cols.map(col => {
-        const lvl = col.state || { level: 'N/A', cls: '', pct: 0, gap: null };
-        const colWins = wins.filter(w => w.dora === col.id);
-
-        const gapHtml = lvl.gap
-            ? `<div class="qw-col-gap"><strong>${lvl.gap}</strong></div>`
-            : lvl.cls === 'elite'
-                ? `<div class="qw-col-gap" style="color:#6ee7b7"><strong>🏆 Elite atteint</strong></div>`
-                : '';
-
-        const itemsHtml = colWins.length === 0
-            ? (lvl.cls === 'elite'
-                ? `<div class="qw-empty-col"><div class="qw-trophy">🏆</div>Aucune action requise<br><strong>Continuez comme ça !</strong></div>`
-                : `<div class="qw-empty-col">Aucune action détectée</div>`)
-            : colWins.map(w =>
-                `<div class="qw-item ${w.priority}">
-                    <div class="qw-text">${w.icon} ${w.text}</div>
-                    ${w.link ? `<a class="qw-link" href="${w.linkUrl}">→ ${w.link}</a>` : ''}
-                </div>`
-              ).join('');
-
-        return `<div class="qw-column" style="border-top-color:${col.color}">
-            <div class="qw-col-header">
-                <div class="qw-col-icon-name">
-                    <span class="qw-col-icon">${col.icon}</span>
-                    <span class="qw-col-name">${col.name}</span>
-                </div>
-                <div class="qw-col-value" style="color:${col.color}">${valueMap[col.id]}</div>
-                <span class="qw-col-badge ${lvl.cls}">${icons[lvl.level] || ''} ${lvl.level}</span>
-                <div class="qw-col-bar"><div class="qw-col-bar-fill ${lvl.cls}" style="width:${lvl.pct}%"></div></div>
-                ${gapHtml}
-            </div>
-            <div class="qw-items">${itemsHtml}</div>
-        </div>`;
-    }).join('');
-
-    const crossEl = document.getElementById('qwCross');
-    if (crossWins && crossWins.length > 0) {
-        crossEl.innerHTML = `<div class="qw-cross">
-            <div class="qw-cross-title">🔗 Croisements inter-DORA</div>
-            ${crossWins.map(w =>
-                `<div class="qw-cross-item">
-                    <div class="qw-cross-icon">${w.icon}</div>
-                    <div>
-                        <div>${w.text}</div>
-                        <div class="qw-cross-tags">${(w.tags || []).map(t => `<span class="qw-cross-tag">${t}</span>`).join('')}</div>
-                    </div>
-                </div>`
-            ).join('')}
-        </div>`;
-    } else {
-        crossEl.innerHTML = '';
-    }
-}
 
 // ════════════════════════════════════════════════════════════
 //  EXPORT RAPPORT

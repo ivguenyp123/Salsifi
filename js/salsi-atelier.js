@@ -69,6 +69,14 @@
             }).join('') + '</div>';
         }
         var progress = cfg.progress ? '<div class="salsi-prog ' + esc(cfg.progress.cls || 'flat') + '">' + (cfg.progress.html || '') + '</div>' : '';
+        var diag = '';
+        if (cfg.diagnostic && cfg.diagnostic.items && cfg.diagnostic.items.length) {
+            diag = (cfg.diagnostic.title ? '<div class="salsi-sec-h">' + esc(cfg.diagnostic.title) + '</div>' : '') +
+                '<ul class="salsi-diag">' + cfg.diagnostic.items.map(function (it) {
+                    var mod = (it.module && it.module.href) ? ' <a class="salsi-chip mod" href="' + it.module.href + '">🧰 ' + esc(it.module.name) + '</a>' : '';
+                    return '<li class="tone-' + esc(it.tone || 'info') + '"><span class="salsi-diag-ic">' + esc(it.icon || '•') + '</span><span class="salsi-diag-tx">' + esc(it.text) + mod + '</span></li>';
+                }).join('') + '</ul>';
+        }
         var why = cfg.why ? '<div class="salsi-why">' + cfg.why + '</div>' : '';
         var plan = '';
         if (cfg.steps && cfg.steps.length) {
@@ -102,7 +110,7 @@
                 '<button class="salsi-x" onclick="Salsifi.closeSalsiAtelier()">✕</button>' +
             '</div>' +
             (cfg.bubble ? '<div class="salsi-bubble2">' + cfg.bubble + '</div>' : '') +
-            analysis + progress + why + plan + extras +
+            analysis + progress + diag + why + plan + extras +
             '<div class="salsi-result" id="salsiResult"></div>' +
             '<div class="salsi-actions">' + actions + '</div>' +
         '</div>';
