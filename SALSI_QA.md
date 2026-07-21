@@ -42,6 +42,29 @@ DORA, Achievements, Bus Factor, Daily, Feature Flags, Repo Analyzer. Intentions 
 Salsi ouvre le **bilan** (le même que la pastille 🌱 du hub) : le **top 5** à traiter,
 sécurité d'abord. Intention : `priorites`.
 
+## 📘 Formation — Salsi répond depuis tes docs de formation
+
+Salsi peut s'appuyer sur des **docs de formation** (déterministe, sans IA) : chaque
+doc devient des **entrées** (mots-clés → réponse fidèle) dans
+`js/hub/salsi-formation.js`. **Ajouter un doc = ajouter ses entrées**, rien d'autre.
+
+**Module 07 — Feature Flags & Progressive Delivery** (22 entrées) : déploiement ≠
+activation, bénéfice DORA, les 4 types de flags (release/experiment/ops/permission),
+contexte d'évaluation, valeur par défaut, OpenFeature, ciblage/targeting, rollout %
++ hash stable, rings, canary vs blue/green vs flag, montée en charge progressive,
+kill switch, dégradation gracieuse, dette de flags (symptômes + discipline), flag =
+emprunt, où stocker les flags, flags & GitOps, audit & traçabilité.
+
+Le routeur `formationRoute` matche les mots-clés (sous-chaîne, normalisé) **avant**
+les autres routes, donc « c'est quoi le canary / kill switch / dette de flags / les
+types de flags » répondent depuis la formation, tandis que « combien de FF » reste
+la **donnée live** et « c'est quoi un feature flag » reste la **définition** courte.
+Réponse signée « 📘 Formation · Module 07 ». Intention : `formation`.
+
+> **Prochaine étape (IA)** : quand une question de formation sort du déterministe,
+> l'IA en fallback pourra lire les docs bruts directement. Ce fichier reste la
+> couche déterministe (rapide, gratuite, traçable).
+
 ## Reconnaissance des formulations (déclencheurs)
 
 Salsi ne devine pas : il matche des **déclencheurs** curés, après **normalisation**

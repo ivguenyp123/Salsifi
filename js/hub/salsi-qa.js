@@ -1027,6 +1027,22 @@
         if (k === 'repo_analyzer' || /^repo_/.test(k)) return 'repo_analyzer';
         return null;
     }
+    // ── FORMATION : réponses issues des docs de formation (js/hub/salsi-formation.js) ──
+    // Match par mots-clés (sous-chaîne, normalisé). Renvoie la meilleure entrée ou null.
+    function formationRoute(n) {
+        var F = Salsifi.formation; if (!F || !F.entries) return null;
+        var best = null, bestLen = 0;
+        F.entries.forEach(function (e) {
+            (e.kw || []).forEach(function (k) {
+                var kn = norm(k);
+                if (kn.length >= 4 && n.indexOf(kn) >= 0 && kn.length > bestLen) { best = e; bestLen = kn.length; }
+            });
+        });
+        if (!best) return null;
+        var m = F.modules[best.mod] || {};
+        var foot = m.title ? `<div class="sqa-hint">📘 Formation · Module ${esc(m.num || '')} — ${esc(m.title)}${m.niveau ? ' (' + esc(m.niveau) + ')' : ''}</div>` : '';
+        return { html: `${best.a}${foot}`, intent: 'formation' };
+    }
     function d_help() {
         var poles = HELP_POLES.map(function (p) {
             var mods = p.m.map(function (x) { return `${x[0]} <b>${esc(x[1])}</b> — <span class="sqa-hint">${esc(x[2])}</span>`; }).join('<br>');
@@ -1230,6 +1246,8 @@
         var st = smalltalkRoute(n); if (st) return st;
         // ── Un module précis nommé (« c'est quoi Smart Estimate ? ») gagne sur l'aide générale ──
         var ml = moduleLookup(n); if (ml) return ml;
+        // ── Formation : concepts des docs (canary, kill switch, dette de flags, types de flags…) ──
+        var fr = formationRoute(n); if (fr) return fr;
         // ── Aide : « que fait la plateforme / comment tu peux m'aider / les modules » ──
         if (/que (fait|fais|font)|a quoi (sert|ca sert|servent|serts)|qu est ce que (tu sais|tu peux|salsifi|la plateforme|le hub|c est)|c est quoi (la plateforme|salsifi|le hub)|tes (fonctionnalites|capacites|features|possibilites)|que (peux|sais) tu faire|(comment|est ce que) (tu peux|pourrais|peux tu|tu pourrais).* ?m aider|tu peux m aider|(liste|tous|quels) (des )?modules|les modules|toutes les fonctionnalites|montre moi ce que tu sais|presente (toi|la plateforme)|a quoi tu sers|ton aide/.test(n)) {
             var rh = d_help(); rh.intent = 'help'; return rh;
