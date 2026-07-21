@@ -42,6 +42,12 @@
         async function boot() {
             // Tous les liens retour pointent sur le nouveau hub
             document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+            // Salsi dans l'en-tête (mascotte + sous-titre), si le SVG est chargé.
+            try {
+                const bell = document.querySelector('.bell');
+                if (bell && window.Salsifi && Salsifi.mascotSVG) { bell.classList.add('salsi'); bell.innerHTML = Salsifi.mascotSVG('proud'); }
+                const h1 = document.querySelector('.top-meta h1'); if (h1) h1.textContent = 'Scaffold · Salsi';
+            } catch (e) { /* header cosmétique, non bloquant */ }
             try {
                 const project = await gitlabAPI(`/projects/${sessionData.projectId}`);
                 sessionData.projectName = project.name;
@@ -283,7 +289,7 @@
             const repo = sessionData.projectName || 'ton repo';
 
             if(expert){
-                bot(`Re 👋 <code>${esc(repo)}</code> ? Même contexte que la dernière fois (petite équipe, flags, intégration quotidienne) ?`, ()=>{
+                bot(`Re, c'est <b>Salsi</b> 🌱 <code>${esc(repo)}</code> ? Même contexte que la dernière fois (petite équipe, flags, intégration quotidienne) ?`, ()=>{
                     quick([
                         ['⚡','Oui, pareil','je redéduis direct', ()=>{ mine('Même contexte'); answers={flags:true,merge:'daily',team:'small',cad:'daily'};
                             botThink(()=>{ deduced=deduceFlow(answers); bot("Alors c'est limpide :", showReco); }); }],
@@ -293,7 +299,7 @@
                 return;
             }
 
-            bot(`Salut 👋 <code>${esc(repo)}</code> est tout neuf. Avant de générer quoi que ce soit, il y a <b>une</b> décision qui compte vraiment et qui t'engagera pour des mois : <b>le flow Git</b>.`, ()=>{
+            bot(`Salut 👋 moi c'est <b>Salsi</b> 🌱 <code>${esc(repo)}</code> est tout neuf. Avant de générer quoi que ce soit, il y a <b>une</b> décision qui compte vraiment et qui t'engagera pour des mois : <b>le flow Git</b>.`, ()=>{
                 botThink(()=> bot("Pas besoin d'être expert Git — je te pose 4 petites questions de contexte, et je te recommande le bon. Tu valides ou tu contestes. On y va ?", ()=>{
                     quick([
                         ['🎯','Allons-y','guide-moi', ()=>{ mine('Allons-y'); startFlowSequence(); }],
@@ -521,14 +527,19 @@
         }
 
         /* ════ primitives de chat ════ */
+        // Avatar Salsi (mascotte partagée). Repli sur 🛎️ si le SVG n'est pas chargé.
+        function salsiAv(mood){
+            var m = (window.Salsifi && Salsifi.mascotSVG) ? Salsifi.mascotSVG(mood||'happy') : '🛎️';
+            return `<div class="av bot salsi">${m}</div>`;
+        }
         function bot(html,cb,delay){
             const m=document.createElement('div'); m.className='msg';
-            m.innerHTML=`<div class="av bot">🛎️</div><div class="bubble bot">${html}</div>`;
+            m.innerHTML=`${salsiAv('happy')}<div class="bubble bot">${html}</div>`;
             thread.appendChild(m); scroll(); if(cb) setTimeout(cb, delay||420);
         }
         function botThink(cb,ms){
             const m=document.createElement('div'); m.className='msg';
-            m.innerHTML=`<div class="av bot">🛎️</div><div class="bubble bot"><div class="typing"><i></i><i></i><i></i></div></div>`;
+            m.innerHTML=`${salsiAv('meh')}<div class="bubble bot"><div class="typing"><i></i><i></i><i></i></div></div>`;
             thread.appendChild(m); scroll();
             setTimeout(()=>{ m.remove(); cb(); }, ms||780);
         }
