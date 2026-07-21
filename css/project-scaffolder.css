@@ -52,6 +52,8 @@ body::before {
 }
 .bell.salsi { background: transparent; box-shadow: none; }
 .bell.salsi .mascot-svg { width: 40px; height: 40px; display: block; }
+.blocked-salsi { width: 72px; margin: 0 auto 10px; }
+.blocked-salsi .mascot-svg { width: 72px; height: 72px; display: block; }
 .top-meta { flex: 1; min-width: 0; }
 .top-meta h1 { font-family: var(--font-display, 'Bricolage Grotesque', serif); font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
 .top-meta .repo { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted, #8b7eaa); display: flex; align-items: center; gap: 6px; margin-top: 1px; }

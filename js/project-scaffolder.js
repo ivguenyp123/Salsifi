@@ -133,7 +133,8 @@
 
         function showBlocked(reason, detail) {
             const t = document.getElementById('thread');
-            if (t) t.innerHTML = `<div class="blocked-wrap"><h2>\ud83d\uded1 ${esc(reason)}</h2>`
+            const face = (window.Salsifi && Salsifi.mascotSVG) ? `<div class="blocked-salsi">${Salsifi.mascotSVG('worried')}</div>` : '';
+            if (t) t.innerHTML = `<div class="blocked-wrap">${face}<h2>\ud83d\uded1 ${esc(reason)}</h2>`
                 + `<p>${esc(detail)}</p>`
                 + `<p>Le Scaffold ne touche qu'aux repos neufs. <a href="${HUB_URL}" data-hub-link>\u2190 Retour au hub</a></p></div>`;
         }
@@ -332,7 +333,7 @@
         function runDeduction(){
             botThink(()=>{
                 deduced = deduceFlow(answers);
-                bot("Voilà, j'ai tout ce qu'il me faut. Je croise tes signaux…", showReco);
+                bot("Voilà, j'ai tout ce qu'il me faut. Je croise tes signaux…", showReco, 420, 'proud');
             }, 950);
         }
 
@@ -400,7 +401,7 @@
                     ['✅','Oui, je sais ce que je fais','en conscience', ()=>{ mine('Oui, en conscience'); acceptFlow(k); }],
                     ['↩️','Non, reviens à ta reco','plus prudent', ()=>{ mine('Reviens à ta reco'); acceptFlow(deduced.pick); }],
                 ]);
-            }));
+            }, 420, 'worried'));
         }
 
         /* ─── flow accepté → on écrit config puis on demande la stack ─── */
@@ -408,7 +409,7 @@
             chosenFlow = k;
             config.workflow = FLOWS[k].cfg;
             config.options.protectDevelop = (config.workflow === 'gitflow');
-            botThink(()=> bot(`Excellent. <b>${FLOWS[k].name}</b>, c'est noté 🔒 Deux derniers points et je te montre tout :`, askStack));
+            botThink(()=> bot(`Excellent. <b>${FLOWS[k].name}</b>, c'est noté 🔒 Deux derniers points et je te montre tout :`, askStack, 420, 'proud'));
         }
         function pickFlowDirect(){
             botThink(()=> bot("Vas-y, lequel ?", ()=>{
@@ -532,9 +533,9 @@
             var m = (window.Salsifi && Salsifi.mascotSVG) ? Salsifi.mascotSVG(mood||'happy') : '🛎️';
             return `<div class="av bot salsi">${m}</div>`;
         }
-        function bot(html,cb,delay){
+        function bot(html,cb,delay,mood){
             const m=document.createElement('div'); m.className='msg';
-            m.innerHTML=`${salsiAv('happy')}<div class="bubble bot">${html}</div>`;
+            m.innerHTML=`${salsiAv(mood||'happy')}<div class="bubble bot">${html}</div>`;
             thread.appendChild(m); scroll(); if(cb) setTimeout(cb, delay||420);
         }
         function botThink(cb,ms){
@@ -1658,7 +1659,7 @@ ${createdFiles.map(f => '- `' + f + '`').join('\n')}
             thread.appendChild(d); scroll();
             botThink(() => bot("La prochaine fois, je me souviendrai de ton contexte et j'irai droit \u00e0 la reco. \u00c0 tout' \ud83d\udc4b", () => {
                 quick([['\u21ba', 'Refaire un repo', 'recommencer', () => startConcierge(true)]]);
-            }), 500);
+            }, 420, 'proud'), 500);
         }
 
         // ============================================
