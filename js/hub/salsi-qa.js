@@ -974,6 +974,22 @@
             ]
         }
     ];
+    // Index des modules « peu couverts » → au moins définissables (« c'est quoi X ? »).
+    // Les 6 modules à couverture profonde gardent leurs routes riches (exclus ici).
+    var DEEP_MODULES = { 'DORA Insights': 1, 'Achievements': 1, 'Bus Factor': 1, 'Daily Report': 1, 'Feature Flag Manager': 1, 'Repo Analyzer': 1 };
+    var MODULE_INDEX = [];
+    HELP_POLES.forEach(function (p) { p.m.forEach(function (x) { if (!DEEP_MODULES[x[1]]) MODULE_INDEX.push({ icon: x[0], name: x[1], desc: x[2], pole: p.t.replace(/^\S+\s/, ''), hay: norm(x[1]) }); }); });
+    // Trouve le module nommé (tous ses mots ≥ 4 lettres présents) ou null.
+    function moduleLookup(n) {
+        var best = null, bestScore = 0;
+        MODULE_INDEX.forEach(function (m) {
+            var toks = m.hay.split(' ').filter(function (t) { return t.length >= 4; });
+            if (!toks.length) return;
+            if (toks.every(function (t) { return n.indexOf(t) >= 0; }) && toks.length > bestScore) { best = m; bestScore = toks.length; }
+        });
+        if (!best) return null;
+        return { html: `${best.icon} <b>${esc(best.name)}</b> — ${esc(best.desc)}.<br><span class="sqa-hint">Pôle « ${esc(best.pole)} ». Je réponds en <b>détail</b> (chiffres, note, améliorer) sur DORA, Achievements, Bus Factor, Daily, Feature Flags et Repo Analyzer.</span>`, intent: 'module_info' };
+    }
     function d_help() {
         var poles = HELP_POLES.map(function (p) {
             var mods = p.m.map(function (x) { return `${x[0]} <b>${esc(x[1])}</b> — <span class="sqa-hint">${esc(x[2])}</span>`; }).join('<br>');
@@ -1174,6 +1190,8 @@
         var n = norm(q);
         // ── Small-talk d'abord (salut, ça va, merci…) — rendu null si vraie question derrière ──
         var st = smalltalkRoute(n); if (st) return st;
+        // ── Un module précis nommé (« c'est quoi Smart Estimate ? ») gagne sur l'aide générale ──
+        var ml = moduleLookup(n); if (ml) return ml;
         // ── Aide : « que fait la plateforme / comment tu peux m'aider / les modules » ──
         if (/que (fait|fais|font)|a quoi (sert|ca sert|servent|serts)|qu est ce que (tu sais|tu peux|salsifi|la plateforme|le hub|c est)|c est quoi (la plateforme|salsifi|le hub)|tes (fonctionnalites|capacites|features|possibilites)|que (peux|sais) tu faire|(comment|est ce que) (tu peux|pourrais|peux tu|tu pourrais).* ?m aider|tu peux m aider|(liste|tous|quels) (des )?modules|les modules|toutes les fonctionnalites|montre moi ce que tu sais|presente (toi|la plateforme)|a quoi tu sers|ton aide/.test(n)) {
             var rh = d_help(); rh.intent = 'help'; return rh;
