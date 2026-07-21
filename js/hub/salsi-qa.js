@@ -212,6 +212,11 @@
         try { if (typeof window.salsiBriefShow === 'function') { window.salsiBriefShow(); return { html: `📋 J'ouvre le <b>bilan complet</b> de ton repo (sécurité, bus factor, activité, DORA…) — regarde la fenêtre qui s'affiche. 👉` }; } } catch (e) { }
         return { html: `Ouvre le <b>bilan</b> via la pastille 🌱 Salsi en haut du hub (sélectionne d'abord un repo).` };
     }
+    // « quelles sont mes priorités de la journée » → ouvre le bilan Salsi (top 5, sécu d'abord).
+    function d_priorities() {
+        try { if (typeof window.salsiBriefShow === 'function') { window.salsiBriefShow(); return { html: `🎯 J'ouvre tes <b>priorités du jour</b> — le bilan Salsi te classe le <b>top 5</b> à traiter (la sécurité d'abord), en analysant ton repo. 👉` }; } } catch (e) { }
+        return { html: `Tes <b>priorités</b> s'affichent via la pastille 🌱 <b>Salsi</b> en haut du hub — sélectionne d'abord un repo, et je te sors le top 5 à traiter.` };
+    }
 
     // ══════════════════════════════════════════════════════════════════
     //  SAVOIR DORA — miroir fidèle du module DORA Insights (js/insights.js)
@@ -990,6 +995,38 @@
         if (!best) return null;
         return { html: `${best.icon} <b>${esc(best.name)}</b> — ${esc(best.desc)}.<br><span class="sqa-hint">Pôle « ${esc(best.pole)} ». Je réponds en <b>détail</b> (chiffres, note, améliorer) sur DORA, Achievements, Bus Factor, Daily, Feature Flags et Repo Analyzer.</span>`, intent: 'module_info' };
     }
+    // « comment je m'en sers / comment ça marche » → comment utiliser le module + ce que Salsi répond.
+    var USAGE = {
+        dora: { ic: '📊', label: 'DORA Insights', page: 'insights.html', how: 'tu y vois tes 4 mesures + un score /100, et le Coach te fait un plan par mesure', ask: ['mon score DORA ?', 'améliorer mon lead time', 'les niveaux DORA', 'génère le rapport DORA'] },
+        badges: { ic: '🏆', label: 'Achievements', page: 'gaming.html', how: 'tu débloques des badges selon tes pratiques GitLab réelles, avec des phases de maturité', ask: ['combien de badges ?', 'quel badge gagner facilement ?', 'comment débloquer Small MR ?'] },
+        bus_factor: { ic: '🚌', label: 'Bus Factor', page: 'bus-factor.html', how: 'tu repères les zones de code maîtrisées par une seule personne', ask: ['mon bus factor ?', 'comment réduire mon bus factor ?'] },
+        daily: { ic: '📅', label: 'Daily Report', page: 'daily-report.html', how: 'le résumé de ta journée + des conseils, pensé pour le standup', ask: ['mon rapport du jour', 'les conseils du jour', 'génère le rapport de la semaine'] },
+        feature_flags: { ic: '🚩', label: 'Feature Flag Manager', page: 'feature-flag-manager.html', how: 'tu gères le cycle de vie de tes feature flags', ask: ['combien de FF ?', 'lesquels en prod ?', 'le flag <nom> ?'] },
+        repo_analyzer: { ic: '🔬', label: 'Repo Analyzer', page: 'repo-analyzer.html', how: 'l\'audit complet de ton repo : santé, red flags, quick-wins', ask: ['la note de mon repo ?', 'ce qui ne va pas ?', 'comment améliorer mon repo ?'] }
+    };
+    function usageHelp(key) {
+        var u = USAGE[key];
+        var asks = u.ask.map(function (a) { return `« ${esc(a)} »`; }).join(' · ');
+        return { html: `${u.ic} <b>${esc(u.label)}</b> — ${esc(u.how)}. <a href="${esc(u.page)}" target="_blank" rel="noopener">Ouvrir le module ↗</a><br>Et moi, tu peux me demander direct : ${asks}. 🌱` };
+    }
+    function usageKeyFromN(n) {
+        if (doraKeyFromN(n) || /\bdora\b/.test(n)) return 'dora';
+        if (/badge|achievement|gaming|succes/.test(n)) return 'badges';
+        if (/bus factor|busfactor|facteur de bus/.test(n)) return 'bus_factor';
+        if (/daily|standup|rapport du jour/.test(n)) return 'daily';
+        if (/feature flag|\bff\b|drapeau/.test(n)) return 'feature_flags';
+        if (/repo analyzer|analyse.*repo|sante.*repo/.test(n)) return 'repo_analyzer';
+        return null;
+    }
+    function usageKeyFromIntent(k) {
+        if (['dora', 'cfr', 'mttr', 'lead_time', 'deploy_freq'].indexOf(k) >= 0) return 'dora';
+        if (k === 'badges') return 'badges';
+        if (k === 'bus_factor') return 'bus_factor';
+        if (k === 'daily') return 'daily';
+        if (k === 'feature_flags') return 'feature_flags';
+        if (k === 'repo_analyzer' || /^repo_/.test(k)) return 'repo_analyzer';
+        return null;
+    }
     function d_help() {
         var poles = HELP_POLES.map(function (p) {
             var mods = p.m.map(function (x) { return `${x[0]} <b>${esc(x[1])}</b> — <span class="sqa-hint">${esc(x[2])}</span>`; }).join('<br>');
@@ -1079,6 +1116,7 @@
 
     // ── Intentions : déclencheurs + (def et/ou data). Ordre = priorité de match. ──
     var INTENTS = [
+        { k: 'priorites', trig: ['priorite', 'priorites', 'priorite du jour', 'priorites du jour', 'priorites de la journee', 'par quoi commencer', 'par quoi je commence', 'par ou commencer', 'commencer par quoi', 'sur quoi me concentrer', 'quoi faire aujourd', 'mes priorites', 'top priorites', 'sur quoi bosser'], data: d_priorities },
         { k: 'etat_repo', trig: ['etat', 'bilan', 'sante', 'diagnostic', 'comment va', 'ca va mon', 'resume de mon repo', 'ou ca coince'], data: d_etat },
         { k: 'cfr', trig: ['cfr', 'taux d echec', 'change failure rate', 'echec de changement'], def: 'cfr', data: d_dora },
         { k: 'mttr', trig: ['mttr', 'temps de restauration', 'time to restore', 'temps de reprise'], def: 'mttr', data: d_dora },
@@ -1224,6 +1262,13 @@
         if (/\bdora\b|score/.test(n) && /calcul|calcule|c est quoi le score|score.*(marche|fonctionne)|combien de points|comment (ca marche|fonctionne)/.test(n)) {
             var rc = d_dora_scorecalc(); rc.intent = 'dora_score_calc'; return rc;
         }
+        // « comment je m'en sers / comment ça marche / comment utiliser <module> » → mode d'emploi
+        // (après le score-calc DORA, avant les routes module → « comment marche le bus factor » = usage).
+        if (/comment (je )?m en (sers|servir)|comment (on )?(s en sert|s en servir|l utilise|l utiliser|utiliser|utilise|je fais|on fait)|comment (ca |c est )?(marche|fonctionne|s utilise)|ca s utilise comment|je m en sers comment/.test(n)) {
+            var uk = usageKeyFromN(n) || (_lastIntent && usageKeyFromIntent(_lastIntent.k));
+            if (uk) { var ru = usageHelp(uk); ru.intent = 'usage_' + uk; return ru; }
+            return { html: `Dis-moi de quel module tu parles 🌱 — <b>DORA</b>, <b>badges</b>, <b>bus factor</b>, <b>Daily</b>, <b>feature flags</b>, <b>Repo Analyzer</b>… ou demande « <b>que fait la plateforme</b> » pour la vue d'ensemble.`, intent: 'usage_ask' };
+        }
         // ── Gaming / Achievements (avant les « niveaux » DORA : « phases »/« badges » gagnent) ──
         var gr = await gamingRoute(n, /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois)/.test(n));
         if (gr) {
@@ -1299,7 +1344,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['que fait la plateforme ?', 'la note de mon repo ?', 'ce qui ne va pas ?', 'mon score DORA ?', 'combien de FF ?', 'comment améliorer mon repo ?'];
+        var chips = ['mes priorités du jour ?', 'que fait la plateforme ?', 'la note de mon repo ?', 'mon score DORA ?', 'combien de FF ?', 'ce qui ne va pas ?'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {

@@ -25,6 +25,23 @@ ce qui ne va pas + comment progresser, badges, générer des rapports, ateliers)
 
 Intention tracée : `help`. « qui es-tu ? » reste la **présentation courte** (small-talk).
 
+## « Comment je m'en sers ? » (mode d'emploi d'un module)
+
+« comment je m'en sers / comment ça marche / comment l'utiliser / comment marche
+`<module>` » → **mode d'emploi** : ce qu'on fait dans le module (+ lien pour l'ouvrir)
+et les questions qu'on peut me poser dessus. Le module est déduit de la question,
+ou — **en suivi** — de la dernière chose dont on parlait (après « c'est quoi DORA ? »,
+« comment je m'en sers ? » répond DORA). Sans contexte → je demande lequel. Couvre
+DORA, Achievements, Bus Factor, Daily, Feature Flags, Repo Analyzer. Intentions :
+`usage_<module>` / `usage_ask`. « comment ça marche **le score** DORA » reste la
+**formule** ; « comment améliorer mon repo » reste les **quick-wins**.
+
+## « Mes priorités de la journée » (dans le chat)
+
+« quelles sont mes priorités / par quoi je commence / sur quoi me concentrer » →
+Salsi ouvre le **bilan** (le même que la pastille 🌱 du hub) : le **top 5** à traiter,
+sécurité d'abord. Intention : `priorites`.
+
 ## Reconnaissance des formulations (déclencheurs)
 
 Salsi ne devine pas : il matche des **déclencheurs** curés, après **normalisation**
