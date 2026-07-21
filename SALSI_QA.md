@@ -516,3 +516,43 @@ déploiements, taux de succès du jour, + renvoi au module.
 - Intentions tracées : `daily_content`, `daily_tips`, `daily`.
 - Isolation : « combien de pipelines aujourd'hui » reste le comptage **pipelines**
   (pas le rapport) ; « conseils du jour » va bien aux **conseils** même sans « daily ».
+
+---
+
+# 🚩 Module Feature Flags — savoir complet (implémenté)
+
+> Miroir fidèle de `js/feature-flag-manager.js`. Salsi lit `/feature_flags` en
+> **live** et répond à **toute** question sur l'état de tes flags.
+
+## 1. Définition
+
+Un **feature flag** = interrupteur pour activer/désactiver une fonctionnalité sans
+redéployer (découple « déployer » de « activer »).
+
+## 2. Toutes les questions sur les données (répond à tout)
+
+Une seule lecture GitLab (`/projects/:id/feature_flags`) alimente toutes ces réponses :
+
+| Question | Réponse |
+|---|---|
+| « combien de FF ? » | total + **N ON / M OFF** + environnements |
+| « leurs noms / la liste » | liste des flags avec 🟢 ON / 🔴 OFF |
+| « sur quel environnement ? » | répartition par `environment_scope` (prod, staging, tous…) |
+| « lesquels en prod ? » | flags ciblés `production` (ou `*`) |
+| « lesquels sont actifs / inactifs ? » | listes ON / OFF |
+| « le flag <nom> ? » | **détail** : ON/OFF · rollout % · env · stratégie(s) |
+
+- **Nom d'un flag** : reconnu même partiel/sans préfixe (« apple pay » → `enable-apple-pay`).
+- **Rollout %** : lu dans `strategies[].parameters.percentage` (`default` = 100 %).
+- **Environnements** : `strategies[].scopes[].environment_scope` (`*` = tous).
+- `403` → 🔒 non vérifiable ; aucun flag → dit clairement « aucun (ou non activé) ».
+
+## 3. Détails techniques du routeur
+
+- `feature_flags` est **`dataFirst`** : une question FF sans « c'est quoi » répond
+  par les **données** (pas la définition). « c'est quoi un feature flag » → définition.
+- `isData` élargi : `nom(s)`, `environnement`, `actif/inactif`, `on/off` comptent
+  comme demandes de données (corrige « leurs noms » au pluriel).
+- Suivi conversationnel : après « combien de FF ? », « leurs noms ? » / « sur quel
+  environnement ? » / « lesquels en prod ? » restent sur les feature flags.
+- Intention tracée : `feature_flags`.

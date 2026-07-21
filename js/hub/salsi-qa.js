@@ -95,12 +95,84 @@
         var prod = d.filter(function (x) { return /prod/i.test((x.environment && x.environment.name) || ''); }).length;
         return { html: `📦 <b>${d.length}</b> déploiement(s) ${w.label} sur <b>${esc(c.name)}</b>${prod ? `, dont <b>${prod}</b> en prod` : ''}.` };
     }
+    // ── Feature Flags : répond à TOUTE question sur les données du module ──
+    function ffActive(f) { return f.active !== false; }
+    function ffEnvs(f) {   // environnements (scopes) couverts par les stratégies
+        var set = {};
+        (f.strategies || []).forEach(function (s) { (s.scopes || []).forEach(function (sc) { if (sc.environment_scope) set[sc.environment_scope] = 1; }); });
+        var arr = Object.keys(set);
+        return arr.length ? arr : ['*']; // '*' = tous les environnements
+    }
+    function ffPct(f) {    // pourcentage de rollout (max sur les stratégies), ou null
+        var best = null;
+        (f.strategies || []).forEach(function (s) {
+            if (s.parameters && s.parameters.percentage != null) { var p = parseInt(s.parameters.percentage, 10); if (!isNaN(p)) best = Math.max(best == null ? 0 : best, p); }
+            else if (s.name === 'default') best = Math.max(best == null ? 0 : best, 100);
+        });
+        return best;
+    }
+    function ffClean(name) { return norm(String(name || '').replace(/^(enable|disable)-/, '').replace(/[-_]/g, ' ')); }
+    function ffFind(n, flags) {   // le flag dont le nom (nettoyé ou brut) apparaît dans la question
+        var best = null, bestLen = 0;
+        flags.forEach(function (f) {
+            [ffClean(f.name), norm(String(f.name).replace(/[-_]/g, ' '))].forEach(function (cand) {
+                if (cand.length >= 4 && n.indexOf(cand) >= 0 && cand.length > bestLen) { best = f; bestLen = cand.length; }
+            });
+        });
+        return best;
+    }
+    function ffLabel(f) { return esc(String(f.name)) + ' ' + (ffActive(f) ? '🟢 ON' : '🔴 OFF'); }
+    function ffDetail(f) {
+        var envs = ffEnvs(f).map(function (e) { return e === '*' ? 'tous' : e; }).join(', ');
+        var pct = ffPct(f), strat = (f.strategies || []).map(function (s) { return s.name; });
+        var bits = [ffActive(f) ? '🟢 <b>ON</b>' : '🔴 <b>OFF</b>'];
+        if (pct != null && pct < 100) bits.push(`rollout <b>${pct}%</b>`);
+        bits.push(`env : <b>${esc(envs)}</b>`);
+        if (strat.length) bits.push(`stratégie(s) : ${esc(strat.join(', '))}`);
+        return { html: `🚩 <b>${esc(f.name)}</b> — ${bits.join(' · ')}.` };
+    }
     async function d_flags(n) {
         var c = repoCtx(); if (c.err) return c.err;
         var r = await F(c, `/projects/${c.pid}/feature_flags?per_page=100`);
+        if (r.status === 403) return { html: `🚩 Feature flags : 🔒 non vérifiable (droits) sur <b>${esc(c.name)}</b>.` };
         if (!(r.status >= 200 && r.status < 300) || !Array.isArray(r.data) || !r.data.length) return { html: `🚩 Aucun feature flag configuré sur <b>${esc(c.name)}</b> (ou non activé).` };
-        var inactive = r.data.filter(function (f) { return f.active === false; }).length;
-        return { html: `🚩 <b>${r.data.length}</b> feature flag(s) sur <b>${esc(c.name)}</b>${inactive ? `, dont <b>${inactive}</b> inactif(s)` : ''}.` };
+        var flags = r.data, total = flags.length;
+        var on = flags.filter(ffActive), off = flags.filter(function (f) { return !ffActive(f); });
+
+        // 1) Détail d'un flag précis nommé dans la question.
+        var named = ffFind(n, flags); if (named) return ffDetail(named);
+
+        // 2) Par environnement (« sur quel environnement », « en prod »…).
+        if (/environnement|env |scope|\bprod\b|production|staging|preprod|recette|integration|dev\b/.test(n)) {
+            var envMap = {};
+            flags.forEach(function (f) { ffEnvs(f).forEach(function (e) { (envMap[e] = envMap[e] || []).push(f); }); });
+            var askProd = /\bprod\b|production/.test(n);
+            if (askProd) {
+                var inProd = flags.filter(function (f) { return ffEnvs(f).some(function (e) { return e === 'production' || e === '*'; }); });
+                if (!inProd.length) return { html: `🚩 Aucun feature flag ciblé sur <b>production</b> sur <b>${esc(c.name)}</b>.` };
+                return { html: `🚩 <b>${inProd.length}</b> flag(s) en <b>production</b> sur <b>${esc(c.name)}</b> : ` + inProd.slice(0, 12).map(ffLabel).join(', ') + (inProd.length > 12 ? ` … (+${inProd.length - 12})` : '') + '.' };
+            }
+            var rows = Object.keys(envMap).map(function (e) { return `<b>${esc(e === '*' ? 'tous' : e)}</b> : ${envMap[e].length}`; }).join(' · ');
+            return { html: `🚩 Répartition par environnement sur <b>${esc(c.name)}</b> : ${rows}.<br><span class="sqa-hint">« quels flags en prod ? » pour la liste d'un environnement.</span>` };
+        }
+
+        // 3) Actifs / inactifs (ON/OFF).
+        if (/actif|active|activ|inactif|desactiv|\bon\b|\boff\b|allum|eteint|coupe/.test(n)) {
+            var wantOff = /inactif|desactiv|\boff\b|eteint|coupe/.test(n);
+            var lst = wantOff ? off : on;
+            if (!lst.length) return { html: `🚩 Aucun flag ${wantOff ? 'inactif' : 'actif'} sur <b>${esc(c.name)}</b>.` };
+            return { html: `🚩 <b>${lst.length}</b> flag(s) ${wantOff ? '🔴 inactif(s)' : '🟢 actif(s)'} sur <b>${esc(c.name)}</b> : ` + lst.slice(0, 12).map(function (f) { return `<code>${esc(f.name)}</code>`; }).join(', ') + (lst.length > 12 ? ` … (+${lst.length - 12})` : '') + '.' };
+        }
+
+        // 4) Noms / liste.
+        if (/nom|liste|lesquel|laquelle|lequel|quels|quelles|montre|affiche|donne|detail|tous les/.test(n)) {
+            return { html: `🚩 <b>${total}</b> feature flag(s) sur <b>${esc(c.name)}</b> :<br>` + flags.slice(0, 20).map(ffLabel).join('<br>') + (total > 20 ? `<br>… (+${total - 20})` : '') };
+        }
+
+        // 5) Par défaut : le compte + ON/OFF + envs.
+        var envAll = {}; flags.forEach(function (f) { ffEnvs(f).forEach(function (e) { envAll[e] = 1; }); });
+        var envList = Object.keys(envAll).map(function (e) { return e === '*' ? 'tous' : e; }).join(', ');
+        return { html: `🚩 <b>${total}</b> feature flag(s) sur <b>${esc(c.name)}</b> — <b>${on.length}</b> 🟢 ON, <b>${off.length}</b> 🔴 OFF. Environnement(s) : <b>${esc(envList)}</b>.<br><span class="sqa-hint">Demande « leurs noms », « lesquels en prod », « lesquels inactifs », ou le nom d'un flag pour son détail.</span>` };
     }
     async function d_dora(n) {
         var c = repoCtx(); if (c.err) return c.err;
@@ -601,7 +673,7 @@
         { k: 'mttr', trig: ['mttr', 'temps de restauration', 'time to restore', 'temps de reprise'], def: 'mttr', data: d_dora },
         { k: 'lead_time', trig: ['lead time', 'delai de livraison'], def: 'lead_time', data: d_dora },
         { k: 'deploy_freq', trig: ['frequence de deploiement', 'deployment frequency'], def: 'deploy_freq', data: d_deploy },
-        { k: 'feature_flags', trig: ['feature flag', 'feature flags', 'ff', 'flag', 'flags', 'drapeau'], def: 'feature_flags', data: d_flags },
+        { k: 'feature_flags', trig: ['feature flag', 'feature flags', 'ff', 'flag', 'flags', 'drapeau'], def: 'feature_flags', data: d_flags, dataFirst: true },
         { k: 'pipelines', trig: ['pipeline', 'pipelines', 'ci', 'build', 'job', 'jobs'], data: d_pipelines },
         { k: 'merge_requests', trig: ['merge request', 'mr', 'pr', 'revue', 'review', 'demande de fusion'], data: d_mr },
         { k: 'deploiements', trig: ['deploiement', 'deployment', 'deploy', 'mise en prod'], data: d_deploy },
@@ -741,11 +813,11 @@
             var atl = searchAteliers(n); if (atl) { atl.intent = 'atelier'; return atl; }
         }
         var isDef = /(c est quoi|qu est ce|c est quoi|explique|definition|ca veut dire|signifie|comprends pas|c est koi)/.test(n);
-        var isData = /(combien|nombre|mon |ma |mes |quel|quelle|\bnom\b|liste|lesquel|laquelle|lequel|montre|affiche|donne|aujourd|semaine|mois|derni|est ce que|qui )/.test(n);
+        var isData = /(combien|nombre|mon |ma |mes |quel|quelle|nom|liste|lesquel|laquelle|lequel|montre|affiche|donne|aujourd|semaine|mois|derni|est ce que|qui |environnement|\benv\b|actif|inactif|\bon\b|\boff\b)/.test(n);
         var intent = null;
         for (var i = 0; i < INTENTS.length; i++) { if (hit(n, INTENTS[i].trig)) { intent = INTENTS[i]; break; } }
         // Suivi : pas d'intention trouvée mais une demande de donnée → dernière intention.
-        if (!intent && isData && _lastIntent && _lastIntent.data && /nom|liste|lesquel|laquelle|lequel|lesquelles|montre|affiche|donne|detail/.test(n)) intent = _lastIntent;
+        if (!intent && isData && _lastIntent && _lastIntent.data && /nom|liste|lesquel|laquelle|lequel|lesquelles|montre|affiche|donne|detail|environnement|\benv\b|actif|inactif|\bprod\b|\bon\b|\boff\b/.test(n)) intent = _lastIntent;
         if (!intent) return { html: `Je ne réponds que sur la <b>plateforme</b> 🌱 — les concepts (« c'est quoi le bus factor ? »), tes résultats (pipelines, MR, bus factor, DORA, sécu…) et les ateliers (« atelier pour optimiser mon flow »). Reformule, ou essaie : « l'état de mon repo », « combien de FF ? ».`, intent: 'unknown' };
         if (intent.data) _lastIntent = intent;
         var r;
@@ -753,6 +825,7 @@
         else if (isData && intent.data) r = await intent.data(n);
         else if (intent.data && !intent.def) r = await intent.data(n);
         else if (intent.def && !intent.data) r = { html: defHtml(intent.def) };
+        else if (intent.dataFirst && intent.data) r = await intent.data(n); // module orienté données (ex. FF) → répond données par défaut
         else r = { html: defHtml(intent.def, true) };
         r.intent = intent.k;
         return r;
