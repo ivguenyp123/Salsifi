@@ -131,6 +131,165 @@
         return { html: `Ouvre le <b>bilan</b> via la pastille 🌱 Salsi en haut du hub (sélectionne d'abord un repo).` };
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SAVOIR DORA — miroir fidèle du module DORA Insights (js/insights.js)
+    //  Seuils = doraLevel() · Leviers/stakes/measure = DORA_COACH · Score = renderGlobalScore
+    //  On ne réinvente rien : Salsi répond avec le contenu exact de la maquette.
+    // ══════════════════════════════════════════════════════════════════
+    var DORA_KB = {
+        df: {
+            emoji: '🚀', label: 'Fréquence de déploiement', short: 'fréquence de déploiement',
+            def: 'À quelle fréquence tu livres en prod. Souvent = petits lots, moins de risque à chaque mise en prod, retour terrain rapide.',
+            calc: 'pipelines <i>success</i> en prod sur 30 j × 7 (dédupliqués par commit).',
+            // notes Elite→Low, seuils exacts de doraLevel('df')
+            levels: [
+                { lv: 'Elite', ic: '🟢', th: '≥ 7 déploiements/sem' },
+                { lv: 'High', ic: '🔵', th: '1 à 7 /sem' },
+                { lv: 'Medium', ic: '🟡', th: '0,25 à 1 /sem (≈ 1 par mois → 1 par semaine)' },
+                { lv: 'Low', ic: '🔴', th: '< 0,25 /sem (moins d\'1 par mois)' }
+            ],
+            target: '≥ 7 déploiements/sem (Elite)',
+            stakes: 'Déployer souvent, c\'est livrer par petits lots : moins de risque à chaque mise en prod, un retour terrain rapide, et la fin des « big bang » stressants.',
+            levers: [
+                { t: 'Automatiser le déploiement (CD)', d: 'Un merge sur la branche par défaut déclenche le déploiement, sans geste manuel. Tant qu\'un humain doit « lancer » la prod, la fréquence plafonne.', mod: 'Pipeline Generator', page: 'pipeline-generator.html' },
+                { t: 'Découper en petites MR', d: 'Vise des MR sous ~200 lignes : elles se relisent et se mergent dans la journée. Plus tu fusionnes petit et souvent, plus tu déploies.' },
+                { t: 'Feature flags', d: 'Déploie du code inactif derrière un flag pour découpler « déployer » de « activer ».', mod: 'Feature Flag Manager', page: 'feature-flag-manager.html' },
+                { t: 'Branches courtes (trunk-based)', d: 'Branche → merge en quelques jours max, sinon ça finit en gros merges rares.' },
+                { t: 'Pipeline rapide et fiable', d: 'Un CI vert en quelques minutes rend le déploiement fréquent tenable.' }
+            ],
+            measure: 'Je te sais en progrès quand le nombre de pipelines réussis par semaine grimpe.',
+            atl: 'pipeline deploiement automatisation ci cd trunk'
+        },
+        lt: {
+            emoji: '⚡', label: 'Lead Time', short: 'lead time',
+            def: 'Le délai entre « le dev commence » (premier commit) et « c\'est en prod » (merge). Long = de la valeur qui dort et des reviews qui traînent.',
+            calc: 'médiane du délai premier commit → merge de tes MR fusionnées (30 j).',
+            levels: [
+                { lv: 'Elite', ic: '🟢', th: '≤ 24 h (moins d\'un jour)' },
+                { lv: 'High', ic: '🔵', th: '≤ 1 semaine (24 h → 168 h)' },
+                { lv: 'Medium', ic: '🟡', th: '≤ 1 mois (168 h → 720 h)' },
+                { lv: 'Low', ic: '🔴', th: '> 1 mois (720 h+)' }
+            ],
+            target: '≤ 24 h premier commit → prod (Elite)',
+            stakes: 'Un Lead Time long, c\'est de la valeur qui dort, des reviews qui traînent et du contexte perdu entre l\'écriture et la livraison.',
+            levers: [
+                { t: 'Réduire la taille des MR', d: 'Une petite MR se relit en minutes ; une grosse traîne des jours. C\'est le levier n°1 sur le lead time.', mod: 'MR Reviewer', page: 'mr-reviewer.html' },
+                { t: 'Un SLA de review', d: 'Fixe une attente d\'équipe (ex. première review < 4 h ouvrées), revieweurs désignés + notifications. La review qui dort est souvent le plus gros du délai.' },
+                { t: 'Merger dès que c\'est vert', d: 'Une MR approuvée au pipeline vert ne devrait pas attendre. Traque les MR « prêtes mais pas mergées ».' },
+                { t: 'Limiter le travail en cours', d: 'Trop de MR ouvertes en parallèle = rien n\'avance. Fini d\'abord, commence ensuite.' },
+                { t: 'Automatiser les checks bloquants', d: 'Lint, format, tests : laisse le CI le faire, la review s\'éternise moins.' }
+            ],
+            measure: 'Ta progression se lit sur la médiane premier commit → merge de tes MR fusionnées.',
+            atl: 'revue review mr taille wip cycle livraison flux goulot'
+        },
+        cfr: {
+            emoji: '🔧', label: 'Change Failure Rate (CFR)', short: 'taux d\'échec (CFR)',
+            def: 'La part de tes livraisons prod qui cassent (échec / rollback). Trop haut : tu vas vite mais tu casses souvent.',
+            calc: 'pipelines prod (main/master) en échec / total × 100, pondéré vers le récent (fenêtres 5 j / 10 j / 30 j).',
+            levels: [
+                { lv: 'Elite', ic: '🟢', th: '≤ 5 % des déploiements en échec' },
+                { lv: 'High', ic: '🔵', th: '≤ 10 %' },
+                { lv: 'Medium', ic: '🟡', th: '≤ 15 %' },
+                { lv: 'Low', ic: '🔴', th: '> 15 %' }
+            ],
+            target: '≤ 5 % de déploiements en échec (Elite)',
+            stakes: 'Un CFR trop haut, c\'est des rollbacks, du stress, et une confiance qui s\'érode à chaque incident.',
+            levers: [
+                { t: 'Quality gates avant merge', d: 'Pipeline vert obligatoire, review obligatoire, branche par défaut protégée : rendre le merge d\'un changement non vérifié impossible.', mod: 'Gouvernance repo', page: 'gouvernance-repo.html' },
+                { t: 'Tests automatisés sur les chemins critiques', d: 'Sans filet, chaque déploiement est un pari. Couvre d\'abord les parcours qui font mal quand ils cassent.' },
+                { t: 'Un staging représentatif', d: 'Tester « comme en prod » attrape les surprises de config et d\'environnement avant les utilisateurs.' },
+                { t: 'Des changements plus petits', d: 'Un petit changement casse moins souvent et se diagnostique en minutes.' },
+                { t: 'Deux paires d\'yeux sur les zones sensibles', d: 'Sur le code critique, exige une vraie revue. Le coût d\'une review << le coût d\'un rollback.' }
+            ],
+            measure: 'Ta progression se lit sur le % de pipelines prod (main/master) en échec, pondéré vers le récent.',
+            atl: 'test couverture qualite quality gate rollback tdd'
+        },
+        mttr: {
+            emoji: '⏱️', label: 'Temps de restauration (MTTR / TTRS)', short: 'temps de restauration (MTTR)',
+            def: 'Le temps pour revenir à la normale après un incident. La résilience compte autant que la vitesse.',
+            calc: 'médiane de la durée pipeline en échec → succès qui restaure, sur branche prod.',
+            levels: [
+                { lv: 'Elite', ic: '🟢', th: '≤ 1 h pour restaurer' },
+                { lv: 'High', ic: '🔵', th: '≤ 24 h (moins d\'un jour)' },
+                { lv: 'Medium', ic: '🟡', th: '≤ 1 semaine (24 h → 168 h)' },
+                { lv: 'Low', ic: '🔴', th: '> 1 semaine (168 h+)' }
+            ],
+            target: '≤ 1 h pour restaurer le service (Elite)',
+            stakes: 'Un MTTR long, c\'est un incident qui dure, donc de l\'impact utilisateur. Ça finira par casser — la question c\'est en combien de temps tu reviens.',
+            levers: [
+                { t: 'Rollback en un geste', d: 'Revenir à la version précédente en une commande (ou un clic) transforme un incident d\'une heure en incident de cinq minutes.' },
+                { t: 'Détecter vite', d: 'Alerting sur les pipelines/déploiements en échec + monitoring des symptômes : on ne restaure pas ce qu\'on n\'a pas vu tomber.' },
+                { t: 'Déployer petit et souvent', d: 'Un petit changement est plus facile à annuler et diagnostiquer.' },
+                { t: 'Couper via un feature flag', d: 'Désactiver la fonctionnalité fautive sans redéployer : la remédiation la plus rapide qui soit.', mod: 'Feature Flag Manager', page: 'feature-flag-manager.html' },
+                { t: 'Des runbooks', d: 'Une procédure écrite pour les incidents fréquents évite d\'improviser sous pression.' }
+            ],
+            measure: 'Ta progression se lit sur le temps médian entre un pipeline en échec et le succès qui restaure.',
+            atl: 'incident monitoring alerting observabilite rollback post mortem runbook resilience'
+        }
+    };
+    var DORA_ORDER = { Low: 0, Medium: 1, High: 2, Elite: 3 };
+    // Détecte de quelle mesure DORA parle la question (ou null).
+    function doraKeyFromN(n) {
+        if (/\bcfr\b|taux d echec|change failure|echec de changement|stabilite|ca casse|je casse|on casse/.test(n)) return 'cfr';
+        if (/\bmttr\b|ttrs|restauration|time to restore|temps de reprise|resilience|recuperation/.test(n)) return 'mttr';
+        if (/lead time|\blt\b|delai de livraison|temps de cycle|cycle time|delai de mise en prod/.test(n)) return 'lt';
+        if (/frequence de deploiement|deployment frequency|deploy freq|\bdf\b|deployer|deploiement|livrer plus souvent|frequence.*deploi/.test(n)) return 'df';
+        return null;
+    }
+    // « comment améliorer ma mesure » → plan condensé fidèle au Coach du module.
+    function d_dora_improve(key, n) {
+        // pas de mesure ciblée → on prend la plus faible du cache, sinon on propose de choisir.
+        var suggestNote = '';
+        if (!key) {
+            var c = repoCtx(); var pid = c.err ? targetRepo() : c.pid;
+            var DH = Salsifi.doraHistory, h = (DH && pid) ? DH.read(pid) : [];
+            if (h && h.length) {
+                var lv = h[h.length - 1].levels || {}, worst = null, worstRank = 99;
+                ['df', 'lt', 'cfr', 'mttr'].forEach(function (k) { var r = DORA_ORDER[lv[k]]; if (typeof r === 'number' && r < worstRank) { worstRank = r; worst = k; } });
+                if (worst) { key = worst; suggestNote = `👉 Je te suggère d'attaquer <b>${DORA_KB[key].label}</b> — c'est ta mesure la plus basse (<b>${esc(lv[key])}</b>).<br>`; }
+            }
+            if (!key) {
+                return { html: `Sur quelle des <b>4 mesures DORA</b> veux-tu progresser ? 🌱<br>🚀 <b>fréquence de déploiement</b> · ⚡ <b>lead time</b> · 🔧 <b>CFR</b> (taux d'échec) · ⏱️ <b>MTTR</b> (restauration).<br>Dis-moi « améliorer mon <b>lead time</b> » — ou ouvre le <b>Coach Salsi</b> dans <a href="insights.html" target="_blank" rel="noopener">DORA Insights ↗</a> pour un plan complet suivi dans le temps.` };
+            }
+        }
+        var m = DORA_KB[key];
+        var levers = m.levers.slice(0, 3).map(function (l) {
+            var mod = l.mod ? ` <a href="${esc(l.page)}" target="_blank" rel="noopener">🧰 ${esc(l.mod)} ↗</a>` : '';
+            return `<div class="sqa-atl"><b>${esc(l.t)}</b>${mod}<div class="sqa-atl-d">${esc(l.d)}</div></div>`;
+        }).join('');
+        var more = m.levers.length > 3 ? `<div class="sqa-hint">+${m.levers.length - 3} autres leviers dans le <b>Coach Salsi</b> (DORA Insights).</div>` : '';
+        // Un atelier d'accompagnement relié à la mesure (parmi les 205).
+        var atlTop = scoreAteliers(m.atl.split(' '))[0];
+        var atlHtml = atlTop ? `<div class="sqa-hint">🎓 Atelier pour se faire accompagner :</div>${atelierCard(atlTop.a)}` : '';
+        return {
+            html: `${suggestNote}${m.emoji} <b>Améliorer ta ${esc(m.short)}</b> — cap : <b>${esc(m.target)}</b>.<br><span class="sqa-hint">${esc(m.stakes)}</span>${levers}${more}` +
+                `<div class="sqa-atl-x">📏 ${esc(m.measure)}</div>${atlHtml}` +
+                `<div class="sqa-hint">Plan complet + suivi dans le temps → <b>Coach Salsi</b> dans <a href="insights.html" target="_blank" rel="noopener">DORA Insights ↗</a>.</div>`
+        };
+    }
+    // « les notes / niveaux DORA » → les 4 paliers, seuils exacts. key ⇒ une mesure, sinon les 4.
+    function d_dora_levels(key) {
+        function block(k) {
+            var m = DORA_KB[k];
+            var rows = m.levels.map(function (L) { return `${L.ic} <b>${L.lv}</b> — ${esc(L.th)}`; }).join('<br>');
+            return `${m.emoji} <b>${esc(m.label)}</b><br>${rows}`;
+        }
+        if (key) return { html: block(key) };
+        return {
+            html: `📊 Les <b>4 niveaux DORA</b> (🟢 Elite · 🔵 High · 🟡 Medium · 🔴 Low), seuils par mesure :<br><br>` +
+                ['df', 'lt', 'cfr', 'mttr'].map(block).join('<br><br>') +
+                `<div class="sqa-hint">Le score global /100 combine ces 4 niveaux — demande-moi « comment est calculé le score DORA ».</div>`
+        };
+    }
+    // « comment est calculé le score DORA » → la formule exacte du module.
+    function d_dora_scorecalc() {
+        return {
+            html: `🎯 <b>Score DORA /100</b> : chaque mesure vaut des points selon son niveau — 🟢 Elite <b>100</b> · 🔵 High <b>70</b> · 🟡 Medium <b>40</b> · 🔴 Low <b>15</b>. Le score = la <b>moyenne</b> des 4.<br>` +
+                `Niveau global : ≥ 85 🏆 Elite · ≥ 60 ✅ High · ≥ 35 📈 Medium · sinon ⚠️ Low.<br>` +
+                `<span class="sqa-hint">⚠️ Si le <b>MTTR</b> manque, le score est plafonné à 75 (Elite interdit) : sans mesure de résilience, on ne peut pas garantir le haut du tableau. Si 2 mesures+ manquent, plafond à 50.</span>`
+        };
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -150,25 +309,30 @@
         var out = {}; kws.forEach(function (w) { out[w] = 1; (ATL_SYN[w] || []).forEach(function (s) { out[s] = 1; }); });
         return Object.keys(out);
     }
-    function searchAteliers(n) {
-        var W = Salsifi.workshops; if (!W || !W.actions) return { html: 'Le référentiel d\'ateliers n\'est pas chargé.' };
-        var kws = n.split(' ').filter(function (w) { return w.length > 2 && !ATL_STOP[w]; });
-        if (!kws.length) return { html: `Sur quel sujet veux-tu progresser ? 🌱 Essaie : « atelier <b>flow</b> », « atelier <b>pipeline</b> », « atelier <b>dette</b> », « <b>incidents</b> », « <b>sécurité</b> », « <b>rituels</b> », « <b>dépendances</b> ».` };
-        var terms = atlExpand(kws), scored = [];
+    // Score les 205 ateliers sur une liste de termes → [{a,score}] trié décroissant.
+    function scoreAteliers(terms) {
+        var W = Salsifi.workshops; if (!W || !W.actions) return [];
+        var scored = [];
         Object.keys(W.actions).forEach(function (k) {
             var a = W.actions[k], txt = norm((a.action || '') + ' ' + (a.titre || '') + ' ' + (a.axeLabel || ''));
             var score = 0; terms.forEach(function (t) { if (txt.indexOf(t) >= 0) score += (t.length > 4 ? 2 : 1); });
             if (score > 0) scored.push({ a: a, score: score });
         });
         scored.sort(function (x, y) { return y.score - x.score; });
-        var top = scored.slice(0, 3);
+        return scored;
+    }
+    function atelierCard(a) {
+        var desc = a.action || a.titre, title = a.page || a.titre;
+        var head = a.lien ? `<a href="${esc(a.lien)}" target="_blank" rel="noopener">🎓 ${esc(title)} ↗</a>` : `🎓 ${esc(title)} <span class="sqa-hint">(pas encore de page)</span>`;
+        return `<div class="sqa-atl">${head}<div class="sqa-atl-d">${esc(desc)}</div><div class="sqa-atl-x">${esc(a.axeLabel || '')} · niv. ${esc(a.niveau)}</div></div>`;
+    }
+    function searchAteliers(n) {
+        var W = Salsifi.workshops; if (!W || !W.actions) return { html: 'Le référentiel d\'ateliers n\'est pas chargé.' };
+        var kws = n.split(' ').filter(function (w) { return w.length > 2 && !ATL_STOP[w]; });
+        if (!kws.length) return { html: `Sur quel sujet veux-tu progresser ? 🌱 Essaie : « atelier <b>flow</b> », « atelier <b>pipeline</b> », « atelier <b>dette</b> », « <b>incidents</b> », « <b>sécurité</b> », « <b>rituels</b> », « <b>dépendances</b> ».` };
+        var top = scoreAteliers(atlExpand(kws)).slice(0, 3);
         if (!top.length) return { html: `Je n'ai pas trouvé d'atelier pile sur « ${esc(kws.join(' '))} » 🌱 Essaie un mot-clé plus large : flow, pipeline, dette, incidents, sécurité, rituels, dépendances.` };
-        var items = top.map(function (s) {
-            var a = s.a, desc = a.action || a.titre, title = a.page || a.titre;
-            var head = a.lien ? `<a href="${esc(a.lien)}" target="_blank" rel="noopener">🎓 ${esc(title)} ↗</a>` : `🎓 ${esc(title)} <span class="sqa-hint">(pas encore de page)</span>`;
-            return `<div class="sqa-atl">${head}<div class="sqa-atl-d">${esc(desc)}</div><div class="sqa-atl-x">${esc(a.axeLabel || '')} · niv. ${esc(a.niveau)}</div></div>`;
-        }).join('');
-        return { html: `🎓 Les ateliers les plus proches :${items}` };
+        return { html: `🎓 Les ateliers les plus proches :` + top.map(function (s) { return atelierCard(s.a); }).join('') };
     }
 
     // ── Glossaire (définitions fixes) ──
@@ -235,6 +399,23 @@
     var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
     async function answer(q) {
         var n = norm(q);
+        // ── DORA d'abord (le module qu'on travaille en profondeur) ──
+        var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
+        var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);
+        // « comment améliorer ma fréquence / mon lead time / mon CFR / mon MTTR (ou mon score DORA) »
+        // (avant le calcul-du-score : « améliorer mon score » = progresser, pas « comment c'est calculé »)
+        if (improveVerb) {
+            var dk = doraKeyFromN(n);
+            if (dk || /\bdora\b|score/.test(n)) { var ri = d_dora_improve(dk, n); ri.intent = 'dora_improve' + (dk ? '_' + dk : ''); return ri; }
+        }
+        // « comment est calculé le score DORA »
+        if (/\bdora\b|score/.test(n) && /calcul|calcule|c est quoi le score|score.*(marche|fonctionne)|combien de points|comment (ca marche|fonctionne)/.test(n)) {
+            var rc = d_dora_scorecalc(); rc.intent = 'dora_score_calc'; return rc;
+        }
+        // « les niveaux / les notes / les paliers DORA » (ou « c'est quoi Elite »)
+        if (/niveau|niveaux|note|notes|palier|paliers|bareme|baremes|seuil|seuils|elite|high performer|medium performer|low performer|barometre/.test(n) && (doraCtx || /elite|palier|performer|bareme/.test(n))) {
+            var rl = d_dora_levels(doraKeyFromN(n)); rl.intent = 'dora_levels'; return rl;
+        }
         // Ateliers : question d'amélioration → on recommande un atelier (avant tout le reste).
         if (/\batelier|workshop|accompagnement|optimiser|ameliorer|\breduire\b|progresser|muscler|comment (faire|reduire|ameliorer|optimiser)/.test(n)) {
             var atl = searchAteliers(n); if (atl) { atl.intent = 'atelier'; return atl; }
@@ -282,7 +463,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['c\'est quoi le bus factor ?', 'combien de pipelines aujourd\'hui ?', 'combien de FF ?', 'ma branche est protégée ?', 'mon score DORA ?'];
+        var chips = ['mon score DORA ?', 'améliorer mon lead time', 'les niveaux DORA', 'combien de pipelines aujourd\'hui ?', 'combien de FF ?', 'c\'est quoi le bus factor ?'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {

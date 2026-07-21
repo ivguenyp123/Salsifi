@@ -249,3 +249,78 @@ Pour ne pas tout coder d'un coup, une **V1 resserrée** couvrant le plus utile :
 
 > **Tu valides / élagues cette liste, et je code la V1.** On ajoutera les modules
 > restants (workspace, releases, rétro…) au fur et à mesure.
+
+---
+
+# 📊 Module DORA Insights — savoir complet (implémenté)
+
+> On traite le module **en profondeur** : Salsi connaît les **définitions**, les
+> **notes** (paliers + seuils exacts), les **ateliers reliés** et sait répondre à
+> **« comment améliorer chaque mesure »**. Tout est un **miroir fidèle** du code du
+> module (`js/insights.js` : `doraLevel()`, `DORA_COACH`, `renderGlobalScore`) —
+> aucun seuil, aucun conseil inventé.
+
+## 1. Définitions (les 4 mesures + global)
+
+| Terme | Ce que Salsi répond (résumé) |
+|---|---|
+| **Fréquence de déploiement** (df, deploy freq) | À quelle fréquence tu livres en prod. Calcul : pipelines *success* prod / 30 j × 7 (dédupliqués par commit). |
+| **Lead Time** (lt, délai de livraison, cycle time) | Délai premier commit → merge en prod. Calcul : médiane sur tes MR fusionnées. |
+| **CFR** (taux d'échec, change failure rate) | Part des livraisons prod qui cassent. Calcul : pipelines prod en échec / total, pondéré récent (5 j/10 j/30 j). |
+| **MTTR / TTRS** (temps de restauration) | Temps pour restaurer après incident. Calcul : médiane pipeline échec → succès sur branche prod. |
+| **Score DORA /100** | Moyenne des 4 niveaux (Elite 100 · High 70 · Medium 40 · Low 15). ≥85 Elite · ≥60 High · ≥35 Medium · sinon Low. |
+
+## 2. Les notes (paliers + seuils exacts) — « les niveaux DORA »
+
+4 niveaux : 🟢 **Elite** · 🔵 **High** · 🟡 **Medium** · 🔴 **Low**.
+
+| Mesure | 🟢 Elite | 🔵 High | 🟡 Medium | 🔴 Low |
+|---|---|---|---|---|
+| 🚀 Déploiement/sem | ≥ 7 | 1 → 7 | 0,25 → 1 | < 0,25 |
+| ⚡ Lead Time | ≤ 24 h | ≤ 1 sem | ≤ 1 mois | > 1 mois |
+| 🔧 CFR | ≤ 5 % | ≤ 10 % | ≤ 15 % | > 15 % |
+| ⏱️ MTTR | ≤ 1 h | ≤ 24 h | ≤ 1 sem | > 1 sem |
+
+Calcul du score : demande « **comment est calculé le score DORA** ». Rappel du
+plafond : **MTTR manquant → score plafonné à 75** (Elite interdit) ; **2 mesures+
+manquantes → plafond 50**.
+
+## 3. « Comment améliorer ma mesure » (Coach condensé)
+
+Salsi renvoie, par mesure : le **cap** (cible Elite), **pourquoi** ça compte
+(stakes), les **3 premiers leviers** (avec lien vers le module associé), la
+**mesure de progrès**, **un atelier d'accompagnement** (parmi les 205), et le
+renvoi vers le **Coach Salsi** de DORA Insights (plan complet + suivi).
+
+| Mesure | Levier n°1 | Module lié |
+|---|---|---|
+| 🚀 df | Automatiser le déploiement (CD) | Pipeline Generator |
+| ⚡ lt | Réduire la taille des MR | MR Reviewer |
+| 🔧 cfr | Quality gates avant merge | Gouvernance repo |
+| ⏱️ mttr | Rollback en un geste / feature flag | Feature Flag Manager |
+
+« **améliorer mon score DORA** » (sans mesure) → Salsi lit le cache et **cible la
+mesure la plus basse**, puis fait le plan de celle-ci.
+
+## 4. Ateliers reliés (échantillon, sur 205)
+
+Reliés automatiquement par mots-clés au corpus `Salsifi.workshops` :
+
+- **df** : #53 (automatiser le déploiement), #55 (découpage incrémental), #105 (feature flags), #73 (anatomie pipeline).
+- **lt** : #133 (SLA de review), #149/#150 (feature slicing / découpage MR), #104 (cycle time < 3 j), #100 (tri MR zombies).
+- **cfr** : #122 (premier test dans le pipeline), #125 (quality gates bloquants), #138 (règles d'approbation), #120 (scan de vulnérabilités).
+- **mttr** : #180 (stop-the-line), #184 (mesure du MTTR), #191 (process d'urgence), #193 (playbook), #195 (revert automatique).
+
+## 5. Déclencheurs ajoutés (DORA)
+
+- **améliorer** : `améliorer / optimiser / augmenter / réduire / baisser / progresser / booster / accélérer / muscler / passer Elite`.
+- **mesure ciblée** : `fréquence / déploiement / df` · `lead time / lt / délai / cycle` · `cfr / taux d'échec` · `mttr / ttrs / restauration / résilience`.
+- **niveaux** : `niveau / note / palier / barème / seuil / Elite / High/Medium/Low performer`.
+- **score** : `comment est calculé le score / combien de points / comment marche le score`.
+
+## 6. Journal & IA-fallback
+
+Chaque question DORA est tracée dans `salsifi_qa_log` avec son intention
+(`dora_improve_lt`, `dora_levels`, `dora_score_calc`…). Les intentions `unknown`
+répétées diront quelles formulations DORA il reste à couvrir **avant** de brancher
+l'IA en dernier recours.
