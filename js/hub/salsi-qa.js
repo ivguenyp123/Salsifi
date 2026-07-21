@@ -483,6 +483,51 @@
         };
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SAVOIR DAILY REPORT — miroir fidèle de js/daily-report.js + .html
+    //  Résumé de la journée GitLab (pensé standup) + « conseils du jour ».
+    // ══════════════════════════════════════════════════════════════════
+    // Ce que contient le rapport (6 chiffres + sections).
+    function d_daily_content() {
+        return {
+            html: `📋 Le <b>Daily Report</b> résume ta journée GitLab (pensé pour le <b>standup</b>). En tête, <b>6 chiffres</b> : MRs mergées · pipelines · échecs · déploiements · taux de succès · commits.<br>` +
+                `Puis les sections : <b>conseils du jour</b>, pipelines en échec, déploiements, tags/releases, MRs (mergées / en attente / fermées), branches (actives / stale > 30 j / mergées non supprimées), issues, <b>pipelines de longue durée</b> (> 15 min), branches à surveiller, <b>reverts</b>.<br>` +
+                `<span class="sqa-hint">Navigable jour par jour. Ouvre le module <b>📋 Daily Report</b>.</span>`
+        };
+    }
+    // Les « conseils du jour » : ce que le rapport détecte + seuils (max 5, triés).
+    function d_daily_tips() {
+        var rows = [
+            '🔴 <b>pipelines en échec</b> → à débloquer en priorité',
+            '👀 <b>MR mergée sans reviewer</b> → qualité',
+            '📝 <b>MR sans description</b> (&lt; 20 car.)',
+            '📐 <b>commits non conventionnels</b> (&gt; 40 % ; feat/fix/docs…)',
+            '⏳ <b>MR en attente + 7 jours</b> → risque de conflits',
+            '⏱️ <b>pipeline &gt; 15 min</b> → perf',
+            '🔄 <b>reverts</b> → problème en prod ou MR mergée trop vite ?',
+            '🐛 <b>nouveaux bugs</b> ouverts',
+            '🚀 <b>pas de déploiement</b> malgré des pipelines',
+            '✅ tout vert · 🎉 MRs toutes reviewées · 🔥 grosse journée · 😴 journée calme'
+        ].map(function (r) { return '• ' + r; }).join('<br>');
+        return { html: `📋 Les <b>conseils du jour</b> (max 5, triés urgence → positif). Le rapport signale :<br>${rows}` };
+    }
+    // Mon rapport du jour (digest live).
+    async function d_daily() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var d = new Date(), since = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString(), todayStr = new Date().toISOString().slice(0, 10);
+        var res = await Promise.all([
+            J(c, `/projects/${c.pid}/pipelines?per_page=100&updated_after=${encodeURIComponent(since)}`),
+            J(c, `/projects/${c.pid}/merge_requests?state=merged&per_page=100&updated_after=${encodeURIComponent(since)}`),
+            J(c, `/projects/${c.pid}/deployments?per_page=100&order_by=created_at&sort=desc`)
+        ]);
+        var pl = (res[0] || []).filter(function (p) { return (p.created_at || '').slice(0, 10) === todayStr; });
+        var mg = (res[1] || []), dp = (res[2] || []).filter(function (x) { return (x.created_at || '').slice(0, 10) === todayStr; });
+        var failed = pl.filter(function (p) { return p.status === 'failed'; }).length;
+        var succ = pl.filter(function (p) { return p.status === 'success'; }).length;
+        var rate = pl.length ? Math.round(succ / pl.length * 100) : null;
+        return { html: `📋 <b>Aujourd'hui</b> sur <b>${esc(c.name)}</b> : <b>${pl.length}</b> pipeline(s)${failed ? ` (<b>${failed}</b> en échec)` : ''}, <b>${mg.length}</b> MR mergée(s), <b>${dp.length}</b> déploiement(s)${rate != null ? `, taux succès <b>${rate}%</b>` : ''}.<br><span class="sqa-hint">Détail + conseils du jour → module <b>📋 Daily Report</b>.</span>` };
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -545,6 +590,7 @@
         ioc: { t: 'IOC', x: 'Indicateur de compromission : le point de départ d\'une enquête (un package+version, une image, un commit malveillant…).' },
         branches: { t: 'Branche morte', x: 'Une branche sans commit depuis longtemps (≥ 60 j) — souvent du travail non livré, à nettoyer.' },
         badges: { t: 'Badges (Salsi)', x: 'Des bonnes pratiques DevOps atteintes (47 au total), avec des phases de maturité et un compagnon qui suit tes progrès.' },
+        daily: { t: 'Daily Report', x: 'Le résumé de ton activité GitLab de la journée (MRs, pipelines, déploiements, commits, taux de succès), pensé pour le daily standup. Il sort aussi des « conseils du jour » (échecs, MR sans review, reverts…).' },
         meta: { t: 'Salsifi', x: 'Une plateforme d\'aide à la maturité DevOps au-dessus de GitLab : mesures (DORA), sécurité (secrets, CIS, Blast Radius), gouvernance des accès, gamification. Moi (Salsi) je fais le lien.' }
     };
 
@@ -571,6 +617,7 @@
         { k: 'ioc', trig: ['ioc', 'indicateur de compromission'], def: 'ioc' },
         { k: 'dora', trig: ['dora', 'score dora', 'niveau dora'], def: 'dora', data: d_dora },
         { k: 'badges', trig: ['badge', 'badges', 'achievement', 'succes'], def: 'badges', data: d_badges },
+        { k: 'daily', trig: ['daily report', 'daily', 'rapport du jour', 'rapport quotidien', 'rapport journalier', 'standup', 'rapport d activite'], def: 'daily', data: d_daily },
         { k: 'meta', trig: ['salsifi', 'salsi', 'plateforme', 'tu sais faire', 'qui es tu'], def: 'meta' }
     ];
     function hit(n, trig) { return trig.some(function (t) { var tn = norm(t); if (tn.length <= 3) return new RegExp('(^| )' + tn.replace(/ /g, ' ') + '( |$)').test(n); return n.indexOf(tn) >= 0; }); }
@@ -675,6 +722,10 @@
         // ── Gaming / Achievements (avant les « niveaux » DORA : « phases »/« badges » gagnent) ──
         var gr = await gamingRoute(n, /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois)/.test(n));
         if (gr) return gr;
+        // ── Daily Report : conseils du jour / ce qu'il contient (avant l'atelier générique) ──
+        var dailyCtx = /daily|standup|rapport (du jour|quotidien|journalier|d activite)/.test(n);
+        if (/conseil du jour|conseils du jour/.test(n) || (dailyCtx && /conseil|signale|detecte|declenche|alerte|flag/.test(n))) { var rdt = d_daily_tips(); rdt.intent = 'daily_tips'; return rdt; }
+        if (dailyCtx && /contient|dans le|sections?|quoi dedans|que montre|qu y a|comprend|composition/.test(n)) { var rdc = d_daily_content(); rdc.intent = 'daily_content'; return rdc; }
         // ── Bus Factor : améliorer / les niveaux (avant l'atelier générique et les niveaux DORA) ──
         var busCtx = /bus factor|busfactor|facteur de bus|camion|silo de connaissance|qui sait quoi/.test(n);
         if (busCtx) {

@@ -467,3 +467,52 @@ Après avoir retiré les motifs small-talk + les mots de remplissage (`salsi`, `
 - « ça va **mon repo** ? » → **état du repo** (pas le small-talk « ça va »).
 
 Intentions tracées : `smalltalk_greet / howru / thanks / bye / compliment / whoru`.
+
+---
+
+# 📋 Module Daily Report — savoir complet (implémenté)
+
+> Miroir fidèle de `js/daily-report.js` + `daily-report.html`. Le résumé de la
+> journée GitLab, pensé pour le **standup**, avec ses **conseils du jour**.
+
+## 1. Définition
+
+Le **Daily Report** résume ton activité GitLab de la journée (MRs, pipelines,
+déploiements, commits, taux de succès) et sort des **conseils du jour**.
+
+## 2. Ce qu'il contient
+
+**6 chiffres** en tête : MRs mergées · pipelines · échecs · déploiements · taux de
+succès · commits. Puis les **sections** : conseils du jour, pipelines en échec,
+déploiements, tags/releases, MRs (mergées / en attente / fermées), branches
+(actives / stale > 30 j / mergées non supprimées), issues, pipelines de longue
+durée (> 15 min), branches à surveiller, reverts. Navigable jour par jour.
+
+## 3. Les « conseils du jour » (règles + seuils) — les « notes »
+
+Max 5, triés **urgence → positif** (critical > warning > info > success) :
+
+| Signal | Seuil |
+|---|---|
+| 🔴 pipelines en échec | ≥ 1 |
+| 👀 MR mergée sans reviewer | ≥ 1 |
+| 📝 MR sans description | < 20 car. (si ≥ 2 MR) |
+| 📐 commits non conventionnels | > 40 % (si ≥ 3 commits) |
+| ⏳ MR en attente | + 7 jours |
+| ⏱️ pipeline long | > 15 min |
+| 🔄 reverts | ≥ 1 |
+| 🐛 nouveaux bugs | label `bug` |
+| 🚀 pas de déploiement | mais > 3 pipelines |
+| ✅ / 🎉 / 🔥 / 😴 | tout vert / MRs reviewées / grosse / calme |
+
+## 4. Mon rapport du jour
+
+« mon rapport du jour » → digest live : pipelines (dont échecs), MRs mergées,
+déploiements, taux de succès du jour, + renvoi au module.
+
+## 5. Déclencheurs & journal
+
+- Contexte : `daily / daily report / rapport du jour / standup / rapport quotidien`.
+- Intentions tracées : `daily_content`, `daily_tips`, `daily`.
+- Isolation : « combien de pipelines aujourd'hui » reste le comptage **pipelines**
+  (pas le rapport) ; « conseils du jour » va bien aux **conseils** même sans « daily ».
