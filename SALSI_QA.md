@@ -547,6 +547,52 @@ sans période → Salsi demande laquelle. Intentions : `activity_report_jour/sem
 
 ---
 
+# 🔍 Module Repo Analyzer — savoir complet (implémenté)
+
+> Module **très important** : Salsi doit répondre à **tout**. Miroir fidèle de
+> `js/repo-analyzer.js` — il refetch les mêmes endpoints (commits 90 j, MR
+> `state=all`, `per_page=100`) et applique les mêmes formules/seuils.
+
+## 1. Ma note / mon score
+
+« **ma note du repo / mon score repo / la santé de mon repo** » → **Santé /100**
+(formule exacte : 100, −40 si aucun commit 90 j, −10 si ≥ 10 MR ouvertes, −15 si
+bus factor ≥ 80 %) + **ce qui pèse** + les **sous-scores** visibles du module :
+⚙️ CI/CD (`succès/total`) et 🔀 Code reviews (MR : −40/−20/−5 par MR > 7 j/−10 par
+MR > 30 j). *(Note : le module calcule ce score global mais ne l'affiche pas ;
+Salsi le restitue quand même, avec les sous-scores réellement affichés.)*
+
+## 2. Ce qui ne va pas (red flags)
+
+« **ce qui ne va pas / ce qui cloche / mes alertes** » → les **red flags** exacts :
+🛡️ main non protégée · 🚌 bus factor ≥ 75 % (critique ≥ 90) · 💥 CI < 60 % de succès
+· 💀 ≥ 5 branches mortes (> 90 j). Aucun → « aucune alerte critique 🎉 ».
+
+## 3. Comment m'améliorer (quick wins priorisés)
+
+« **comment améliorer mon repo / quick wins / que faire / comment je m'améliore** »
+→ le **plan d'actions priorisé** (miroir des 24 règles) : 🔴 critique · 🟠 urgent ·
+🟡 important · 🔵 amélioration. Ex. protéger main, configurer CI/CD, bus factor,
+closer MR abandonnées, supprimer branches mortes, résoudre conflits, reviewer MR,
+assigner reviewers, nettoyer branches stale, pipelines en échec, documenter MR,
+Conventional Commits, README/.gitignore/CODEOWNERS/labels manquants… Top 6 sur N.
+
+## 4. Le reste des données
+
+`combien de MR / branches mortes / commits / contributeurs / pipelines` → gérés par
+les handlers existants (MR, branches, bus factor, pipelines). « **mon repo est-il
+actif ?** » → badge d'activité (`(commits+MR)/30` : ≥ 2 très actif, ≥ 0,5 actif).
+
+## 5. Déclencheurs & journal
+
+- Contexte : `repo analyzer / analyse du repo / santé du repo / ce qui ne va pas /
+  quick win / ma note du repo / comment améliorer mon repo`.
+- Intentions : `repo_score`, `repo_flags`, `repo_improve`, `repo_activity`, `repo_analyzer`.
+- Isolation : « améliorer mon lead time » reste **DORA** ; « combien de MR » reste le
+  comptage **MR** ; le Repo Analyzer prend les questions repo-globales.
+
+---
+
 # 🚩 Module Feature Flags — savoir complet (implémenté)
 
 > Miroir fidèle de `js/feature-flag-manager.js`. Salsi lit `/feature_flags` en

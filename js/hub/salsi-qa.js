@@ -801,6 +801,139 @@
         return { html: `📋 <b>Aujourd'hui</b> sur <b>${esc(c.name)}</b> : <b>${pl.length}</b> pipeline(s)${failed ? ` (<b>${failed}</b> en échec)` : ''}, <b>${mg.length}</b> MR mergée(s), <b>${dp.length}</b> déploiement(s)${rate != null ? `, taux succès <b>${rate}%</b>` : ''}.<br><span class="sqa-hint">Détail + conseils du jour → module <b>📋 Daily Report</b>.</span>` };
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SAVOIR REPO ANALYZER — miroir fidèle de js/repo-analyzer.js
+    //  Score de santé /100, sous-scores CI/MR, red flags, quick-wins priorisés.
+    //  Salsi refetch les mêmes endpoints (commits 90 j, MR state=all, per_page=100).
+    // ══════════════════════════════════════════════════════════════════
+    var RA_EXCL = { main: 1, master: 1, develop: 1, dev: 1 };
+    function raAge(iso) { return iso ? Math.floor((Date.now() - Date.parse(iso)) / 86400000) : null; }
+    function raBus(cs) { var t = cs.reduce(function (s, x) { return s + (x.commits || 0); }, 0); if (!t) return { name: '-', pct: 0 }; var top = cs.reduce(function (m, x) { return (x.commits || 0) > (m.commits || 0) ? x : m; }, cs[0]); return { name: top.name || top.email || '?', pct: Math.round((top.commits || 0) / t * 100) }; }
+    function raDead(bs) { return bs.filter(function (b) { return b.name && !RA_EXCL[b.name.toLowerCase()] && b.commit && raAge(b.commit.committed_date) > 90; }); }
+    function raStale(bs) { return bs.filter(function (b) { var a = b.commit && raAge(b.commit.committed_date); return b.name && !RA_EXCL[b.name.toLowerCase()] && a != null && a > 30 && a <= 90; }); }
+    function raMrScore(mrs) { var open = mrs.filter(function (m) { return m.state === 'opened'; }), merged = mrs.filter(function (m) { return m.state === 'merged'; }); var s = 100; if (!merged.length && open.length) s -= 40; if (open.length > 10) s -= 20; s -= open.filter(function (m) { return raAge(m.created_at) > 7; }).length * 5; s -= open.filter(function (m) { return raAge(m.created_at) > 30; }).length * 10; return Math.max(0, s); }
+    function raPag(c, ep, mp) { return Salsifi.gitlabPaginate(c.auth.gitlabUrl, c.auth.token, ep, { maxPages: mp || 3 }).catch(function () { return []; }); }
+    function raSince() { return new Date(Date.now() - 90 * 86400000).toISOString(); }
+
+    // « ma note / mon score repo » → santé /100 (formule exacte) + sous-scores.
+    async function d_repo_score() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var R = await Promise.all([
+            J(c, `/projects/${c.pid}/repository/commits?per_page=100&since=${encodeURIComponent(raSince())}`),
+            J(c, `/projects/${c.pid}/merge_requests?state=all&per_page=100`),
+            J(c, `/projects/${c.pid}/repository/contributors?per_page=100`),
+            J(c, `/projects/${c.pid}/pipelines?per_page=100`)
+        ]);
+        var commits = R[0] || [], mrs = R[1] || [], contribs = R[2] || [], pipelines = R[3] || [];
+        var openMRs = mrs.filter(function (m) { return m.state === 'opened'; }), bf = raBus(contribs);
+        var score = 100, deduc = [];
+        if (!commits.length) { score -= 40; deduc.push('aucun commit sur 90 j (−40)'); }
+        if (openMRs.length >= 10) { score -= 10; deduc.push('≥ 10 MR ouvertes (−10)'); }
+        if (bf.pct >= 80) { score -= 15; deduc.push(`bus factor ${bf.pct} % (−15)`); }
+        score = Math.max(0, Math.min(100, score));
+        var ci = pipelines.length ? Math.round(pipelines.filter(function (p) { return p.status === 'success'; }).length / pipelines.length * 100) : 0;
+        var mrS = raMrScore(mrs), col = score >= 80 ? '🟢' : score >= 50 ? '🟡' : '🔴';
+        return { html: `📁 <b>Santé de ${esc(c.name)}</b> : ${col} <b>${score}/100</b>.${deduc.length ? ` <span class="sqa-hint">Ce qui pèse : ${esc(deduc.join(' · '))}.</span>` : ' Rien à retirer 🎉'}<br>Sous-scores : ⚙️ CI/CD <b>${ci}%</b> · 🔀 Code reviews (MR) <b>${mrS}%</b>.<br><span class="sqa-hint">Demande « <b>ce qui ne va pas</b> » ou « <b>comment améliorer mon repo</b> » pour le détail.</span>` };
+    }
+
+    // « ce qui ne va pas / mes red flags » → alertes critiques (formule exacte).
+    async function d_repo_flags() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var R = await Promise.all([
+            raPag(c, `/projects/${c.pid}/repository/branches`, 3),
+            J(c, `/projects/${c.pid}/repository/contributors?per_page=100`),
+            J(c, `/projects/${c.pid}/pipelines?per_page=100`),
+            F(c, `/projects/${c.pid}/protected_branches?per_page=100`)
+        ]);
+        var branches = R[0] || [], contribs = R[1] || [], pipelines = R[2] || [], prot = R[3];
+        var flags = [];
+        var mainB = branches.filter(function (b) { return ['main', 'master'].indexOf(b.name.toLowerCase()) >= 0; })[0];
+        if (mainB && prot.status !== 403 && Array.isArray(prot.data)) {
+            var isProt = prot.data.map(function (b) { return b.name.toLowerCase(); }).indexOf(mainB.name.toLowerCase()) >= 0;
+            if (!isProt) flags.push('🛡️ <b>Branche main non protégée</b> — risque de push direct en prod.');
+        }
+        var bf = raBus(contribs);
+        if (bf.pct >= 75) flags.push(`🚌 <b>Bus factor ${bf.pct >= 90 ? 'critique' : 'élevé'} (${bf.pct} %)</b> — ${esc(bf.name)} concentre le savoir.`);
+        if (pipelines.length) { var rate = Math.round(pipelines.filter(function (p) { return p.status === 'success'; }).length / pipelines.length * 100); if (rate < 60) flags.push(`💥 <b>CI/CD instable (${rate} % succès)</b> — beaucoup de builds échouent.`); }
+        var dead = raDead(branches); if (dead.length >= 5) flags.push(`💀 <b>${dead.length} branches mortes</b> (> 90 j) — le repo est pollué.`);
+        if (!flags.length) return { html: `🎉 <b>Aucune alerte critique</b> sur <b>${esc(c.name)}</b> — les fondamentaux sont au vert. Demande « comment améliorer mon repo » pour les optimisations.` };
+        return { html: `🚨 <b>Ce qui ne va pas</b> sur <b>${esc(c.name)}</b> :<br>` + flags.map(function (f) { return '• ' + f; }).join('<br>') + `<br><span class="sqa-hint">« comment améliorer mon repo » → le plan d'action priorisé.</span>` };
+    }
+
+    // « comment améliorer mon repo / quick wins » → actions priorisées (miroir des 24 règles).
+    async function d_repo_improve() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var R = await Promise.all([
+            raPag(c, `/projects/${c.pid}/repository/branches`, 3),
+            J(c, `/projects/${c.pid}/merge_requests?state=all&per_page=100`),
+            J(c, `/projects/${c.pid}/repository/contributors?per_page=100`),
+            J(c, `/projects/${c.pid}/pipelines?per_page=100`),
+            F(c, `/projects/${c.pid}/protected_branches?per_page=100`),
+            J(c, `/projects/${c.pid}/repository/commits?per_page=100&since=${encodeURIComponent(raSince())}`),
+            raPag(c, `/projects/${c.pid}/repository/tree?recursive=true`, 5),
+            J(c, `/projects/${c.pid}/labels?per_page=100`)
+        ]);
+        var branches = R[0] || [], mrs = R[1] || [], contribs = R[2] || [], pipelines = R[3] || [], prot = R[4], commits = R[5] || [], tree = R[6] || [], labels = R[7] || [];
+        var open = mrs.filter(function (m) { return m.state === 'opened'; }), merged = mrs.filter(function (m) { return m.state === 'merged'; });
+        var files = tree.filter(function (f) { return f.path && f.path.indexOf('/') < 0; }).map(function (f) { return (f.name || '').toLowerCase(); });
+        var hasCi = files.indexOf('.gitlab-ci.yml') >= 0, bf = raBus(contribs);
+        var qw = [];
+        function add(p, icon, t, d) { qw.push({ p: p, icon: icon, t: t, d: d }); }
+        // CRITIQUE (0)
+        var mainB = branches.filter(function (b) { return ['main', 'master'].indexOf(b.name.toLowerCase()) >= 0; })[0];
+        var isProt = prot.status !== 403 && Array.isArray(prot.data) && mainB && prot.data.map(function (b) { return b.name.toLowerCase(); }).indexOf(mainB.name.toLowerCase()) >= 0;
+        if (mainB && prot.status !== 403 && !isProt) add(0, '🛡️', 'Protéger la branche main', 'N\'importe qui peut push en prod.');
+        if (!pipelines.length && !hasCi) add(0, '⚙️', 'Configurer CI/CD', 'Aucun pipeline : builds et tests non automatisés.');
+        if (bf.pct >= 90) add(0, '🚌', 'Bus factor critique', `${bf.name} = ${bf.pct} % du code. Partagez la connaissance.`);
+        var aband = open.filter(function (m) { return raAge(m.created_at) > 30; }); if (aband.length) add(0, '📌', `Closer ${aband.length} MR abandonnée(s)`, 'Ouvertes depuis > 30 j : merger, closer ou relancer.');
+        var dead = raDead(branches); if (dead.length) add(0, '💀', `Supprimer ${dead.length} branche(s) morte(s)`, 'Inactives > 90 j : elles polluent le repo.');
+        // URGENT (1)
+        var conf = open.filter(function (m) { return m.has_conflicts === true; }); if (conf.length) add(1, '⚔️', `Résoudre ${conf.length} conflit(s) de MR`, 'Ces MR ne peuvent pas être mergées en l\'état.');
+        var oldm = open.filter(function (m) { var a = raAge(m.created_at); return a > 7 && a <= 30; }); if (oldm.length) add(1, '⏳', `Reviewer ${oldm.length} MR en attente`, 'Ouvertes > 7 j : le feedback devient obsolète.');
+        var noRev = open.filter(function (m) { return !m.reviewers || !m.reviewers.length; }); if (noRev.length) add(1, '👀', `Assigner ${noRev.length} reviewer(s)`, 'Code mergé sans validation possible.');
+        var stale = raStale(branches); if (stale.length) add(1, '🧹', `Nettoyer ${stale.length} branche(s) stale`, 'Inactives 30-90 j : finir, merger ou supprimer.');
+        var failed = pipelines.filter(function (p) { return p.status === 'failed'; }); if (pipelines.length && failed.length >= pipelines.length * 0.3) add(1, '💥', 'Pipelines en échec', `${failed.length} échecs : investiguez les causes.`);
+        // IMPORTANT (2)
+        var noDesc = merged.concat(open).filter(function (m) { return !m.description || m.description.trim().length < 10; }); if (noDesc.length) add(2, '📝', `Documenter ${noDesc.length} MR`, 'Description manquante : les reviewers manquent de contexte.');
+        if (bf.pct >= 70 && bf.pct < 90) add(2, '🤝', 'Améliorer le bus factor', `${bf.name} = ${bf.pct} %. Planifiez du pair programming.`);
+        var conv = /^(feat|fix|docs|style|refactor|test|chore|build|ci)(\(.+\))?:/; var nonConv = commits.filter(function (cm) { return !conv.test(cm.title || ''); }); if (commits.length > 10 && nonConv.length > commits.length * 0.7) add(2, '📐', 'Adopter Conventional Commits', 'Standardisez : feat:, fix:, docs:…');
+        // AMÉLIORATION (3)
+        if (files.filter(function (f) { return f.indexOf('readme') === 0; }).length === 0) add(3, '📖', 'Créer un README', 'Aide les nouveaux arrivants à comprendre le projet.');
+        if (files.indexOf('.gitignore') < 0) add(3, '🚫', 'Ajouter un .gitignore', 'Évite de committer node_modules, build, secrets…');
+        if (contribs.length > 3 && !tree.some(function (f) { return /^(CODEOWNERS|docs\/CODEOWNERS|\.gitlab\/CODEOWNERS)$/i.test(f.path || ''); })) add(3, '👥', 'Créer un CODEOWNERS', 'Assigne les reviewers par zone de code.');
+        if (!labels.length) add(3, '🏷️', 'Définir des labels', 'Pour catégoriser et filtrer MRs/issues.');
+
+        if (!qw.length) return { html: `🎉 <b>${esc(c.name)}</b> : rien de critique, beau boulot ! Continue comme ça. 🌱` };
+        qw.sort(function (a, b) { return a.p - b.p; });
+        var pl = ['🔴 critique', '🟠 urgent', '🟡 important', '🔵 amélioration'];
+        var items = qw.slice(0, 6).map(function (w) { return `<div class="sqa-atl"><b>${w.icon} ${esc(w.t)}</b> <span class="sqa-hint">${pl[w.p]}</span><div class="sqa-atl-d">${esc(w.d)}</div></div>`; }).join('');
+        return { html: `🛠️ <b>Comment améliorer ${esc(c.name)}</b> — top ${Math.min(qw.length, 6)} sur ${qw.length} action(s) :${items}<span class="sqa-hint">Détail complet + boutons d'action → module <b>Repo Analyzer</b>.</span>` };
+    }
+
+    // « mon repo est-il actif ? » → badge d'activité (formule exacte du module).
+    async function d_repo_activity() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var R = await Promise.all([
+            J(c, `/projects/${c.pid}/repository/commits?per_page=100&since=${encodeURIComponent(raSince())}`),
+            J(c, `/projects/${c.pid}/merge_requests?state=all&per_page=100`)
+        ]);
+        var commits = R[0] || [], mrs = R[1] || [];
+        var last = commits.length ? raAge(commits[0].created_at || commits[0].committed_date) : null;
+        var avg = (commits.length + mrs.length) / 30, badge = avg >= 2 ? '🔥 Très actif' : avg >= 0.5 ? '✅ Actif' : '😴 Peu actif';
+        return { html: `📁 <b>${esc(c.name)}</b> : ${badge} — <b>${commits.length}</b> commit(s) (90 j), <b>${mrs.length}</b> MR${last != null ? `, dernier commit il y a <b>${last} j</b>` : ''}.` };
+    }
+
+    // Routeur Repo Analyzer : score / ce qui ne va pas / améliorer / activité.
+    async function repoRoute(n) {
+        var repoAsk = /repo analyzer|analyzer|analyse (de |du |mon )?repo|sante (de |du |mon )?repo|health|red flag|point.* ?a? ?ameliorer|quick ?win|ce qui (ne )?va pas|ce qui cloche|qu est ce qui (ne )?va pas|mes (probleme|alerte|souci|red flag)|note (globale|de mon repo|du repo|repo)|score (de mon |du |mon )?repo|ameliorer mon repo|comment (je m ameliore|m ameliorer|je progresse|progresser|s ameliorer)|etat de mon repo global|mon repo est il|repo actif/.test(n);
+        if (!repoAsk) return null;
+        function tag(r, k) { r.intent = k; return r; }
+        if (/ce qui (ne )?va pas|cloche|probleme|alerte|red flag|risque|qu est ce qui|ce qui cloche/.test(n)) return tag(await d_repo_flags(), 'repo_flags');
+        if (/ameliore|ameliorer|quick ?win|action|recommand|que faire|que dois je|point.* ?ameliorer|conseil|progresser|optimiser/.test(n)) return tag(await d_repo_improve(), 'repo_improve');
+        if (/actif|activite|vivant|mort|inactif/.test(n)) return tag(await d_repo_activity(), 'repo_activity');
+        return tag(await d_repo_score(), 'repo_score');
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -864,6 +997,7 @@
         branches: { t: 'Branche morte', x: 'Une branche sans commit depuis longtemps (≥ 60 j) — souvent du travail non livré, à nettoyer.' },
         badges: { t: 'Badges (Salsi)', x: 'Des bonnes pratiques DevOps atteintes (47 au total), avec des phases de maturité et un compagnon qui suit tes progrès.' },
         daily: { t: 'Daily Report', x: 'Le résumé de ton activité GitLab de la journée (MRs, pipelines, déploiements, commits, taux de succès), pensé pour le daily standup. Il sort aussi des « conseils du jour » (échecs, MR sans review, reverts…).' },
+        repo_analyzer: { t: 'Repo Analyzer', x: 'L\'audit complet de ton repo : santé /100, sous-scores CI/CD et code reviews, alertes (« red flags »), et un plan d\'actions priorisé (quick wins). Demande « ma note », « ce qui ne va pas », « comment améliorer mon repo ».' },
         meta: { t: 'Salsifi', x: 'Une plateforme d\'aide à la maturité DevOps au-dessus de GitLab : mesures (DORA), sécurité (secrets, CIS, Blast Radius), gouvernance des accès, gamification. Moi (Salsi) je fais le lien.' }
     };
 
@@ -891,6 +1025,7 @@
         { k: 'dora', trig: ['dora', 'score dora', 'niveau dora'], def: 'dora', data: d_dora },
         { k: 'badges', trig: ['badge', 'badges', 'achievement', 'succes'], def: 'badges', data: d_badges },
         { k: 'daily', trig: ['daily report', 'daily', 'rapport du jour', 'rapport quotidien', 'rapport journalier', 'standup', 'rapport d activite'], def: 'daily', data: d_daily },
+        { k: 'repo_analyzer', trig: ['repo analyzer', 'analyzer', 'analyse de repo', 'analyse du repo', 'sante du repo', 'sante de mon repo', 'audit du repo', 'audit repo'], def: 'repo_analyzer', data: d_repo_score, dataFirst: true },
         { k: 'meta', trig: ['salsifi', 'salsi', 'plateforme', 'tu sais faire', 'qui es tu'], def: 'meta' }
     ];
     function hit(n, trig) { return trig.some(function (t) { var tn = norm(t); if (tn.length <= 3) return new RegExp('(^| )' + tn.replace(/ /g, ' ') + '( |$)').test(n); return n.indexOf(tn) >= 0; }); }
@@ -1019,6 +1154,8 @@
         var dailyCtx = /daily|standup|rapport (du jour|quotidien|journalier|d activite)/.test(n);
         if (/conseil du jour|conseils du jour/.test(n) || (dailyCtx && /conseil|signale|detecte|declenche|alerte|flag/.test(n))) { var rdt = d_daily_tips(); rdt.intent = 'daily_tips'; return rdt; }
         if (dailyCtx && /contient|dans le|sections?|quoi dedans|que montre|qu y a|comprend|composition/.test(n)) { var rdc = d_daily_content(); rdc.intent = 'daily_content'; return rdc; }
+        // ── Repo Analyzer : score / ce qui ne va pas / améliorer / activité (avant l'atelier) ──
+        var rp = await repoRoute(n); if (rp) return rp;
         // ── Bus Factor : améliorer / les niveaux (avant l'atelier générique et les niveaux DORA) ──
         var busCtx = /bus factor|busfactor|facteur de bus|camion|silo de connaissance|qui sait quoi/.test(n);
         if (busCtx) {
@@ -1080,7 +1217,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['mon score DORA ?', 'génère le rapport DORA', 'combien de FF ?', 'combien de badges ?', 'améliorer mon lead time', 'les conseils du jour'];
+        var chips = ['la note de mon repo ?', 'ce qui ne va pas ?', 'comment améliorer mon repo ?', 'mon score DORA ?', 'combien de FF ?', 'génère le rapport de la semaine'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {
