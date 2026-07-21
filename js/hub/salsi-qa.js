@@ -589,9 +589,76 @@
     }
     function defHtml(k, hint) { return `<b>${esc(G[k].t)}</b> — ${esc(G[k].x)}` + (hint ? `<br><span class="sqa-hint">(pour tes chiffres, ajoute « combien… » ou « mon… »)</span>` : ''); }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SMALL-TALK — pour rendre Salsi sympa (déterministe, jamais volé à une vraie
+    //  question : s'il reste une demande derrière « salut … », on la traite).
+    // ══════════════════════════════════════════════════════════════════
+    var ST = {
+        greet: /\b(salut|bonjour|bonsoir|coucou|hello|hey|yo|wesh|hola|holla|slt|cc)\b/,
+        howru: /\b(ca va|ca roule|comment vas tu|comment tu vas|comment allez vous|tu vas bien|la forme|comment ca va|quoi de neuf|bien ou quoi|tout va bien)\b/,
+        thanks: /\b(merci|mercii|thx|thanks|nickel|genial|parfait|excellent|bravo|c est top|trop bien|j adore|impec|impeccable|au top)\b/,
+        bye: /\b(au revoir|a plus|a plus tard|a toute|bye|ciao|adios|bonne journee|bonne soiree|a bientot|a demain|bonne nuit|a la prochaine)\b/,
+        whoru: /\b(qui es tu|tu es qui|t es qui|c est quoi ton nom|tu es quoi|tu sers a quoi|tu es un robot|tu es une ia|es tu une ia|tu es humain)\b/,
+        compliment: /\b(t es cool|tu gere|tu geres|bien joue|je t aime|t es fort|t es le meilleur|t es genial|tu es super|t es sympa|t es la meilleure|good job|gg|t es trop bien)\b/
+    };
+    var ST_FILLER = { salsi: 1, stp: 1, dis: 1, dit: 1, moi: 1, alors: 1, donc: 1, bon: 1, eh: 1, ben: 1, toi: 1, please: 1, svp: 1, oui: 1, non: 1, ok: 1, hey: 1, et: 1, un: 1, peu: 1, la: 1, ca: 1, va: 1, aussi: 1, bien: 1, tres: 1, beaucoup: 1 };
+    var ST_MSG = {
+        greet: [
+            'Salut 🌱 Moi c\'est <b>Salsi</b>. Prêt à t\'aider sur ta plateforme — pose-moi une question (DORA, badges, bus factor, sécu…).',
+            'Coucou 👋 Content de te voir ! On regarde quoi aujourd\'hui — ton <b>score DORA</b>, tes <b>badges</b>, ta <b>sécu</b> ?',
+            'Hey 🌱 Salsi à ton service. Un concept à t\'expliquer, ou un chiffre à sortir de ton repo ?'
+        ],
+        howru: [
+            'Au taquet, merci 🌱 Et surtout prêt à t\'aider — DORA, badges, bus factor, sécu… on regarde quoi ?',
+            'Toujours vert 🟢 Et toi ? Dis-moi ce que tu veux vérifier sur ton repo.',
+            'Ça roule ! 🌱 Pose-moi une question plateforme quand tu veux — « mon score DORA ? », « combien de badges ? »…'
+        ],
+        thanks: [
+            'Avec plaisir 🌱 N\'hésite pas si tu veux creuser autre chose.',
+            'De rien ! 💚 Je reste là pour tes questions plateforme.',
+            'Quand tu veux 🙌 Un autre truc à regarder sur ton repo ?'
+        ],
+        bye: [
+            'À bientôt 🌱 Reviens quand tu veux checker ton flow.',
+            'Ciao 👋 Bonne continuation sur tes livraisons !',
+            'À plus ! 💚 Je garde un œil sur ton repo (façon de parler).'
+        ],
+        compliment: [
+            'Merci 🥲🌱 Toi aussi tu gères. On améliore un truc ensemble ?',
+            'Trop sympa 💚 Allez, dis-moi ce qu\'on regarde !',
+            'Ça fait plaisir 🌱 Je continue à te sortir les bons chiffres quand tu veux.'
+        ],
+        whoru: [
+            'Moi c\'est <b>Salsi</b> 🌱 le compagnon de la plateforme : je réponds sur tes <b>mesures</b> (DORA), tes <b>badges</b>, ton <b>bus factor</b>, ta <b>sécu</b>… et je t\'oriente vers le bon module. 100 % déterministe, <b>zéro IA</b> pour l\'instant.'
+        ]
+    };
+    var _stN = 0;
+    function stPick(arr) { var m = arr[_stN % arr.length]; _stN++; return m; }
+    // Renvoie une réponse small-talk, ou null si une vraie question se cache derrière.
+    function smalltalkRoute(n) {
+        var type = null;
+        if (ST.thanks.test(n)) type = 'thanks';
+        else if (ST.bye.test(n)) type = 'bye';
+        else if (ST.compliment.test(n)) type = 'compliment';
+        else if (ST.whoru.test(n)) type = 'whoru';
+        else if (ST.howru.test(n)) type = 'howru';
+        else if (ST.greet.test(n)) type = 'greet';
+        if (!type) return null;
+        // Résidu : on enlève les motifs small-talk + les mots de remplissage.
+        // S'il reste une vraie demande (« salut c'est quoi le bus factor »), on rend
+        // la main au routeur normal — le bonjour est simplement ignoré.
+        var rest = n.replace(ST.greet, ' ').replace(ST.howru, ' ').replace(ST.thanks, ' ')
+            .replace(ST.bye, ' ').replace(ST.whoru, ' ').replace(ST.compliment, ' ');
+        rest = rest.split(' ').filter(function (w) { return w.length > 1 && !ST_FILLER[w]; }).join(' ').trim();
+        if (rest.length >= 3) return null;
+        return { html: stPick(ST_MSG[type]), intent: 'smalltalk_' + type };
+    }
+
     var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
     async function answer(q) {
         var n = norm(q);
+        // ── Small-talk d'abord (salut, ça va, merci…) — rendu null si vraie question derrière ──
+        var st = smalltalkRoute(n); if (st) return st;
         // ── DORA d'abord (le module qu'on travaille en profondeur) ──
         var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
         var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);

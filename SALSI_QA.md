@@ -437,3 +437,33 @@ renvoi au module pour le détail par zone.
 
 - Contexte : `bus factor / facteur de bus / silo de connaissance / qui sait quoi`.
 - Intentions tracées : `busfactor_levels`, `busfactor_improve`, `bus_factor`.
+
+---
+
+# 😊 Small-talk — rendre Salsi sympa (implémenté)
+
+> Des petites phrases pour que Salsi soit chaleureux, **sans jamais voler une vraie
+> question** : si une demande se cache derrière le bonjour, on la traite normalement.
+
+## Types reconnus (réponses variées, en rotation)
+
+| Type | Déclencheurs | Exemple de réponse |
+|---|---|---|
+| `greet` | salut, bonjour, coucou, hello, hey, yo, slt, cc | « Salut 🌱 Moi c'est Salsi… on regarde quoi ? » |
+| `howru` | ça va, ça roule, la forme, quoi de neuf, tu vas bien | « Au taquet, merci 🌱 … on regarde quoi ? » |
+| `thanks` | merci, thx, nickel, génial, parfait, au top | « Avec plaisir 🌱 … » |
+| `bye` | au revoir, à plus, ciao, bonne journée, à bientôt | « À bientôt 🌱 … » |
+| `compliment` | t'es cool, tu gères, bien joué, gg, j't'aime | « Trop sympa 💚 … » |
+| `whoru` | qui es-tu, tu es quoi, tu es une IA, tu sers à quoi | « Moi c'est Salsi 🌱 … zéro IA pour l'instant » |
+
+## Règle d'or — ne jamais voler une vraie question
+
+Après avoir retiré les motifs small-talk + les mots de remplissage (`salsi`, `stp`,
+`dis-moi`, `un peu`, `bien`…), s'il **reste ≥ 3 caractères** de vraie demande, Salsi
+**rend la main** au routeur normal :
+
+- « salut c'est quoi le bus factor ? » → répond **bus factor** (le bonjour est ignoré).
+- « bonjour, mon score DORA ? » → répond **DORA**.
+- « ça va **mon repo** ? » → **état du repo** (pas le small-talk « ça va »).
+
+Intentions tracées : `smalltalk_greet / howru / thanks / bye / compliment / whoru`.
