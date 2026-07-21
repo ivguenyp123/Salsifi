@@ -1031,11 +1031,17 @@
     // Match par mots-clés (sous-chaîne, normalisé). Renvoie la meilleure entrée ou null.
     function formationRoute(n) {
         var F = Salsifi.formation; if (!F || !F.entries) return null;
-        var best = null, bestLen = 0;
+        var best = null, bestScore = 0;
         F.entries.forEach(function (e) {
+            // Co-occurrence : tous les tokens `all` présents (robuste aux tournures libres).
+            if (e.all && e.all.every(function (tok) { return n.indexOf(norm(tok)) >= 0; })) {
+                var sc = 100 + e.all.join('').length;
+                if (sc > bestScore) { bestScore = sc; best = e; }
+            }
+            // Mots-clés (sous-chaîne) : on garde le plus long match.
             (e.kw || []).forEach(function (k) {
                 var kn = norm(k);
-                if (kn.length >= 4 && n.indexOf(kn) >= 0 && kn.length > bestLen) { best = e; bestLen = kn.length; }
+                if (kn.length >= 4 && n.indexOf(kn) >= 0 && kn.length > bestScore) { best = e; bestScore = kn.length; }
             });
         });
         if (!best) return null;

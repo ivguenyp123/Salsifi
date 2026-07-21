@@ -26,6 +26,7 @@
             },
             {
                 mod: 'ff', t: 'Bénéfice DORA des flags',
+                all: ['flag', 'dora'],
                 kw: ['benefice dora', 'flag et dora', 'flags dora', 'flag aide dora', 'flag cfr mttr', 'pourquoi flag dora', 'flag ameliore dora', 'flags aident', 'flag aident', 'aident mes dora', 'flags et dora', 'flags et mes dora', 'flag pour dora', 'flags ameliorent', 'flag baisse cfr', 'flag baisse mttr'],
                 a: 'Le flag découple « déployer » (risqué, lent à annuler) de « activer » (instantané, réversible). Il fait <b>chuter le CFR et le MTTR</b> : un incident lié à une fonctionnalité se résout en <b>basculant un flag, en secondes</b> — pas en relançant un pipeline. C\'est aussi ce qui rend le <b>trunk-based</b> viable.'
             },
