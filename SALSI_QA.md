@@ -302,6 +302,15 @@ renvoi vers le **Coach Salsi** de DORA Insights (plan complet + suivi).
 « **améliorer mon score DORA** » (sans mesure) → Salsi lit le cache et **cible la
 mesure la plus basse**, puis fait le plan de celle-ci.
 
+## 3 bis. Générer le rapport DORA (une action, pas juste une réponse)
+
+« **génère / télécharge / exporte le rapport de mes DORA** » → Salsi **construit et
+télécharge** le rapport HTML (miroir du bouton « Exporter » de DORA Insights), depuis
+la **dernière analyse mémorisée** (cache `doraHistory`, aucune donnée re-fetchée) :
+score /100 + niveau, les 4 métriques formatées (X/sem, Xj/Xh, X %) avec leur badge de
+niveau, et la note de méthode. Fichier `DORA-<repo>-<AAAA-MM-JJ>.html`. Sans analyse
+préalable → Salsi invite à ouvrir DORA Insights une fois. Intention tracée : `dora_report`.
+
 ## 4. Ateliers reliés (échantillon, sur 205)
 
 Reliés automatiquement par mots-clés au corpus `Salsifi.workshops` :

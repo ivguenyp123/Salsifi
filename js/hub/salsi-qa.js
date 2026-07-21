@@ -364,6 +364,62 @@
                 `<span class="sqa-hint">⚠️ Si le <b>MTTR</b> manque, le score est plafonné à 75 (Elite interdit) : sans mesure de résilience, on ne peut pas garantir le haut du tableau. Si 2 mesures+ manquent, plafond à 50.</span>`
         };
     }
+    // « génère-moi le rapport de mes DORA » → construit le rapport HTML (miroir du
+    // module) depuis le cache DORA et le télécharge. Zéro donnée re-fetchée : on
+    // utilise la dernière analyse mémorisée par DORA Insights.
+    function doraFmtVal(metric, v) {
+        if (v == null) return '—';
+        if (metric === 'df') return v + '/sem';
+        if (metric === 'cfr') return v + '%';
+        return v >= 24 ? (v / 24).toFixed(1) + 'j' : v + 'h';
+    }
+    function triggerDownload(filename, content, mime) {
+        try {
+            var blob = new Blob([content], { type: (mime || 'text/html') + ';charset=utf-8' });
+            var url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+            document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+            return true;
+        } catch (e) { return false; }
+    }
+    function d_dora_report() {
+        var c = repoCtx(); if (c.err) return c.err;
+        var DH = Salsifi.doraHistory, h = (DH && DH.read) ? DH.read(c.pid) : [];
+        if (!h || !h.length) return { html: `Je n'ai pas encore de mesure DORA pour <b>${esc(c.name)}</b> — ouvre une fois <b>DORA Insights</b> (l'analyse se mémorise), puis redemande-moi « génère le rapport DORA ». 🌱` };
+        var last = h[h.length - 1], m = last.metrics || {}, lv = last.levels || {}, cls = last.cls;
+        var df = doraFmtVal('df', m.df), lt = doraFmtVal('lt', m.lt), cfr = doraFmtVal('cfr', m.cfr), mttr = doraFmtVal('mttr', m.mttrDora);
+        var scoreValue = (typeof m.doraScore === 'number') ? Math.round(m.doraScore) : '—';
+        var titles = { elite: '🏆 Elite Performer', high: '✅ High Performer', medium: '📈 Medium Performer', low: '⚠️ Low Performer' };
+        var scoreLevel = cls ? (titles[cls] || cls) : 'Score indisponible';
+        var dfB = lv.df || 'N/A', ltB = lv.lt || 'N/A', cfrB = lv.cfr || 'N/A', mttrB = lv.mttr || 'N/A';
+        var now = new Date();
+        var dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+        var timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        var name = esc(c.name);
+        var html = '<!DOCTYPE html>\n<html lang="fr"><head><meta charset="UTF-8"><title>Rapport DORA — ' + name + ' — ' + dateStr + '</title>'
+            + '<style>:root{--o1:rgba(255,255,255,.05);--o2:rgba(255,255,255,.12);--o15:rgba(255,255,255,.15);--o07:rgba(255,255,255,.07)}'
+            + '*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95);min-height:100vh;color:#fff;padding:40px}'
+            + '.container{max-width:900px;margin:0 auto}.header{text-align:center;padding:40px;background:var(--o1);border-radius:24px;border:1px solid var(--o2);margin-bottom:40px}'
+            + '.header h1{font-size:32px;font-weight:800;margin-bottom:8px}.header p{opacity:.7;font-size:15px}.project{display:inline-block;padding:10px 20px;background:var(--o15);border-radius:12px;font-size:16px;font-weight:600;margin-top:16px}'
+            + '.section-title{font-size:20px;font-weight:700;margin:30px 0 16px;padding-bottom:10px;border-bottom:2px solid var(--o2)}.score-global{text-align:center;padding:30px;background:var(--o1);border-radius:20px;border:1px solid var(--o2);margin-bottom:30px}'
+            + '.score-value{font-size:64px;font-weight:800}.score-level{font-size:20px;font-weight:700;margin-top:8px}.dora-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:30px}'
+            + '.dora-card{background:var(--o1);border-radius:16px;padding:24px;border:1px solid var(--o2)}.dora-name{font-size:13px;font-weight:600;opacity:.8;margin-bottom:8px}.dora-val{font-size:36px;font-weight:800;margin-bottom:8px}'
+            + '.dora-badge{display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600}.method-note{background:var(--o07);border:1px solid var(--o15);border-radius:12px;padding:16px;font-size:12px;opacity:.75;margin-top:20px;line-height:1.7}.footer{text-align:center;margin-top:40px;opacity:.5;font-size:13px}</style></head><body><div class="container">'
+            + '<div class="header"><div style="font-size:56px;margin-bottom:16px">📊</div><h1>Rapport DORA Metrics</h1><p>Performance DevOps</p><div class="project">📦 ' + name + '</div><p style="margin-top:12px;font-size:13px;opacity:.6">Généré le ' + dateStr + ' à ' + timeStr + '</p></div>'
+            + '<div class="score-global"><div class="score-value">' + scoreValue + '/100</div><div class="score-level">' + esc(scoreLevel) + '</div></div>'
+            + '<div class="section-title">🎯 Les 4 métriques DORA</div><div class="dora-grid">'
+            + '<div class="dora-card"><div class="dora-name">🚀 Deploy Frequency</div><div class="dora-val" style="color:#a5b4fc">' + esc(df) + '</div><span class="dora-badge" style="background:rgba(165,180,252,.2);color:#a5b4fc">' + esc(dfB) + '</span></div>'
+            + '<div class="dora-card"><div class="dora-name">⚡ Lead Time for Changes</div><div class="dora-val" style="color:#6ee7b7">' + esc(lt) + '</div><span class="dora-badge" style="background:rgba(110,231,183,.2);color:#6ee7b7">' + esc(ltB) + '</span></div>'
+            + '<div class="dora-card"><div class="dora-name">🔧 Change Failure Rate</div><div class="dora-val" style="color:#fca5a5">' + esc(cfr) + '</div><span class="dora-badge" style="background:rgba(252,165,165,.2);color:#fca5a5">' + esc(cfrB) + '</span></div>'
+            + '<div class="dora-card"><div class="dora-name">⏱️ Time to Restore Service</div><div class="dora-val" style="color:#fcd34d">' + esc(mttr) + '</div><span class="dora-badge" style="background:rgba(252,211,77,.2);color:#fcd34d">' + esc(mttrB) + '</span></div></div>'
+            + '<div class="method-note"><strong>Méthode de calcul</strong><br>DF : pipelines success sur env prod / 30j × 7<br>Lead Time : médiane first_commit_at → merged_at des MRs<br>CFR : pipelines failed / total pipelines × 100 (fenêtres pondérées 5j/10j/30j)<br>TTRS : médiane durée pipeline failed → success suivant sur branche prod<br><br><strong>⚠️ Note sur le score global :</strong> si MTTR est manquant, le score est plafonné à 75/100 maximum. Toute métrique absente réduit la fiabilité du score.</div>'
+            + '<div class="footer">DevOps Hub © ' + now.getFullYear() + '</div></div></body></html>';
+        var filename = 'DORA-' + String(c.name).replace(/[^a-zA-Z0-9]/g, '-') + '-' + now.toISOString().split('T')[0] + '.html';
+        var okDl = triggerDownload(filename, html, 'text/html');
+        if (!okDl) return { html: `😅 Je n'ai pas pu déclencher le téléchargement (blocage navigateur ?). Réessaie, ou exporte depuis <b>DORA Insights</b>.` };
+        var when = last.at ? ` (analyse du <b>${esc(last.at)}</b>)` : '';
+        return { html: `📄 Rapport DORA de <b>${name}</b> généré et téléchargé ✅${when}<br>Score <b>${scoreValue}/100</b> — ${esc(scoreLevel)}. Fichier : <code>${esc(filename)}</code>.<br><span class="sqa-hint">C'est un instantané de ta dernière analyse DORA. Rouvre <b>DORA Insights</b> pour rafraîchir les chiffres avant d'exporter.</span>` };
+    }
 
     // ══════════════════════════════════════════════════════════════════
     //  SAVOIR GAMING / ACHIEVEMENTS — miroir fidèle de js/gaming.js
@@ -781,6 +837,10 @@
         // ── DORA d'abord (le module qu'on travaille en profondeur) ──
         var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
         var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);
+        // « génère / télécharge / exporte le rapport de mes DORA » → génère + télécharge
+        if ((/\bdora\b/.test(n) || doraCtx) && /rapport|report|\bexport/.test(n) && /genere|generer|telecharge|download|exporte|exporter|\bexport\b|fais moi|sors moi|produit|edite|donne moi le rapport|veux le rapport|cree/.test(n) && !/c est quoi|qu est ce/.test(n)) {
+            var rr = d_dora_report(); rr.intent = 'dora_report'; return rr;
+        }
         // « comment améliorer ma fréquence / mon lead time / mon CFR / mon MTTR (ou mon score DORA) »
         // (avant le calcul-du-score : « améliorer mon score » = progresser, pas « comment c'est calculé »)
         if (improveVerb) {
@@ -856,7 +916,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['mon score DORA ?', 'améliorer mon lead time', 'combien de badges ?', 'comment débloquer Small MR ?', 'les phases de maturité', 'combien de FF ?'];
+        var chips = ['mon score DORA ?', 'génère le rapport DORA', 'combien de FF ?', 'combien de badges ?', 'améliorer mon lead time', 'les conseils du jour'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {
