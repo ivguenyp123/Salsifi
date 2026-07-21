@@ -394,3 +394,46 @@ Exemples : « comment débloquer Small MR », « le badge bus factor safe c'est 
   `gaming_list`, `gaming_howto`, `badges`.
 - Isolation : « améliorer mon MTTR » reste **DORA** ; « c'est quoi le bus factor »
   reste la **définition** (pas le badge *Bus Factor Safe*).
+
+---
+
+# 🚌 Module Bus Factor — savoir complet (implémenté)
+
+> Miroir fidèle de `js/bus-factor.js` + `bus-factor.html`. Salsi mesure le savoir
+> **d'aujourd'hui** (qui sait quoi maintenant), **par zone de code**.
+
+## 1. Définition
+
+Le **bus factor** = nombre minimum de personnes qui doivent quitter l'équipe avant
+que le projet soit bloqué. Calculé par répertoire = nombre de personnes couvrant
+**80 %** des commits de la zone.
+
+## 2. Les notes (niveaux + score global)
+
+| Par zone | Risque |
+|---|---|
+| 🔴 **BF = 1** (une seule tête) | risque critique |
+| 🟡 **BF = 2** | risque moyen |
+| 🟢 **BF ≥ 3** | risque faible |
+
+**Score global /5** = médiane des zones **pondérée par leur activité** (commits) :
+`< 2` 🔴 RISQUE CRITIQUE · `< 3` 🟡 RISQUE MOYEN · `≥ 3` 🟢 RISQUE FAIBLE.
+Un contributeur qui détient **≥ 70 %** d'une zone est signalé « dominant ».
+
+## 3. « Comment améliorer / réduire mon bus factor »
+
+Leviers (miroir des recommandations du module) : **pair / mob-programming** sur les
+zones critiques, **revue croisée**, **rotation des reviewers (≥ 3)**, **documenter**
+les zones critiques, **répartir** le travail (top contributeur < 40 %). Salsi relie
+aussi les **badges** (Bus Factor Safe, Work Balanced, Reviewer Rotation), un **atelier**
+(axe Résilience & Bus Factor), et renvoie au module 🚌 pour voir *quelles zones / qui*.
+
+## 4. Mes résultats
+
+« mon bus factor » → nb de contributeurs + part du top + **libellé de risque**, avec
+renvoi au module pour le détail par zone.
+
+## 5. Déclencheurs & journal
+
+- Contexte : `bus factor / facteur de bus / silo de connaissance / qui sait quoi`.
+- Intentions tracées : `busfactor_levels`, `busfactor_improve`, `bus_factor`.

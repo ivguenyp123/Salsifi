@@ -84,8 +84,9 @@
         var ct = await J(c, `/projects/${c.pid}/repository/contributors`) || [];
         if (!ct.length) return { html: `Pas de données de contributeurs sur <b>${esc(c.name)}</b>.` };
         var total = ct.reduce(function (s, x) { return s + (x.commits || 0); }, 0), top = ct.reduce(function (m, x) { return Math.max(m, x.commits || 0); }, 0), share = total ? top / total : 0;
-        if (ct.length === 1) return { html: `🚌 Bus factor <b>critique</b> : 1 seul contributeur sur <b>${esc(c.name)}</b>.` };
-        return { html: `🚌 <b>${ct.length}</b> contributeurs sur <b>${esc(c.name)}</b> ; le top en concentre <b>${Math.round(share * 100)}%</b>.${share >= 0.7 ? ' ⚠️ concentration élevée' : ''}` };
+        if (ct.length === 1) return { html: `🚌 Bus factor <b>🔴 critique</b> : 1 seul contributeur sur <b>${esc(c.name)}</b>. Ouvre le module <b>Bus Factor</b> pour le détail par zone.` };
+        var risk = ct.length < 3 ? '🟡 risque moyen' : (share >= 0.7 ? '🟡 concentration élevée' : '🟢 risque faible');
+        return { html: `🚌 <b>${ct.length}</b> contributeurs sur <b>${esc(c.name)}</b> ; le top en concentre <b>${Math.round(share * 100)}%</b> — ${risk}.${share >= 0.7 ? ' ⚠️ un dominant (≥ 70 %)' : ''}<br><span class="sqa-hint">Détail par zone de code → module <b>🚌 Bus Factor</b>.</span>` };
     }
     async function d_deploy(n) {
         var c = repoCtx(); if (c.err) return c.err; var w = win(n);
@@ -449,6 +450,39 @@
         return tag({ html: defHtml('badges') }, 'badges');
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SAVOIR BUS FACTOR — miroir fidèle de js/bus-factor.js + bus-factor.html
+    //  Mesure le savoir d'AUJOURD'HUI, par zone de code. Niveaux 1/2/≥3, score /5.
+    // ══════════════════════════════════════════════════════════════════
+    // Les « notes » : niveaux par zone + score global /5.
+    function d_bf_levels() {
+        return {
+            html: `🚌 <b>Bus Factor</b> — combien de personnes peuvent partir avant que le projet soit bloqué. Mesuré <b>par zone de code</b> (le savoir d'aujourd'hui, pas l'historique) :<br>` +
+                `🔴 <b>BF = 1</b> — une seule personne connaît le code → <b>risque critique</b><br>` +
+                `🟡 <b>BF = 2</b> — deux personnes → <b>risque moyen</b><br>` +
+                `🟢 <b>BF ≥ 3</b> — trois ou plus → <b>risque faible</b><br>` +
+                `<span class="sqa-hint">Score global <b>/5</b> = médiane des zones pondérée par leur activité : &lt; 2 🔴 RISQUE CRITIQUE · &lt; 3 🟡 RISQUE MOYEN · ≥ 3 🟢 RISQUE FAIBLE. Un contributeur qui détient ≥ 70 % d'une zone est signalé « dominant ».</span>`
+        };
+    }
+    // « comment améliorer / réduire mon bus factor »
+    function d_bf_improve() {
+        var levers = [
+            { t: 'Pair / mob-programming sur les zones critiques', d: 'Deux personnes sur le code où une seule sait aujourd\'hui : le savoir se diffuse en le faisant ensemble.' },
+            { t: 'Revue croisée systématique', d: 'Le savoir circule par la review — fais relire les zones que peu de gens maîtrisent.' },
+            { t: 'Rotation des reviewers (≥ 3 distincts)', d: 'Évite le relecteur unique : plusieurs yeux sur la durée diffusent la connaissance.' },
+            { t: 'Documenter les zones critiques', d: 'Un README par module + des runbooks : ce qui est écrit ne part pas avec la personne.' },
+            { t: 'Répartir le travail', d: 'Vise un top contributeur sous ~40 % des commits : pas de zone « propriété » d\'une seule personne.' }
+        ];
+        var lv = levers.slice(0, 3).map(function (l) { return `<div class="sqa-atl"><b>${esc(l.t)}</b><div class="sqa-atl-d">${esc(l.d)}</div></div>`; }).join('');
+        var atlTop = scoreAteliers(['bus', 'factor', 'resilience', 'rotation', 'connaissance', 'pair', 'continuite'])[0];
+        var atlHtml = atlTop ? `<div class="sqa-hint">🎓 Atelier pour se faire accompagner :</div>${atelierCard(atlTop.a)}` : '';
+        return {
+            html: `🚌 <b>Réduire ton risque bus factor</b> — l'objectif : que <b>personne ne soit seul</b> à savoir.${lv}` +
+                `<div class="sqa-hint">🎮 Badges liés : <b>Bus Factor Safe</b> (≥ 3 contributeurs), <b>Work Balanced</b> (&lt; 40 %), <b>Reviewer Rotation</b> (≥ 3 relecteurs).</div>${atlHtml}` +
+                `<div class="sqa-hint">Ouvre le module <b>🚌 Bus Factor</b> pour voir <b>quelles zones</b> et <b>qui</b> concentrent le savoir.</div>`
+        };
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -496,7 +530,7 @@
 
     // ── Glossaire (définitions fixes) ──
     var G = {
-        bus_factor: { t: 'Bus factor', x: 'Le nombre de personnes qui peuvent disparaître (« passer sous un bus ») avant que le projet soit bloqué. Bus factor 1 = savoir détenu par une seule personne → risque critique.' },
+        bus_factor: { t: 'Bus factor', x: 'Le nombre de personnes qui peuvent disparaître (« passer sous un bus ») avant que le projet soit bloqué. Par zone de code : 🔴 BF 1 = une seule tête → critique · 🟡 BF 2 = moyen · 🟢 BF ≥ 3 = faible. Score global /5.' },
         dora: { t: 'DORA', x: 'Les 4 métriques de livraison : fréquence de déploiement, lead time, taux d\'échec (CFR), temps de restauration (MTTR). Niveaux Low → Elite.' },
         deploy_freq: { t: 'Fréquence de déploiement', x: 'À quelle fréquence tu livres en prod. Élevée = petits lots, moins de risque. Elite ≥ 7/sem.' },
         lead_time: { t: 'Lead time', x: 'Délai entre le premier commit d\'un changement et sa mise en prod. Elite ≤ 24 h.' },
@@ -574,6 +608,12 @@
         // ── Gaming / Achievements (avant les « niveaux » DORA : « phases »/« badges » gagnent) ──
         var gr = await gamingRoute(n, /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois)/.test(n));
         if (gr) return gr;
+        // ── Bus Factor : améliorer / les niveaux (avant l'atelier générique et les niveaux DORA) ──
+        var busCtx = /bus factor|busfactor|facteur de bus|camion|silo de connaissance|qui sait quoi/.test(n);
+        if (busCtx) {
+            if (improveVerb || /pair programming|mob|partager le savoir|repartir|rotation|documenter|reduire le risque|desiloter|dessilot/.test(n)) { var rbi = d_bf_improve(); rbi.intent = 'busfactor_improve'; return rbi; }
+            if (/niveau|niveaux|note|notes|palier|risque|critique|score|seuil|sur 5|\/5|comment.*(calcul|marche|fonctionne)/.test(n)) { var rbl = d_bf_levels(); rbl.intent = 'busfactor_levels'; return rbl; }
+        }
         // « les niveaux / les notes / les paliers DORA » (ou « c'est quoi Elite »)
         if (/niveau|niveaux|note|notes|palier|paliers|bareme|baremes|seuil|seuils|elite|high performer|medium performer|low performer|barometre/.test(n) && (doraCtx || /elite|palier|performer|bareme/.test(n))) {
             var rl = d_dora_levels(doraKeyFromN(n)); rl.intent = 'dora_levels'; return rl;
