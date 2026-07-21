@@ -180,6 +180,13 @@
         if (!h || !h.length) return { html: `Je n'ai pas encore de mesure DORA pour <b>${esc(c.name)}</b> — ouvre <b>DORA Insights</b> une fois et je saurai répondre.` };
         var last = h[h.length - 1], lv = last.levels || {}, sc = last.metrics && last.metrics.doraScore;
         var head = (typeof sc === 'number') ? ` — score <b>${Math.round(sc)}/100</b>` : '';
+        var lvIc = { Elite: '🟢', High: '🔵', Medium: '🟡', Low: '🔴' };
+        // Mesure ciblée (« la note de mon lead time ») → on répond juste celle-là.
+        var key = doraKeyFromN(n || '');
+        if (key && DORA_KB[key]) {
+            var l = lv[key] || '—', m = DORA_KB[key];
+            return { html: `${m.emoji} Ta <b>${esc(m.short)}</b> sur <b>${esc(c.name)}</b> : ${lvIc[l] || ''} <b>${esc(l)}</b> — cible Elite : ${esc(m.target)}${head}.` };
+        }
         return { html: `📊 <b>${esc(c.name)}</b>${head} : 🔧 CFR <b>${esc(lv.cfr || '—')}</b> · ⚡ lead time <b>${esc(lv.lt || '—')}</b> · 🚀 déploiement <b>${esc(lv.df || '—')}</b> · ⏱️ MTTR <b>${esc(lv.mttr || '—')}</b>.` };
     }
     async function d_badges(n) {
@@ -677,11 +684,33 @@
         var items = GB_INDEX.filter(function (b) { return b.cat === cat; }).map(function (b) { return `${b.icon} <b>${esc(b.name)}</b> <span class="sqa-hint">— ${esc(b.crit)}</span>`; }).join('<br>');
         return { html: `${c.ic} <b>${esc(c.name)}</b> :<br>${items}` };
     }
+    // « quel badge je peux gagner facilement ? » → propose des badges faciles NON débloqués.
+    // Ordre de facilité : réglages GitLab + fichiers à créer + hygiène (actions ponctuelles, faible XP).
+    var EASY_BADGES = ['pipeline_as_code', 'essential_files', 'lock_files_present', 'branch_protection', 'force_push_blocked', 'approval_rules', 'reset_approvals', 'semver', 'tagged_releases', 'ci_versioned', 'multi_stage_pipeline', 'automated_tests', 'clean_repo', 'stale_branch_hunter'];
+    function d_badge_easy() {
+        var pid = targetRepo();
+        var GH = Salsifi.gamingHistory, g = (GH && GH.read && pid) ? GH.read(pid) : [];
+        var unlocked = (g && g.length) ? (g[g.length - 1].unlocked || []) : [];
+        var uset = {}; unlocked.forEach(function (id) { uset[id] = 1; });
+        var cand = EASY_BADGES.map(function (id) { return GB_INDEX.filter(function (b) { return b.id === id; })[0]; })
+            .filter(Boolean).filter(function (b) { return !uset[b.id]; }).slice(0, 3);
+        if (!cand.length) return { html: `Beau boulot 🌱 les badges les plus faciles sont déjà en poche ! Ouvre <b>Achievements</b> pour viser les suivants, ou demande-moi « comment débloquer <b>&lt;badge&gt;</b> ».` };
+        var items = cand.map(function (b) {
+            var rec = (Salsifi.gamingRecipes || {})[b.id];
+            var tip = (rec && rec.steps && rec.steps[0]) ? rec.steps[0] : esc(b.tip); // step = HTML de confiance
+            var mod = (rec && rec.module) ? ` <a href="${esc(rec.module.url)}" target="_blank" rel="noopener">🧰 ${esc(rec.module.name)} ↗</a>` : '';
+            return `<div class="sqa-atl"><b>${b.icon} ${esc(b.name)}</b> · ${b.xp} XP${mod}<div class="sqa-atl-d">${tip}</div></div>`;
+        }).join('');
+        return { html: `🎮 Les badges les plus <b>faciles</b> à débloquer pour toi (actions rapides, pas encore obtenus) :${items}<span class="sqa-hint">Dis « comment débloquer &lt;badge&gt; » pour le plan complet.</span>` };
+    }
     // Routeur gaming : renvoie une réponse taguée, ou null si hors sujet.
     async function gamingRoute(n, isData) {
-        var gameCtx = /badge|badges|achievement|succes|troph|\bxp\b|debloqu|maturite|phase de/.test(n);
+        var easyAsk = /(facile|facilement|rapide|rapidement|vite|simple|quick ?win)/.test(n) && /(badge|gagner|debloqu|obtenir|remporter|avoir|\bxp\b)/.test(n);
+        var gameCtx = /badge|badges|achievement|succes|troph|\bxp\b|debloqu|maturite|phase de/.test(n) || easyAsk;
         if (!gameCtx) return null;
         function tag(r, k) { r.intent = k; return r; }
+        // « lequel je peux gagner facilement » → propose un badge facile (priorité haute).
+        if (easyAsk || (/facile|facilement|le plus simple|rapide a/.test(n) && /badge/.test(n))) return tag(d_badge_easy(), 'gaming_easy');
         if (/phase|maturite|palier|decouverte|structuration|fiabilisation|optimisation|excellence/.test(n)) return tag(d_gaming_phases(), 'gaming_phases');
         if (/famille|familles|categorie|categories|\baxe\b|axes/.test(n)) return tag(d_gaming_cats(), 'gaming_cats');
         if (/attente de donnee|en attente|grise|verrouille pourquoi|pourquoi.*(pas|jamais).*(debloqu|badge)|badge.*(pas|jamais).*debloqu/.test(n)) return tag(d_gaming_gate(), 'gaming_gate');
@@ -980,7 +1009,12 @@
         }
         // ── Gaming / Achievements (avant les « niveaux » DORA : « phases »/« badges » gagnent) ──
         var gr = await gamingRoute(n, /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois)/.test(n));
-        if (gr) return gr;
+        if (gr) {
+            // Le sujet courant devient « badges » → un suivi (« lesquels ? ») ne repart pas
+            // sur une intention obsolète (ex. feature flags) restée en mémoire.
+            var _bi = INTENTS.filter(function (x) { return x.k === 'badges'; })[0]; if (_bi) _lastIntent = _bi;
+            return gr;
+        }
         // ── Daily Report : conseils du jour / ce qu'il contient (avant l'atelier générique) ──
         var dailyCtx = /daily|standup|rapport (du jour|quotidien|journalier|d activite)/.test(n);
         if (/conseil du jour|conseils du jour/.test(n) || (dailyCtx && /conseil|signale|detecte|declenche|alerte|flag/.test(n))) { var rdt = d_daily_tips(); rdt.intent = 'daily_tips'; return rdt; }
@@ -989,10 +1023,13 @@
         var busCtx = /bus factor|busfactor|facteur de bus|camion|silo de connaissance|qui sait quoi/.test(n);
         if (busCtx) {
             if (improveVerb || /pair programming|mob|partager le savoir|repartir|rotation|documenter|reduire le risque|desiloter|dessilot/.test(n)) { var rbi = d_bf_improve(); rbi.intent = 'busfactor_improve'; return rbi; }
-            if (/niveau|niveaux|note|notes|palier|risque|critique|score|seuil|sur 5|\/5|comment.*(calcul|marche|fonctionne)/.test(n)) { var rbl = d_bf_levels(); rbl.intent = 'busfactor_levels'; return rbl; }
+            // « la note de MON bus factor » → mes vraies données (d_bus), pas le tableau générique.
+            if (/niveau|niveaux|note|notes|palier|risque|critique|score|seuil|sur 5|\/5|comment.*(calcul|marche|fonctionne)/.test(n) && !/\bmon\b|\bma\b|\bmes\b/.test(n)) { var rbl = d_bf_levels(); rbl.intent = 'busfactor_levels'; return rbl; }
         }
         // « les niveaux / les notes / les paliers DORA » (ou « c'est quoi Elite »)
         if (/niveau|niveaux|note|notes|palier|paliers|bareme|baremes|seuil|seuils|elite|high performer|medium performer|low performer|barometre/.test(n) && (doraCtx || /elite|palier|performer|bareme/.test(n))) {
+            // « la note de MON lead time / MES dora » → mes vraies mesures (pas le tableau générique).
+            if (/\bmon\b|\bma\b|\bmes\b/.test(n)) { var rmy = await d_dora(n); rmy.intent = 'dora'; return rmy; }
             var rl = d_dora_levels(doraKeyFromN(n)); rl.intent = 'dora_levels'; return rl;
         }
         // Ateliers : question d'amélioration → on recommande un atelier (avant tout le reste).
