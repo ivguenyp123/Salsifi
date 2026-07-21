@@ -934,6 +934,66 @@
         return tag(await d_repo_score(), 'repo_score');
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  AIDE — « que fait la plateforme + comment tu peux m'aider »
+    //  Panorama des 4 pôles / 18 modules (desc officielles) + capacités de Salsi.
+    // ══════════════════════════════════════════════════════════════════
+    var HELP_POLES = [
+        {
+            t: '📊 Mesurer & Progresser', m: [
+                ['📊', 'DORA Insights', 'tes 4 chiffres du delivery (DF, lead time, CFR, MTTR) + Coach + rapport'],
+                ['📋', 'DevOps Assessment', 'score de maturité sur 8 axes, radar et historique'],
+                ['🏆', 'Achievements', 'badges DevOps + phases de maturité (motivation par le jeu)'],
+                ['🚌', 'Bus Factor', 'les zones de code maîtrisées par une seule personne'],
+                ['📅', 'Daily Report', 'synthèse quotidienne pour le standup + conseils du jour'],
+                ['📄', 'Générateur de rapport', 'composer un rapport HTML à partir de blocs 🚧 bientôt']
+            ]
+        },
+        {
+            t: '🚀 Livrer & Déployer', m: [
+                ['⚙️', 'Pipeline Generator', 'génère ton .gitlab-ci.yml en wizard, pousse, lance, suit les logs'],
+                ['🚩', 'Feature Flag Manager', 'cycle de vie des flags : création, audit, decommission, RBAC'],
+                ['📝', 'Release Notes', 'génère les notes de version automatiquement par tag Git']
+            ]
+        },
+        {
+            t: '🔬 Inspecter & Sécuriser', m: [
+                ['🔬', 'Repo Analyzer', 'état global : santé /100, red flags, quick-wins priorisés'],
+                ['🛡️', 'Security Scanner', 'conformité CIS GitLab (branch protection, approvals, lock files) — note A→F'],
+                ['🥗', 'Repo Diet', 'détecte binaires/archives/logs et génère un .gitignore'],
+                ['🌳', 'Branch Monitor', 'détecte et nettoie les branches obsolètes'],
+                ['🔑', 'Secrets Scanner', 'secrets exposés dans tes repos 🔒 réservé plateforme'],
+                ['🧪', 'Secret Scanner Test', 'Blast Radius d\'un IOC (package compromis), read-only + timeline']
+            ]
+        },
+        {
+            t: '🤝 Collaborer & Améliorer', m: [
+                ['🤖', 'MR Reviewer AI', 'analyse IA des MR : qualité, risques, couverture, suggestions'],
+                ['🔄', 'Auto Retro', 'génère une rétro à partir des données GitLab (user stories incluses)'],
+                ['🎯', 'Smart Estimate', 'estime la charge d\'une feature à partir de l\'historique des MR']
+            ]
+        }
+    ];
+    function d_help() {
+        var poles = HELP_POLES.map(function (p) {
+            var mods = p.m.map(function (x) { return `${x[0]} <b>${esc(x[1])}</b> — <span class="sqa-hint">${esc(x[2])}</span>`; }).join('<br>');
+            return `<b>${p.t}</b><br>${mods}`;
+        }).join('<br><br>');
+        var moi = [
+            '📖 <b>Définir</b> les concepts — « c\'est quoi le bus factor ? », « les niveaux DORA »',
+            '📊 <b>Sortir tes chiffres</b> — « combien de FF ? », « mon score DORA ? », « la note de mon repo ? », « combien de MR ? »',
+            '🩺 <b>Dire ce qui ne va pas</b> + <b>comment progresser</b> — repo, DORA, bus factor',
+            '🎮 <b>Badges</b> — « combien de badges ? », « quel badge gagner facilement ? »',
+            '📄 <b>Générer & télécharger des rapports</b> — DORA, et jour / semaine / mois',
+            '🎓 <b>Te relier aux 205 ateliers</b> — « atelier pour optimiser mon flow »'
+        ].map(function (x) { return '• ' + x; }).join('<br>');
+        return {
+            html: `🌱 <b>Salsifi</b> — plateforme d'aide à la maturité DevOps au-dessus de GitLab. <b>4 pôles, 18 modules</b> :<br><br>${poles}<br><br>` +
+                `💬 <b>Moi (Salsi), je t'aide à :</b><br>${moi}<br><br>` +
+                `<span class="sqa-hint">Pose ta question — un concept, un chiffre, « ce qui ne va pas », ou « génère le rapport de la semaine ». 🌱</span>`
+        };
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -1114,6 +1174,10 @@
         var n = norm(q);
         // ── Small-talk d'abord (salut, ça va, merci…) — rendu null si vraie question derrière ──
         var st = smalltalkRoute(n); if (st) return st;
+        // ── Aide : « que fait la plateforme / comment tu peux m'aider / les modules » ──
+        if (/que (fait|fais|font)|a quoi (sert|ca sert|servent|serts)|qu est ce que (tu sais|tu peux|salsifi|la plateforme|le hub|c est)|c est quoi (la plateforme|salsifi|le hub)|tes (fonctionnalites|capacites|features|possibilites)|que (peux|sais) tu faire|(comment|est ce que) (tu peux|pourrais|peux tu|tu pourrais).* ?m aider|tu peux m aider|(liste|tous|quels) (des )?modules|les modules|toutes les fonctionnalites|montre moi ce que tu sais|presente (toi|la plateforme)|a quoi tu sers|ton aide/.test(n)) {
+            var rh = d_help(); rh.intent = 'help'; return rh;
+        }
         // ── DORA d'abord (le module qu'on travaille en profondeur) ──
         var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
         var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);
@@ -1217,7 +1281,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['la note de mon repo ?', 'ce qui ne va pas ?', 'comment améliorer mon repo ?', 'mon score DORA ?', 'combien de FF ?', 'génère le rapport de la semaine'];
+        var chips = ['que fait la plateforme ?', 'la note de mon repo ?', 'ce qui ne va pas ?', 'mon score DORA ?', 'combien de FF ?', 'comment améliorer mon repo ?'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {

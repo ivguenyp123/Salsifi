@@ -8,6 +8,23 @@
 > **À valider ici AVANT de coder** : garde-t-on tout ? On élague ? Les formulations
 > et les seuils te vont-ils ?
 
+## 🗺️ « Que fait la plateforme / comment tu peux m'aider »
+
+Salsi répond à `que fait la plateforme`, `comment peux-tu m'aider`, `qu'est-ce que
+tu sais faire`, `à quoi sert Salsifi`, `les modules`, `montre-moi ce que tu sais`…
+par un **panorama complet** : les **4 pôles / 18 modules** (descriptions officielles
+du hub) + la liste de **ce que Salsi sait faire** (définir, sortir tes chiffres, dire
+ce qui ne va pas + comment progresser, badges, générer des rapports, ateliers).
+
+- **Mesurer & Progresser** : DORA Insights · DevOps Assessment · Achievements · Bus
+  Factor · Daily Report · Générateur de rapport.
+- **Livrer & Déployer** : Pipeline Generator · Feature Flag Manager · Release Notes.
+- **Inspecter & Sécuriser** : Repo Analyzer · Security Scanner · Repo Diet · Branch
+  Monitor · Secrets Scanner · Secret Scanner Test.
+- **Collaborer & Améliorer** : MR Reviewer AI · Auto Retro · Smart Estimate.
+
+Intention tracée : `help`. « qui es-tu ? » reste la **présentation courte** (small-talk).
+
 ## Reconnaissance des formulations (déclencheurs)
 
 Salsi ne devine pas : il matche des **déclencheurs** curés, après **normalisation**
