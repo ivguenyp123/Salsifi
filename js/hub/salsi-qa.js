@@ -113,7 +113,9 @@
         var c = repoCtx(); if (c.err) return c.err;
         var GH = Salsifi.gamingHistory, g = GH ? GH.read(c.pid) : [];
         if (!g || !g.length) return { html: `Pas encore de badges suivis pour <b>${esc(c.name)}</b> — passe par <b>Achievements</b>.` };
-        return { html: `🎮 <b>${(g[g.length - 1].unlocked || []).length}/47</b> badges sur <b>${esc(c.name)}</b>.` };
+        var u = (g[g.length - 1].unlocked || []).length, ph = '';
+        try { if (GH.computePhase) { var p = GH.computePhase(g, GAMING_TOTAL); if (p && p.label) ph = ` · phase ${p.emoji} <b>${esc(p.label)}</b> (${Math.round(p.progress * 100)}%)`; } } catch (e) { }
+        return { html: `🎮 <b>${u}/${GAMING_TOTAL}</b> badges sur <b>${esc(c.name)}</b>${ph}.` };
     }
     async function d_secu(n) {
         var c = repoCtx(); if (c.err) return c.err;
@@ -290,6 +292,163 @@
         };
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    //  SAVOIR GAMING / ACHIEVEMENTS — miroir fidèle de js/gaming.js
+    //  47 badges · 6 familles · 5 phases (gaming-history.js) · gate anti-vide.
+    //  Recettes « comment débloquer » lues au runtime dans Salsifi.gamingRecipes.
+    // ══════════════════════════════════════════════════════════════════
+    var GAMING_CATS = {
+        delivery: { ic: '🚀', name: 'Delivery', desc: 'Fréquence, stabilité, vitesse' },
+        quality: { ic: '🔒', name: 'Qualité & Merge Requests', desc: 'Review, approbations, taille MR' },
+        stability: { ic: '⚙️', name: 'Stabilité & Pipelines', desc: 'Résilience, recovery, tendance' },
+        hygiene: { ic: '🧹', name: 'Hygiène & Repository', desc: 'Branches, fichiers, protection' },
+        resilience: { ic: '🚌', name: 'Résilience & Connaissances', desc: 'Bus factor, répartition, rotation' },
+        practices: { ic: '⚡', name: 'Pratiques DevOps', desc: 'Feature flags, CI/CD, automation' }
+    };
+    // [id, cat, icon, name, criteria, tip, xp] — extrait verbatim du BADGES de gaming.js
+    var GAMING_BADGES = [
+        ['frequent_deploy','delivery','📦','Frequent Deploy','≥ 5 pipelines réussis / semaine','Découpez vos features en plus petits morceaux pour déployer plus souvent.',100],
+        ['high_frequency_deploy','delivery','🚀','High Frequency Deploy','≥ 10 pipelines réussis / semaine','Les équipes DORA Elite déploient plusieurs fois par jour.',150],
+        ['fast_pipeline','delivery','⚡','Fast Pipeline','Durée moyenne pipeline < 10 min','Parallélisez vos jobs et utilisez le cache GitLab.',100],
+        ['very_fast_pipeline','delivery','⚡⚡','Very Fast Pipeline','Durée moyenne pipeline < 5 min','Optimisez le cache, réduisez les dépendances, utilisez des images légères.',150],
+        ['pipeline_as_code','delivery','📝','Pipeline as Code','.gitlab-ci.yml présent','Créez un fichier .gitlab-ci.yml à la racine du repo.',50],
+        ['green_pipeline','delivery','✅','Green Pipeline','Taux de succès > 90%','Corrigez les tests flaky et améliorez la qualité du code.',150],
+        ['high_stability','delivery','🟢','High Stability','Taux de succès > 95%','Éliminez tous les tests instables et automatisez les rollbacks.',200],
+        ['recovery_master','delivery','🔄','Recovery Master','MTTR < 2h (temps moyen de recovery)','Mettez en place des alertes et des runbooks pour réagir vite.',200],
+        ['no_failed_streak','delivery','📉','No Failed Streak','Max 1 pipeline failed consécutif','Réagissez vite aux échecs pour éviter les séries de fails.',150],
+        ['deploy_from_main','delivery','🎯','Deploy from Main','100% des déploiements via main','Ne déployez jamais depuis une branche feature.',100],
+        ['tagged_releases','delivery','🏷️','Tagged Releases','≥ 1 release taguée / mois','Créez un tag Git pour chaque release.',75],
+        ['semver','delivery','🔢','Semver','Tags suivent semver (vX.Y.Z)','Utilisez des tags comme v1.0.0, v1.1.0, v2.0.0.',75],
+        ['code_review_champion','quality','👀','Code Review Champion','≥ 80% des MR avec approbation','Demandez toujours une review avant de merger.',150],
+        ['review_speed','quality','⏱️','Review Speed','Temps moyen de review < 2 jours','Réservez du temps quotidien pour les reviews.',100],
+        ['very_fast_review','quality','⚡','Very Fast Review','Temps de review < 1 jour','Priorisez les reviews dès leur arrivée.',150],
+        ['approval_rules','quality','🔐','Approval Rules','2 approbateurs requis, author exclu','Settings → Merge requests → Approval rules.',100],
+        ['reset_approvals','quality','🔁','Reset Approvals','Approvals invalidées après push','Settings → Merge requests → Remove all approvals on push.',100],
+        ['small_mr','quality','✂️','Small MR','Taille moyenne MR < 200 lignes','Découpez vos changements en MR atomiques.',100],
+        ['tiny_mr','quality','🧩','Tiny MR','Taille moyenne MR < 50 lignes','Les micro-MR sont reviewées en quelques minutes.',150],
+        ['low_mr_files','quality','📄','Low MR Files','< 10 fichiers modifiés par MR','Moins de fichiers = review plus ciblée.',75],
+        ['no_merge_without_approval','quality','🛡️','No Merge Without Approval','0 MR mergées sans approval','Bloquez les merges sans approbation.',150],
+        ['constructive_reviews','quality','💬','Constructive Reviews','> 3 commentaires / MR','Encouragez les discussions constructives sur le code.',100],
+        ['stable_build','stability','✅','Stable Build','Taux de succès > 90%','Identifiez et corrigez les tests flaky.',150],
+        ['pipeline_resilient','stability','🛡️','Pipeline Resilient','Échecs isolés (max 1 consécutif)','Réagissez vite aux premiers signes de problème.',100],
+        ['quick_fix','stability','🔧','Quick Fix','MTTR < 2h','Préparez des runbooks pour les incidents courants.',200],
+        ['no_pipeline_red','stability','🚦','No Pipeline Red','Aucun pipeline failed sur la semaine','Maintenez un taux de succès parfait cette semaine.',100],
+        ['trend_up','stability','📈','Trend Up','Taux succès en hausse sur 1 mois','Améliorez continuellement votre CI/CD.',75],
+        ['clean_repo','hygiene','🧹','Clean Repo','0 branches inactives > 30 jours','Supprimez les branches déjà mergées.',75],
+        ['stale_branch_hunter','hygiene','🌿','Stale Branch Hunter','< 5 branches inactives','Nettoyez régulièrement vos branches.',50],
+        ['lock_files_present','hygiene','🔒','Lock Files Present','package-lock / yarn.lock / poetry.lock présent','Committez vos fichiers de lock pour garantir la reproductibilité.',75],
+        ['essential_files','hygiene','📁','Essential Files','README + .gitignore + CHANGELOG présents','Documentez votre projet avec les fichiers essentiels.',100],
+        ['branch_protection','hygiene','🛡️','Branch Protection','Branche principale protégée','Settings → Repository → Protected branches.',100],
+        ['force_push_blocked','hygiene','🚫','Force Push Blocked','Force push interdit sur main','Désactivez allow_force_push sur la branche protégée.',100],
+        ['no_zombie_mrs','hygiene','🧟','No Zombie MRs','0 MR ouvertes > 7 jours','Fermez ou mergez vos MRs rapidement.',100],
+        ['mr_cycle_time','hygiene','⏲️','MR Cycle Time','MR ouvertes < 3 jours en moyenne','Réduisez le temps entre création et merge.',100],
+        ['merged_branches_cleaned','hygiene','🗑️','Merged Branches Cleaned','< 3 branches mergées non supprimées','Activez la suppression auto des branches après merge.',75],
+        ['bus_factor_safe','resilience','🚌','Bus Factor Safe','≥ 3 contributeurs actifs','Impliquez plus de développeurs dans le projet.',100],
+        ['work_balanced','resilience','⚖️','Work Balanced','Top contributeur < 40% des commits','Répartissez le travail entre les membres de l\'équipe.',100],
+        ['reviewer_rotation','resilience','🔄','Reviewer Rotation','≥ 3 reviewers distincts sur les MR','Faites tourner les reviewers pour partager la connaissance.',100],
+        ['regular_activity','resilience','📅','Regular Activity','Gap max entre commits < 7 jours','Maintenez une activité régulière sur le projet.',75],
+        ['feature_flags','practices','🚩','Feature Flags','Utilisation de feature flags','Utilisez GitLab Feature Flags ou Unleash.',100],
+        ['ci_versioned','practices','📝','CI Versioned','.gitlab-ci.yml dans le repo','Versionnez votre pipeline dans le repo.',75],
+        ['multi_stage_pipeline','practices','🔀','Multi-Stage Pipeline','≥ 3 stages dans le pipeline','Structurez votre pipeline : build, test, deploy.',75],
+        ['automated_tests','practices','🧪','Automated Tests','Stage de test dans le pipeline','Ajoutez un job de test dans votre CI.',100],
+        ['automated_deploy','practices','🚀','Automated Deploy','Stage de deploy dans le pipeline','Automatisez vos déploiements.',100],
+        ['env_separation','practices','🌍','Environment Separation','Variables d\'environnement par env','Utilisez les environnements GitLab (dev, staging, prod).',75],
+        ['rollback_ready','practices','⏪','Rollback Ready','Job de rollback disponible','Préparez un job pour revenir à la version précédente.',100]
+    ];
+    var GAMING_TOTAL = GAMING_BADGES.length; // 47
+    // Index normalisé pour la recherche (nom + critère + tip).
+    var GB_INDEX = GAMING_BADGES.map(function (b) {
+        return { id: b[0], cat: b[1], icon: b[2], name: b[3], crit: b[4], tip: b[5], xp: b[6], hay: norm(b[3] + ' ' + b[4] + ' ' + b[5]), nameN: norm(b[3]) };
+    });
+    // 4 badges « d'absence » neutralisés tant qu'il n'y a pas assez de signal.
+    var GAMING_GATED = { no_failed_streak: 1, pipeline_resilient: 1, no_merge_without_approval: 1, no_zombie_mrs: 1 };
+    var GAMING_PHASES = [
+        { emoji: '🌱', label: 'Découverte', from: '0 %' },
+        { emoji: '🧱', label: 'Structuration', from: '≥ 15 % (~7/47)' },
+        { emoji: '🛡️', label: 'Fiabilisation', from: '≥ 40 % (~19/47)' },
+        { emoji: '⚙️', label: 'Optimisation', from: '≥ 65 % (~31/47)' },
+        { emoji: '🏆', label: 'Excellence', from: '≥ 85 % (~40/47)' }
+    ];
+    // Trouve le badge le plus proche de la question (ou null).
+    function findBadge(n) {
+        var toks = n.split(' ').filter(function (w) { return w.length > 2 && !ATL_STOP[w]; });
+        if (!toks.length) return null;
+        var best = null, bestScore = 0;
+        GB_INDEX.forEach(function (b) {
+            var s = 0;
+            toks.forEach(function (t) {
+                if (b.nameN.indexOf(t) >= 0) s += 3;
+                else if (b.hay.indexOf(t) >= 0) s += (t.length > 4 ? 2 : 1);
+            });
+            if (s > bestScore) { bestScore = s; best = b; }
+        });
+        return bestScore >= 3 ? best : null;
+    }
+    function catFromN(n) {
+        if (/qualite|review|revue|approbation|approval|\bmr\b|merge request|commentaire/.test(n)) return 'quality';
+        if (/hygien|branche|repo|protection|protegee|fichier|readme|lock|zombie/.test(n)) return 'hygiene';
+        if (/resilience|bus factor|connaissance|rotation|contributeur|equilibr/.test(n)) return 'resilience';
+        if (/pratique|feature flag|automation|automatis|\bci\b|stage/.test(n)) return 'practices';
+        if (/stabilite|resilient|recovery|tendance|flaky/.test(n)) return 'stability';
+        if (/delivery|livraison|deploiement|frequence|pipeline|release|tag/.test(n)) return 'delivery';
+        return null;
+    }
+    // Fiche badge : critère + (recette « comment débloquer » si demandé/dispo).
+    function d_badge_info(b, howto) {
+        var cat = GAMING_CATS[b.cat];
+        var head = `${b.icon} <b>${esc(b.name)}</b> · ${cat.ic} ${esc(cat.name)} · <b>${b.xp} XP</b><br><span class="sqa-hint">Critère : ${esc(b.crit)}</span>`;
+        var gate = GAMING_GATED[b.id] ? `<div class="sqa-hint">⏳ Badge « d'absence » : compte seulement quand il y a assez d'activité (pipelines/MR) à juger.</div>` : '';
+        var rec = (Salsifi.gamingRecipes || {})[b.id];
+        if (howto) {
+            if (rec) {
+                var steps = (rec.steps || []).slice(0, 3).map(function (s) { return `<div class="sqa-atl-d">• ${s}</div>`; }).join(''); // HTML de confiance (module)
+                var modH = rec.module ? `<div style="margin-top:5px"><a href="${esc(rec.module.url)}" target="_blank" rel="noopener">🧰 ${esc(rec.module.name)} ↗</a></div>` : '';
+                return { html: `${head}<div class="sqa-atl"><b>Pour le débloquer :</b>${steps}${modH}</div>${gate}` };
+            }
+            return { html: `${head}<div class="sqa-atl"><b>Pour le débloquer :</b> ${esc(b.tip)}</div>${gate}` };
+        }
+        return { html: `${head}<div class="sqa-hint">💡 ${esc(b.tip)}</div>${gate}` };
+    }
+    // Les 5 phases de maturité + seuils (les « notes » du gaming).
+    function d_gaming_phases() {
+        var rows = GAMING_PHASES.map(function (p) { return `${p.emoji} <b>${esc(p.label)}</b> — ${esc(p.from)}`; }).join('<br>');
+        return { html: `🎮 Les <b>5 phases de maturité</b> (sur ${GAMING_TOTAL} badges) :<br>${rows}<br><span class="sqa-hint">On monte dès qu'on franchit le seuil ; on ne redescend qu'après une baisse soutenue (2 jours), pas sur un mauvais jour.</span>` };
+    }
+    // Les 6 familles de badges.
+    function d_gaming_cats() {
+        var counts = {}; GAMING_BADGES.forEach(function (b) { counts[b[1]] = (counts[b[1]] || 0) + 1; });
+        var rows = Object.keys(GAMING_CATS).map(function (k) { var c = GAMING_CATS[k]; return `${c.ic} <b>${esc(c.name)}</b> (${counts[k]}) — <span class="sqa-hint">${esc(c.desc)}</span>`; }).join('<br>');
+        return { html: `🎮 Les <b>6 familles</b> de badges (${GAMING_TOTAL} au total) :<br>${rows}<br><span class="sqa-hint">Demande « les badges <b>hygiène</b> » pour la liste d'une famille.</span>` };
+    }
+    // Explique le gate anti-vide.
+    function d_gaming_gate() {
+        return { html: `⏳ <b>« En attente de données »</b> : certains badges « d'absence » (0 échec, 0 MR sans approbation…) seraient vrais sur un repo qui ne fait <i>rien</i>. Salsi les neutralise tant qu'il n'y a pas assez d'activité (pipelines / MR) à juger — un repo mort ne doit pas finir mieux noté qu'un repo vivant. Concernés : <b>No Failed Streak</b>, <b>Pipeline Resilient</b>, <b>No Merge Without Approval</b>, <b>No Zombie MRs</b>.` };
+    }
+    // Liste des badges (d'une famille si précisée, sinon renvoie les familles).
+    function d_badge_list(n) {
+        var cat = catFromN(n);
+        if (!cat) return d_gaming_cats();
+        var c = GAMING_CATS[cat];
+        var items = GB_INDEX.filter(function (b) { return b.cat === cat; }).map(function (b) { return `${b.icon} <b>${esc(b.name)}</b> <span class="sqa-hint">— ${esc(b.crit)}</span>`; }).join('<br>');
+        return { html: `${c.ic} <b>${esc(c.name)}</b> :<br>${items}` };
+    }
+    // Routeur gaming : renvoie une réponse taguée, ou null si hors sujet.
+    async function gamingRoute(n, isData) {
+        var gameCtx = /badge|badges|achievement|succes|troph|\bxp\b|debloqu|maturite|phase de/.test(n);
+        if (!gameCtx) return null;
+        function tag(r, k) { r.intent = k; return r; }
+        if (/phase|maturite|palier|decouverte|structuration|fiabilisation|optimisation|excellence/.test(n)) return tag(d_gaming_phases(), 'gaming_phases');
+        if (/famille|familles|categorie|categories|\baxe\b|axes/.test(n)) return tag(d_gaming_cats(), 'gaming_cats');
+        if (/attente de donnee|en attente|grise|verrouille pourquoi|pourquoi.*(pas|jamais).*(debloqu|badge)|badge.*(pas|jamais).*debloqu/.test(n)) return tag(d_gaming_gate(), 'gaming_gate');
+        if (/liste|tous les badges|quels badges|catalogue|lesquel|les badges (de|d|hygien|qualit|delivery|resilience|stabilit|pratique)/.test(n)) return tag(d_badge_list(n), 'gaming_list');
+        var b = findBadge(n);
+        var howto = /comment|debloqu|obtenir|avoir|gagner|remplir|valider|atteindre|ameliorer|progresser|conseil|astuce/.test(n);
+        if (b) return tag(d_badge_info(b, howto), 'gaming_badge');
+        if (howto) return { html: `Pour débloquer plus de badges : ouvre <b>Achievements</b> (tes badges verrouillés + leur recette), ou dis-moi un badge précis — ex. « comment débloquer <b>Small MR</b> ». Familles : 🚀 Delivery · 🔒 Qualité · ⚙️ Stabilité · 🧹 Hygiène · 🚌 Résilience · ⚡ Pratiques.`, intent: 'gaming_howto' };
+        if (isData) return tag(await d_badges(n), 'badges');
+        return tag({ html: defHtml('badges') }, 'badges');
+    }
+
     // ── Ateliers : recherche dans le référentiel (205 actions) + lien Confluence ──
     var ATL_STOP = { c: 1, est: 1, quoi: 1, mon: 1, ma: 1, mes: 1, de: 1, du: 1, la: 1, le: 1, les: 1, un: 1, une: 1, des: 1, pour: 1, sur: 1, au: 1, aux: 1, et: 1, ou: 1, comment: 1, je: 1, tu: 1, on: 1, nous: 1, notre: 1, nos: 1, avec: 1, dans: 1, en: 1, ce: 1, cette: 1, veux: 1, aide: 1, faire: 1, plus: 1, moins: 1, optimiser: 1, ameliorer: 1, reduire: 1, progresser: 1, muscler: 1, atelier: 1, ateliers: 1, workshop: 1, session: 1, accompagnement: 1, sait: 1, peux: 1, avoir: 1, mieux: 1, gerer: 1, notre: 1 };
     var ATL_SYN = {
@@ -412,6 +571,9 @@
         if (/\bdora\b|score/.test(n) && /calcul|calcule|c est quoi le score|score.*(marche|fonctionne)|combien de points|comment (ca marche|fonctionne)/.test(n)) {
             var rc = d_dora_scorecalc(); rc.intent = 'dora_score_calc'; return rc;
         }
+        // ── Gaming / Achievements (avant les « niveaux » DORA : « phases »/« badges » gagnent) ──
+        var gr = await gamingRoute(n, /(combien|nombre|mon |ma |mes |quel|quelle|aujourd|semaine|mois)/.test(n));
+        if (gr) return gr;
         // « les niveaux / les notes / les paliers DORA » (ou « c'est quoi Elite »)
         if (/niveau|niveaux|note|notes|palier|paliers|bareme|baremes|seuil|seuils|elite|high performer|medium performer|low performer|barometre/.test(n) && (doraCtx || /elite|palier|performer|bareme/.test(n))) {
             var rl = d_dora_levels(doraKeyFromN(n)); rl.intent = 'dora_levels'; return rl;
@@ -463,7 +625,7 @@
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }
     function suggestions() {
-        var chips = ['mon score DORA ?', 'améliorer mon lead time', 'les niveaux DORA', 'combien de pipelines aujourd\'hui ?', 'combien de FF ?', 'c\'est quoi le bus factor ?'];
+        var chips = ['mon score DORA ?', 'améliorer mon lead time', 'combien de badges ?', 'comment débloquer Small MR ?', 'les phases de maturité', 'combien de FF ?'];
         return '<div class="sqa-chips">' + chips.map(function (c) { return `<button class="sqa-chip" data-q="${esc(c)}">${esc(c)}</button>`; }).join('') + '</div>';
     }
     function togglePanel(open) {

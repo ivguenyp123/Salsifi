@@ -324,3 +324,73 @@ Chaque question DORA est tracée dans `salsifi_qa_log` avec son intention
 (`dora_improve_lt`, `dora_levels`, `dora_score_calc`…). Les intentions `unknown`
 répétées diront quelles formulations DORA il reste à couvrir **avant** de brancher
 l'IA en dernier recours.
+
+---
+
+# 🎮 Module Gaming / Achievements — savoir complet (implémenté)
+
+> Miroir fidèle de `js/gaming.js` (catalogue des **47 badges**, 6 familles, le
+> **gate anti-vide**) et de `js/gaming-history.js` (les **5 phases** + seuils). Les
+> **recettes « comment débloquer »** sont lues au runtime dans `Salsifi.gamingRecipes`
+> (`js/gaming-recipes.js`, chargé sur le hub) — `why` + `steps` + lien module.
+
+## 1. Définitions
+
+- **Badge / achievement** : une bonne pratique DevOps atteinte, mesurée sur tes
+  vraies données GitLab (30 j). **47 badges**, **6 familles**, XP par badge.
+- **Phase de maturité** : ta progression globale (5 phases, cf. §2).
+- **Gate « en attente de données »** : cf. §4.
+
+## 2. Les notes (phases de maturité) — « les phases »
+
+| Phase | Seuil (fraction des 47 badges) |
+|---|---|
+| 🌱 Découverte | 0 % |
+| 🧱 Structuration | ≥ 15 % (~7/47) |
+| 🛡️ Fiabilisation | ≥ 40 % (~19/47) |
+| ⚙️ Optimisation | ≥ 65 % (~31/47) |
+| 🏆 Excellence | ≥ 85 % (~40/47) |
+
+On **monte** dès qu'on franchit le seuil ; on ne **redescend** qu'après une baisse
+**soutenue** (2 jours), jamais sur un mauvais jour (hystérésis).
+
+## 3. Les 6 familles (catégories)
+
+| Famille | Badges | Focus |
+|---|---|---|
+| 🚀 Delivery | 12 | Fréquence, stabilité, vitesse |
+| 🔒 Qualité & Merge Requests | 10 | Review, approbations, taille MR |
+| ⚙️ Stabilité & Pipelines | 5 | Résilience, recovery, tendance |
+| 🧹 Hygiène & Repository | 9 | Branches, fichiers, protection |
+| 🚌 Résilience & Connaissances | 4 | Bus factor, répartition, rotation |
+| ⚡ Pratiques DevOps | 7 | Feature flags, CI/CD, automation |
+
+« les badges **hygiène** » → liste de la famille (nom + critère).
+
+## 4. Le gate anti-vide (« en attente de données »)
+
+4 badges « d'absence » (No Failed Streak, Pipeline Resilient, No Merge Without
+Approval, No Zombie MRs) seraient vrais sur un repo qui ne fait *rien*. Salsi les
+neutralise tant qu'il n'y a pas assez d'activité (pipelines / MR) à juger — un repo
+mort ne doit pas finir mieux noté qu'un repo vivant.
+
+## 5. « Comment débloquer le badge X »
+
+Salsi trouve le badge par son **nom ou son critère** (fuzzy), puis renvoie :
+critère + XP + famille, et — si demandé (« comment débloquer / obtenir ») — la
+**recette** (`steps` de `gamingRecipes`) + le **lien module** quand il y en a un
+(Pipeline Generator, Feature Flag Manager, Branch Monitor, Release Notes).
+Exemples : « comment débloquer Small MR », « le badge bus factor safe c'est quoi ».
+
+## 6. Mes résultats
+
+« combien de badges / mes badges / ma phase » → `X/47` + la **phase courante**
+(via `gamingHistory.computePhase`).
+
+## 7. Déclencheurs & journal
+
+- Contexte gaming : `badge / achievement / succès / trophée / xp / débloquer / maturité / phase`.
+- Intentions tracées : `gaming_phases`, `gaming_cats`, `gaming_badge`, `gaming_gate`,
+  `gaming_list`, `gaming_howto`, `badges`.
+- Isolation : « améliorer mon MTTR » reste **DORA** ; « c'est quoi le bus factor »
+  reste la **définition** (pas le badge *Bus Factor Safe*).
