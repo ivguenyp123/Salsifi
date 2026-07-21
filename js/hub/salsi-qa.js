@@ -422,6 +422,122 @@
     }
 
     // ══════════════════════════════════════════════════════════════════
+    //  RAPPORT D'ACTIVITÉ — jour / semaine / mois (miroir du Daily Report)
+    //  Reproduit generateStandaloneReport() : santé, best-practices, jour-par-jour.
+    //  NOUVEAU : le « jour » (days=1) qui n'existait pas dans le module.
+    // ══════════════════════════════════════════════════════════════════
+    function inRange(iso, a, b) { var t = Date.parse(iso); return !isNaN(t) && t >= a && t <= b; }
+    function pctScore(x) { return x >= 70 ? '#34d399' : x >= 40 ? '#fbbf24' : '#f87171'; }
+    async function d_activity_report(days, label) {
+        var c = repoCtx(); if (c.err) return c.err;
+        var base = c.auth.gitlabUrl, tok = c.auth.token, P = c.pid;
+        var end = new Date(), start = new Date(); start.setDate(start.getDate() - days + 1); start.setHours(0, 0, 0, 0); end.setHours(23, 59, 59, 999);
+        var aMs = start.getTime(), bMs = end.getTime(), after = start.toISOString(), before = end.toISOString();
+        var pag = function (ep, mp) { return Salsifi.gitlabPaginate(base, tok, ep, { maxPages: mp || 3 }).catch(function () { return []; }); };
+        var qr = `updated_after=${encodeURIComponent(after)}&updated_before=${encodeURIComponent(before)}`;
+        var R;
+        try {
+            R = await Promise.all([
+                pag(`/projects/${P}/pipelines?${qr}&order_by=updated_at&sort=desc`, 5),
+                pag(`/projects/${P}/merge_requests?state=merged&${qr}`, 3),
+                Salsifi.gitlabPaginate(base, tok, `/projects/${P}/merge_requests?state=opened`, { maxPages: 3 }).catch(function () { return []; }),
+                pag(`/projects/${P}/merge_requests?state=closed&${qr}`, 2),
+                pag(`/projects/${P}/deployments?${qr}`, 2),
+                Salsifi.gitlabPaginate(base, tok, `/projects/${P}/repository/branches`, { maxPages: 3 }).catch(function () { return []; }),
+                pag(`/projects/${P}/repository/commits?since=${encodeURIComponent(after)}&until=${encodeURIComponent(before)}`, 5)
+            ]);
+        } catch (e) { return { html: `😅 Je n'ai pas pu récupérer les données pour le rapport. Réessaie.` }; }
+        var pipelines = (R[0] || []).filter(function (p) { return inRange(p.created_at, aMs, bMs); });
+        var mrsMerged = (R[1] || []).filter(function (m) { return m.merged_at && inRange(m.merged_at, aMs, bMs); });
+        var mrsOpen = R[2] || [];
+        var mrsClosed = (R[3] || []).filter(function (m) { return inRange(m.updated_at || m.created_at, aMs, bMs); });
+        var deployments = (R[4] || []).filter(function (d) { return inRange(d.created_at, aMs, bMs); });
+        var branches = R[5] || [], commits = (R[6] || []).filter(function (cm) { return inRange(cm.created_at, aMs, bMs); });
+
+        var total = pipelines.length, success = pipelines.filter(function (p) { return p.status === 'success'; }).length, failed = pipelines.filter(function (p) { return p.status === 'failed'; }).length;
+        var rate = total ? Math.round(success / total * 100) : 0;
+        var staleBranches = branches.filter(function (b) { var d = b.commit && (b.commit.committed_date || b.commit.created_at); return d && (Date.now() - Date.parse(d)) / 86400000 > 90; }).length;
+        var oldMrs = mrsOpen.filter(function (mr) { return (Date.now() - Date.parse(mr.created_at)) / 86400000 > 7; }).length;
+        var health = 100; if (rate < 80) health -= 20; if (rate < 60) health -= 15; if (staleBranches > 20) health -= 15; if (oldMrs > 5) health -= 10;
+        health = Math.max(0, Math.min(100, health));
+        var hText = health >= 80 ? 'Bonne santé' : health >= 50 ? 'À surveiller' : 'Critique', hColor = pctScore(health);
+
+        // best-practices (formules exactes du module)
+        var staleMrs = mrsOpen.map(function (mr) { return { ageDays: Math.floor((Date.now() - Date.parse(mr.created_at)) / 86400000), iid: mr.iid, title: mr.title }; }).filter(function (mr) { return mr.ageDays >= 2; }).sort(function (a, b) { return b.ageDays - a.ageDays; });
+        var avgPipPerDay = total / Math.max(days, 1);
+        var reviewScore = mrsOpen.length ? Math.max(0, Math.round(100 - (staleMrs.length / mrsOpen.length) * 100)) : 100;
+        var branchScore = branches.length ? Math.max(0, Math.min(100, Math.round(100 - (staleBranches / branches.length) * 200))) : 100;
+        var failRateScore = Math.max(0, 100 - (total ? Math.round(failed / total * 100) : 0));
+        var practices = [
+            { icon: '⚡', name: 'Pipeline Speed', score: Math.min(100, Math.round(avgPipPerDay > 0 ? 90 : 50)), detail: `${avgPipPerDay.toFixed(1)} pip/jour` },
+            { icon: '✅', name: 'Success Rate', score: rate, detail: `${success}/${total} success` },
+            { icon: '👀', name: 'Review Speed', score: reviewScore, detail: `${staleMrs.length} MR > 48h` },
+            { icon: '🌿', name: 'Branch Hygiene', score: branchScore, detail: `${staleBranches} stale > 90j` },
+            { icon: '🔴', name: 'Failure Rate', score: failRateScore, detail: `${failed} échecs` }
+        ];
+        var globalBP = Math.round(practices.reduce(function (s, p) { return s + p.score; }, 0) / practices.length);
+
+        // jour-par-jour (bucket local)
+        var dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'], daily = [];
+        for (var i = days - 1; i >= 0; i--) {
+            var dd = new Date(); dd.setDate(dd.getDate() - i); var ds = new Date(dd); ds.setHours(0, 0, 0, 0); var de = new Date(dd); de.setHours(23, 59, 59, 999);
+            var s = ds.getTime(), e2 = de.getTime();
+            daily.push({
+                label: dayNames[dd.getDay()], date: dd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                success: pipelines.filter(function (p) { return p.status === 'success' && inRange(p.created_at, s, e2); }).length,
+                failed: pipelines.filter(function (p) { return p.status === 'failed' && inRange(p.created_at, s, e2); }).length,
+                total: pipelines.filter(function (p) { return inRange(p.created_at, s, e2); }).length,
+                mrsMerged: mrsMerged.filter(function (m) { return inRange(m.merged_at, s, e2); }).length,
+                commits: commits.filter(function (cm) { return inRange(cm.created_at, s, e2); }).length
+            });
+        }
+        // top failures par branche
+        var failByRef = {}; pipelines.filter(function (p) { return p.status === 'failed'; }).forEach(function (p) { var ref = p.ref || 'unknown'; failByRef[ref] = (failByRef[ref] || 0) + 1; });
+        var topFails = Object.keys(failByRef).map(function (k) { return { ref: k, n: failByRef[k] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+
+        var startStr = start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+        var endStr = end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        var rangeStr = days === 1 ? endStr : (startStr + ' → ' + endStr);
+        var nm = esc(c.name);
+        // barres jour-par-jour
+        var maxPip = Math.max.apply(null, daily.map(function (x) { return x.total; }).concat([1]));
+        var bars = daily.map(function (x) {
+            var hPct = Math.round((x.total / maxPip) * 100), fPct = x.total ? Math.round((x.failed / x.total) * 100) : 0;
+            return `<div style="flex:1;text-align:center"><div style="height:90px;display:flex;align-items:flex-end;justify-content:center"><div title="${x.total} pipelines" style="width:60%;height:${Math.max(hPct, 2)}%;background:linear-gradient(180deg,#34d399 ${100 - fPct}%,#f87171 ${100 - fPct}%);border-radius:4px 4px 0 0"></div></div><div style="font-size:10px;opacity:.7;margin-top:4px">${esc(x.label)}</div><div style="font-size:9px;opacity:.5">${esc(x.date)}</div></div>`;
+        }).join('');
+        var practiceRows = practices.map(function (p) {
+            return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${p.icon} ${esc(p.name)} <span style="opacity:.6;font-size:11px">${esc(p.detail)}</span></span><b style="color:${pctScore(p.score)}">${p.score}</b></div><div style="height:7px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:${p.score}%;background:${pctScore(p.score)}"></div></div></div>`;
+        }).join('');
+        var failRows = topFails.length ? topFails.map(function (f) { return `<tr><td style="padding:6px 10px"><code>${esc(f.ref)}</code></td><td style="padding:6px 10px;text-align:right;color:#f87171"><b>${f.n}</b></td></tr>`; }).join('') : `<tr><td colspan="2" style="padding:10px;opacity:.6">Aucun échec sur la période 🎉</td></tr>`;
+        var staleRows = staleMrs.slice(0, 5).map(function (mr) { return `<tr><td style="padding:6px 10px">!${esc(mr.iid)} ${esc((mr.title || '').slice(0, 50))}</td><td style="padding:6px 10px;text-align:right">${mr.ageDays} j</td></tr>`; }).join('') || `<tr><td colspan="2" style="padding:10px;opacity:.6">Aucune MR ancienne 👍</td></tr>`;
+        var dailyTable = daily.map(function (x) { return `<tr><td style="padding:5px 10px">${esc(x.label)} ${esc(x.date)}</td><td style="padding:5px 10px;text-align:center">${x.total}</td><td style="padding:5px 10px;text-align:center;color:#34d399">${x.success}</td><td style="padding:5px 10px;text-align:center;color:#f87171">${x.failed}</td><td style="padding:5px 10px;text-align:center">${x.mrsMerged}</td><td style="padding:5px 10px;text-align:center">${x.commits}</td></tr>`; }).join('');
+
+        var css = '*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b,#312e81);min-height:100vh;color:#e2e8f0;padding:32px}.wrap{max-width:960px;margin:0 auto}.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;margin-bottom:20px}h1{font-size:28px;font-weight:800}h2{font-size:17px;font-weight:700;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}.stat{background:rgba(255,255,255,.04);border-radius:12px;padding:14px;text-align:center}.stat .v{font-size:26px;font-weight:800}.stat .l{font-size:11px;opacity:.6;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;padding:6px 10px;opacity:.6;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)}tr{border-bottom:1px solid rgba(255,255,255,.05)}.foot{text-align:center;opacity:.4;font-size:12px;margin-top:8px}';
+        var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapport ' + esc(label) + ' — ' + nm + ' — ' + esc(rangeStr) + '</title><style>' + css + '</style></head><body><div class="wrap">'
+            + '<div class="card" style="text-align:center"><div style="font-size:46px">📋</div><h1>Rapport ' + esc(label) + '</h1><p style="opacity:.7;margin-top:6px">📦 ' + nm + ' · ' + esc(rangeStr) + '</p>'
+            + '<div style="display:inline-block;margin-top:16px;padding:10px 22px;border-radius:14px;background:' + hColor + '22;border:1px solid ' + hColor + '55"><span style="font-size:30px;font-weight:800;color:' + hColor + '">' + health + '/100</span> <span style="font-weight:700;color:' + hColor + '">' + hText + '</span></div></div>'
+            + '<div class="card"><h2>📊 Vue d\'ensemble</h2><div class="grid">'
+            + '<div class="stat"><div class="v">' + total + '</div><div class="l">Pipelines</div></div>'
+            + '<div class="stat"><div class="v" style="color:#34d399">' + rate + '%</div><div class="l">Taux succès</div></div>'
+            + '<div class="stat"><div class="v" style="color:#f87171">' + failed + '</div><div class="l">Échecs</div></div>'
+            + '<div class="stat"><div class="v">' + mrsMerged.length + '</div><div class="l">MR mergées</div></div>'
+            + '<div class="stat"><div class="v">' + mrsOpen.length + '</div><div class="l">MR ouvertes</div></div>'
+            + '<div class="stat"><div class="v">' + deployments.length + '</div><div class="l">Déploiements</div></div>'
+            + '<div class="stat"><div class="v">' + commits.length + '</div><div class="l">Commits</div></div></div></div>'
+            + '<div class="card"><h2>📈 Activité jour par jour</h2><div style="display:flex;gap:6px;align-items:flex-end">' + bars + '</div>'
+            + '<table style="margin-top:16px"><tr><th>Jour</th><th style="text-align:center">Pip.</th><th style="text-align:center">✅</th><th style="text-align:center">❌</th><th style="text-align:center">MR</th><th style="text-align:center">Commits</th></tr>' + dailyTable + '</table></div>'
+            + '<div class="card"><h2>🎯 Bonnes pratiques — global <b style="color:' + pctScore(globalBP) + '">' + globalBP + '/100</b></h2>' + practiceRows + '</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">'
+            + '<div class="card"><h2>🔴 Top échecs par branche</h2><table>' + failRows + '</table></div>'
+            + '<div class="card"><h2>⏳ MR qui traînent</h2><table>' + staleRows + '</table></div></div>'
+            + '<div class="card foot">Généré par Salsi 🌱 · ' + esc(endStr) + ' · Données GitLab bornées (' + label.toLowerCase() + ')</div>'
+            + '</div></body></html>';
+        var filename = 'rapport-' + String(label).toLowerCase() + '-' + String(c.name).replace(/[^a-zA-Z0-9]/g, '-') + '-' + end.toISOString().split('T')[0] + '.html';
+        if (!triggerDownload(filename, html, 'text/html')) return { html: `😅 Téléchargement bloqué par le navigateur. Réessaie.` };
+        return { html: `📄 Rapport <b>${esc(label)}</b> de <b>${nm}</b> généré et téléchargé ✅ (${esc(rangeStr)}).<br>Santé <b style="color:${hColor}">${health}/100</b> — ${esc(hText)} · ${total} pipelines (${rate}% succès) · ${mrsMerged.length} MR mergées · ${commits.length} commits.<br>Fichier : <code>${esc(filename)}</code>.` };
+    }
+
+    // ══════════════════════════════════════════════════════════════════
     //  SAVOIR GAMING / ACHIEVEMENTS — miroir fidèle de js/gaming.js
     //  47 badges · 6 familles · 5 phases (gaming-history.js) · gate anti-vide.
     //  Recettes « comment débloquer » lues au runtime dans Salsifi.gamingRecipes.
@@ -837,9 +953,20 @@
         // ── DORA d'abord (le module qu'on travaille en profondeur) ──
         var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
         var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);
-        // « génère / télécharge / exporte le rapport de mes DORA » → génère + télécharge
-        if ((/\bdora\b/.test(n) || doraCtx) && /rapport|report|\bexport/.test(n) && /genere|generer|telecharge|download|exporte|exporter|\bexport\b|fais moi|sors moi|produit|edite|donne moi le rapport|veux le rapport|cree/.test(n) && !/c est quoi|qu est ce/.test(n)) {
+        // ── Rapports téléchargeables (une action) ──
+        var wantReport = /rapport|report|\bexport/.test(n) && /genere|generer|telecharge|download|exporte|exporter|\bexport\b|fais moi|sors moi|produit|edite|donne moi le rapport|veux le rapport|cree|bilan a telecharger/.test(n) && !/c est quoi|qu est ce/.test(n);
+        // « génère / télécharge / exporte le rapport de mes DORA » → rapport DORA
+        if (wantReport && (/\bdora\b/.test(n) || doraCtx)) {
             var rr = d_dora_report(); rr.intent = 'dora_report'; return rr;
+        }
+        // « génère le rapport du jour / de la semaine / du mois » → rapport d'activité
+        if (wantReport) {
+            var per = null;
+            if (/semaine|hebdo|\b7 ?j/.test(n)) per = { d: 7, l: 'Semaine' };
+            else if (/mois|mensuel|\b30 ?j/.test(n)) per = { d: 30, l: 'Mois' };
+            else if (/jour|quotidien|journalier|aujourd|daily|journee/.test(n)) per = { d: 1, l: 'Jour' };
+            if (per) { var ra = await d_activity_report(per.d, per.l); ra.intent = 'activity_report_' + per.l.toLowerCase(); return ra; }
+            return { html: `Quel rapport veux-tu ? 📄 « rapport du <b>jour</b> », « rapport de la <b>semaine</b> », « rapport du <b>mois</b> » — ou « le rapport <b>DORA</b> ».`, intent: 'report_ask' };
         }
         // « comment améliorer ma fréquence / mon lead time / mon CFR / mon MTTR (ou mon score DORA) »
         // (avant le calcul-du-score : « améliorer mon score » = progresser, pas « comment c'est calculé »)

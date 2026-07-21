@@ -526,6 +526,25 @@ déploiements, taux de succès du jour, + renvoi au module.
 - Isolation : « combien de pipelines aujourd'hui » reste le comptage **pipelines**
   (pas le rapport) ; « conseils du jour » va bien aux **conseils** même sans « daily ».
 
+## Rapports d'activité téléchargeables — jour / semaine / mois (action)
+
+« **génère le rapport du jour / de la semaine / du mois** » → Salsi **fetch les
+données GitLab de la période**, calcule et **télécharge** un rapport HTML autonome
+(miroir de `generateStandaloneReport` du Daily Report) :
+
+- **Santé /100** (mêmes malus : taux succès < 80/< 60, branches stale > 90 j > 20,
+  MR ouvertes > 7 j > 5).
+- **Vue d'ensemble** : pipelines / taux succès / échecs / MR mergées / ouvertes /
+  déploiements / commits.
+- **Activité jour par jour** (barres + tableau) — bucketing local des données.
+- **Bonnes pratiques** (5 scores + global, formules exactes du module).
+- **Top échecs par branche** + **MR qui traînent**.
+
+Périodes : `jour` (**NOUVEAU** — n'existait pas dans le module) = 1 j · `semaine` = 7 j
+· `mois` = 30 j. Fichier `rapport-<période>-<repo>-<date>.html`. « génère un rapport »
+sans période → Salsi demande laquelle. Intentions : `activity_report_jour/semaine/mois`.
+« rapport DORA » reste routé vers le rapport **DORA** (score /100).
+
 ---
 
 # 🚩 Module Feature Flags — savoir complet (implémenté)
