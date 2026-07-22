@@ -1,5 +1,75 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.9.0 — 2026-07-22 · Salsi × IA, en dernier recours (Vertex · Gemini 2.5 Pro)
+
+L'IA vient **par-dessus** le déterministe, **jamais avant**. Elle n'est appelée que
+lorsque Salsi ne sait pas (`unknown`), et reste **OFF par défaut** tant qu'aucun back
+n'est configuré. Objectif : l'utiliser **de moins en moins**.
+
+- **Fallback-only** : sur une question inconnue, Salsi envoie au back la question + un
+  **contexte de grounding** (18 modules + glossaire + entrées formation + tes résultats
+  en cache). La réponse est **badgée « ⚡ IA (hors déterministe) »** et **loggée `ai:true`**
+  dans `salsifi_qa_log` → tu vois ce que l'IA traite, tu l'ajoutes au déterministe.
+- **Client** (`js/hub/salsi-ai.js` + `salsi-config.js`) : aucun secret côté navigateur ;
+  URL/secret via `salsi-config.js` (ou localStorage). La pastille affiche « · IA en
+  secours » quand c'est branché, « · 0 IA » sinon.
+- **Back de prod** (dossier `salsi-ai/`) : relais Node → Vertex `gemini-2.5-pro`
+  (europe-west9). Contrat `POST /salsi/ask {question, contexte} → {answer, horsPerimetre}`.
+- **Blindé LCL** : prompt système durci (périmètre strict + anti-injection + anti-
+  hallucination), **safety filters Vertex** natifs, gestion des réponses bloquées,
+  **rate-limiting** par IP, **contrôle d'origine** + CORS strict + secret partagé,
+  timeout Vertex, payload plafonné, **journal d'audit** (hash de la question, texte OFF
+  par défaut). `README` + `.env.example` + `Dockerfile` fournis.
+
+## v1.8.0 — 2026-07-22 · Salsi apprend tes docs de formation
+
+Salsi peut désormais **répondre depuis tes docs de formation**, en 100 % déterministe.
+Chaque doc devient des entrées (mots-clés → réponse fidèle) dans
+`js/hub/salsi-formation.js` — **ajouter un doc = ajouter ses entrées**.
+
+- **Module 07 « Feature Flags & Progressive Delivery »** ingéré : 22 concepts —
+  déploiement ≠ activation, bénéfice DORA, les 4 types de flags, ciblage, rollout %
+  + hash stable, canary vs blue/green, montée en charge, kill switch, dette de flags,
+  OpenFeature, stockage, GitOps, audit…
+- **Match par co-occurrence** (`all`) en plus des mots-clés : « comment les flags
+  m'aident à augmenter mes DORA » retombe sur la bonne fiche même avec des mots
+  intercalés. Sans casser l'existant : « combien de FF » reste la donnée live,
+  « c'est quoi un feature flag » reste la définition courte.
+
+## v1.7.0 — 2026-07-22 · Salsi vit dans le Scaffolder
+
+Le scaffolder (concierge IA guidée par questions) a désormais l'**identité Salsi**.
+
+- La **mascotte Salsi** remplace l'avatar générique, l'intro le présente par son nom,
+  l'en-tête devient « Scaffold · Salsi ».
+- **Mascotte expressive** : *proud* ✨ (reco, flow verrouillé, génération réussie),
+  *worried* (écran bloqué, choix de flow risqué), *meh* (réflexion), *happy* (guidage).
+  Aucune logique du flux modifiée — que l'habillage.
+
+## v1.6.0 — 2026-07-21 · Salsi Q&R : demande-lui tout sur la plateforme
+
+Une **icône flottante** ouvre un chat où Salsi répond **sur la plateforme**, en
+**100 % déterministe** (routeur d'intentions, zéro IA) : définitions, tes chiffres,
+ce qui ne va pas, comment progresser. Chaque question est **journalisée** (heure,
+repo, intention) — socle du fallback IA.
+
+- **Couverture profonde de 6 modules** (définition + tes chiffres + ta note + comment
+  améliorer) : **DORA** (4 mesures, niveaux/seuils, calcul du score, coach), **Achievements**
+  (47 badges, 6 familles, 5 phases, « quel badge gagner facilement »), **Bus Factor**
+  (niveaux, score /5, leviers), **Daily Report** (contenu, conseils du jour, digest),
+  **Feature Flags** (nombre, noms, environnements, actifs/inactifs, détail d'un flag),
+  **Repo Analyzer** (santé /100, red flags, quick-wins priorisés).
+- **Rapports téléchargeables à la demande** : rapport **DORA** (miroir de l'export
+  Insights), et rapports d'activité **jour** (nouveau) / **semaine** / **mois**
+  (santé, best-practices, jour-par-jour, top échecs, MR qui traînent).
+- **Aide & prise en main** : « que fait la plateforme » (les 18 modules), « comment je
+  m'en sers » (mode d'emploi d'un module, y compris en suivi), « c'est quoi <module> »
+  pour les 18, « mes priorités du jour » (ouvre le bilan Salsi).
+- **Small-talk** (salut, ça va, merci, qui es-tu) sans jamais voler une vraie question,
+  et **compréhension du jargon** (`FF` = feature flag, `MR`, `CI`…).
+- Répond sur le **repo sélectionné**, `403` → « non vérifiable », hors périmètre →
+  refus honnête. Nouveaux `js/hub/salsi-qa.js`, `SALSI_QA.md` (catalogue).
+
 ## v1.5.0 — 2026-07-20 · Salsi, bilan cross-modules à la demande (hub)
 
 On entre sur le hub **normalement** (aucune popup à l'arrivée). Le bouton **🌱 Salsi**
