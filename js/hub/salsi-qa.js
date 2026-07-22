@@ -1413,8 +1413,10 @@
         var mascot = Salsifi.mascotSVG ? Salsifi.mascotSVG('happy') : '🌱';
         var fab = document.createElement('button'); fab.id = 'salsiFab'; fab.className = 'salsi-fab'; fab.title = 'Demande à Salsi (plateforme)'; fab.innerHTML = mascot;
         var panel = document.createElement('div'); panel.id = 'salsiQaPanel'; panel.className = 'salsi-qa-panel'; panel.style.display = 'none';
+        var aiOn = !!(Salsifi.aiConfigured && Salsifi.aiConfigured());
+        var sub = aiOn ? 'plateforme · IA en secours' : 'questions sur la plateforme · 0 IA';
         panel.innerHTML =
-            '<div class="sqa-head"><span class="sqa-ava">' + mascot + '</span><div><div class="sqa-title">Salsi</div><div class="sqa-sub">questions sur la plateforme · 0 IA</div></div><button class="sqa-x" id="sqaX">✕</button></div>' +
+            '<div class="sqa-head"><span class="sqa-ava">' + mascot + '</span><div><div class="sqa-title">Salsi</div><div class="sqa-sub">' + sub + '</div></div><button class="sqa-x" id="sqaX">✕</button></div>' +
             '<div class="sqa-msgs" id="sqaMsgs"></div>' +
             '<div class="sqa-input"><input id="sqaQ" type="text" placeholder="c\'est quoi le bus factor ? · combien de FF ?" autocomplete="off"><button id="sqaSend" title="Demander">↑</button></div>';
         document.body.appendChild(fab); document.body.appendChild(panel);
