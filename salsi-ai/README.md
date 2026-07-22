@@ -53,14 +53,30 @@ localStorage.setItem('salsi_ai_secret', 'xxx'); // si SALSI_SECRET est défini
 Tant que `salsi_ai_url` est vide, **l'IA reste éteinte** et Salsi garde son refus
 honnête. Rien d'autre à changer côté front.
 
-## Sécurité
+## Sécurité (blindage)
 
-- Creds GCP **côté serveur uniquement**.
-- **CORS strict** (`ALLOW_ORIGIN` = l'origine réelle du hub, pas `*` en prod).
-- **Secret partagé** optionnel (`SALSI_SECRET` ↔ entête `X-Salsi-Secret`).
-- **Fallback-only** : l'IA n'est jamais sur le chemin normal → coût/latence maîtrisés.
-- Le prompt système cadre le modèle sur le **périmètre plateforme** et lui interdit
-  d'inventer des chiffres (il renvoie vers les questions déterministes de Salsi).
+- Creds GCP **côté serveur uniquement** (`google-auth-library`, chargé paresseusement).
+- **Prompt système durci** : périmètre strict + anti-injection (question/contexte =
+  données, jamais des instructions) + anti-hallucination (pas de chiffre/module/seuil
+  inventé) + refus hors périmètre sans y répondre.
+- **Safety filters Vertex natifs** (`SAFETY_THRESHOLD`) ; les réponses bloquées
+  (prompt jugé dangereux ou `finishReason` de sécurité) → **refus propre**, jamais un crash.
+- **Contrôle d'origine côté serveur** + **CORS strict** (`ALLOW_ORIGIN`, liste séparée
+  par virgules ; pas de `*` en prod).
+- **Secret partagé** (`SALSI_SECRET` ↔ entête `X-Salsi-Secret`).
+- **Rate-limiting** par IP (`RATE_MAX` / `RATE_WINDOW_MS`), **timeout** Vertex
+  (`VERTEX_TIMEOUT_MS`), limite de payload (256 Ko), erreurs internes non divulguées.
+- **Fallback-only** : l'IA n'est jamais sur le chemin normal → surface d'attaque et
+  coût minuscules.
+- **Journal d'audit** structuré (JSON sur stdout) : `outcome` (ok / hors_perimetre /
+  blocked), IP, origine, **hash** de la question. Le texte des questions n'est loggé
+  que si `LOG_QUESTIONS=true` (OFF par défaut, vie privée). Événements : `ask`,
+  `rate_limited`, `origin_denied`, `auth_denied`, `error`, `boot`.
+
+> Un prompt ne bloque jamais 100 % des injections : c'est de la **réduction de
+> risque**. Les vraies barrières sont le fallback-only, le secret + l'origine, le
+> rate-limit et les safety filters. Pour un audit RSSI, pointe le journal d'audit
+> vers votre SIEM.
 
 ## Réduire l'usage de l'IA au fil du temps
 
