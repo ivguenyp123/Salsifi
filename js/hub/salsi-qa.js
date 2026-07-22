@@ -1170,10 +1170,10 @@
     // Trace question + date/heure + contexte (repo) + intention (ou « unknown »).
     // Quand l'IA arrivera en fallback, ce journal dira quelles questions inconnues
     // folder dans le déterministe → on appelle l'IA de moins en moins.
-    function logQ(q, intentKey) {
+    function logQ(q, intentKey, ai) {
         try {
             var raw = lsGet('salsifi_qa_log'); var arr = raw ? JSON.parse(raw) : [];
-            arr.push({ q: q, at: new Date().toISOString(), repo: targetRepo() || null, intent: intentKey || 'unknown' });
+            arr.push({ q: q, at: new Date().toISOString(), repo: targetRepo() || null, intent: intentKey || 'unknown', ai: !!ai });
             if (arr.length > 800) arr = arr.slice(arr.length - 800);
             localStorage.setItem('salsifi_qa_log', JSON.stringify(arr));
         } catch (e) { /* quota / indispo */ }
@@ -1243,6 +1243,28 @@
         rest = rest.split(' ').filter(function (w) { return w.length > 1 && !ST_FILLER[w]; }).join(' ').trim();
         if (rest.length >= 3) return null;
         return { html: stPick(ST_MSG[type]), intent: 'smalltalk_' + type };
+    }
+
+    // ── Contexte pour l'IA-fallback (grounding) : tout le savoir déterministe + tes résultats ──
+    // Envoyé au back seulement quand le déterministe ne sait pas. L'IA répond « dans le
+    // périmètre plateforme » à partir de ça, cohérente avec Salsi, sans halluciner.
+    function stripTags(s) { return String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); }
+    function salsiContext() {
+        var ctx = { plateforme: 'Salsifi — aide à la maturité DevOps au-dessus de GitLab (LCL). 4 pôles, 18 modules.', modules: [], glossaire: [], formation: [], resultats: {} };
+        try { HELP_POLES.forEach(function (p) { p.m.forEach(function (x) { ctx.modules.push({ nom: x[1], desc: x[2], pole: p.t }); }); }); } catch (e) { }
+        try { Object.keys(G).forEach(function (k) { ctx.glossaire.push({ terme: G[k].t, def: G[k].x }); }); } catch (e) { }
+        try { var F = Salsifi.formation; if (F && F.entries) F.entries.forEach(function (e) { ctx.formation.push({ titre: e.t, reponse: stripTags(e.a), module: (F.modules[e.mod] || {}).title }); }); } catch (e) { }
+        try {
+            var pid = targetRepo();
+            if (pid) {
+                var DH = Salsifi.doraHistory, h = (DH && DH.read) ? DH.read(pid) : [];
+                if (h && h.length) { var last = h[h.length - 1]; ctx.resultats.dora = { score: last.metrics && last.metrics.doraScore, niveaux: last.levels }; }
+                var GH = Salsifi.gamingHistory, g = (GH && GH.read) ? GH.read(pid) : [];
+                if (g && g.length) ctx.resultats.badges = (g[g.length - 1].unlocked || []).length + '/47';
+                var nm = repoName(knownRepos((getAuth() || {}).username), pid); if (nm) ctx.resultats.repo = nm;
+            }
+        } catch (e) { }
+        return ctx;
     }
 
     var _lastIntent = null;   // mémoire de contexte pour les questions de suivi (« lesquelles ? »)
@@ -1363,7 +1385,16 @@
         addMsg('user', esc(q));
         var pending = addMsg('salsi', '⏳ …');
         var r; try { r = await answer(q); } catch (e) { r = { html: '😅 Je n\'ai pas pu répondre — réessaie.', intent: 'error' }; }
-        logQ(q, r && r.intent);   // trace : question + heure + contexte + intention (socle IA-fallback)
+        // ── IA en DERNIER recours : uniquement si le déterministe ne sait pas ET l'IA est branchée ──
+        var usedAI = false;
+        if (r && r.intent === 'unknown' && Salsifi.aiConfigured && Salsifi.aiConfigured()) {
+            if (pending) pending.innerHTML = '⚡ Je réfléchis…';
+            try {
+                var ai = await Salsifi.aiAsk({ question: q, contexte: salsiContext() });
+                if (ai && ai.answer) { usedAI = true; r = { html: ai.answer + '<div class="sqa-hint">⚡ Réponse assistée par IA (hors déterministe)</div>', intent: ai.horsPerimetre ? 'ai_out' : 'ai' }; }
+            } catch (e) { /* on garde le refus honnête */ }
+        }
+        logQ(q, r && r.intent, usedAI);   // trace : question + heure + contexte + intention + ai
         if (pending) pending.innerHTML = r.html;
         if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
     }

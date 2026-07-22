@@ -1,0 +1,16 @@
+{
+  "name": "salsi-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Back de fallback IA de Salsi — relais vers Vertex AI (gemini-2.5-pro).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.15.0"
+  }
+}
