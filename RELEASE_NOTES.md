@@ -1,5 +1,21 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.16.1 — 2026-07-23 · Gouvernance Repo — correctif : le flux guidé ne s'arrête plus après Secrets
+
+**Régression corrigée.** En lançant plusieurs vérifications d'un coup (Secrets + Historique
++ Supply-chain + CIS), seul **Secrets** s'exécutait quand le token n'a pas le droit de créer
+des MR.
+
+- **Cause** : `createReportMRs` / `createCISMRs` arrêtaient leur boucle après 3 refus de MR
+  (403) en positionnant le flag **global** `aborted = true`. Or l'orchestrateur du flux
+  guidé (`runSelectedChecks`) lit ce même flag (`if (aborted) break`) → il coupait **tout
+  le scan** après la première vérification.
+- **Fix** : la boucle de création des MR utilise désormais un flag **local** (`stopMr`) ;
+  le flag global `aborted` (arrêt du scan par l'utilisateur) n'est plus touché. Les 4
+  vérifications s'enchaînent, même quand aucune MR ne peut être créée.
+- Vérifié end-to-end : 4 repos, secret détecté, MR **refusées (403)** → **Secrets +
+  Historique + Supply-chain + CIS** tournent tous, `aborted` reste `false`.
+
 ## v1.16.0 — 2026-07-23 · Gouvernance Repo / Secrets Scanner — liens « aller à la ligne » dans le rapport
 
 Chaque finding (rapport à l'écran, HTML, Excel, Markdown téléchargé **et** MR) est

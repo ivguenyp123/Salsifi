@@ -522,9 +522,11 @@
       el.insertAdjacentHTML('beforeend', `<div class="mr-row"><span class="mr-ic">${icon}</span><span class="mr-repo" title="${escH(r.repo.path)}">${escH(r.repo.path)}</span><span class="mr-stat">${txt}</span>${link}</div>`);
     };
 
-    let idx = 0;
+    let idx = 0, stopMr = false;   // stopMr : arrêt LOCAL de la boucle MR (ne touche pas
+                                   // le flag global `aborted` du scan — sinon le flux guidé
+                                   // multi-check s'arrêterait après le 1er scan).
     async function worker() {
-      while (idx < aff.length && !aborted) {
+      while (idx < aff.length && !aborted && !stopMr) {
         const { repo, res } = aff[idx++];
         renderMr(repo.path);
         let r;
@@ -536,7 +538,7 @@
         addRow(r);
         renderMr(repo.path);
         // Token read-only : inutile d'insister sur des centaines de repos.
-        if (forbiddenSeen && counts.forbidden >= 3) { aborted = true; }
+        if (forbiddenSeen && counts.forbidden >= 3) { stopMr = true; }
       }
     }
     await Promise.all(Array.from({ length: MR_CONC }, () => worker()));
@@ -582,9 +584,9 @@
       el.insertAdjacentHTML('beforeend', `<div class="mr-row"><span class="mr-ic">${icon}</span><span class="mr-repo" title="${escH(r.repo.path)}">${escH(r.repo.path)}</span><span class="mr-stat">${txt}</span>${link}</div>`);
     };
 
-    let idx = 0;
+    let idx = 0, stopMr = false;   // arrêt LOCAL de la boucle MR (cf. createReportMRs)
     async function worker() {
-      while (idx < crit.length && !aborted) {
+      while (idx < crit.length && !aborted && !stopMr) {
         const { repo, res } = crit[idx++];
         renderMr(repo.path);
         let r; try { r = await createCISMR(repo, res); } catch { r = { repo, status: 'error', detail: 'exception' }; }
@@ -595,7 +597,7 @@
           attachMRLinkToCard(repo.id, r.url, r.status === 'created' ? 'MR de conformité créée' : 'MR de conformité déjà ouverte');
         }
         addRow(r); renderMr(repo.path);
-        if (forbiddenSeen && counts.forbidden >= 3) aborted = true;
+        if (forbiddenSeen && counts.forbidden >= 3) stopMr = true;
       }
     }
     await Promise.all(Array.from({ length: MR_CONC }, () => worker()));
