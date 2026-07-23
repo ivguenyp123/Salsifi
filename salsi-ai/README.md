@@ -78,9 +78,33 @@ honnête. Rien d'autre à changer côté front.
 > rate-limit et les safety filters. Pour un audit RSSI, pointe le journal d'audit
 > vers votre SIEM.
 
-## Réduire l'usage de l'IA au fil du temps
+## Réduire l'usage de l'IA au fil du temps — la boucle d'apprentissage
 
-Le front logge chaque question dans `localStorage['salsifi_qa_log']` avec un flag
-`ai: true` quand l'IA a répondu. Exporte-le (bouton d'export de Salsi), repère les
-questions récurrentes traitées par l'IA, et **ajoute-les au déterministe** (glossaire,
-formation, `all`). L'IA est alors appelée de moins en moins.
+**Principe : l'IA rédige, un humain valide (MR). Jamais l'IA qui écrit direct.**
+
+1. **Collecte** — mets `LEARN=true` : le back ajoute chaque paire question/réponse
+   **in-scope** dans `candidates.jsonl` (fichier serveur ; contient le texte des
+   questions — garde-le côté serveur).
+2. **Promotion** — lance `node promote.js` (par ex. en CI/cron) :
+   - groupe par question, garde les **récurrentes** (`MIN_COUNT`, défaut 3),
+   - l'**IA distille** chaque paire en entrée déterministe `{t, kw, all?, a}` (Vertex ;
+     repli local naïf si pas de GCP),
+   - **dédup** contre l'existant (formation + appris),
+   - insère dans `js/hub/salsi-learned.js` (au marqueur) et **ouvre une MR GitLab**.
+3. **Validation** — tu relis le diff de la MR, ajustes, **merges**. Les entrées
+   passent alors en **déterministe** → la prochaine fois, **0 IA** pour ces questions.
+
+```bash
+# aperçu sans rien pousser :
+CANDIDATES_FILE=./candidates.jsonl MIN_COUNT=3 node promote.js --dry-run
+# ouvre la MR (GitLab configuré) :
+GITLAB_URL=https://gitlab.lcl GITLAB_TOKEN=... GITLAB_PROJECT=groupe%2Frepo \
+GCP_PROJECT=... node promote.js
+```
+
+Env de `promote.js` : `MIN_COUNT`, `CANDIDATES_FILE`, `PROMOTED_FILE`, `REPO_ROOT`,
+`LEARNED_PATH`, `FORMATION_PATH`, `GITLAB_URL`, `GITLAB_TOKEN`, `GITLAB_PROJECT`,
+`TARGET_BRANCH`, + (distillation) `GCP_PROJECT`/`GCP_LOCATION`/`VERTEX_MODEL`.
+
+> Les entrées apprises vivent dans `js/hub/salsi-learned.js` (séparé du curé main),
+> diff propre, chacune relue en MR. Rien ne devient déterministe sans ton merge.

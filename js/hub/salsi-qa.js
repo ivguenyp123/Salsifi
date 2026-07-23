@@ -1046,7 +1046,7 @@
         });
         if (!best) return null;
         var m = F.modules[best.mod] || {};
-        var foot = m.title ? `<div class="sqa-hint">📘 Formation · Module ${esc(m.num || '')} — ${esc(m.title)}${m.niveau ? ' (' + esc(m.niveau) + ')' : ''}</div>` : '';
+        var foot = m.title ? `<div class="sqa-hint">📘 Formation${(m.num && m.num !== '—') ? ' · Module ' + esc(m.num) : ''} — ${esc(m.title)}${m.niveau ? ' (' + esc(m.niveau) + ')' : ''}</div>` : '';
         return { html: `${best.a}${foot}`, intent: 'formation' };
     }
     function d_help() {

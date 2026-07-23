@@ -18,6 +18,7 @@
 'use strict';
 const http = require('http');
 const crypto = require('crypto');
+const fs = require('fs');
 // google-auth-library est chargé paresseusement (au 1er appel Vertex) : le serveur
 // démarre et sert /health + les garde-fous même si la dépendance n'est pas encore là.
 
@@ -34,6 +35,10 @@ const SAFETY = process.env.SAFETY_THRESHOLD || 'BLOCK_MEDIUM_AND_ABOVE';
 const RATE_MAX = parseInt(process.env.RATE_MAX || '30', 10);          // requêtes / fenêtre / IP
 const RATE_WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || '60000', 10);
 const LOG_QUESTIONS = process.env.LOG_QUESTIONS === 'true';           // OFF par défaut (vie privée)
+// Apprentissage : si LEARN=true, on stocke les paires question/réponse (in-scope) pour
+// que promote.js en fasse des entrées déterministes candidates (→ MR à valider).
+const LEARN = process.env.LEARN === 'true';
+const CANDIDATES_FILE = process.env.CANDIDATES_FILE || './candidates.jsonl';
 const VERTEX_TIMEOUT_MS = parseInt(process.env.VERTEX_TIMEOUT_MS || '20000', 10);
 const MAX_BODY = 256 * 1024;
 
@@ -156,12 +161,12 @@ const server = http.createServer((req, res) => {
         const qhash = crypto.createHash('sha256').update(question).digest('hex').slice(0, 12);
         try {
             const out = await callVertex(question, payload.contexte || {});
-            audit({
-                ev: 'ask', ip, origin, qhash, qlen: question.length,
-                outcome: out.blocked ? 'blocked' : (out.horsPerimetre ? 'hors_perimetre' : 'ok'),
-                blocked: out.blocked || undefined,
-                q: LOG_QUESTIONS ? question.slice(0, 200) : undefined
-            });
+            const outcome = out.blocked ? 'blocked' : (out.horsPerimetre ? 'hors_perimetre' : 'ok');
+            audit({ ev: 'ask', ip, origin, qhash, qlen: question.length, outcome, blocked: out.blocked || undefined, q: LOG_QUESTIONS ? question.slice(0, 200) : undefined });
+            // Apprentissage : on ne retient que le IN-SCOPE (pas les refus/hors-périmètre/bloqués).
+            if (LEARN && outcome === 'ok' && out.answer) {
+                try { fs.appendFile(CANDIDATES_FILE, JSON.stringify({ ts: new Date().toISOString(), qhash, q: question, a: out.answer }) + '\n', () => { }); } catch (e) { }
+            }
             return json(res, 200, { answer: out.answer, horsPerimetre: out.horsPerimetre });
         } catch (e) {
             audit({ ev: 'error', ip, origin, qhash, msg: (e && e.message) || 'err' });
