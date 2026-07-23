@@ -11,7 +11,7 @@
   --font-body:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
   --font-mono:'SF Mono','Fira Code','Consolas',monospace;
 }
-* { margin:0; padding:0; box-sizing:border-box; } html{-webkit-font-smoothing:antialiased;}
+
 body { font-family:var(--font-body); background:var(--bg-deep); color:var(--text-primary); min-height:100vh; padding:24px; position:relative; overflow-x:hidden; }
 body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
   background:radial-gradient(ellipse 600px 400px at 15% 10%,rgba(251,146,60,0.14),transparent 60%),radial-gradient(ellipse 500px 350px at 85% 20%,rgba(124,92,255,0.10),transparent 60%),radial-gradient(ellipse 600px 500px at 80% 90%,rgba(244,114,182,0.08),transparent 60%); }
@@ -59,7 +59,7 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 /* LOADING / EMPTY */
 .loading-state, .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); font-size:14px; }
 .loading-spinner { width:36px; height:36px; border:3px solid var(--border-subtle); border-top-color:var(--inspect); border-radius:50%; animation:spin 0.9s linear infinite; margin:0 auto 14px; }
-@keyframes spin { to { transform:rotate(360deg); } }
+
 .empty-icon { font-size:40px; margin-bottom:12px; }
 
 /* FILE LIST */

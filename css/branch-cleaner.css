@@ -10,7 +10,7 @@
   --font-body:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
   --font-mono:'SF Mono','Fira Code','Consolas',monospace;
 }
-* { margin:0; padding:0; box-sizing:border-box; } html{-webkit-font-smoothing:antialiased;}
+
 body { font-family:var(--font-body); background:var(--bg-deep); color:var(--text-primary); min-height:100vh; position:relative; overflow-x:hidden; }
 body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
   background:radial-gradient(ellipse 600px 400px at 15% 10%,rgba(251,146,60,0.14),transparent 60%),radial-gradient(ellipse 500px 350px at 85% 20%,rgba(124,92,255,0.10),transparent 60%),radial-gradient(ellipse 600px 500px at 80% 90%,rgba(244,114,182,0.08),transparent 60%); }
@@ -80,7 +80,7 @@ body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index
 /* LOADING / EMPTY */
 .loading-container { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px; }
 .loading-spinner { width:54px; height:54px; border:4px solid var(--border-subtle); border-top-color:var(--inspect); border-radius:50%; animation:spin 0.9s linear infinite; margin-bottom:18px; }
-@keyframes spin { to { transform:rotate(360deg); } }
+
 .loading-text { font-size:15px; color:var(--text-secondary); }
 .empty-state { padding:60px; text-align:center; }
 .empty-state-icon { font-size:60px; margin-bottom:18px; }

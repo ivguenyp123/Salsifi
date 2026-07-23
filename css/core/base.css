@@ -1,0 +1,20 @@
+/* Salsifi — core/base.css
+ * ------------------------------------------------------------------
+ * Socle partagé par TOUTES les pages : reset + réglages identiques
+ * qui étaient copiés-collés dans chaque CSS de module.
+ * Ordre de chargement :
+ *     css/core/tokens.css   (variables)
+ *     css/core/base.css     (ce fichier)
+ *     css/<page>.css        (spécifique au module)
+ *
+ * On n'y met QUE ce qui est strictement identique partout. Le <body>
+ * (padding, overflow, fond animé) reste dans le CSS de chaque page car
+ * il varie d'un module à l'autre.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* Spinner de chargement — même animation partout. */
+@keyframes spin { to { transform: rotate(360deg); } }

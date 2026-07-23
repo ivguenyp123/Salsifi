@@ -71,7 +71,6 @@ body.dnd-active { cursor: grabbing; user-select: none; -webkit-user-select: none
 .status { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 9px; }
 .status.busy { color: var(--text-primary); }
 .spinner { width: 15px; height: 15px; border: 2px solid var(--border-subtle); border-top-color: var(--deliver); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .preview-wrap { display: none; }
 .preview-wrap.show { display: block; animation: rise .3s ease; }

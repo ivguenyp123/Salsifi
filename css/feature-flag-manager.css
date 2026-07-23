@@ -1,4 +1,4 @@
-        *{margin:0;padding:0;box-sizing:border-box;}
+
         :root{
             --bg: var(--bg-deep);
             --surface: var(--ov-07);
@@ -548,7 +548,6 @@
             border-top-color:var(--accent);
             border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto;
         }
-        @keyframes spin{to{transform:rotate(360deg);}}
 
         /* ── RESPONSIVE ── */
 
@@ -683,7 +682,6 @@
         .cw-btn-secondary:hover { background: var(--ov-18); }
         .cw-btn-cancel { padding: 12px 18px; background: var(--ov-07); border: 1px solid var(--ov-12); border-radius: 11px; color: var(--ov-65); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .cw-btn-cancel:hover { background: var(--ov-14); color: white; }
-
 
         /* ── FLAGS TOOLBAR ── */
         .flags-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}

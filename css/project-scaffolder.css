@@ -177,7 +177,7 @@ body::before {
 .pipe-step.done .ps-ic { background: var(--cc-mint); border-color: var(--cc-mint); color: #0e0a18; }
 .pipe-step.run .ps-ic { border-color: var(--cc-glow); border-top-color: transparent; animation: spin .7s linear infinite; }
 .pipe-step.error .ps-ic { border-color: var(--err, #f87171); color: var(--err, #f87171); }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 .pipe-step.done { color: var(--text-primary); }
 
 .done-card { margin: 4px 0 6px 42px; background: linear-gradient(140deg, rgba(45, 212, 191, .1), rgba(167, 139, 255, .07)); border: 1px solid rgba(45, 212, 191, .3); border-radius: 16px; padding: 16px; animation: rise .5s ease both; }

@@ -85,16 +85,32 @@ au lieu du bloc répété. (Ou, a minima : un `<head>` **identique** documenté.
 
 ## Plan par phases (incrémental, faible risque)
 
-| Phase | Contenu | Risque |
-|---|---|---|
-| **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul |
-| **1** | CSS `core/` (tokens/base/components) + migrer les pages, alléger `modules/*.css` | Faible (visuel à vérifier) |
-| **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible |
-| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) |
-| **4** | `<head>` partagé + doc conventions | Faible |
+| Phase | Contenu | Risque | État |
+|---|---|---|---|
+| **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul | ✅ **Fait** (v1.10.0) |
+| **1** | CSS `core/` (tokens + base) + migrer les 27 pages, dédup reset/spin | Faible | ✅ **Fait** (v1.11.0) |
+| **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | à venir |
+| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | à venir |
+| **4** | `<head>` partagé + doc conventions | Faible | à venir |
 
 Chaque phase est **vérifiable** (suites headless Salsi + ouverture des pages). On avance
 module par module : jamais un big-bang.
+
+### Phase 1 — ce qui a été fait (et ce qui a été volontairement reporté)
+
+- **`css/core/tokens.css`** = ex-`css/theme.css` (les 128 variables), déplacé et re-câblé
+  sur les **27 pages**.
+- **`css/core/base.css`** (nouveau) : reset universel `*{}`, lissage `html{}`, et
+  `@keyframes spin` — **strictement identiques** dans tous les modules, donc levés sans
+  risque. Retirés de **23 CSS de module** (reset ×20, smoothing ×18, spin ×19).
+- Chaque page charge désormais **`core/tokens.css` → `core/base.css` → `<module>.css`**.
+- **Vérifié headless** (Playwright, 6 pages représentatives) : `box-sizing:border-box`
+  appliqué, tokens résolus, fond correct, **0 CSS 404**, aucune régression.
+- **Reporté à la Phase 3 (à raison)** : la dédup de `.btn` / `.stat` / `.card`. Les
+  variantes **divergent par module** (couleurs, et surtout **sémantique** — le
+  `.btn-primary` de `branch-cleaner` est **rouge destructif** exprès). Les fusionner à
+  l'aveugle casserait du visuel. Ça se fera module par module, avec test visuel, quand on
+  cassera les monolithes (Phase 3) — pas avant.
 
 ## Recommandation
 

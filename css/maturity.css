@@ -27,10 +27,6 @@
     --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
 body {
     font-family: var(--font-body);
     background: var(--bg-deep);
@@ -569,7 +565,7 @@ body::after {
     margin-bottom: 24px;
     filter: drop-shadow(0 8px 24px var(--accent-glow));
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 .loading-title {
     font-family: var(--font-display);
     font-size: 24px;

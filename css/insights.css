@@ -28,10 +28,6 @@
     --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
 body {
     font-family: var(--font-body);
     background: var(--bg-deep);
@@ -155,7 +151,7 @@ body::after {
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 .error-message {
     background: rgba(251, 113, 133, 0.10);
     border: 1px solid rgba(251, 113, 133, 0.35);

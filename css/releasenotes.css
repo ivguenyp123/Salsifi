@@ -33,9 +33,6 @@
     --font-mono: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
 body {
     font-family: var(--font-body);
     background: var(--bg-deep);
@@ -636,7 +633,6 @@ body::after {
     margin-bottom: 20px;
     filter: drop-shadow(0 4px 12px var(--accent-glow));
 }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .loading-state p {
     font-size: 14px;

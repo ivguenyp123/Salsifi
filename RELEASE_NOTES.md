@@ -1,5 +1,23 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.11.0 — 2026-07-23 · Restructuration — Phase 1 : socle CSS `core/`
+
+Mise en place d'une couche CSS partagée, chargée avant le CSS de chaque page. **Zéro
+régression visuelle** : on n'a levé que ce qui était **strictement identique** partout.
+
+- **`css/core/tokens.css`** ← ex-`css/theme.css` (les 128 variables de thème), déplacé
+  et re-câblé sur les **27 pages**.
+- **`css/core/base.css`** (nouveau) : reset universel `*{}`, lissage `html{}`, et
+  `@keyframes spin` — retirés de **23 CSS de module** (reset ×20, smoothing ×18,
+  spin ×19). Une seule source désormais.
+- Ordre standard sur chaque page : **`core/tokens.css` → `core/base.css` →
+  `<module>.css`**.
+- **Vérifié headless** (Playwright, 6 pages) : `box-sizing` OK, tokens résolus, fond
+  correct, aucun 404.
+- **Reporté (à raison) en Phase 3** : la dédup `.btn`/`.stat`/`.card` — variantes trop
+  divergentes selon le module (ex. `.btn-primary` rouge destructif dans `branch-cleaner`).
+  Se fera module par module, testée, lors du découpage des monolithes.
+
 ## v1.10.0 — 2026-07-23 · Restructuration — Phase 0 : nettoyage du poids mort
 
 Début de la restructuration pour la maintenabilité (voir `RESTRUCTURE.md`). Cette
