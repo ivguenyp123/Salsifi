@@ -1,5 +1,24 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.13.0 — 2026-07-23 · Restructuration — Phase 3 (pilote) : découpage de `feature-flag-manager`
+
+Premier monolithe cassé — le plus gros (**3830 lignes**). Découpé en **5 fichiers** sous
+`js/modules/feature-flag-manager/`, sur le modèle du hub. **Zéro changement de
+comportement** (prouvé).
+
+- **`state.js`** (état & config, chargé en 1er) · **`data.js`** (I/O GitLab) ·
+  **`compute.js`** (logique pure : scoring, statuts, familles) · **`render.js`** (rendu
+  DOM) · **`index.js`** (`init` + câblage, chargé en dernier).
+- **Méthode sans build** : les `let`/`const` top-level d'un script classique sont
+  **partagés** entre `<script>` séparés → découpage par simples balises, comme le hub.
+  Les fonctions sont déplacées **intactes**, l'état regroupé dans `state.js`.
+- **Prouvé équivalent** : (1) invariant — mêmes **148 déclarations** (md5 identique) ;
+  (2) `node --check` OK sur les 5 fichiers ; (3) **DOM rendu byte-identique** monolithe
+  vs split (KPIs, score santé, âges, 0 erreur) sous auth seedée + API mockée.
+- Le HTML charge 5 `<script>` au lieu d'un ; monolithe supprimé.
+- **Reste en Phase 3** : maturity (2673), gouvernance-repo (2454), secrets-scanner
+  (2110), daily-report (1926), gaming (1884)… — un par un, même méthode, même preuve.
+
 ## v1.12.0 — 2026-07-23 · Restructuration — Phase 2 : la brique Salsi dans `js/salsi/`
 
 Toute la partie conversationnelle de Salsi, jusqu'ici **éparpillée** entre `js/` et

@@ -90,11 +90,38 @@ au lieu du bloc répété. (Ou, a minima : un `<head>` **identique** documenté.
 | **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul | ✅ **Fait** (v1.10.0) |
 | **1** | CSS `core/` (tokens + base) + migrer les 27 pages, dédup reset/spin | Faible | ✅ **Fait** (v1.11.0) |
 | **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | ✅ **Fait** (v1.12.0) |
-| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | à venir |
+| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | 🔶 **En cours** — pilote `feature-flag-manager` ✅ (v1.13.0) |
 | **4** | `<head>` partagé + doc conventions | Faible | à venir |
 
 Chaque phase est **vérifiable** (suites headless Salsi + ouverture des pages). On avance
 module par module : jamais un big-bang.
+
+### Phase 3 — pilote `feature-flag-manager` (le plus gros monolithe : 3830 l.)
+
+Le monolithe est cassé en **5 fichiers** dans `js/modules/feature-flag-manager/`,
+chargés dans cet ordre :
+
+| Fichier | Rôle | ~lignes |
+|---|---|---|
+| `state.js` | état & config partagés (33 déclarations) — **chargé en 1er** | 119 |
+| `data.js` | I/O GitLab + fichier client (19 fonctions) | 434 |
+| `compute.js` | logique pure : scoring, statuts, familles, helpers (30) | 980 |
+| `render.js` | rendu DOM : dashboard, tables, modals, wizard, rapports (63) | 2206 |
+| `index.js` | entrée & câblage : `init()` + `renderAllCharts` + bloc INIT — **chargé en dernier** | 179 |
+
+**Méthode (reproductible pour les prochains monolithes)** :
+1. Les `let`/`const` top-level d'un script classique **sont partagés** entre `<script>`
+   séparés (vérifié empiriquement) → on peut découper sans build, sans `import`.
+2. Tout l'état est regroupé dans `state.js` (chargé en 1er, comme `js/hub/core/state.js`) ;
+   les fonctions sont réparties **intactes** (jamais coupées en plein corps).
+3. Seul le bloc à exécution immédiate (`init` au `DOMContentLoaded`) va en dernier.
+
+**Vérifications (toutes ✅)** :
+- **Invariant** : la concaténation des 5 fichiers contient exactement les **148
+  déclarations** d'origine (même md5) — rien perdu, rien ajouté.
+- **Syntaxe** : `node --check` OK sur les 5 fichiers (aucune coupure en plein corps).
+- **Équivalence de rendu** : DOM rendu **byte-identique** entre monolithe et split
+  (mêmes KPIs, score santé, âges des flags, 0 erreur), avec auth seedée + API mockée.
 
 ### Phase 2 — ce qui a été fait
 

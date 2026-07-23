@@ -652,7 +652,7 @@ actif ?** » → badge d'activité (`(commits+MR)/30` : ≥ 2 très actif, ≥ 0
 
 # 🚩 Module Feature Flags — savoir complet (implémenté)
 
-> Miroir fidèle de `js/feature-flag-manager.js`. Salsi lit `/feature_flags` en
+> Miroir fidèle de `js/modules/feature-flag-manager/`. Salsi lit `/feature_flags` en
 > **live** et répond à **toute** question sur l'état de tes flags.
 
 ## 1. Définition
