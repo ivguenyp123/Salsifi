@@ -1182,7 +1182,7 @@ function renderSec(f){
   var tb=document.querySelector('#secTable tbody'); if(!tb)return; f=(f||'').toLowerCase();
   tb.innerHTML=D.sec.filter(function(r){return !f||(r.Repo+r.Fichier+r.Type+r['Aperçu']).toLowerCase().indexOf(f)>=0;}).map(function(r){
     var s=D.sev[r.Type]||'red';
-    return '<tr><td>'+tag(s)+'</td><td class="t-repo" title="'+r.Repo+'">'+r.Repo+'</td><td>'+link(r,r.Fichier+':'+r.Ligne,'t-file')+'</td><td>'+r.Type+'</td><td><span class="t-prev">'+r['Aperçu']+'</span></td><td style="font-family:var(--fm);font-size:11px;color:var(--tm)">'+r['Catégorie']+'</td></tr>';
+    return '<tr><td>'+tag(s)+'</td><td class="t-repo" title="'+r.Repo+'">'+link(r,r.Repo,'t-repo')+'</td><td>'+link(r,r.Fichier+':'+r.Ligne,'t-file')+'</td><td>'+r.Type+'</td><td><span class="t-prev">'+r['Aperçu']+'</span></td><td style="font-family:var(--fm);font-size:11px;color:var(--tm)">'+r['Catégorie']+'</td></tr>';
   }).join('')||'<tr><td colspan="6" class="empty">Aucun résultat</td></tr>';
 }
 function renderSup(){
@@ -1194,7 +1194,7 @@ function renderSup(){
     if(sv&&s!==sv)return false; if(ec&&r['Catégorie']!==ec)return false;
     if(f&&(r.Repo+r.Fichier+r.Type+r['Aperçu']).toLowerCase().indexOf(f)<0)return false; return true;
   }).map(function(r){var s=D.sev[r.Type]||'orange';
-    return '<tr><td>'+tag(s)+'</td><td class="t-repo" title="'+r.Repo+'">'+r.Repo+'</td><td>'+link(r,r.Fichier+':'+r.Ligne,'t-file')+'</td><td>'+r.Type+'</td><td style="font-family:var(--fm);font-size:11px;color:var(--ts)">'+r['Catégorie']+'</td><td><span class="t-prev">'+r['Aperçu']+'</span></td></tr>';
+    return '<tr><td>'+tag(s)+'</td><td class="t-repo" title="'+r.Repo+'">'+link(r,r.Repo,'t-repo')+'</td><td>'+link(r,r.Fichier+':'+r.Ligne,'t-file')+'</td><td>'+r.Type+'</td><td style="font-family:var(--fm);font-size:11px;color:var(--ts)">'+r['Catégorie']+'</td><td><span class="t-prev">'+r['Aperçu']+'</span></td></tr>';
   }).join('')||'<tr><td colspan="6" class="empty">Aucun résultat</td></tr>';
 }
 var _ss=document.getElementById('secSearch'); if(_ss){_ss.addEventListener('input',function(e){renderSec(e.target.value);}); renderSec('');}

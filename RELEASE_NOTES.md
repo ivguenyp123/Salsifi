@@ -15,6 +15,8 @@ les modes (repo simple `?repo=`, workspace, tous les repos).
   passent par ce helper → cohérence garantie.
 - Fichier **et** numéro de ligne cliquables : `…/-/blob/<ref>/<fichier>#L<ligne>`.
   Finding **historique** ancré sur son **commit**. Check CIS sans fichier → pas de faux lien.
+- **Colonne REPO du tableau du rapport rendue cliquable** : cliquer le chemin du repo
+  (`lcl/easypro/…`) emmène directement à la ligne concernée, comme les résultats en page.
 - **Même correctif dans le module frère `secrets-scanner`.**
 
 ## v1.15.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `gouvernance-repo`
