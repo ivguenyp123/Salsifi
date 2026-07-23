@@ -90,11 +90,29 @@ au lieu du bloc répété. (Ou, a minima : un `<head>` **identique** documenté.
 | **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul | ✅ **Fait** (v1.10.0) |
 | **1** | CSS `core/` (tokens + base) + migrer les 27 pages, dédup reset/spin | Faible | ✅ **Fait** (v1.11.0) |
 | **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | ✅ **Fait** (v1.12.0) |
-| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | 🔶 **En cours** — pilote `feature-flag-manager` ✅ (v1.13.0) |
+| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | 🔶 **En cours** — `feature-flag-manager` ✅ (v1.13.0), `maturity` ✅ (v1.14.0) |
 | **4** | `<head>` partagé + doc conventions | Faible | à venir |
 
 Chaque phase est **vérifiable** (suites headless Salsi + ouverture des pages). On avance
 module par module : jamais un big-bang.
+
+### Phase 3 — `maturity` (2673 l.) — cas « script à exécution top-level »
+
+Contrairement à FF (déclarations + un seul bloc init), `maturity.js` mêle **8 statements
+à exécution immédiate** aux déclarations (boucles qui construisent `QUESTIONS`/`ADVICE`,
+garde `initAuth`, `attachEventDelegation`, init de la date, IIFE de délégation). Le
+naïf « découper par colonne » casse en plus sur un **template literal HTML** (contenu à
+colonne 0). J'ai donc parsé le fichier avec l'**AST TypeScript** pour des frontières exactes.
+
+Découpe (chargée dans cet ordre) : `state.js` (21 déclarations, 1er) → `data.js` (9) →
+`compute.js` (7) → `render.js` (16) → **`index.js` = bootstrap** (les 8 statements
+immédiats + `inDateEl`, dans l'ordre d'origine, **chargé en dernier** pour que les
+fonctions et l'état soient prêts).
+
+Vérifs ✅ : **invariant AST** (32 fonctions + 22 déclarations + 8 statements, tous
+préservés) ; `node --check` sur les 5 ; **rendu byte-identique** monolithe vs split, à
+l'écran d'intro **et** en flow (démarrage du quiz, catégorie Culture, 10 questions,
+`inDate` correctement initialisée → preuve que le bootstrap immédiat s'exécute), 0 erreur.
 
 ### Phase 3 — pilote `feature-flag-manager` (le plus gros monolithe : 3830 l.)
 

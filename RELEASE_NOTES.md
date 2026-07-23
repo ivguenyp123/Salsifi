@@ -1,5 +1,21 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.14.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `maturity`
+
+2ᵉ monolithe cassé (**2673 lignes**) → 5 fichiers sous `js/modules/maturity/`. Cas plus
+délicat que FF : du **code top-level à exécution immédiate** (construction des données du
+questionnaire, garde d'auth, câblage DOM, init date) mêlé aux déclarations, **plus** un
+gros template literal HTML. Parsé à l'**AST TypeScript** pour des frontières exactes.
+
+- **`state.js`** (données JSON + config + état, 1er) · **`data.js`** (I/O GitLab, auth,
+  export/import) · **`compute.js`** (scoring, sélection questions) · **`render.js`**
+  (écrans, quiz, rapport, modals) · **`index.js`** (bootstrap : les 8 statements
+  immédiats dans l'ordre, chargé en dernier).
+- **Prouvé équivalent** : invariant AST (32 fonctions + 22 déclarations + 8 statements
+  préservés), `node --check` sur les 5, et **DOM byte-identique** monolithe vs split —
+  à l'intro **et** en flow (démarrage du quiz, 10 questions de Culture, date initialisée),
+  0 erreur. Monolithe supprimé.
+
 ## v1.13.0 — 2026-07-23 · Restructuration — Phase 3 (pilote) : découpage de `feature-flag-manager`
 
 Premier monolithe cassé — le plus gros (**3830 lignes**). Découpé en **5 fichiers** sous
