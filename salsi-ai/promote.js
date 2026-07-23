@@ -5,7 +5,7 @@
  * 2. Groupe par question, garde les RÉCURRENTES (≥ MIN_COUNT).
  * 3. L'IA (Vertex) DISTILLE chaque paire en entrée déterministe {t, kw, all?, a}.
  * 4. Dédup contre l'existant (formation + appris).
- * 5. Insère dans js/hub/salsi-learned.js (au marqueur) et OUVRE UNE MR GitLab.
+ * 5. Insère dans js/salsi/learned.js (au marqueur) et OUVRE UNE MR GitLab.
  *    → TOI tu relis le diff et tu merges. Rien ne part en prod sans ta validation.
  *
  * `node promote.js --dry-run` : fait tout SAUF la MR (affiche ce qui serait proposé).
@@ -24,8 +24,8 @@ const MIN_COUNT = parseInt(process.env.MIN_COUNT || '3', 10);
 const CANDIDATES_FILE = process.env.CANDIDATES_FILE || './candidates.jsonl';
 const PROMOTED_FILE = process.env.PROMOTED_FILE || './promoted.txt';
 const REPO_ROOT = process.env.REPO_ROOT || path.join(__dirname, '..');
-const LEARNED_PATH = process.env.LEARNED_PATH || 'js/hub/salsi-learned.js';
-const FORMATION_PATH = process.env.FORMATION_PATH || 'js/hub/salsi-formation.js';
+const LEARNED_PATH = process.env.LEARNED_PATH || 'js/salsi/learned.js';
+const FORMATION_PATH = process.env.FORMATION_PATH || 'js/salsi/formation.js';
 const MARKER = '/* __PROMOTE_INSERT__';
 
 // GitLab

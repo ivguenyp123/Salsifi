@@ -90,7 +90,7 @@ honnête. Rien d'autre à changer côté front.
    - l'**IA distille** chaque paire en entrée déterministe `{t, kw, all?, a}` (Vertex ;
      repli local naïf si pas de GCP),
    - **dédup** contre l'existant (formation + appris),
-   - insère dans `js/hub/salsi-learned.js` (au marqueur) et **ouvre une MR GitLab**.
+   - insère dans `js/salsi/learned.js` (au marqueur) et **ouvre une MR GitLab**.
 3. **Validation** — tu relis le diff de la MR, ajustes, **merges**. Les entrées
    passent alors en **déterministe** → la prochaine fois, **0 IA** pour ces questions.
 
@@ -106,5 +106,5 @@ Env de `promote.js` : `MIN_COUNT`, `CANDIDATES_FILE`, `PROMOTED_FILE`, `REPO_ROO
 `LEARNED_PATH`, `FORMATION_PATH`, `GITLAB_URL`, `GITLAB_TOKEN`, `GITLAB_PROJECT`,
 `TARGET_BRANCH`, + (distillation) `GCP_PROJECT`/`GCP_LOCATION`/`VERTEX_MODEL`.
 
-> Les entrées apprises vivent dans `js/hub/salsi-learned.js` (séparé du curé main),
+> Les entrées apprises vivent dans `js/salsi/learned.js` (séparé du curé main),
 > diff propre, chacune relue en MR. Rien ne devient déterministe sans ton merge.

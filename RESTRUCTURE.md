@@ -89,12 +89,29 @@ au lieu du bloc répété. (Ou, a minima : un `<head>` **identique** documenté.
 |---|---|---|---|
 | **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul | ✅ **Fait** (v1.10.0) |
 | **1** | CSS `core/` (tokens + base) + migrer les 27 pages, dédup reset/spin | Faible | ✅ **Fait** (v1.11.0) |
-| **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | à venir |
+| **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | ✅ **Fait** (v1.12.0) |
 | **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | à venir |
 | **4** | `<head>` partagé + doc conventions | Faible | à venir |
 
 Chaque phase est **vérifiable** (suites headless Salsi + ouverture des pages). On avance
 module par module : jamais un big-bang.
+
+### Phase 2 — ce qui a été fait
+
+- **7 fichiers de la brique conversationnelle Salsi** regroupés dans **`js/salsi/`**,
+  préfixe `salsi-` retiré (le dossier le porte déjà) :
+  `hub/salsi-{ai,brief,config,formation,learned,qa}.js` + `salsi-atelier.js`
+  → `js/salsi/{ai,brief,config,formation,learned,qa,atelier}.js`.
+- Références mises à jour : `<script src>` sur **hub / insights / project-scaffolder**,
+  chemins par défaut de **`salsi-ai/promote.js`** (`LEARNED_PATH`/`FORMATION_PATH`),
+  et le catalogue `SALSI_QA.md`.
+- **Volontairement laissés en place** : `js/gaming-history.js`, `gaming-recipes.js`,
+  `dora-history.js`. Ce sont des **données/recettes partagées** (chargées aussi par
+  `gaming.html` et `insights.html`), pas la brique conversationnelle — les déplacer
+  sous `js/salsi/` serait trompeur. Ils iront dans un futur `js/common/` si besoin.
+- **Vérifié headless** : les 7 fichiers servis à leurs nouveaux chemins (0 lien cassé),
+  globals initialisés (`Salsifi`, `salsiQaAsk`, 22 entrées formation), et **5 routes
+  déterministes rendues** correctement (panorama, lead time, feature flag, priorités…).
 
 ### Phase 1 — ce qui a été fait (et ce qui a été volontairement reporté)
 

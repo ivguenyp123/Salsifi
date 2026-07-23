@@ -1027,7 +1027,7 @@
         if (k === 'repo_analyzer' || /^repo_/.test(k)) return 'repo_analyzer';
         return null;
     }
-    // ── FORMATION : réponses issues des docs de formation (js/hub/salsi-formation.js) ──
+    // ── FORMATION : réponses issues des docs de formation (js/salsi/formation.js) ──
     // Match par mots-clés (sous-chaîne, normalisé). Renvoie la meilleure entrée ou null.
     function formationRoute(n) {
         var F = Salsifi.formation; if (!F || !F.entries) return null;

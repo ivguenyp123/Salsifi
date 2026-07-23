@@ -1,5 +1,20 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.12.0 — 2026-07-23 · Restructuration — Phase 2 : la brique Salsi dans `js/salsi/`
+
+Toute la partie conversationnelle de Salsi, jusqu'ici **éparpillée** entre `js/` et
+`js/hub/`, est désormais **rangée au même endroit**. Déplacements purs (contenu inchangé).
+
+- **7 fichiers → `js/salsi/`**, préfixe `salsi-` retiré (redondant avec le dossier) :
+  `ai.js · brief.js · config.js · formation.js · learned.js · qa.js · atelier.js`.
+- Références mises à jour : `<script src>` de **hub / insights / project-scaffolder**,
+  chemins par défaut de **`salsi-ai/promote.js`** (boucle d'apprentissage), catalogue
+  `SALSI_QA.md`.
+- **Laissés en place** : `gaming-history.js`, `gaming-recipes.js`, `dora-history.js` —
+  données partagées avec `gaming.html`/`insights.html`, pas la brique conversationnelle.
+- **Vérifié headless** : 0 lien cassé, globals initialisés (22 entrées formation), et
+  5 routes déterministes rendues OK depuis les nouveaux chemins.
+
 ## v1.11.0 — 2026-07-23 · Restructuration — Phase 1 : socle CSS `core/`
 
 Mise en place d'une couche CSS partagée, chargée avant le CSS de chaque page. **Zéro

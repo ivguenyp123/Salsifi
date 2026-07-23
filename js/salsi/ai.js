@@ -1,7 +1,7 @@
 /*
  * Salsi — Transport IA (fallback en DERNIER recours)
  * ------------------------------------------------------------------
- * Le déterministe répond d'abord (salsi-qa.js). SEULEMENT si l'intention est
+ * Le déterministe répond d'abord (qa.js). SEULEMENT si l'intention est
  * « unknown », Salsi appelle un petit back (ton serveur) qui relaie vers
  * Vertex AI · gemini-2.5-pro. Ce fichier ne fait QUE l'appel HTTP — aucune
  * clé, aucun secret GCP côté navigateur.

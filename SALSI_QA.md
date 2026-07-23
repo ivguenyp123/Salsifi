@@ -46,7 +46,7 @@ sécurité d'abord. Intention : `priorites`.
 
 Salsi peut s'appuyer sur des **docs de formation** (déterministe, sans IA) : chaque
 doc devient des **entrées** (mots-clés → réponse fidèle) dans
-`js/hub/salsi-formation.js`. **Ajouter un doc = ajouter ses entrées**, rien d'autre.
+`js/salsi/formation.js`. **Ajouter un doc = ajouter ses entrées**, rien d'autre.
 
 **Module 07 — Feature Flags & Progressive Delivery** (22 entrées) : déploiement ≠
 activation, bénéfice DORA, les 4 types de flags (release/experiment/ops/permission),
