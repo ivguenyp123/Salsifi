@@ -76,7 +76,7 @@
     const rows = findings.map(f => {
       const encFile = f.file.split('/').map(encodeURIComponent).join('/');
       const ref = f.commit ? f.commit : branch;
-      const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}` : '';
+      const link = findingUrl(repo, f);
       const loc = f.line ? `<span class="f-line">:${f.line}</span>` : '';
       const commitChip = f.commit ? `<span class="commit-tag">@${escH(f.commit)}</span>` : '';
       const fileInner = `${escH(f.file)}${loc}`;
@@ -163,7 +163,7 @@
         const key = [repo.path, f.file, f.line || '', f.type, f.preview].join('|');
         if (target.has(key)) continue; // vrai doublon (ex. vu en Surface ET Historique) : on garde 1 fois
         const ref = f.commit ? f.commit : branch;
-        const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${f.file.split('/').map(encodeURIComponent).join('/')}${f.line ? '#L' + f.line : ''}` : '';
+        const link = findingUrl(repo, f);
         target.set(key, { Repo: repo.path, Namespace: ns, Fichier: f.file, Ligne: f.line || '', Type: f.type, 'Catégorie': f.tag || ('CIS ' + f.cis), 'Aperçu': f.preview, Lien: link });
       }
     }

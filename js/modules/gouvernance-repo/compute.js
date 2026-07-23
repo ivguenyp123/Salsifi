@@ -12,11 +12,17 @@
   // Marche pour tous les modes : repo.url est renseigné en mono (?repo=), workspace et « tous ».
   // Pour un finding historique, on ancre sur le commit (f.commit) plutôt que la branche.
   function findingUrl(repo, f) {
-    if (!repo || !repo.url) return '';
+    if (!repo || !f || !f.file || f.file === '—') return '';
+    // web_url (repo.url) peut manquer selon l'API (ex. listing `simple=true`) :
+    // on reconstruit alors la base depuis GITLAB_URL + le chemin du repo, donc un
+    // lien est TOUJOURS produit (rapport, cartes, Excel, Markdown), dans tous les modes.
+    const base = repo.url || ((typeof GITLAB_URL === 'string' && GITLAB_URL && repo.path)
+      ? GITLAB_URL.replace(/\/+$/, '') + '/' + repo.path : '');
+    if (!base) return '';
     const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
     const ref = f.commit ? f.commit : branch;
     const encFile = String(f.file).split('/').map(encodeURIComponent).join('/');
-    return `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
+    return `${base}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
   }
 
   function nextLink(h) {
@@ -164,7 +170,7 @@
       const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
       for (const f of res.findings) {
         const ref = f.commit ? f.commit : branch;
-        const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${f.file.split('/').map(encodeURIComponent).join('/')}${f.line ? '#L' + f.line : ''}` : '';
+        const link = findingUrl(repo, f);
         rows.push({ Repo: repo.path, Namespace: ns, Fichier: f.file, Ligne: f.line || '', Commit: f.commit || '', Type: f.type, 'Catégorie': f.tag || ('CIS ' + f.cis), 'Aperçu': f.preview, Lien: link });
       }
     }

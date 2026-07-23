@@ -1,18 +1,21 @@
 # Salsifi — DevOps Hub · Notes de version
 
-## v1.16.0 — 2026-07-23 · Gouvernance Repo — rapports Markdown : liens vers la ligne exacte
+## v1.16.0 — 2026-07-23 · Gouvernance Repo / Secrets Scanner — liens « aller à la ligne » dans le rapport
 
-Dans le module **Gouvernance Repo (Secrets Scanner)**, chaque finding des rapports
-**Markdown** (le `.md` téléchargé **et** celui poussé en MR) est désormais un **lien
-cliquable vers le repo, à la ligne exacte du problème** — comme les cartes en page.
+Chaque finding (rapport à l'écran, HTML, Excel, Markdown téléchargé **et** MR) est
+désormais un **lien cliquable vers le repo, à la ligne exacte du problème** — dans tous
+les modes (repo simple `?repo=`, workspace, tous les repos).
 
-- Fichier **et** numéro de ligne deviennent des liens `…/-/blob/<ref>/<fichier>#L<ligne>`.
-- Un finding **historique** est ancré sur son **commit** (pas la branche).
-- Marche dans les **3 portées** : repo simple (`?repo=`), workspace, et tous les repos
-  (`repo.url` est renseigné identiquement partout).
-- Factorisé dans un helper `findingUrl(repo, f)` ; les rapports HTML et Excel liaient
-  déjà vers la ligne → tous les formats sont maintenant cohérents.
-- **Même correctif appliqué au module frère `secrets-scanner`** (mêmes rapports Markdown).
+- **Cause du bug** : l'URL du lien dépendait de `repo.url` (le `web_url` GitLab), **absent
+  du listing `simple=true`** sur certains GitLab (dont LCL) → lien vide → fichier affiché
+  en texte brut dans le rapport.
+- **Fix** : un helper unique `findingUrl(repo, f)` reconstruit toujours la base depuis
+  `GITLAB_URL + repo.path` quand `web_url` manque → un lien est **toujours** produit.
+  Tous les générateurs (cartes en page, tableau du rapport, Excel, les 2 Markdown)
+  passent par ce helper → cohérence garantie.
+- Fichier **et** numéro de ligne cliquables : `…/-/blob/<ref>/<fichier>#L<ligne>`.
+  Finding **historique** ancré sur son **commit**. Check CIS sans fichier → pas de faux lien.
+- **Même correctif dans le module frère `secrets-scanner`.**
 
 ## v1.15.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `gouvernance-repo`
 

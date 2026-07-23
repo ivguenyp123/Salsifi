@@ -720,7 +720,7 @@
     const rows = findings.map(f => {
       const encFile = f.file.split('/').map(encodeURIComponent).join('/');
       const ref = f.commit ? f.commit : branch;
-      const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}` : '';
+      const link = findingUrl(repo, f);
       const loc = f.line ? `<span class="f-line">:${f.line}</span>` : '';
       const commitChip = f.commit ? `<span class="commit-tag">@${escH(f.commit)}</span>` : '';
       const fileInner = `${escH(f.file)}${loc}`;
@@ -803,7 +803,7 @@
         const key = [repo.path, f.file, f.line || '', f.type, f.preview].join('|');
         if (target.has(key)) continue; // vrai doublon (ex. vu en Surface ET Historique) : on garde 1 fois
         const ref = f.commit ? f.commit : branch;
-        const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${f.file.split('/').map(encodeURIComponent).join('/')}${f.line ? '#L' + f.line : ''}` : '';
+        const link = findingUrl(repo, f);
         target.set(key, { Repo: repo.path, Namespace: ns, Fichier: f.file, Ligne: f.line || '', Type: f.type, 'Catégorie': f.tag || ('CIS ' + f.cis), 'Aperçu': f.preview, Lien: link });
       }
     }
@@ -930,7 +930,7 @@
       const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
       for (const f of res.findings) {
         const ref = f.commit ? f.commit : branch;
-        const link = repo.url ? `${repo.url}/-/blob/${encodeURIComponent(ref)}/${f.file.split('/').map(encodeURIComponent).join('/')}${f.line ? '#L' + f.line : ''}` : '';
+        const link = findingUrl(repo, f);
         rows.push({ Repo: repo.path, Namespace: ns, Fichier: f.file, Ligne: f.line || '', Commit: f.commit || '', Type: f.type, 'Catégorie': f.tag || ('CIS ' + f.cis), 'Aperçu': f.preview, Lien: link });
       }
     }
@@ -1651,11 +1651,17 @@ if(document.getElementById('supTable')) renderSup();
   // Même logique que les cartes en page → un lien mène droit au problème.
   // Un finding historique est ancré sur son commit (f.commit) plutôt que la branche.
   function findingUrl(repo, f) {
-    if (!repo || !repo.url) return '';
+    if (!repo || !f || !f.file || f.file === '—') return '';
+    // web_url (repo.url) peut manquer selon l'API (ex. listing `simple=true`) :
+    // on reconstruit alors la base depuis GITLAB_URL + le chemin du repo, donc un
+    // lien est TOUJOURS produit (rapport, cartes, Excel, Markdown).
+    const base = repo.url || ((typeof GITLAB_URL === 'string' && GITLAB_URL && repo.path)
+      ? GITLAB_URL.replace(/\/+$/, '') + '/' + repo.path : '');
+    if (!base) return '';
     const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
     const ref = f.commit ? f.commit : branch;
     const encFile = String(f.file).split('/').map(encodeURIComponent).join('/');
-    return `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
+    return `${base}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
   }
 
   function buildReportMarkdown(repo, res) {
