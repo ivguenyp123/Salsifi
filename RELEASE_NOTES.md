@@ -1,5 +1,20 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.10.0 — 2026-07-23 · Restructuration — Phase 0 : nettoyage du poids mort
+
+Début de la restructuration pour la maintenabilité (voir `RESTRUCTURE.md`). Cette
+première phase est **zéro risque** : elle ne supprime que du code **mort**.
+
+- **16 fichiers obsolètes supprimés** (`*old*`, doublons `« (1) »`/`« (2) »`) —
+  **15 847 lignes** référencées par **0 page vivante** : `hubold`, `feature-flag-
+  managerold`, `secrets-scannerold` (+ variante), `pipeline-generator (1)/(2)`,
+  `repo-analyzer (1)`, `hub-mockup-v2_1old`… (CSS + JS + HTML).
+- **Convention respectée** : plus aucun fichier avec espaces ni suffixe `old` dans le
+  repo (git garde l'historique). Scan des références HTML → **aucun lien cassé**.
+- Prochaines phases (dans `RESTRUCTURE.md`) : **1** CSS `core/` (tokens/base/
+  components), **2** regrouper Salsi dans `js/salsi/`, **3** casser les monolithes en
+  `js/modules/<name>/{data,compute,render,index}`, **4** `<head>` partagé.
+
 ## v1.9.0 — 2026-07-22 · Salsi × IA, en dernier recours (Vertex · Gemini 2.5 Pro)
 
 L'IA vient **par-dessus** le déterministe, **jamais avant**. Elle n'est appelée que
