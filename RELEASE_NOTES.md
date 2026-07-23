@@ -1,5 +1,18 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.16.0 — 2026-07-23 · Gouvernance Repo — rapports Markdown : liens vers la ligne exacte
+
+Dans le module **Gouvernance Repo (Secrets Scanner)**, chaque finding des rapports
+**Markdown** (le `.md` téléchargé **et** celui poussé en MR) est désormais un **lien
+cliquable vers le repo, à la ligne exacte du problème** — comme les cartes en page.
+
+- Fichier **et** numéro de ligne deviennent des liens `…/-/blob/<ref>/<fichier>#L<ligne>`.
+- Un finding **historique** est ancré sur son **commit** (pas la branche).
+- Marche dans les **3 portées** : repo simple (`?repo=`), workspace, et tous les repos
+  (`repo.url` est renseigné identiquement partout).
+- Factorisé dans un helper `findingUrl(repo, f)` ; les rapports HTML et Excel liaient
+  déjà vers la ligne → tous les formats sont maintenant cohérents.
+
 ## v1.15.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `gouvernance-repo`
 
 3ᵉ monolithe cassé (**2454 lignes**) → 5 fichiers sous `js/modules/gouvernance-repo/`.

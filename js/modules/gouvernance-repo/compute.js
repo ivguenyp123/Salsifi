@@ -7,6 +7,18 @@
 
   function isInternalRegistry(u) { const h = _registryHost(u); return !!h && INTERNAL_REGISTRY_RX.test(h); }
 
+  // URL GitLab d'un finding, ancrée sur la LIGNE exacte (ou le fichier si pas de ligne).
+  // Même logique que les cartes en page → un lien mène droit au problème.
+  // Marche pour tous les modes : repo.url est renseigné en mono (?repo=), workspace et « tous ».
+  // Pour un finding historique, on ancre sur le commit (f.commit) plutôt que la branche.
+  function findingUrl(repo, f) {
+    if (!repo || !repo.url) return '';
+    const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
+    const ref = f.commit ? f.commit : branch;
+    const encFile = String(f.file).split('/').map(encodeURIComponent).join('/');
+    return `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
+  }
+
   function nextLink(h) {
     if (!h) return null;
     for (const part of h.split(',')) { const m = part.match(/<([^>]+)>\s*;\s*rel="next"/); if (m) return m[1]; }
@@ -182,7 +194,12 @@
     if (!aff.length) md += `✅ Rien détecté.\n`;
     for (const { repo, res } of aff) {
       md += `## ${repo.path}\n\n${repo.url}\n\n| Fichier | Ligne | Commit | Type | Catégorie | Aperçu |\n|---|---|---|---|---|---|\n`;
-      for (const f of res.findings) md += `| \`${f.file}\` | ${f.line || ''} | ${f.commit || ''} | ${f.type} | ${f.tag || ('CIS ' + f.cis)} | \`${f.preview}\` |\n`;
+      for (const f of res.findings) {
+        const url = findingUrl(repo, f);
+        const fileCell = url ? `[\`${f.file}\`](${url})` : `\`${f.file}\``;
+        const lineCell = (url && f.line) ? `[${f.line}](${url})` : (f.line || '');
+        md += `| ${fileCell} | ${lineCell} | ${f.commit || ''} | ${f.type} | ${f.tag || ('CIS ' + f.cis)} | \`${f.preview}\` |\n`;
+      }
       md += `\n`;
     }
     download(isSupply ? 'scan-supply-chain.md' : 'scan-secrets.md', md, 'text/markdown');
@@ -536,7 +553,10 @@ if(document.getElementById('supTable')) renderSup();
     md += `|---|---|${isHist ? '---|' : ''}---|---|---|\n`;
     for (const f of res.findings) {
       const cat = f.tag || ('CIS ' + f.cis);
-      md += `| \`${f.file}\` | ${f.line || ''} | ${isHist ? (f.commit || '') + ' | ' : ''}${f.type} | ${cat} | \`${f.preview}\` |\n`;
+      const url = findingUrl(repo, f);
+      const fileCell = url ? `[\`${f.file}\`](${url})` : `\`${f.file}\``;
+      const lineCell = (url && f.line) ? `[${f.line}](${url})` : (f.line || '');
+      md += `| ${fileCell} | ${lineCell} | ${isHist ? (f.commit || '') + ' | ' : ''}${f.type} | ${cat} | \`${f.preview}\` |\n`;
     }
 
     md += `\n## Que faire ?\n\n`;
