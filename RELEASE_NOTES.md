@@ -12,6 +12,7 @@ cliquable vers le repo, à la ligne exacte du problème** — comme les cartes e
   (`repo.url` est renseigné identiquement partout).
 - Factorisé dans un helper `findingUrl(repo, f)` ; les rapports HTML et Excel liaient
   déjà vers la ligne → tous les formats sont maintenant cohérents.
+- **Même correctif appliqué au module frère `secrets-scanner`** (mêmes rapports Markdown).
 
 ## v1.15.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `gouvernance-repo`
 

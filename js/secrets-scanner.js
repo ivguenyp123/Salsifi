@@ -959,7 +959,12 @@
     if (!aff.length) md += `✅ Rien détecté.\n`;
     for (const { repo, res } of aff) {
       md += `## ${repo.path}\n\n${repo.url}\n\n| Fichier | Ligne | Commit | Type | Catégorie | Aperçu |\n|---|---|---|---|---|---|\n`;
-      for (const f of res.findings) md += `| \`${f.file}\` | ${f.line || ''} | ${f.commit || ''} | ${f.type} | ${f.tag || ('CIS ' + f.cis)} | \`${f.preview}\` |\n`;
+      for (const f of res.findings) {
+        const url = findingUrl(repo, f);
+        const fileCell = url ? `[\`${f.file}\`](${url})` : `\`${f.file}\``;
+        const lineCell = (url && f.line) ? `[${f.line}](${url})` : (f.line || '');
+        md += `| ${fileCell} | ${lineCell} | ${f.commit || ''} | ${f.type} | ${f.tag || ('CIS ' + f.cis)} | \`${f.preview}\` |\n`;
+      }
       md += `\n`;
     }
     download(isSupply ? 'scan-supply-chain.md' : 'scan-secrets.md', md, 'text/markdown');
@@ -1642,6 +1647,17 @@ if(document.getElementById('supTable')) renderSup();
 
   // Markdown du rapport, par repo. Aligné sur exportMarkdown : mêmes colonnes,
   // colonne Commit seulement en historique, aperçus censurés, refs CIS.
+  // URL GitLab d'un finding, ancrée sur la LIGNE exacte (ou le fichier si pas de ligne).
+  // Même logique que les cartes en page → un lien mène droit au problème.
+  // Un finding historique est ancré sur son commit (f.commit) plutôt que la branche.
+  function findingUrl(repo, f) {
+    if (!repo || !repo.url) return '';
+    const branch = repo.defaultBranch && repo.defaultBranch !== 'HEAD' ? repo.defaultBranch : 'HEAD';
+    const ref = f.commit ? f.commit : branch;
+    const encFile = String(f.file).split('/').map(encodeURIComponent).join('/');
+    return `${repo.url}/-/blob/${encodeURIComponent(ref)}/${encFile}${f.line ? '#L' + f.line : ''}`;
+  }
+
   function buildReportMarkdown(repo, res) {
     const isSupply = res.findings.some(f => f.kind === 'supply');
     const isHist = res.findings.some(f => f.commit);
@@ -1662,7 +1678,10 @@ if(document.getElementById('supTable')) renderSup();
     md += `|---|---|${isHist ? '---|' : ''}---|---|---|\n`;
     for (const f of res.findings) {
       const cat = f.tag || ('CIS ' + f.cis);
-      md += `| \`${f.file}\` | ${f.line || ''} | ${isHist ? (f.commit || '') + ' | ' : ''}${f.type} | ${cat} | \`${f.preview}\` |\n`;
+      const url = findingUrl(repo, f);
+      const fileCell = url ? `[\`${f.file}\`](${url})` : `\`${f.file}\``;
+      const lineCell = (url && f.line) ? `[${f.line}](${url})` : (f.line || '');
+      md += `| ${fileCell} | ${lineCell} | ${isHist ? (f.commit || '') + ' | ' : ''}${f.type} | ${cat} | \`${f.preview}\` |\n`;
     }
 
     md += `\n## Que faire ?\n\n`;
