@@ -90,11 +90,34 @@ au lieu du bloc répété. (Ou, a minima : un `<head>` **identique** documenté.
 | **0** | **Supprimer le poids mort** (~11k lignes, 0 référence) + renommer les fichiers à espaces | Nul | ✅ **Fait** (v1.10.0) |
 | **1** | CSS `core/` (tokens + base) + migrer les 27 pages, dédup reset/spin | Faible | ✅ **Fait** (v1.11.0) |
 | **2** | Regrouper la brique Salsi dans `js/salsi/` (déplacements + mise à jour des `<script>`) | Faible | ✅ **Fait** (v1.12.0) |
-| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | 🔶 **En cours** — `feature-flag-manager` ✅ (v1.13.0), `maturity` ✅ (v1.14.0) |
+| **3** | Casser les monolithes en `js/modules/<name>/…`, un par un (FF 3830 → maturity → gouvernance…) | Moyen (un module à la fois, testé) | 🔶 **En cours** — `feature-flag-manager` ✅, `maturity` ✅, `gouvernance-repo` ✅ (v1.15.0) |
 | **4** | `<head>` partagé + doc conventions | Faible | à venir |
 
 Chaque phase est **vérifiable** (suites headless Salsi + ouverture des pages). On avance
 module par module : jamais un big-bang.
+
+### Phase 3 — `gouvernance-repo` (2454 l.) — cas « module enveloppé dans une IIFE »
+
+Ici tout le fichier était dans **une IIFE** `(function(){ 'use strict'; … })()` : les
+fonctions/état vivaient dans la **closure**, invisibles entre `<script>` séparés. Deux
+approches sans build : (a) **déballer l'IIFE** vers la portée globale, ou (b) réécrire en
+objet-namespace (lourd). J'ai retenu **(a)**, après avoir vérifié que c'était sûr :
+
+- **Aucun `return` top-level** dans l'IIFE (sinon « return outside function » au déballage).
+- **Zéro dépendance `common/`** (le module a son propre `GITLAB_URL`/`token`) et les pages
+  ne chargent que `theme.js` + XLSX/Chart (CDN) → **aucune collision** de noms (vérifié par
+  AST : les 51 déclarations + 83 fonctions ne heurtent aucun global de la page).
+
+Déballage → 5 fichiers, `'use strict'` **remis en tête de chaque fichier** pour garder le
+mode strict. `state.js` (51 déclarations, 1er) → `data.js` (18) → `compute.js` (23) →
+`render.js` (32) → `index.js` (10 orchestrateurs + `DOMContentLoaded` + **17 expositions
+`window.*`** = l'API des onclick, chargé en dernier). L'indentation 2-espaces est conservée
+(dé-indenter corromprait les template literals).
+
+Vérifs ✅ : **invariant AST** (83 fonctions + 51 déclarations préservées) ; `node --check`
+sur les 5 ; **rendu byte-identique** monolithe vs split, **17 fonctions d'API bien
+exposées**, et interactions cross-fichiers OK (`setMode`, `openLaunchModal`…), 0 erreur.
+Chargé par **2 pages** (`gouvernance-repo.html` + `gouvernance-repool.html`), les deux recâblées.
 
 ### Phase 3 — `maturity` (2673 l.) — cas « script à exécution top-level »
 

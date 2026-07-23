@@ -1,5 +1,22 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.15.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `gouvernance-repo`
+
+3ᵉ monolithe cassé (**2454 lignes**) → 5 fichiers sous `js/modules/gouvernance-repo/`.
+Cas nouveau : le fichier était **enveloppé dans une IIFE** (état/fonctions dans la
+closure). Déballé vers la portée globale — sûr ici (pas de `return` top-level, zéro
+dépendance `common/`, aucune collision de noms vérifiée par AST). `'use strict'` remis en
+tête de chaque fichier.
+
+- **`state.js`** (51 déclarations, 1er) · **`data.js`** (I/O GitLab + persistance, 18) ·
+  **`compute.js`** (analyse secrets/supply/CIS, parsing, rapports-strings, 23) ·
+  **`render.js`** (cards, charts, modals, filtres, 32) · **`index.js`** (orchestrateurs +
+  `DOMContentLoaded` + **17 expositions `window.*`**, dernier).
+- **Prouvé équivalent** : invariant AST (83 fonctions + 51 déclarations), `node --check`
+  sur les 5, **DOM byte-identique** monolithe vs split, **17 fonctions d'API exposées**,
+  interactions cross-fichiers OK, 0 erreur. Chargé par 2 pages, les deux recâblées ;
+  monolithe supprimé.
+
 ## v1.14.0 — 2026-07-23 · Restructuration — Phase 3 : découpage de `maturity`
 
 2ᵉ monolithe cassé (**2673 lignes**) → 5 fichiers sous `js/modules/maturity/`. Cas plus
