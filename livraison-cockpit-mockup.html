@@ -139,6 +139,15 @@ textarea::placeholder{color:var(--tm)}
     <button class="gobtn" onclick="prepare()">✏️ Overlay + 🔀 Créer la MR</button>
   </div>
 
+  <!-- 1b. Nouvelle branche (raccourci optionnel) -->
+  <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:14px 20px">
+    <span style="font-size:13px;font-weight:600;color:var(--ts)">🌿 Nouvelle branche</span>
+    <input id="newbr" placeholder="nom libre (ex. feature/ma-tuile)" style="flex:1;min-width:200px;font-family:var(--fm);font-size:13px;background:var(--bg-card);border:1px solid var(--line2);border-radius:10px;color:var(--tp);padding:9px 12px">
+    <span style="color:var(--tm);font-size:13px">depuis <b style="font-family:var(--fm);color:var(--tp)">main</b></span>
+    <button class="btn ghost" onclick="createBranch()">Créer</button>
+    <span style="font-size:11px;color:var(--tm)">raccourci — sinon <code style="font-family:var(--fm)">git checkout -b</code> dans ton IDE</span>
+  </div>
+
   <!-- 2. MR DU REPO -->
   <div class="section-title">MR du repo</div>
   <div class="filter">
@@ -287,6 +296,7 @@ function runTrain(m){
 function approve(n){const m=MRS.find(x=>x.num===n);if(m.author===ME)return;if(m.appr<m.need)m.appr++;renderList();renderDetail();toast('👍 <b>'+n+'</b> approuvée ('+m.appr+'/'+m.need+') — <i>pas mergée</i>');}
 function del(n){const m=MRS.find(x=>x.num===n);const i=MRS.indexOf(m);MRS.splice(i,1);sel=null;renderList();renderDetail();toast('🚫 <b>'+n+'</b> fermée <i>(simulé)</i>');}
 function addComment(n){const ta=document.getElementById('cin');const v=(ta.value||'').trim();if(!v)return;(COMMENTS[n]=COMMENTS[n]||[]).push({a:ME,t:v,at:'à l\'instant'});renderDetail();toast('💬 Commentaire ajouté sur <b>'+n+'</b> <i>(simulé)</i>');}
+function createBranch(){const v=(document.getElementById('newbr').value||'').trim();if(!v){toast('⚠️ Donne un nom de branche.');return;}document.getElementById('newbr').value='';toast('🌿 Branche <b>'+v+'</b> créée depuis main <i>(simulé)</i> — code dans ton IDE, reviens pour livrer.');}
 let toastT;function toast(msg){const el=document.getElementById('toast');el.innerHTML=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3400);}
 
 renderList();
