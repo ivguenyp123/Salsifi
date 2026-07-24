@@ -107,6 +107,28 @@ textarea::placeholder{color:var(--tm)}
 .btn.ship:hover{filter:brightness(1.08)}
 .btn.del{color:var(--err);border:1px solid rgba(248,113,113,.3)} .btn.del:hover{background:rgba(248,113,113,.1)}
 .btn:disabled,.btn.off{opacity:.4;pointer-events:none}
+/* TRAIN + LOGS (tranche 3, réel) */
+.train-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.train-head .pill{margin:0}
+.train{display:flex;align-items:center;gap:0;margin:2px 0 14px;overflow-x:auto;padding-bottom:4px}
+.stg{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:92px}
+.stg .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:14px;border:2px solid var(--line2);background:rgba(255,255,255,.03);color:var(--tm)}
+.stg.done .ic{border-color:var(--ok);color:var(--ok);background:rgba(52,211,153,.1)}
+.stg.run .ic{border-color:var(--info);color:var(--info);animation:pulse 1.1s infinite}
+.stg.fail .ic{border-color:var(--err);color:var(--err);background:rgba(248,113,113,.1)}
+.stg .nm{font-size:10.5px;color:var(--tm);font-weight:600;text-align:center;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stg.done .nm,.stg.run .nm,.stg.fail .nm{color:var(--ts)}
+.rail{flex:1;height:2px;background:var(--line);min-width:16px}
+.rail.done{background:var(--ok)}
+.jobstrip{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.jobchip{all:unset;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--ts);border:1px solid var(--line);border-radius:9px;padding:6px 10px;transition:.14s}
+.jobchip:hover{background:var(--bg-card-h)}
+.jobchip.on{border-color:var(--accent);background:rgba(167,139,250,.1);color:var(--tp)}
+.jobchip.failed{border-color:rgba(248,113,113,.4)} .jobchip.running{border-color:rgba(96,165,250,.4)} .jobchip.success{border-color:rgba(52,211,153,.3)}
+.logs-head{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.console{background:#0a0716;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:var(--fm);font-size:11.5px;line-height:1.7;max-height:340px;overflow:auto;color:#c9c0e8}
+.console .l{white-space:pre-wrap;word-break:break-word}
+.console .ok{color:var(--ok)} .console .info{color:var(--info)} .console .warn{color:var(--warn)} .console .err{color:var(--err)}
 .foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:24px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
 #toast.show{transform:translateX(-50%) translateY(0)}
@@ -152,12 +174,23 @@ textarea::placeholder{color:var(--tm)}
     <div class="card detail" id="detail"><div class="d-empty">← Clique une MR pour l'ouvrir</div></div>
   </div>
 
-  <!-- 3. TRAIN + LOGS — tranche 3 -->
-  <div class="section-title">Le train de la pipeline <span class="soon">à venir</span></div>
-  <div class="card soon-card">
+  <!-- 3. TRAIN + LOGS — réel, câblé GitLab -->
+  <div class="section-title">Le train de la pipeline</div>
+  <div class="card soon-card" id="trainHint">
     <div class="ico">🚂</div>
-    <div class="txt"><b>Suivi live du pipeline après merge</b> — les étapes (build, promote, deploy_production) et leurs logs, en direct. En cours de branchement sur l'API pipelines/jobs de GitLab.</div>
-    <div class="tag">tranche 3</div>
+    <div class="txt">Le train de livraison apparaît ici <b>après un merge</b>. Tu peux aussi cliquer <b>« 🚂 voir le train »</b> sur une MR pour suivre sa pipeline (étapes + logs en direct).</div>
+  </div>
+  <div class="card" id="trainSection" style="display:none">
+    <div class="train-head">
+      <span class="d-title" id="trainTitle" style="font-size:16px">Pipeline</span>
+      <span class="pill run" id="trainStatus"></span>
+      <a class="pill g" id="trainGl" href="#" target="_blank" rel="noopener" style="text-decoration:none">GitLab ↗</a>
+      <button class="btn ghost" style="margin-left:auto;padding:7px 12px" onclick="livraisonStopTrain()">✕ fermer</button>
+    </div>
+    <div class="train" id="train"></div>
+    <div class="jobstrip" id="trainJobs"></div>
+    <div class="logs-head"><span id="trainJobName" class="d-meta"></span><button class="btn ghost" id="trainScroll" style="margin-left:auto;padding:6px 11px;font-size:11px" onclick="livraisonToggleScroll()">📜 auto-scroll : ON</button></div>
+    <div class="console" id="trainLogs"><span style="color:var(--tm)">Sélectionne un job pour voir ses logs…</span></div>
   </div>
 
   <div class="foot">Câblé sur GitLab en temps réel · actions réelles (approuver / merger / fermer / commenter) · Salsi DevOps Hub</div>

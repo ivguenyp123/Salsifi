@@ -14,6 +14,8 @@
   let mrList = [], selected = null, authorFilter = '', busy = false;
   // Tranche 2 — préparation : bump IMAGE_TAG + sync overlays + création de MR.
   let branches = [], prepBranch = '', prepBumpType = 'minor', prepCurTag = '';
+  // Tranche 3 — suivi du train de pipeline + logs.
+  let pipeId = null, pipeTimer = null, logTimer = null, curJobId = null, autoScroll = true;
   const IMAGE_TAG_RX = /^(\s*IMAGE_TAG:\s*)(["']?)([^"'\n]+)(["']?)(\s*)$/m;
   const OVERLAY_PATHS = ['Manifests/overlays/development/kustomization.yaml', 'Manifests/overlays/uat/kustomization.yaml'];
 
@@ -125,6 +127,7 @@
         <span class="pill g">${files.length} fichier${files.length > 1 ? 's' : ''}</span>
         <span class="pill g">${mine ? '🙋 la tienne' : '👤 ' + esc((m.author && m.author.username) || '?')}</span>
         <span class="pill ${m.merge_status === 'can_be_merged' ? 'ok' : 'g'}">${m.merge_status === 'can_be_merged' ? 'mergeable' : esc(m.merge_status || '')}</span>
+        ${(m.head_pipeline && m.head_pipeline.id) ? `<button class="pill g" id="btnTrain" style="all:unset;cursor:pointer;display:inline-flex" data-pipe="${m.head_pipeline.id}">🚂 voir le train</button>` : ''}
       </div>
 
       <div class="box"><div class="bh">Fichiers (${files.length})</div>
@@ -153,6 +156,7 @@
     const ba = $('btnApprove'); if (ba && !ba.disabled) ba.addEventListener('click', () => doApprove(m.iid));
     const bm = $('btnMerge'); if (bm && !bm.disabled) bm.addEventListener('click', () => doMerge(m.iid));
     const bc = $('btnClose'); if (bc) bc.addEventListener('click', () => doClose(m.iid));
+    const bt = $('btnTrain'); if (bt) bt.addEventListener('click', () => showTrain(parseInt(bt.dataset.pipe, 10), { delivery: false }));
     // dépliage des diffs
     d.querySelectorAll('[data-diff]').forEach(h => h.addEventListener('click', () => {
       const el = $('diff-' + h.dataset.diff); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
@@ -203,7 +207,10 @@
     guard(async () => {
       const r = await glFetch(`/projects/${PROJECT_ID}/merge_requests/${iid}/merge`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
       if (!r.ok) { const b = await r.json().catch(() => ({})); return toast('⚠️ Merge refusé : ' + esc(b.message || r.status)); }
-      toast('🚀 MR mergée — la pipeline part.'); selected = null; await loadMRs(); const d = $('detail'); if (d) d.innerHTML = '<div class="d-empty">✅ Mergée. La livraison est en cours côté pipeline.</div>';
+      const merged = await r.json().catch(() => ({}));
+      toast('🚀 MR mergée — la pipeline part.'); selected = null; await loadMRs();
+      const d = $('detail'); if (d) d.innerHTML = '<div class="d-empty">✅ Mergée. La livraison démarre — suis le train ci-dessous.</div>';
+      trackDeliveryPipeline(merged.merge_commit_sha || merged.sha); // affiche le train de livraison
     });
   }
   function doClose(iid) {
@@ -299,12 +306,140 @@
     });
   }
 
-  // exposé pour le filtre + refresh + préparation
+  // ── Tranche 3 : le train de la pipeline + logs en direct ──
+  const PIPE_ICON = { success: '✅', running: '🔄', pending: '⏳', created: '⏳', failed: '❌', canceled: '⏹️', skipped: '⏭️', manual: '👆' };
+  function stageStatus(jobs) {
+    if (jobs.some(j => j.status === 'failed')) return 'failed';
+    if (jobs.some(j => j.status === 'running')) return 'running';
+    if (jobs.length && jobs.every(j => ['success', 'skipped', 'manual'].includes(j.status))) return 'success';
+    return 'pending';
+  }
+  function fmtDur(s) { if (!s) return ''; if (s < 60) return Math.round(s) + 's'; return Math.floor(s / 60) + 'm ' + Math.round(s % 60) + 's'; }
+
+  function stopTrain() {
+    clearInterval(pipeTimer); clearInterval(logTimer); pipeTimer = logTimer = null; pipeId = null; curJobId = null;
+    const sec = $('trainSection'); if (sec) sec.style.display = 'none';
+  }
+
+  async function showTrain(pipelineId, opts) {
+    opts = opts || {};
+    if (!pipelineId) return;
+    stopTrain();
+    pipeId = pipelineId;
+    const sec = $('trainSection'); if (sec) sec.style.display = 'block';
+    const t = $('trainTitle'); if (t) t.textContent = (opts.delivery ? '🚀 Livraison en cours' : '🔎 Pipeline de la MR') + ' · #' + pipelineId;
+    const gl = $('trainGl'); if (gl) gl.href = `${GITLAB_URL}/${PROJECT_PATH}/-/pipelines/${pipelineId}`;
+    const logs = $('trainLogs'); if (logs) logs.innerHTML = '<span style="color:var(--tm)">Sélectionne un job pour voir ses logs…</span>';
+    const jn = $('trainJobName'); if (jn) jn.textContent = '';
+    if (sec && opts.scroll !== false) sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    await pollPipeline();
+    pipeTimer = setInterval(pollPipeline, 3000);
+  }
+
+  async function pollPipeline() {
+    if (!pipeId) return;
+    try {
+      const [pRes, jRes] = await Promise.all([
+        glFetch(`/projects/${PROJECT_ID}/pipelines/${pipeId}`),
+        glFetch(`/projects/${PROJECT_ID}/pipelines/${pipeId}/jobs?per_page=100`),
+      ]);
+      if (!pRes.ok || !jRes.ok) return;
+      const pipeline = await pRes.json();
+      let jobs = await jRes.json();
+      // Ordre déterministe : id croissant = ordre de création = ordre des stages
+      // (indépendant de l'ordre renvoyé par l'API, qui varie).
+      jobs = Array.isArray(jobs) ? jobs.slice().sort((a, b) => (a.id || 0) - (b.id || 0)) : [];
+      renderTrain(pipeline, jobs);
+      // auto-sélection du job en cours si l'utilisateur n'a rien choisi manuellement
+      const running = jobs.find(j => j.status === 'running');
+      if (running && curJobId == null) selectJob(running.id, running.name);
+      if (['success', 'failed', 'canceled', 'skipped'].includes(pipeline.status)) {
+        clearInterval(pipeTimer); pipeTimer = null;
+        toast(pipeline.status === 'success' ? '✅ Pipeline terminée — livraison OK.' : '❌ Pipeline ' + esc(pipeline.status) + '.');
+      }
+    } catch (e) { /* transitoire, on retente au prochain tick */ }
+  }
+
+  function renderTrain(pipeline, jobs) {
+    const st = $('trainStatus');
+    if (st) { st.textContent = (PIPE_ICON[pipeline.status] || '') + ' ' + pipeline.status; st.className = 'pill ' + (pipeline.status === 'success' ? 'ok' : pipeline.status === 'failed' ? 'err' : 'run'); }
+    // regroupe par stage en conservant l'ordre d'apparition
+    const order = [], byStage = {};
+    jobs.forEach(j => { const s = j.stage || '—'; if (!byStage[s]) { byStage[s] = []; order.push(s); } byStage[s].push(j); });
+    const train = $('train');
+    if (train) {
+      train.innerHTML = order.map((s, i) => {
+        const cls = stageStatus(byStage[s]);
+        const ic = cls === 'success' ? '✓' : cls === 'failed' ? '✕' : cls === 'running' ? '🔄' : '•';
+        const rail = i ? `<div class="rail ${stageStatus(byStage[order[i - 1]]) === 'success' ? 'done' : ''}"></div>` : '';
+        return rail + `<div class="stg ${cls === 'success' ? 'done' : cls === 'running' ? 'run' : cls === 'failed' ? 'fail' : ''}"><div class="ic">${ic}</div><div class="nm">${esc(s)}</div></div>`;
+      }).join('');
+    }
+    const jc = $('trainJobs');
+    if (jc) {
+      jc.innerHTML = jobs.map(j => `<button class="jobchip ${j.status} ${curJobId === j.id ? 'on' : ''}" data-job="${j.id}" data-jobname="${esc(j.name)}">${PIPE_ICON[j.status] || '•'} ${esc(j.name)}${j.duration ? ` · ${fmtDur(j.duration)}` : ''}</button>`).join('');
+      jc.querySelectorAll('.jobchip').forEach(b => b.addEventListener('click', () => selectJob(parseInt(b.dataset.job, 10), b.dataset.jobname)));
+    }
+  }
+
+  async function selectJob(jobId, jobName) {
+    curJobId = jobId;
+    const jn = $('trainJobName'); if (jn) jn.textContent = jobName || '';
+    document.querySelectorAll('.jobchip').forEach(b => b.classList.toggle('on', parseInt(b.dataset.job, 10) === jobId));
+    clearInterval(logTimer); logTimer = null;
+    await fetchLogs();
+    const active = document.querySelector('.jobchip.on');
+    if (active && active.classList.contains('running')) logTimer = setInterval(fetchLogs, 2500);
+  }
+
+  async function fetchLogs() {
+    if (!curJobId) return;
+    const el = $('trainLogs'); if (!el) return;
+    try {
+      const r = await glFetch(`/projects/${PROJECT_ID}/jobs/${curJobId}/trace`);
+      if (!r.ok) { el.innerHTML = '<span style="color:var(--tm)">Logs indisponibles (job pas encore démarré ?).</span>'; return; }
+      const raw = await r.text();
+      const clean = raw.replace(/\x1b\[[0-9;]*m/g, '');
+      el.innerHTML = clean.split('\n').map(line => {
+        let c = '';
+        if (/(?:✅|\bsuccess|SUCCESS)/.test(line)) c = 'ok';
+        else if (/(?:❌|\berror|ERROR|fatal|FAIL)/.test(line)) c = 'err';
+        else if (/(?:⚠️|warning|WARNING)/.test(line)) c = 'warn';
+        else if (/(?:ℹ️|INFO|section_)/.test(line)) c = 'info';
+        return `<div class="l"><span class="${c}">${esc(line)}</span></div>`;
+      }).join('');
+      if (autoScroll) el.scrollTop = el.scrollHeight;
+    } catch (e) { /* transitoire */ }
+  }
+
+  // Après un merge : retrouve la pipeline de livraison sur la branche cible et la suit.
+  async function trackDeliveryPipeline(mergeCommitSha) {
+    for (let i = 0; i < 8; i++) {
+      try {
+        let pl = null;
+        if (mergeCommitSha) {
+          const r = await glFetch(`/projects/${PROJECT_ID}/pipelines?sha=${encodeURIComponent(mergeCommitSha)}&per_page=1`);
+          if (r.ok) { const a = await r.json(); if (Array.isArray(a) && a.length) pl = a[0]; }
+        }
+        if (!pl) {
+          const r = await glFetch(`/projects/${PROJECT_ID}/pipelines?ref=${encodeURIComponent(DEFAULT_BRANCH)}&per_page=1`);
+          if (r.ok) { const a = await r.json(); if (Array.isArray(a) && a.length) pl = a[0]; }
+        }
+        if (pl && pl.id) { showTrain(pl.id, { delivery: true }); return; }
+      } catch (e) { /* retry */ }
+      await new Promise(res => setTimeout(res, 2000));
+    }
+    toast('ℹ️ Pipeline de livraison pas encore visible — clique « ↻ Rafraîchir » dans un instant.');
+  }
+
+  // exposé pour le filtre + refresh + préparation + train
   window.livraisonFilter = () => { authorFilter = ($('who') || {}).value || ''; renderList(); };
   window.livraisonRefresh = () => loadMRs();
   window.livraisonPrepBranch = prepOnBranch;
   window.livraisonPrepBump = prepSetBump;
   window.livraisonPrepGo = prepGo;
+  window.livraisonStopTrain = stopTrain;
+  window.livraisonToggleScroll = () => { autoScroll = !autoScroll; const b = $('trainScroll'); if (b) b.textContent = '📜 auto-scroll : ' + (autoScroll ? 'ON' : 'OFF'); };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
