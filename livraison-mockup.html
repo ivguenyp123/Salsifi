@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Préparer une livraison — Maquette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(60% 50% at 15% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 90% 10%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:16px;padding:22px 0 6px}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:22px}
+header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.mock-badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
+.svc{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:8px 13px;font-size:13px;font-weight:600}
+.svc .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.section-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:24px 4px 12px}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;backdrop-filter:blur(20px)}
+
+/* HERO préparer */
+.hero{background:linear-gradient(135deg,rgba(45,212,191,.10),rgba(124,92,252,.06));border:1px solid rgba(45,212,191,.28)}
+.hero h2{font-family:var(--fd);font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px}
+.hero .lead{font-size:13px;color:var(--ts);margin:6px 0 18px}
+.verpick{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.verbox{text-align:center}
+.verbox .k{font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.verbox .v{font-family:var(--fd);font-size:40px;font-weight:800;line-height:1;margin-top:4px}
+.verbox .v.from{color:var(--ts)} .verbox .v.to{color:var(--deliver)}
+.arrowto{font-size:26px;color:var(--tm)}
+.bumps{display:flex;gap:8px}
+.bumps button{all:unset;cursor:pointer;font-size:12px;font-weight:700;padding:8px 14px;border-radius:10px;border:1px solid var(--line);color:var(--ts);transition:.15s}
+.bumps button:hover,.bumps button.on{border-color:var(--deliver);color:var(--deliver);background:rgba(45,212,191,.08)}
+.plan{margin:18px 0;display:flex;flex-direction:column;gap:9px}
+.planrow{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--ts)}
+.planrow .pi{width:26px;text-align:center;font-size:15px}
+.planrow code{font-family:var(--fm);font-size:12px;background:rgba(0,0,0,.28);padding:2px 7px;border-radius:5px;color:var(--tp)}
+.gobtn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800;font-size:14.5px;padding:14px 24px;border-radius:13px;transition:.16s}
+.gobtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.done{display:none;margin-top:6px;padding:16px 18px;border-radius:14px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3)}
+.done.show{display:block}
+.done .dt{font-weight:700;color:var(--ok);font-size:14px;margin-bottom:8px}
+.done .dl{font-size:13px;color:var(--ts);margin:4px 0;display:flex;gap:9px;align-items:center}
+.mrlink{color:var(--deliver);font-weight:700;text-decoration:none}
+.note{margin-top:14px;font-size:12px;color:var(--tm);border-left:2px solid var(--warn);padding-left:12px;line-height:1.55}
+.note b{color:var(--warn)}
+
+/* cols */
+.cols{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:20px}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.card h3{font-family:var(--fd);font-size:15px;font-weight:700;margin-bottom:3px}
+.card .hint{font-size:12px;color:var(--tm);margin-bottom:14px}
+.ro{font-size:10.5px;font-weight:700;color:var(--tm);background:rgba(255,255,255,.05);border:1px solid var(--line);padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+
+.br{display:flex;flex-direction:column;gap:10px}
+.branch{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
+.branch .bn{font-family:var(--fm);font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.branch .st{font-size:11px;color:var(--tm);margin-top:2px;font-family:var(--fb)}
+.chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.chip.ready{background:rgba(52,211,153,.14);color:var(--ok)}
+.chip.rev{background:rgba(167,139,250,.16);color:var(--accent)}
+.chip.none{background:rgba(255,255,255,.05);color:var(--tm)}
+.chip.dev{background:rgba(96,165,250,.14);color:var(--info)}
+
+.envs{display:flex;flex-direction:column;gap:0}
+.envrow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line)}
+.envrow:last-child{border-bottom:0}
+.envrow .en{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;width:52px}
+.envrow .ev{font-family:var(--fm);font-weight:700;font-size:15px;color:var(--tp)}
+.envrow .ew{margin-left:auto;font-size:11px;color:var(--tm)}
+.en.dev{color:var(--info)} .en.uat{color:var(--warn)} .en.prod{color:var(--ok)}
+
+.salsi{display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,rgba(124,92,252,.12),rgba(45,212,191,.06));border:1px solid rgba(167,139,250,.28);border-radius:18px;padding:16px 22px;margin-top:22px}
+.salsi .mas{font-size:36px}
+.salsi .line{font-size:13.5px;margin:2px 0;color:var(--ts)}
+.salsi .line b{color:var(--tp)} .salsi .u{color:var(--accent);font-weight:600}
+.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:28px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🚚</div>
+    <div>
+      <h1>Préparer une livraison</h1>
+      <div class="sub">Le seul geste manuel du flow : décider la version. GitLab fait le reste.</div>
+    </div>
+    <div class="svc"><span class="dot"></span> platformengineering · <span style="color:var(--tm)">trunk</span></div>
+    <div class="mock-badge">◆ MAQUETTE — données fictives</div>
+  </header>
+
+  <!-- HERO : préparer -->
+  <div class="section-title">1 · Préparer</div>
+  <div class="card hero">
+    <h2>🏷️ Quelle version veux-tu sortir&nbsp;?</h2>
+    <div class="lead">La pipeline ne décide pas <i>quelle</i> version part — toi si. On bump, on sync les overlays, on ouvre la MR. Toi tu valides &amp; tu merges.</div>
+
+    <div class="verpick">
+      <div class="verbox"><div class="k">actuelle</div><div class="v from" id="vfrom">2.0.5</div></div>
+      <div class="arrowto">→</div>
+      <div class="verbox"><div class="k">à livrer</div><div class="v to" id="vto">2.0.6</div></div>
+      <div style="margin-left:8px">
+        <div class="k" style="font-size:11px;color:var(--tm);font-weight:700;margin-bottom:6px">incrément</div>
+        <div class="bumps">
+          <button onclick="setBump('major')" id="b-major">MAJOR</button>
+          <button onclick="setBump('minor')" id="b-minor" class="on">MINOR</button>
+          <button onclick="setBump('patch')" id="b-patch">PATCH</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan">
+      <div class="planrow"><span class="pi">✏️</span> <code>IMAGE_TAG</code> <span id="p1">2.0.5 → 2.0.6</span> dans le <code>.gitlab-ci.yml</code></div>
+      <div class="planrow"><span class="pi">🔄</span> Overlays kustomize (<code>development</code>) sync à <span id="p2">2.0.6</span></div>
+      <div class="planrow"><span class="pi">🔀</span> MR de livraison <span id="p3">« release 2.0.6 »</span> ouverte sur <code>main</code></div>
+    </div>
+
+    <button class="gobtn" onclick="prepare()">🚚 Préparer la livraison <span id="gob">2.0.6</span></button>
+
+    <div class="done" id="done">
+      <div class="dt">✅ Livraison préparée</div>
+      <div class="dl"><span>🔀</span> MR <b id="mrid">!44</b> « release <span id="mrv">2.0.6</span> » créée · <a class="mrlink" href="#" onclick="return false">ouvrir dans GitLab ↗</a></div>
+      <div class="dl"><span>👉</span> À toi : <b>valide &amp; merge</b>. Le merge sur <code style="font-family:var(--fm)">main</code> déclenche <code style="font-family:var(--fm)">deploy_production</code> — <b>ça part en prod, tout seul.</b></div>
+    </div>
+
+    <div class="note">⚠️ <b>L'outil ne déploie rien.</b> Il prépare (bump + overlays + MR). C'est ton <b>merge</b> qui livre, via les <code style="font-family:var(--fm)">rules</code> de la pipeline. En trunk : merge sur <code style="font-family:var(--fm)">main</code> = prod.</div>
+  </div>
+
+  <div class="cols">
+    <!-- Ce qui bouge -->
+    <div class="card">
+      <h3>🌿 Ce qui bouge <span class="ro">lecture seule</span></h3>
+      <div class="hint">Tes branches et leurs MR — pour t'y retrouver.</div>
+      <div class="br" id="branches"></div>
+    </div>
+    <!-- Versions en place -->
+    <div class="card">
+      <h3>📍 Où est quoi <span class="ro">lecture seule</span></h3>
+      <div class="hint">Version déployée par environnement.</div>
+      <div class="envs" id="envs"></div>
+    </div>
+  </div>
+
+  <!-- Salsi -->
+  <div class="salsi">
+    <div class="mas">🌱</div>
+    <div>
+      <div class="line"><span class="u">— Salsi, prépare ma livraison en mineur.</span></div>
+      <div class="line"><b>— C'est fait : <code style="font-family:var(--fm)">2.0.5 → 2.0.6</code>, overlays sync, MR !44 ouverte. Tu valides &amp; tu merges ?</b></div>
+      <div class="line" style="color:var(--tm);font-size:12px;margin-top:6px">Même geste, version conversationnelle. L'outil visuel ici, Salsi là.</div>
+    </div>
+  </div>
+
+  <div class="foot">Maquette statique · aucune donnée réelle · aucune action exécutée · Salsi DevOps Hub</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const BRANCHES = [
+  {n:'feature/iban-tile', s:'MR !42 ouverte · déployée en dev · reviews ✅', chip:['ready','prête à merger']},
+  {n:'feature/cbs-timeout', s:'MR !43 ouverte · en review (2)', chip:['rev','en review']},
+  {n:'feature/audit-log', s:'poussée il y a 40 min · build_app ✅', chip:['none','pas de MR']},
+];
+const ENVS = [
+  {e:'dev', c:'dev', v:'2.0.5', w:'merge !40 · il y a 12 min'},
+  {e:'uat', c:'uat', v:'2.0.4', w:'release · il y a 2 j'},
+  {e:'prod', c:'prod', v:'2.0.4', w:'promote stable · il y a 2 j'},
+];
+document.getElementById('branches').innerHTML = BRANCHES.map(b=>`
+  <div class="branch"><div style="flex:1;min-width:0"><div class="bn">🌿 ${b.n}</div><div class="st">${b.s}</div></div>
+  <div class="chip ${b.chip[0]}">${b.chip[1]}</div></div>`).join('');
+document.getElementById('envs').innerHTML = ENVS.map(x=>`
+  <div class="envrow"><div class="en ${x.c}">${x.e}</div><div class="ev">${x.v}</div><div class="ew">${x.w}</div></div>`).join('');
+
+const CUR=[2,0,5]; let bump='minor';
+function target(){ let c=CUR.slice(); if(bump==='major'){c[0]++;c[1]=0;c[2]=0;} else if(bump==='minor'){c[1]++;c[2]=0;} else c[2]++; return c.join('.'); }
+function setBump(k){ bump=k; ['major','minor','patch'].forEach(x=>document.getElementById('b-'+x).classList.toggle('on',x===k));
+  const t=target(), f=CUR.join('.');
+  document.getElementById('vto').textContent=t;
+  document.getElementById('p1').textContent=f+' → '+t;
+  document.getElementById('p2').textContent=t;
+  document.getElementById('p3').textContent='« release '+t+' »';
+  document.getElementById('gob').textContent=t;
+  document.getElementById('done').classList.remove('show');
+}
+let toastT;
+function prepare(){
+  const t=target();
+  document.getElementById('mrv').textContent=t;
+  document.getElementById('done').classList.add('show');
+  const el=document.getElementById('toast'); el.innerHTML='🚚 Livraison <b>'+t+'</b> préparée — MR ouverte. <i>(simulé)</i>'; el.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),3200);
+}
+setBump('minor');
+</script>
+</body>
+</html>
