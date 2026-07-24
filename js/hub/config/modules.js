@@ -10,7 +10,7 @@
             'Générateur de rapport': 'report-builder.html',
             'Feature Flag Manager': 'feature-flag-manager.html',
             'Release Notes': 'release-notes.html',
-            'Pipeline Generator': 'pipeline-generator.html',
+            'Livraison': 'pipeline-generator.html',
             'Repo Analyzer': 'repo-analyzer.html',
             'Security Scanner': 'gouvernance-repo.html',
             'Repo Diet': 'repo-diet.html',
@@ -24,7 +24,7 @@
         };
         // Modules migrés au modèle plateforme : ils lisent le repo via ?repo=<id>
         // (auth en localStorage). Les autres pages suivront au portage.
-        const MODULE_REPO_AWARE = new Set(['Pipeline Generator', 'Repo Analyzer', 'Security Scanner', 'Repo Diet', 'Branch Monitor', 'MR Reviewer AI', 'Auto Retro', 'Smart Estimate', 'Générateur de rapport']);
+        const MODULE_REPO_AWARE = new Set(['Livraison', 'Repo Analyzer', 'Security Scanner', 'Repo Diet', 'Branch Monitor', 'MR Reviewer AI', 'Auto Retro', 'Smart Estimate', 'Générateur de rapport']);
 
         // Modules DÉSACTIVÉS : grisés + non cliquables. La valeur (string) est la
         // raison affichée en title + toast. Deux cas :

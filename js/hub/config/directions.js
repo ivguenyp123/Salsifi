@@ -63,7 +63,7 @@
                     { label: 'Pipeline status', key: 'pipelineStatus' }
                 ],
                 modules: [
-                    { icon: '⚙️', name: 'Pipeline Generator', desc: 'Génère ton .gitlab-ci.yml en wizard. Pousse, lance, suis les logs.' },
+                    { icon: '🚚', name: 'Livraison', desc: 'Prépare ta MR, valide, livre — et suis le train de la pipeline en direct.' },
                     { icon: '🚩', name: 'Feature Flag Manager', desc: 'Cycle de vie complet : création, audit, decommission, RBAC.' },
                     { icon: '📝', name: 'Release Notes', desc: 'Génère les notes de version automatiquement par tag Git.' }
                 ]

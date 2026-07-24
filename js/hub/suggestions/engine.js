@@ -26,7 +26,7 @@
             if (picked.length < 3) {
                 const generic = [
                     { tag: 'measure', tagLabel: 'Mesurer', direction: 'measure', text: 'Lance une évaluation de maturité DevOps pour cartographier les 8 axes de ta squad.', cta: 'Faire l\'évaluation', severity: 0 },
-                    { tag: 'deliver', tagLabel: 'Livrer', direction: 'deliver', text: 'Génère ton pipeline GitLab CI en quelques clics, prêt pour la production.', cta: 'Pipeline Generator', severity: 0 },
+                    { tag: 'deliver', tagLabel: 'Livrer', direction: 'deliver', text: 'Prépare ta livraison, valide la MR et suis la mise en prod.', cta: 'Livraison', severity: 0 },
                     { tag: 'collab', tagLabel: 'Collaborer', direction: 'collab', text: 'Lance une rétro automatique pour ton dernier sprint, basée sur tes données GitLab.', cta: 'Démarrer la rétro', severity: 0 }
                 ];
                 for (const g of generic) {
