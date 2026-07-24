@@ -210,7 +210,7 @@
       const merged = await r.json().catch(() => ({}));
       toast('🚀 MR mergée — la pipeline part.'); selected = null; await loadMRs();
       const d = $('detail'); if (d) d.innerHTML = '<div class="d-empty">✅ Mergée. La livraison démarre — suis le train ci-dessous.</div>';
-      trackDeliveryPipeline(merged.merge_commit_sha || merged.sha); // affiche le train de livraison
+      trackDeliveryPipeline(iid, merged.merge_commit_sha || merged.squash_commit_sha || null); // train du commit de merge uniquement
     });
   }
   function doClose(iid) {
@@ -427,24 +427,30 @@
     } catch (e) { /* transitoire */ }
   }
 
-  // Après un merge : retrouve la pipeline de livraison sur la branche cible et la suit.
-  async function trackDeliveryPipeline(mergeCommitSha) {
-    for (let i = 0; i < 8; i++) {
+  // Après un merge : suit UNIQUEMENT la pipeline du commit de merge (par sha).
+  // On ne prend jamais « la dernière pipeline de la branche » : au moment du
+  // merge, la nouvelle pipeline n'existe pas encore, et ce fallback verrouillait
+  // sur une ancienne pipeline sans rapport. On patiente qu'elle apparaisse.
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+  async function trackDeliveryPipeline(iid, sha) {
+    // Récupère le sha du commit de merge si la réponse du merge ne l'avait pas.
+    for (let i = 0; i < 5 && !sha; i++) {
       try {
-        let pl = null;
-        if (mergeCommitSha) {
-          const r = await glFetch(`/projects/${PROJECT_ID}/pipelines?sha=${encodeURIComponent(mergeCommitSha)}&per_page=1`);
-          if (r.ok) { const a = await r.json(); if (Array.isArray(a) && a.length) pl = a[0]; }
-        }
-        if (!pl) {
-          const r = await glFetch(`/projects/${PROJECT_ID}/pipelines?ref=${encodeURIComponent(DEFAULT_BRANCH)}&per_page=1`);
-          if (r.ok) { const a = await r.json(); if (Array.isArray(a) && a.length) pl = a[0]; }
-        }
-        if (pl && pl.id) { showTrain(pl.id, { delivery: true }); return; }
+        const r = await glFetch(`/projects/${PROJECT_ID}/merge_requests/${iid}`);
+        if (r.ok) { const m = await r.json(); sha = m.merge_commit_sha || m.squash_commit_sha || null; }
       } catch (e) { /* retry */ }
-      await new Promise(res => setTimeout(res, 2000));
+      if (!sha) await sleep(1500);
     }
-    toast('ℹ️ Pipeline de livraison pas encore visible — clique « ↻ Rafraîchir » dans un instant.');
+    if (!sha) { toast('ℹ️ Merge OK — sha du commit introuvable. Ouvre la pipeline dans GitLab ↗.'); return; }
+    // Attend que la pipeline du commit de merge existe (jusqu'à ~50 s), puis la suit.
+    for (let i = 0; i < 20; i++) {
+      try {
+        const r = await glFetch(`/projects/${PROJECT_ID}/pipelines?sha=${encodeURIComponent(sha)}&per_page=1`);
+        if (r.ok) { const a = await r.json(); if (Array.isArray(a) && a.length && a[0].id) { showTrain(a[0].id, { delivery: true }); return; } }
+      } catch (e) { /* retry */ }
+      await sleep(2500);
+    }
+    toast('ℹ️ Pipeline de livraison pas encore visible — clique « ↻ Rafraîchir » ou ouvre GitLab ↗.');
   }
 
   // exposé pour le filtre + refresh + préparation + train
