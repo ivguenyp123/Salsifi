@@ -139,6 +139,16 @@ textarea::placeholder{color:var(--tm)}
     <button class="gobtn" onclick="prepare()">✏️ Overlay + 🔀 Créer la MR</button>
   </div>
 
+  <!-- Changelog auto -->
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--fd);font-size:14px;font-weight:700">📋 Contenu de <span id="clver" style="color:var(--deliver)">2.1.0</span></span>
+      <span style="font-size:12px;color:var(--tm)"><b id="clcount">3</b> MR mergées depuis <span style="font-family:var(--fm)">2.0.5</span></span>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--deliver);font-weight:700">→ devient la release note</span>
+    </div>
+    <div id="cl-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
   <!-- 1b. Nouvelle branche (raccourci optionnel) -->
   <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:14px 20px">
     <span style="font-size:13px;font-weight:600;color:var(--ts)">🌿 Nouvelle branche</span>
@@ -147,6 +157,18 @@ textarea::placeholder{color:var(--tm)}
     <button class="btn ghost" onclick="createBranch()">Créer</button>
     <span style="font-size:11px;color:var(--tm)">raccourci — sinon <code style="font-family:var(--fm)">git checkout -b</code> dans ton IDE</span>
   </div>
+
+  <!-- Environnements + rollback -->
+  <div class="section-title">Environnements</div>
+  <div class="card" style="display:flex;align-items:center;gap:0;flex-wrap:wrap">
+    <div style="display:flex;gap:26px;flex-wrap:wrap;flex:1">
+      <div><div style="font-size:11px;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:.05em">dev</div><div style="font-family:var(--fm);font-weight:700;font-size:17px">2.1.0</div></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.05em">uat</div><div style="font-family:var(--fm);font-weight:700;font-size:17px">2.0.5</div></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.05em">prod</div><div style="font-family:var(--fm);font-weight:700;font-size:17px" id="prodver">2.0.5</div><div style="font-size:10.5px;color:var(--tm)">livré il y a 3 h · par c.martin</div></div>
+    </div>
+    <button class="btn del" onclick="rollback()" title="re-livrer la version précédente" id="rbbtn">↩️ Rollback prod → 2.0.4</button>
+  </div>
+  <div id="rbpanel"></div>
 
   <!-- 2. MR DU REPO -->
   <div class="section-title">MR du repo</div>
@@ -195,7 +217,21 @@ let sel=null, live=null;
 const CUR=[2,0,5]; let bump='minor';
 function tgt(){let c=CUR.slice();bump==='major'?(c[0]++,c[1]=0,c[2]=0):bump==='minor'?(c[1]++,c[2]=0):c[2]++;return c.join('.');}
 function setBump(k){bump=k;['major','minor','patch'].forEach(x=>document.getElementById('b-'+x).classList.toggle('on',x===k));renderPrep();}
-function renderPrep(){document.getElementById('pv').textContent=tgt();}
+function renderPrep(){document.getElementById('pv').textContent=tgt();const cl=document.getElementById('clver');if(cl)cl.textContent=tgt();}
+const CHANGELOG=[{num:'!44',t:'feat: nouvelle tuile IBAN',a:'j.dupont'},{num:'!43',t:'fix: timeout appel CBS',a:'a.bernard'},{num:'!41',t:'chore: bump deps sécu',a:'c.martin'}];
+function renderChangelog(){document.getElementById('cl-list').innerHTML=CHANGELOG.map(c=>`<div style="font-size:12.5px;color:var(--ts);display:flex;gap:9px;align-items:center"><span style="font-family:var(--fm);color:var(--accent);font-weight:700">${c.num}</span><span style="flex:1">${c.t}</span><span style="color:var(--tm);font-size:11px">${c.a}</span></div>`).join('');document.getElementById('clcount').textContent=CHANGELOG.length;}
+renderChangelog();
+function rollback(){document.getElementById('rbpanel').innerHTML=`<div class="card" style="margin-top:12px;border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.05)">
+  <div style="font-family:var(--fd);font-weight:800;font-size:14px;color:var(--err)">↩️ Rollback production — re-livrer 2.0.4</div>
+  <div style="font-size:12.5px;color:var(--ts);margin-top:9px;line-height:1.85">
+    <b>Même chemin qu'une livraison normale</b>, juste la version qui recule :<br>
+    ✏️ <code style="font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:5px">IMAGE_TAG 2.0.5 → 2.0.4</code> — l'image 2.0.4 est déjà au registre (<code style="font-family:var(--fm)">promote_stable</code> l'y a poussée)<br>
+    🔀 MR <code style="font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:5px">rollback/2.0.4 → main</code> · le merge redéploie 2.0.4 en prod<br>
+    <span style="color:var(--ok)">✅ La toolchain n'est PAS modifiée</span> — mêmes <code style="font-family:var(--fm)">rules</code>, seule la valeur <code style="font-family:var(--fm)">IMAGE_TAG</code> change.</div>
+  <div style="margin-top:14px;display:flex;gap:10px">
+    <button class="btn ship" onclick="rollbackGo()">Créer la MR de rollback</button>
+    <button class="btn ghost" onclick="document.getElementById('rbpanel').innerHTML=''">Annuler</button></div></div>`;}
+function rollbackGo(){document.getElementById('rbpanel').innerHTML='';toast('↩️ MR <b>!48 « rollback/2.0.4 »</b> ouverte → main. Valide + merge = prod revient en <b>2.0.4</b> <i>(simulé)</i>');}
 function prepare(){const t=tgt();const src=document.getElementById('srcbranch').value;const br=src==='__new__'?'release/'+t:src;toast('✏️ overlay sync · 🔀 MR <b>!47 « release '+t+' »</b> · '+br+' → main <i>(simulé)</i>');}
 renderPrep();
 
