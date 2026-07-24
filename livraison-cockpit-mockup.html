@@ -69,6 +69,14 @@ select{font-family:var(--fm);font-size:13px;font-weight:600;background:var(--bg-
 .box{margin-top:15px;padding:14px 15px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
 .box .bh{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
 .willship code{font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:6px;color:var(--deliver)}
+.cmt{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--line)}
+.cmt:last-of-type{border-bottom:0}
+.cmt .ca{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:9px;font-weight:800;color:#160f2e;flex-shrink:0}
+.cmt .cn{font-size:12px;font-weight:700} .cmt .cw{font-size:10.5px;color:var(--tm);font-weight:500;margin-left:6px}
+.cmt .ct{font-size:12.5px;color:var(--ts);margin-top:2px}
+.cbox{display:flex;gap:8px;margin-top:11px}
+textarea{flex:1;background:var(--bg-card);border:1px solid var(--line2);border-radius:10px;color:var(--tp);font-family:var(--fb);font-size:12.5px;padding:9px 11px;resize:vertical;min-height:38px}
+textarea::placeholder{color:var(--tm)}
 .f{font-family:var(--fm);font-size:12px;color:var(--ts);display:flex;gap:8px;align-items:center;padding:2px 0}
 .f.key{color:var(--tp);font-weight:600} .f .plus{color:var(--ok)} .f .minus{color:var(--err)}
 .appr{display:flex;align-items:center;gap:9px}
@@ -109,7 +117,7 @@ select{font-family:var(--fm);font-size:13px;font-weight:600;background:var(--bg-
   <header>
     <div class="logo">🚚</div>
     <div><h1>Livraison</h1><div class="sub">Prépare ta MR · valide · livre · regarde le train partir.</div></div>
-    <div class="svc"><span class="dot"></span> platformengineering · <span style="color:var(--tm)">trunk</span></div>
+    <div class="svc"><span class="dot"></span> platformengineering · <span style="color:var(--tm)" title="flow lu depuis le .gitlab-ci.yml de la branche — non modifiable ici">trunk <span style="font-size:10px;opacity:.7">(détecté)</span></span></div>
     <div class="mock-badge">◆ MAQUETTE — données fictives</div>
   </header>
 
@@ -166,6 +174,12 @@ const MRS=[
  {num:'!41',author:'c.martin',title:'chore: bump deps sécu',branch:'chore/deps',at:'3 j',plus:120,minus:120,pipeline:'ok',dev:true,appr:2,need:2,ships:'2.0.5',
   files:[{f:'.gitlab-ci.yml',key:'IMAGE_TAG 2.0.4 → 2.0.5'},{f:'package-lock.json',p:110,m:110}]},
 ];
+const COMMENTS={
+ '!44':[{a:'a.bernard',t:'La tuile s\'affiche bien mais pense à gérer le cas IBAN vide.',at:'1 h'},
+        {a:'j.dupont',t:'Bien vu, corrigé au dernier commit 👍',at:'40 min'}],
+ '!46':[{a:'c.martin',t:'LGTM, le libellé est bon maintenant.',at:'20 min'}],
+ '!43':[], '!41':[{a:'j.dupont',t:'Merci pour le bump sécu.',at:'2 j'}],
+};
 let sel=null, live=null;
 
 // PREPARE
@@ -213,13 +227,17 @@ function renderDetail(){
       ${m.files.map(f=>`<div class="f ${f.key?'key':''}"><span>${f.key?'🏷️':'📄'}</span><span style="flex:1">${f.f}</span>${f.key?`<span style="color:var(--deliver);font-size:11px">${f.key}</span>`:`<span><span class="plus">+${f.p}</span> <span class="minus">−${f.m}</span></span>`}</div>`).join('')}</div>
     <div class="box"><div class="bh">Validation</div><div class="appr"><div style="display:flex;gap:5px">${dots}</div>
       <div class="txt">${ok?'<b style="color:var(--ok)">Validée '+m.appr+'/'+m.need+'</b>':'En attente <b style="color:var(--warn)">'+m.appr+'/'+m.need+'</b>'}</div></div></div>
+    <div class="box"><div class="bh">💬 Discussion — toutes les fonctions MR (remplace mr-reviewer)</div>
+      <div id="disc">${(COMMENTS[m.num]||[]).map(c=>{const av=A[c.a]||{i:'?',c:'#666'};return `<div class="cmt"><div class="ca" style="background:${av.c}">${av.i}</div><div><div><span class="cn">${c.a}</span><span class="cw">il y a ${c.at}</span></div><div class="ct">${c.t}</div></div></div>`;}).join('')||'<span style="color:var(--tm);font-size:12px">Aucun commentaire pour l\'instant.</span>'}</div>
+      <div class="cbox"><textarea id="cin" placeholder="Commenter la MR…"></textarea><button class="btn ghost" onclick="addComment('${m.num}')">Commenter</button></div>
+    </div>
     <div class="roles">
       <div class="role"><div class="rl">👍 en tant que relecteur</div><div class="btns">
         <button class="btn ghost ${mine?'off':''}" onclick="approve('${m.num}')" title="${mine?'tu es le créateur — pas relecteur de ta propre MR':''}">Approuver</button></div>
         ${mine?'<div style="font-size:11px;color:var(--tm);margin-top:7px">Tu es le créateur — c\'est un autre qui approuve.</div>':''}</div>
       <div class="role"><div class="rl">🚀 en tant que créateur</div><div class="btns">
         <button class="btn ship ${(mine&&canShip)?'':'off'}" onclick="ship('${m.num}')">Merger &amp; livrer${m.ships!=='—'?' — '+m.ships:''}</button>
-        <button class="btn del ${mine?'':'off'}" onclick="del('${m.num}')">Supprimer</button></div>
+        <button class="btn del ${mine?'':'off'}" onclick="del('${m.num}')">Fermer la MR</button></div>
         ${(mine&&!canShip)?'<div style="font-size:11px;color:var(--tm);margin-top:7px">Livraison possible quand : validée '+m.need+'/'+m.need+' + pipeline OK.</div>':''}</div>
     </div>`;
 }
@@ -267,7 +285,8 @@ function runTrain(m){
   },650);
 }
 function approve(n){const m=MRS.find(x=>x.num===n);if(m.author===ME)return;if(m.appr<m.need)m.appr++;renderList();renderDetail();toast('👍 <b>'+n+'</b> approuvée ('+m.appr+'/'+m.need+') — <i>pas mergée</i>');}
-function del(n){const m=MRS.find(x=>x.num===n);const i=MRS.indexOf(m);MRS.splice(i,1);sel=null;renderList();renderDetail();toast('🗑️ <b>'+n+'</b> supprimée <i>(simulé)</i>');}
+function del(n){const m=MRS.find(x=>x.num===n);const i=MRS.indexOf(m);MRS.splice(i,1);sel=null;renderList();renderDetail();toast('🚫 <b>'+n+'</b> fermée <i>(simulé)</i>');}
+function addComment(n){const ta=document.getElementById('cin');const v=(ta.value||'').trim();if(!v)return;(COMMENTS[n]=COMMENTS[n]||[]).push({a:ME,t:v,at:'à l\'instant'});renderDetail();toast('💬 Commentaire ajouté sur <b>'+n+'</b> <i>(simulé)</i>');}
 let toastT;function toast(msg){const el=document.getElementById('toast');el.innerHTML=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3400);}
 
 renderList();
