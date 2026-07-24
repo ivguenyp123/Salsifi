@@ -17,7 +17,7 @@
   // Tranche 3 — suivi du train de pipeline + logs.
   let pipeId = null, pipeTimer = null, logTimer = null, curJobId = null, autoScroll = true;
   const IMAGE_TAG_RX = /^(\s*IMAGE_TAG:\s*)(["']?)([^"'\n]+)(["']?)(\s*)$/m;
-  const OVERLAY_PATHS = ['Manifests/overlays/development/kustomization.yaml', 'Manifests/overlays/uat/kustomization.yaml'];
+  const KUSTO_RX = /(^|\/)kustomization\.ya?ml$/i;
 
   const $ = (id) => document.getElementById(id);
   const esc = (v) => (window.Salsifi && window.Salsifi.escapeHtml) ? window.Salsifi.escapeHtml(v) : String(v == null ? '' : v);
@@ -238,6 +238,18 @@
   function prepTarget() { return bumpVer(prepCurTag, prepBumpType); }
   function renderPrepTarget() { const el = $('prepTgt'); if (el) el.textContent = prepTarget() || '—'; }
 
+  // Découverte dynamique des overlays kustomize (les chemins varient d'un repo
+  // à l'autre : Manifests/overlays/…, deploy/…, k8s/… etc.). On liste l'arbre du
+  // repo et on retient tous les kustomization.ya?ml — le bump ne touchera que
+  // ceux qui portent réellement un newTag/APP_VERSION.
+  async function findOverlays(ref) {
+    try {
+      const tree = await window.Salsifi.gitlabPaginate(GITLAB_URL, TOKEN,
+        `/projects/${PROJECT_ID}/repository/tree?recursive=true&ref=${encodeURIComponent(ref)}`, { throwOnError: false });
+      return (tree || []).filter(t => t && t.type === 'blob' && KUSTO_RX.test(t.path)).map(t => t.path);
+    } catch (e) { return []; }
+  }
+
   async function loadBranches() {
     const sel = $('prepBranch'); if (!sel) return;
     const dbl = $('prepDefBr'); if (dbl) dbl.textContent = DEFAULT_BRANCH;
@@ -278,9 +290,12 @@
       if (ci == null) return toast('⚠️ .gitlab-ci.yml introuvable sur ' + esc(prepBranch));
       const newCi = ci.replace(IMAGE_TAG_RX, (m, p, q, v, q2, s) => p + q + target + q2 + s);
       if (newCi !== ci) actions.push({ action: 'update', file_path: '.gitlab-ci.yml', content: newCi });
-      // Overlays : best-effort, on n'inclut que ceux qui existent et changent.
+      // Overlays : découverts dynamiquement puis bumpés (newTag + APP_VERSION).
+      // On n'inclut au commit que ceux qui portent vraiment la version (donc pas
+      // le kustomization de base, qui n'a pas de newTag).
       let overlaysTouched = 0;
-      for (const path of OVERLAY_PATHS) {
+      const overlayFiles = await findOverlays(prepBranch);
+      for (const path of overlayFiles) {
         const c = await readFile(path, prepBranch);
         if (c == null) continue;
         const nc = c.replace(/^(\s*newTag:\s*).*$/gm, `$1"${target}"`).replace(/^(\s*-\s+APP_VERSION=).*$/gm, `$1${target}`);
@@ -299,7 +314,7 @@
         toast('⚠️ MR non créée : ' + esc(txt) + '. Le commit, lui, est passé.'); prepCurTag = target; await loadMRs(); return;
       }
       const created = await mr.json();
-      toast(`🔀 MR !${created.iid} « release ${target} » ouverte → ${esc(DEFAULT_BRANCH)}${overlaysTouched ? ' · overlays sync' : ''}.`);
+      toast(`🔀 MR !${created.iid} « release ${target} » ouverte → ${esc(DEFAULT_BRANCH)} · ${overlaysTouched ? overlaysTouched + ' overlay(s) sync' : 'aucun overlay trouvé'}.`);
       prepCurTag = target; renderPrepTarget();
       await loadMRs();
       if (created.iid) selectMR(created.iid);
