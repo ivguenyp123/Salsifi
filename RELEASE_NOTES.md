@@ -1,5 +1,17 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.16.2 — 2026-07-23 · Hub — correctif : les repos de la mauvaise instance GitLab
+
+**Bug corrigé.** En se connectant à l'instance **community** (`scm.saas…`), les repos
+**premium** (`scm-premium.saas…`) apparaissaient — et inversement.
+
+- **Cause** : le cache des repos du hub était indexé sur `hub_cache_repos_<identifiant>`,
+  **sans l'instance GitLab**. Comme le même identifiant existe sur les deux instances, le
+  cache de l'une (TTL 1h) s'affichait sur l'autre avant le fetch live.
+- **Fix** : la clé de cache inclut désormais l'**hôte GitLab** :
+  `hub_cache_repos_<host>|<identifiant>`. Chaque instance a son cache isolé → on ne voit
+  que les repos de l'instance sur laquelle on est connecté.
+
 ## v1.16.1 — 2026-07-23 · Gouvernance Repo — correctif : le flux guidé ne s'arrête plus après Secrets
 
 **Régression corrigée.** En lançant plusieurs vérifications d'un coup (Secrets + Historique

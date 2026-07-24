@@ -19,7 +19,12 @@
 
         // ───── Repos : fetch + cache ───────────────────────────────────────
         function getCacheKey() {
-            return CACHE_KEY_PREFIX + auth.username;
+            // La clé DOIT inclure l'instance GitLab : le même identifiant existe sur
+            // community ET premium (scm / scm-premium). Sans l'hôte, le cache d'une
+            // instance réapparaissait sur l'autre (TTL 1h) → repos de la mauvaise
+            // instance affichés.
+            const host = (auth.gitlabUrl || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+            return CACHE_KEY_PREFIX + host + '|' + (auth.username || '');
         }
 
         function readCache() {
