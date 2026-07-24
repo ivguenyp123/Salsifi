@@ -402,6 +402,9 @@
             // Lien retour vers le hub
             document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
 
+            // Stratégie : description + défauts (avant loadExistingYaml, qui peut réécrire les flags)
+            onStrategyChange();
+
             // Charger le repo cible (nom + path)
             try {
                 const res = await glFetch(`/projects/${projectId}`);
@@ -591,6 +594,7 @@
 
         function generatePipeline() {
             const config = {
+                strategy: (document.getElementById('strategy') || {}).value || 'trunk',
                 appName: document.getElementById('appName').value || 'my-app',
                 capiref: document.getElementById('capiref').value || 'CAPIREF',
                 blockCode: document.getElementById('blockCode').value || 'block-code',
@@ -621,8 +625,138 @@
             document.getElementById('yamlSection').scrollIntoView({ behavior: 'smooth' });
         }
 
+        // ══════════════════════════════════════════════════════════════════
+        //  STRATÉGIES DE BRANCHEMENT
+        //  Le `include` + `variables` sont identiques ; ce qui change par
+        //  stratégie = le bloc `workflow:` + la matrice de `rules:` par job.
+        //  Noms de jobs alignés sur la toolchain LCL (fichier trunk de référence) :
+        //  initialize, build_app, build_docker, deploy_development, deploy_uat,
+        //  promote_staging (dev/staging), promote (stable/prod), deploy_production.
+        // ══════════════════════════════════════════════════════════════════
+        const PG_CTX = {
+            featureNonMain: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main"',
+            mrMain:         '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"',
+            mainPush:       '$CI_COMMIT_BRANCH == "main"',
+            feature:        '$CI_COMMIT_BRANCH =~ /^feature\\//',
+            mrDevelop:      '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"',
+            developPush:    '$CI_COMMIT_BRANCH == "develop"',
+            releasePush:    '$CI_COMMIT_BRANCH =~ /^release\\//',
+            hotfixPush:     '$CI_COMMIT_BRANCH =~ /^hotfix\\//',
+        };
+        const PG_ANTIDUP_TRUNK = '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CI_OPEN_MERGE_REQUESTS';
+        const PG_ANTIDUP_GITFLOW = '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "develop"';
+
+        const PG_STRATEGIES = {
+            trunk: {
+                label: 'Trunk-based',
+                desc: 'Une seule branche longue (main). Features courtes → MR sur main.',
+                defaults: { deployDev: true, deployUat: false, deployProd: true, promoteStaging: true, promoteStable: true },
+                matrix: [
+                    'feature/push -> initialize, build_app',
+                    'MR->main     -> initialize, build_app, build_docker, deploy_development',
+                    'main/push    -> promote_staging, promote (stable), deploy_production',
+                ],
+                workflow: [
+                    { if: PG_ANTIDUP_TRUNK, when: 'never', note: 'anti-doublon branch+MR' },
+                    { if: PG_CTX.featureNonMain },
+                    { if: PG_CTX.mrMain },
+                    { if: PG_CTX.mainPush },
+                ],
+                jobs: [
+                    ['initialize',         [PG_CTX.mrMain, PG_CTX.featureNonMain, PG_CTX.mainPush]],
+                    ['build_app',          [PG_CTX.mrMain, PG_CTX.featureNonMain]],
+                    ['build_docker',       [PG_CTX.mrMain]],
+                    ['deploy_development',  [PG_CTX.mrMain]],
+                    ['promote_staging',    [PG_CTX.mainPush]],
+                    ['promote',            [PG_CTX.mainPush]],
+                    ['deploy_production',  [PG_CTX.mainPush]],
+                ],
+            },
+            'feature-branching': {
+                label: 'Feature branching',
+                desc: 'main + branches feature. La MR valide jusqu’en UAT avant merge.',
+                defaults: { deployDev: true, deployUat: true, deployProd: true, promoteStaging: true, promoteStable: true },
+                matrix: [
+                    'feature/push -> initialize, build_app',
+                    'MR->main     -> initialize, build_app, build_docker, deploy_development, deploy_uat',
+                    'main/push    -> promote_staging, promote (stable), deploy_production',
+                ],
+                workflow: [
+                    { if: PG_ANTIDUP_TRUNK, when: 'never', note: 'anti-doublon branch+MR' },
+                    { if: PG_CTX.featureNonMain },
+                    { if: PG_CTX.mrMain },
+                    { if: PG_CTX.mainPush },
+                ],
+                jobs: [
+                    ['initialize',         [PG_CTX.mrMain, PG_CTX.featureNonMain, PG_CTX.mainPush]],
+                    ['build_app',          [PG_CTX.mrMain, PG_CTX.featureNonMain]],
+                    ['build_docker',       [PG_CTX.mrMain]],
+                    ['deploy_development',  [PG_CTX.mrMain]],
+                    ['deploy_uat',          [PG_CTX.mrMain]],
+                    ['promote_staging',    [PG_CTX.mainPush]],
+                    ['promote',            [PG_CTX.mainPush]],
+                    ['deploy_production',  [PG_CTX.mainPush]],
+                ],
+            },
+            gitflow: {
+                label: 'GitFlow',
+                desc: 'main + develop + release/* + hotfix/*. Promotion multi-étages.',
+                defaults: { deployDev: true, deployUat: true, deployProd: true, promoteStaging: true, promoteStable: true },
+                matrix: [
+                    'feature/* push   -> initialize, build_app',
+                    'MR->develop      -> initialize, build_app, build_docker, deploy_development',
+                    'develop push     -> build_docker, deploy_development, promote_staging',
+                    'release/* push   -> build_docker, deploy_uat, promote_staging',
+                    'main push        -> promote (stable), deploy_production',
+                    'hotfix/* push    -> build_docker, promote (stable), deploy_production',
+                ],
+                workflow: [
+                    { if: PG_ANTIDUP_GITFLOW, when: 'never', note: 'anti-doublon branch+MR' },
+                    { if: PG_CTX.feature },
+                    { if: PG_CTX.mrDevelop },
+                    { if: PG_CTX.developPush },
+                    { if: PG_CTX.releasePush },
+                    { if: PG_CTX.mrMain },
+                    { if: PG_CTX.hotfixPush },
+                    { if: PG_CTX.mainPush },
+                ],
+                jobs: [
+                    ['initialize',         [PG_CTX.feature, PG_CTX.mrDevelop, PG_CTX.developPush, PG_CTX.releasePush, PG_CTX.hotfixPush, PG_CTX.mainPush]],
+                    ['build_app',          [PG_CTX.feature, PG_CTX.mrDevelop, PG_CTX.releasePush, PG_CTX.hotfixPush]],
+                    ['build_docker',       [PG_CTX.mrDevelop, PG_CTX.developPush, PG_CTX.releasePush, PG_CTX.hotfixPush]],
+                    ['deploy_development',  [PG_CTX.mrDevelop, PG_CTX.developPush]],
+                    ['deploy_uat',          [PG_CTX.releasePush]],
+                    ['promote_staging',    [PG_CTX.developPush, PG_CTX.releasePush]],
+                    ['promote',            [PG_CTX.mainPush, PG_CTX.hotfixPush]],
+                    ['deploy_production',  [PG_CTX.mainPush, PG_CTX.hotfixPush]],
+                ],
+            },
+        };
+
+        // Sélecteur de stratégie : met à jour la description + la matrice affichée,
+        // et pré-coche les défauts d'environnement/promote propres à la stratégie.
+        function onStrategyChange() {
+            const sel = document.getElementById('strategy');
+            const strat = PG_STRATEGIES[sel && sel.value] || PG_STRATEGIES.trunk;
+            const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const desc = document.getElementById('strategyDesc');
+            if (desc) {
+                desc.innerHTML = '🌳 <strong>' + esc(strat.label) + '</strong> — ' + esc(strat.desc)
+                    + '<div style="margin-top:8px;font-family:var(--font-mono,monospace);font-size:11px;line-height:1.6;opacity:.85">'
+                    + strat.matrix.map(m => esc(m)).join('<br>') + '</div>';
+            }
+            const d = strat.defaults;
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+            set('deployDev', d.deployDev);
+            set('deployUat', d.deployUat);
+            set('deployProd', d.deployProd);
+            set('promoteStaging', d.promoteStaging);
+            set('promoteStable', d.promoteStable);
+        }
+
         function buildYaml(config) {
             const imageTag = config.imageTag || '1.0.0';
+            const strat = PG_STRATEGIES[config.strategy] || PG_STRATEGIES.trunk;
 
             let yaml = `include:
   - project: "lcl/commun/devops/ci-cd"
@@ -659,18 +793,32 @@ variables:
   DEPLOY_TO_UAT: "${config.deployUat}"
   DEPLOY_TO_PROD: "${config.deployProd}"
 
-# Deploy rules
-deploy:
+# =========================================================
+# WORKFLOW — contextes actifs + garde anti-duplicate pipelines
+# Stratégie : ${strat.label}
+# =========================================================
+workflow:
   rules:
-    # Vos règles supplémentaires
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-
-# Docker rules
-build_docker:
-  rules:
-    # Vos règles supplémentaires
-    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
 `;
+            for (const r of strat.workflow) {
+                yaml += `    - if: '${r.if}'`;
+                if (r.note) yaml += `   # ${r.note}`;
+                yaml += `\n`;
+                if (r.when) yaml += `      when: ${r.when}\n`;
+            }
+
+            yaml += `
+# =========================================================
+# OVERRIDES DE RÈGLES PAR JOB — flow « ${strat.label} »
+# Matrice :
+`;
+            for (const line of strat.matrix) yaml += `#   ${line}\n`;
+            yaml += `# =========================================================\n`;
+
+            for (const [job, conds] of strat.jobs) {
+                yaml += `\n${job}:\n  rules:\n`;
+                for (const c of conds) yaml += `    - if: '${c}'\n`;
+            }
 
             return yaml;
         }

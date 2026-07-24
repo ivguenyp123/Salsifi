@@ -1,5 +1,24 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v1.17.0 — 2026-07-24 · Pipeline Generator — nouveau format toolchain + stratégies de branchement
+
+Le générateur produit désormais le **nouveau format de toolchain appelante** (bloc
+`workflow:` + matrice de `rules:` par job), piloté par une **stratégie de branchement**.
+
+- **Sélecteur de stratégie** : `Trunk-based` · `Feature branching` · `GitFlow`. Le
+  `include` + `variables` restent identiques ; ce qui change = le `workflow:` + les
+  `rules:` par job (`initialize`, `build_app`, `build_docker`, `deploy_development`,
+  `deploy_uat`, `promote_staging`, `promote`, `deploy_production`).
+- **Trunk** reproduit **fidèlement** le fichier de référence (mêmes jobs, mêmes contextes,
+  garde anti-doublon branch+MR).
+- Choisir une stratégie **pré-coche** ses défauts (`DEPLOY_TO_*`, promotes) et affiche sa
+  **matrice** contexte→jobs.
+- Matrices (défauts, ajustables — c'est piloté par données) :
+  - **Feature branching** : la MR→main valide jusqu'en **UAT** avant merge.
+  - **GitFlow** : `develop`→DEV, `release/*`→UAT, `main`→PROD, `hotfix/*`→prod fast-path,
+    promotion multi-étages (`promote_staging` en pré-prod, `promote` en stable/prod).
+- Les 3 stratégies génèrent du **YAML valide** (vérifié).
+
 ## v1.16.2 — 2026-07-23 · Hub — correctif : les repos de la mauvaise instance GitLab
 
 **Bug corrigé.** En se connectant à l'instance **community** (`scm.saas…`), les repos

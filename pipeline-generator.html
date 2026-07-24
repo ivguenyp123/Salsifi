@@ -73,6 +73,20 @@
             </div>
         </div>
 
+        <!-- Stratégie de branchement -->
+        <div class="card">
+            <h2 class="card-title">🌳 Stratégie de branchement</h2>
+            <div class="form-group">
+                <label for="strategy" class="required">Flow du dépôt</label>
+                <select id="strategy" onchange="onStrategyChange()">
+                    <option value="trunk">Trunk-based</option>
+                    <option value="feature-branching">Feature branching</option>
+                    <option value="gitflow">GitFlow</option>
+                </select>
+            </div>
+            <div class="helper-text" id="strategyDesc" style="margin-top: 10px;"></div>
+        </div>
+
         <!-- Configuration de base -->
         <div class="card">
             <h2 class="card-title">📋 Configuration de base</h2>
