@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valider & livrer — Maquette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(60% 50% at 15% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 90% 10%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:16px;padding:22px 0 12px}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:22px}
+header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.mock-badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
+.svc{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:8px 13px;font-size:13px;font-weight:600}
+.svc .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+
+.layout{display:grid;grid-template-columns:400px 1fr;gap:20px;margin-top:8px}
+@media(max-width:880px){.layout{grid-template-columns:1fr}}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(20px)}
+.pane-h{padding:16px 18px 8px;display:flex;align-items:center;gap:10px}
+.pane-h h3{font-family:var(--fd);font-size:15px;font-weight:700}
+.count{font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.13);padding:2px 9px;border-radius:20px}
+.sortby{margin-left:auto;font-size:11px;color:var(--tm);display:flex;align-items:center;gap:6px}
+.sortby b{color:var(--ts)}
+
+/* author group */
+.grp{padding:6px 10px 10px}
+.grp-h{display:flex;align-items:center;gap:9px;padding:10px 8px 8px}
+.ava{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#1a1030}
+.grp-h .nm{font-size:13px;font-weight:700}
+.grp-h .ct{margin-left:auto;font-size:11px;color:var(--tm)}
+.mritem{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;transition:.14s}
+.mritem:hover{background:rgba(255,255,255,.03)}
+.mritem.sel{background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(124,92,252,.06));border-color:rgba(45,212,191,.35)}
+.mritem .num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--accent)}
+.mritem .ti{flex:1;min-width:0}
+.mritem .tt{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mritem .ts{font-size:11px;color:var(--tm);font-family:var(--fm);margin-top:1px}
+.mini{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.dot2{width:8px;height:8px;border-radius:50%}
+.dot2.pipe-ok{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.dot2.pipe-run{background:var(--info);animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.appmini{font-size:10px;font-weight:700;color:var(--warn)}
+.appmini.ok{color:var(--ok)}
+
+/* detail */
+.detail{padding:22px}
+.d-empty{color:var(--tm);font-size:13px;text-align:center;padding:60px 0}
+.d-top{display:flex;align-items:flex-start;gap:12px}
+.d-num{font-family:var(--fm);font-size:14px;font-weight:800;color:var(--accent)}
+.d-title{font-family:var(--fd);font-size:19px;font-weight:800;line-height:1.2}
+.d-meta{font-size:12.5px;color:var(--ts);margin-top:6px;font-family:var(--fm)}
+.d-meta .b{color:var(--tp)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;margin:12px 8px 0 0}
+.pill.ok{background:rgba(52,211,153,.13);color:var(--ok)} .pill.dev{background:rgba(96,165,250,.13);color:var(--info)}
+.pill.run{background:rgba(96,165,250,.13);color:var(--info)}
+.box{margin-top:18px;padding:15px 16px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
+.box .bh{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
+.willship{font-size:14px;font-weight:600}
+.willship code{font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:6px;color:var(--deliver)}
+.willship .arrow{color:var(--tm)}
+.diff{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.diff .f{font-family:var(--fm);font-size:12px;color:var(--ts);display:flex;gap:8px;align-items:center}
+.diff .f .plus{color:var(--ok)} .diff .f .minus{color:var(--err)}
+.diff .f.key{color:var(--tp);font-weight:600}
+.appr{display:flex;align-items:center;gap:10px;margin-top:4px}
+.appr .dots{display:flex;gap:5px}
+.appr .d{width:11px;height:11px;border-radius:50%;background:var(--warn);opacity:.28}
+.appr .d.on{opacity:1}
+.appr .txt{font-size:13px;font-weight:600;color:var(--ts)}
+.appr .txt b{color:var(--warn)}
+
+.actions{display:flex;gap:10px;margin-top:20px}
+.btn{all:unset;cursor:pointer;font-weight:700;font-size:13.5px;padding:12px 18px;border-radius:12px;transition:.15s;text-align:center}
+.btn.ghost{border:1px solid var(--line2);color:var(--ts)} .btn.ghost:hover{background:var(--bg-card-h);color:var(--tp)}
+.btn.ship{flex:1;background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.ship:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.note{margin-top:14px;font-size:11.5px;color:var(--tm);border-left:2px solid var(--warn);padding-left:12px;line-height:1.55}
+.note b{color:var(--warn)}
+.shipped{margin-top:18px;padding:16px;border-radius:14px;background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.32)}
+.shipped .st{font-weight:800;color:var(--ok);font-size:15px;margin-bottom:6px}
+.shipped .sl{font-size:13px;color:var(--ts);margin:3px 0;display:flex;gap:8px;align-items:center}
+.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:24px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">✅</div>
+    <div>
+      <h1>Valider &amp; livrer</h1>
+      <div class="sub">Les MR à valider. Tu cliques, tu regardes, tu valides → ça part.</div>
+    </div>
+    <div class="svc"><span class="dot"></span> platformengineering · <span style="color:var(--tm)">trunk</span></div>
+    <div class="mock-badge">◆ MAQUETTE — données fictives</div>
+  </header>
+
+  <div class="layout">
+    <!-- liste -->
+    <div class="card">
+      <div class="pane-h">
+        <h3>🔀 À valider</h3><span class="count" id="count">3</span>
+        <span class="sortby">trié par · <b>auteur</b> ▾</span>
+      </div>
+      <div id="list"></div>
+    </div>
+    <!-- detail -->
+    <div class="card">
+      <div class="detail" id="detail"><div class="d-empty">← Clique une MR pour l'afficher</div></div>
+    </div>
+  </div>
+
+  <div class="foot">Maquette statique · aucune donnée réelle · aucune action exécutée · Salsi DevOps Hub</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const AUTHORS = {
+  'j.dupont':{init:'JD',color:'#a78bfa'},
+  'a.bernard':{init:'AB',color:'#2dd4bf'},
+  'c.martin':{init:'CM',color:'#fbbf24'},
+};
+const MRS = [
+  {num:'!44', author:'j.dupont', title:'release 2.1.0', branch:'feature/iban-tile', target:'main',
+   at:'il y a 2 h', plus:312, minus:18, pipeline:'ok', dev:true, appr:1, need:2, ships:'2.1.0',
+   files:[{f:'.gitlab-ci.yml',p:1,m:1,key:'IMAGE_TAG 2.0.5 → 2.1.0'},{f:'Manifests/overlays/development/kustomization.yaml',p:2,m:2,key:'newTag 2.1.0'},{f:'src/tiles/iban.tsx',p:284,m:12},{f:'src/tiles/index.ts',p:25,m:3}]},
+  {num:'!46', author:'j.dupont', title:'fix: libellé montant EUR', branch:'fix/montant-eur', target:'main',
+   at:'il y a 25 min', plus:8, minus:4, pipeline:'ok', dev:true, appr:2, need:2, ships:'2.0.6',
+   files:[{f:'.gitlab-ci.yml',p:1,m:1,key:'IMAGE_TAG 2.0.5 → 2.0.6'},{f:'src/format/money.ts',p:7,m:3}]},
+  {num:'!43', author:'a.bernard', title:'fix: timeout appel CBS', branch:'feature/cbs-timeout', target:'main',
+   at:'il y a 1 j', plus:54, minus:12, pipeline:'run', dev:false, appr:0, need:2, ships:'—',
+   files:[{f:'src/clients/cbs.ts',p:40,m:9},{f:'src/config/timeouts.ts',p:14,m:3}]},
+];
+let selected=null; const shipped=new Set();
+
+function renderList(){
+  const groups={};
+  MRS.forEach(m=>{ if(shipped.has(m.num))return; (groups[m.author]=groups[m.author]||[]).push(m); });
+  const authors=Object.keys(groups);
+  document.getElementById('count').textContent = MRS.filter(m=>!shipped.has(m.num)).length;
+  document.getElementById('list').innerHTML = authors.map(a=>{
+    const A=AUTHORS[a];
+    return `<div class="grp"><div class="grp-h"><div class="ava" style="background:${A.color}">${A.init}</div>
+      <div class="nm">${a}</div><div class="ct">${groups[a].length} MR</div></div>`
+      + groups[a].map(m=>{
+        const okAppr = m.appr>=m.need;
+        return `<div class="mritem ${selected===m.num?'sel':''}" onclick="select('${m.num}')">
+          <div class="num">${m.num}</div>
+          <div class="ti"><div class="tt">${m.title}</div><div class="ts">${m.branch} → ${m.target}</div></div>
+          <div class="mini"><span class="dot2 pipe-${m.pipeline}"></span><span class="appmini ${okAppr?'ok':''}">${m.appr}/${m.need}</span></div>
+        </div>`;
+      }).join('') + `</div>`;
+  }).join('');
+}
+function select(num){ selected=num; renderList(); renderDetail(); }
+function renderDetail(){
+  const m=MRS.find(x=>x.num===selected); const el=document.getElementById('detail');
+  if(!m){ el.innerHTML='<div class="d-empty">← Clique une MR pour l\'afficher</div>'; return; }
+  if(shipped.has(m.num)){ el.innerHTML=shippedView(m); return; }
+  const okAppr=m.appr>=m.need; const willBe=m.appr+1; const willOk=willBe>=m.need;
+  const dots=Array.from({length:m.need},(_,i)=>`<span class="d ${i<m.appr?'on':''}"></span>`).join('');
+  el.innerHTML=`
+    <div class="d-top"><div class="d-num">${m.num}</div>
+      <div><div class="d-title">${m.title}</div>
+        <div class="d-meta"><span class="b">${m.branch}</span> → <span class="b">${m.target}</span> · par ${m.author} · ${m.at}</div></div></div>
+    <div>
+      <span class="pill ${m.pipeline==='ok'?'ok':'run'}">${m.pipeline==='ok'?'✅ pipeline OK':'⏳ pipeline en cours'}</span>
+      ${m.dev?'<span class="pill dev">🔧 déployée en dev</span>':''}
+      <span class="pill" style="background:rgba(255,255,255,.05);color:var(--ts)">+${m.plus} −${m.minus}</span>
+    </div>
+    <div class="box"><div class="bh">Ce que ça livre</div>
+      <div class="willship">${m.ships!=='—'?`<code>IMAGE_TAG ${m.ships}</code> <span class="arrow">→</span> <b style="color:var(--ok)">PROD</b> <span style="color:var(--tm);font-size:12px">(merge sur main = deploy_production)</span>`:'<span style="color:var(--tm)">Pas de bump de version dans cette MR — ne livre pas.</span>'}</div>
+    </div>
+    <div class="box"><div class="bh">Fichiers (${m.files.length})</div><div class="diff">
+      ${m.files.map(f=>`<div class="f ${f.key?'key':''}"><span>${f.key?'🏷️':'📄'}</span><span style="flex:1">${f.f}</span>${f.key?`<span style="color:var(--deliver);font-size:11px">${f.key}</span>`:`<span><span class="plus">+${f.p}</span> <span class="minus">−${f.m}</span></span>`}</div>`).join('')}
+    </div></div>
+    <div class="box"><div class="bh">Validation</div>
+      <div class="appr"><div class="dots">${dots}</div>
+        <div class="txt">${okAppr?'<b style="color:var(--ok)">Validée '+m.appr+'/'+m.need+'</b> — prête à livrer':'En attente : <b>'+m.appr+'/'+m.need+'</b> approbations'}</div></div>
+      ${!okAppr?`<div style="font-size:11.5px;color:var(--tm);margin-top:8px">Ton approbation → <b style="color:${willOk?'var(--ok)':'var(--warn)'}">${willBe}/${m.need}</b>${willOk?' → mergeable':' (il en faudra encore)'}</div>`:''}
+    </div>
+    <div class="actions">
+      <button class="btn ghost" onclick="approveOnly('${m.num}')">👍 Approuver seulement</button>
+      <button class="btn ship" ${(m.pipeline!=='ok'||m.ships==='—')?'style="opacity:.45;pointer-events:none"':''} onclick="shipIt('${m.num}')">
+        ✅ Valider &amp; livrer${m.ships!=='—'?' — '+m.ships:''} 🚀</button>
+    </div>
+    <div class="note">⚠️ <b>Valider &amp; livrer</b> = approuve <b>et</b> merge en un geste. Le merge sur <code style="font-family:var(--fm)">main</code> déclenche la pipeline → prod. Si la MR exige ${m.need} approbations, ton clic compte comme une, et le merge ne part que quand les règles sont satisfaites.</div>`;
+}
+function shippedView(m){
+  return `<div class="d-top"><div class="d-num">${m.num}</div><div><div class="d-title">${m.title}</div>
+    <div class="d-meta">${m.branch} → ${m.target}</div></div></div>
+    <div class="shipped"><div class="st">🚀 Livraison lancée</div>
+      <div class="sl"><span>✅</span> MR approuvée (${m.need}/${m.need}) &amp; mergée sur <code style="font-family:var(--fm)">main</code></div>
+      <div class="sl"><span>⚙️</span> Pipeline <b style="font-family:var(--fm)">#1899</b> · <code style="font-family:var(--fm)">promote_stable</code> + <code style="font-family:var(--fm)">deploy_production</code> en cours</div>
+      <div class="sl"><span>📍</span> <b>${m.ships}</b> en route vers <b style="color:var(--ok)">PROD</b> — je te préviens quand c'est en ligne.</div>
+    </div>`;
+}
+let toastT;
+function toast(msg){ const el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),3400); }
+function approveOnly(num){ const m=MRS.find(x=>x.num===num); if(m.appr<m.need)m.appr++; renderList(); renderDetail(); toast('👍 <b>'+num+'</b> approuvée ('+m.appr+'/'+m.need+') — <i>pas mergée, ça ne livre pas.</i>'); }
+function shipIt(num){ const m=MRS.find(x=>x.num===num); m.appr=m.need; shipped.add(num); renderList(); renderDetail(); toast('🚀 <b>'+num+'</b> validée &amp; mergée → <b>'+m.ships+'</b> part en prod. <i>(simulé)</i>'); }
+
+renderList();
+</script>
+</body>
+</html>
