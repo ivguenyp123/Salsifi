@@ -147,6 +147,23 @@ textarea::placeholder{color:var(--tm)}
       <span style="margin-left:auto;font-size:11.5px;color:var(--deliver);font-weight:700">→ devient la release note</span>
     </div>
     <div id="cl-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+      <button class="btn ghost" onclick="toggleRN()" id="rnbtn">📄 Aperçu de la release note</button>
+      <span style="font-size:11px;color:var(--tm)">publiée dans le module <b style="color:var(--ts)">Release Notes</b> + GitLab Release au merge</span>
+    </div>
+    <div id="rnprev" style="display:none;margin-top:12px;padding:14px 16px;border-radius:12px;background:#0a0716;border:1px solid var(--line);font-family:var(--fm);font-size:12px;line-height:1.75;color:#c9c0e8">
+<span style="color:var(--deliver)"># platformengineering — 2.1.0</span>
+<span style="color:var(--tm)">_généré le 24/07/2026 · depuis 2.0.5_</span>
+
+<span style="color:var(--warn)">## ✨ Nouveautés</span>
+- feat: nouvelle tuile IBAN <span style="color:var(--tm)">(!44 · j.dupont)</span>
+
+<span style="color:var(--warn)">## 🐛 Corrections</span>
+- fix: timeout appel CBS <span style="color:var(--tm)">(!43 · a.bernard)</span>
+
+<span style="color:var(--warn)">## 🔧 Technique</span>
+- chore: bump deps sécu <span style="color:var(--tm)">(!41 · c.martin)</span>
+    </div>
   </div>
 
   <!-- 1b. Nouvelle branche (raccourci optionnel) -->
@@ -166,7 +183,10 @@ textarea::placeholder{color:var(--tm)}
       <div><div style="font-size:11px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.05em">uat</div><div style="font-family:var(--fm);font-weight:700;font-size:17px">2.0.5</div></div>
       <div><div style="font-size:11px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.05em">prod</div><div style="font-family:var(--fm);font-weight:700;font-size:17px" id="prodver">2.0.5</div><div style="font-size:10.5px;color:var(--tm)">livré il y a 3 h · par c.martin</div></div>
     </div>
-    <button class="btn del" onclick="rollback()" title="re-livrer la version précédente" id="rbbtn">↩️ Rollback prod → 2.0.4</button>
+    <div style="text-align:right">
+      <button class="btn ghost" onclick="rollback()" id="rbbtn" style="border-color:rgba(248,113,113,.35);color:var(--err)">↩️ Préparer un rollback…</button>
+      <div style="font-size:10.5px;color:var(--tm);margin-top:5px">🔒 ouvre une MR — validée + mergée comme une livraison</div>
+    </div>
   </div>
   <div id="rbpanel"></div>
 
@@ -228,10 +248,12 @@ function rollback(){document.getElementById('rbpanel').innerHTML=`<div class="ca
     ✏️ <code style="font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:5px">IMAGE_TAG 2.0.5 → 2.0.4</code> — l'image 2.0.4 est déjà au registre (<code style="font-family:var(--fm)">promote_stable</code> l'y a poussée)<br>
     🔀 MR <code style="font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:5px">rollback/2.0.4 → main</code> · le merge redéploie 2.0.4 en prod<br>
     <span style="color:var(--ok)">✅ La toolchain n'est PAS modifiée</span> — mêmes <code style="font-family:var(--fm)">rules</code>, seule la valeur <code style="font-family:var(--fm)">IMAGE_TAG</code> change.</div>
+  <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);font-size:12px;color:var(--ts);line-height:1.7">🔒 <b style="color:var(--warn)">Ce bouton ne rollback rien tout seul.</b> Il ouvre une <b>MR de rollback</b> soumise aux mêmes gardes que toute livraison prod : <b>validation 2/2</b> + <b>merge sur <code style="font-family:var(--fm)">main</code> protégée</b>. Seul quelqu'un avec les droits de merge peut l'appliquer.</div>
   <div style="margin-top:14px;display:flex;gap:10px">
     <button class="btn ship" onclick="rollbackGo()">Créer la MR de rollback</button>
     <button class="btn ghost" onclick="document.getElementById('rbpanel').innerHTML=''">Annuler</button></div></div>`;}
-function rollbackGo(){document.getElementById('rbpanel').innerHTML='';toast('↩️ MR <b>!48 « rollback/2.0.4 »</b> ouverte → main. Valide + merge = prod revient en <b>2.0.4</b> <i>(simulé)</i>');}
+function rollbackGo(){document.getElementById('rbpanel').innerHTML='';toast('↩️ MR <b>!48 « rollback/2.0.4 »</b> ouverte → main. Doit être <b>validée + mergée</b> (droits requis) pour revenir en <b>2.0.4</b> <i>(simulé)</i>');}
+function toggleRN(){const p=document.getElementById('rnprev'),b=document.getElementById('rnbtn');const on=p.style.display==='none';p.style.display=on?'block':'none';b.textContent=on?'📄 Masquer la release note':'📄 Aperçu de la release note';}
 function prepare(){const t=tgt();const src=document.getElementById('srcbranch').value;const br=src==='__new__'?'release/'+t:src;toast('✏️ overlay sync · 🔀 MR <b>!47 « release '+t+' »</b> · '+br+' → main <i>(simulé)</i>');}
 renderPrep();
 
