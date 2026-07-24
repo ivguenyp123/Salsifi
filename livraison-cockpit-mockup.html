@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livraison — Cockpit (maquette)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 15% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 90% 10%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:16px;padding:22px 0 8px}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:22px}
+header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.mock-badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
+.svc{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:8px 13px;font-size:13px;font-weight:600}
+.svc .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.section-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:22px 4px 12px;display:flex;align-items:center;gap:8px}
+.section-title .prio{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.04em}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(20px)}
+
+/* PREPARE (compact) */
+.prep{background:linear-gradient(135deg,rgba(45,212,191,.10),rgba(124,92,252,.06));border:1px solid rgba(45,212,191,.28);display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.prep .grp{display:flex;flex-direction:column;gap:5px}
+.prep .k{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+select{font-family:var(--fm);font-size:13px;font-weight:600;background:var(--bg-card);color:var(--tp);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;cursor:pointer}
+.prep .ver{font-family:var(--fd);font-size:26px;font-weight:800;color:var(--deliver);line-height:1}
+.bumps{display:flex;gap:6px}
+.bumps button{all:unset;cursor:pointer;font-size:11px;font-weight:700;padding:6px 11px;border-radius:9px;border:1px solid var(--line);color:var(--ts)}
+.bumps button.on,.bumps button:hover{border-color:var(--deliver);color:var(--deliver);background:rgba(45,212,191,.08)}
+.gobtn{all:unset;cursor:pointer;margin-left:auto;background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800;font-size:13.5px;padding:12px 18px;border-radius:12px;transition:.15s}
+.gobtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+
+/* MR section */
+.filter{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.filter .k{font-size:12px;color:var(--tm);font-weight:600}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:18px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.mrlist{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto}
+.mri{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.02);transition:.14s}
+.mri:hover{background:var(--bg-card-h)}
+.mri.sel{background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(124,92,252,.06));border-color:rgba(45,212,191,.4)}
+.mri .num{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--accent)}
+.mri .ti{flex:1;min-width:0}
+.mri .tt{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mri .ts{font-size:11px;color:var(--tm);margin-top:1px}
+.ava{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:9.5px;font-weight:800;color:#160f2e;flex-shrink:0}
+.dot2{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pipe-ok{background:var(--ok);box-shadow:0 0 6px var(--ok)} .pipe-run{background:var(--info);animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.detail .d-empty{color:var(--tm);text-align:center;padding:60px 0;font-size:13px}
+.d-title{font-family:var(--fd);font-size:18px;font-weight:800}
+.d-meta{font-size:12px;color:var(--ts);font-family:var(--fm);margin-top:5px}
+.pill{display:inline-flex;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;margin:10px 7px 0 0}
+.pill.ok{background:rgba(52,211,153,.13);color:var(--ok)} .pill.dev{background:rgba(96,165,250,.13);color:var(--info)}
+.pill.run{background:rgba(96,165,250,.13);color:var(--info)} .pill.g{background:rgba(255,255,255,.05);color:var(--ts)}
+.box{margin-top:15px;padding:14px 15px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
+.box .bh{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
+.willship code{font-family:var(--fm);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:6px;color:var(--deliver)}
+.f{font-family:var(--fm);font-size:12px;color:var(--ts);display:flex;gap:8px;align-items:center;padding:2px 0}
+.f.key{color:var(--tp);font-weight:600} .f .plus{color:var(--ok)} .f .minus{color:var(--err)}
+.appr{display:flex;align-items:center;gap:9px}
+.appr .d{width:10px;height:10px;border-radius:50%;background:var(--warn);opacity:.28}
+.appr .d.on{opacity:1} .appr .txt{font-size:12.5px;font-weight:600;color:var(--ts)}
+
+.roles{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+.role{flex:1;min-width:210px;padding:13px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.role .rl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tm);margin-bottom:9px}
+.role .btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{all:unset;cursor:pointer;font-weight:700;font-size:12.5px;padding:10px 14px;border-radius:11px;transition:.15s}
+.btn.ghost{border:1px solid var(--line2);color:var(--ts)} .btn.ghost:hover{background:var(--bg-card-h);color:var(--tp)}
+.btn.ship{background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800}
+.btn.ship:hover{filter:brightness(1.08)}
+.btn.del{color:var(--err);border:1px solid rgba(248,113,113,.3)} .btn.del:hover{background:rgba(248,113,113,.1)}
+.btn:disabled,.btn.off{opacity:.4;pointer-events:none}
+
+/* TRAIN + LOGS */
+.train{display:flex;align-items:center;gap:0;margin:6px 0 14px;overflow-x:auto}
+.stg{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:96px}
+.stg .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:15px;border:2px solid var(--line2);background:rgba(255,255,255,.03);color:var(--tm)}
+.stg.done .ic{border-color:var(--ok);color:var(--ok);background:rgba(52,211,153,.1)}
+.stg.run .ic{border-color:var(--info);color:var(--info);animation:pulse 1.1s infinite}
+.stg .nm{font-size:10.5px;color:var(--tm);font-weight:600;text-align:center}
+.stg.done .nm,.stg.run .nm{color:var(--ts)}
+.rail{flex:1;height:2px;background:var(--line);min-width:18px}
+.rail.done{background:var(--ok)}
+.console{background:#0a0716;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:var(--fm);font-size:11.5px;line-height:1.7;max-height:220px;overflow:auto;color:#c9c0e8}
+.console .l{white-space:pre-wrap}
+.console .ts{color:var(--tm)} .console .ok{color:var(--ok)} .console .info{color:var(--info)} .console .warn{color:var(--warn)}
+.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:24px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🚚</div>
+    <div><h1>Livraison</h1><div class="sub">Prépare ta MR · valide · livre · regarde le train partir.</div></div>
+    <div class="svc"><span class="dot"></span> platformengineering · <span style="color:var(--tm)">trunk</span></div>
+    <div class="mock-badge">◆ MAQUETTE — données fictives</div>
+  </header>
+
+  <!-- 1. PRÉPARER (priorité) -->
+  <div class="section-title">Préparer ma livraison <span class="prio">priorité</span></div>
+  <div class="card prep">
+    <div class="grp"><span class="k">branche</span>
+      <select id="srcbranch" onchange="renderPrep()">
+        <option value="__new__">＋ release/…</option>
+        <option value="feature/iban-tile">feature/iban-tile</option>
+        <option value="fix/montant-eur">fix/montant-eur</option>
+      </select>
+    </div>
+    <div style="color:var(--tm)">→ <b style="font-family:var(--fm);color:var(--tp)">main</b></div>
+    <div class="grp"><span class="k">version</span><div class="ver" id="pv">2.1.0</div></div>
+    <div class="grp"><span class="k">incrément</span>
+      <div class="bumps"><button onclick="setBump('major')" id="b-major">MAJ</button><button onclick="setBump('minor')" id="b-minor" class="on">MIN</button><button onclick="setBump('patch')" id="b-patch">PAT</button></div>
+    </div>
+    <button class="gobtn" onclick="prepare()">✏️ Overlay + 🔀 Créer la MR</button>
+  </div>
+
+  <!-- 2. MR DU REPO -->
+  <div class="section-title">MR du repo</div>
+  <div class="filter">
+    <span class="k">Filtrer par créateur :</span>
+    <select id="who" onchange="renderList()">
+      <option value="">Tous</option>
+      <option value="j.dupont">j.dupont</option>
+      <option value="a.bernard">a.bernard</option>
+      <option value="c.martin">c.martin</option>
+    </select>
+    <span class="k" style="margin-left:auto" id="mrcount"></span>
+  </div>
+
+  <div class="grid">
+    <div class="mrlist" id="list"></div>
+    <div class="card detail" id="detail"><div class="d-empty">← Clique une MR pour l'ouvrir</div></div>
+  </div>
+
+  <div class="foot">Maquette statique · aucune donnée réelle · aucune action exécutée · Salsi DevOps Hub · s'appuie sur mr-reviewer (liste + diff)</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const A={'j.dupont':{i:'JD',c:'#a78bfa'},'a.bernard':{i:'AB',c:'#2dd4bf'},'c.martin':{i:'CM',c:'#fbbf24'}};
+const ME='j.dupont';
+const MRS=[
+ {num:'!44',author:'j.dupont',title:'release 2.1.0',branch:'feature/iban-tile',at:'2 h',plus:312,minus:18,pipeline:'ok',dev:true,appr:1,need:2,ships:'2.1.0',
+  files:[{f:'.gitlab-ci.yml',key:'IMAGE_TAG 2.0.5 → 2.1.0'},{f:'…/development/kustomization.yaml',key:'newTag 2.1.0'},{f:'src/tiles/iban.tsx',p:284,m:12},{f:'src/tiles/index.ts',p:25,m:3}]},
+ {num:'!46',author:'j.dupont',title:'fix: libellé montant EUR',branch:'fix/montant-eur',at:'25 min',plus:8,minus:4,pipeline:'ok',dev:true,appr:2,need:2,ships:'2.0.6',
+  files:[{f:'.gitlab-ci.yml',key:'IMAGE_TAG 2.0.5 → 2.0.6'},{f:'src/format/money.ts',p:7,m:3}]},
+ {num:'!43',author:'a.bernard',title:'fix: timeout appel CBS',branch:'feature/cbs-timeout',at:'1 j',plus:54,minus:12,pipeline:'run',dev:false,appr:0,need:2,ships:'—',
+  files:[{f:'src/clients/cbs.ts',p:40,m:9},{f:'src/config/timeouts.ts',p:14,m:3}]},
+ {num:'!41',author:'c.martin',title:'chore: bump deps sécu',branch:'chore/deps',at:'3 j',plus:120,minus:120,pipeline:'ok',dev:true,appr:2,need:2,ships:'2.0.5',
+  files:[{f:'.gitlab-ci.yml',key:'IMAGE_TAG 2.0.4 → 2.0.5'},{f:'package-lock.json',p:110,m:110}]},
+];
+let sel=null, live=null;
+
+// PREPARE
+const CUR=[2,0,5]; let bump='minor';
+function tgt(){let c=CUR.slice();bump==='major'?(c[0]++,c[1]=0,c[2]=0):bump==='minor'?(c[1]++,c[2]=0):c[2]++;return c.join('.');}
+function setBump(k){bump=k;['major','minor','patch'].forEach(x=>document.getElementById('b-'+x).classList.toggle('on',x===k));renderPrep();}
+function renderPrep(){document.getElementById('pv').textContent=tgt();}
+function prepare(){const t=tgt();const src=document.getElementById('srcbranch').value;const br=src==='__new__'?'release/'+t:src;toast('✏️ overlay sync · 🔀 MR <b>!47 « release '+t+' »</b> · '+br+' → main <i>(simulé)</i>');}
+renderPrep();
+
+// LIST
+function renderList(){
+  const w=document.getElementById('who').value;
+  const rows=MRS.filter(m=>!w||m.author===w);
+  document.getElementById('mrcount').textContent=rows.length+' MR ouvertes';
+  document.getElementById('list').innerHTML=rows.map(m=>{
+    const av=A[m.author];const ok=m.appr>=m.need;
+    return `<div class="mri ${sel===m.num?'sel':''}" onclick="select('${m.num}')">
+      <div class="ava" style="background:${av.c}">${av.i}</div>
+      <div class="ti"><div class="tt">${m.num} · ${m.title}</div><div class="ts">${m.author} · ${m.branch} · il y a ${m.at}</div></div>
+      <span class="dot2 pipe-${m.pipeline}" title="pipeline"></span>
+      <span style="font-size:10.5px;font-weight:700;color:${ok?'var(--ok)':'var(--warn)'}">${m.appr}/${m.need}</span></div>`;
+  }).join('')||'<div style="color:var(--tm);padding:20px;text-align:center">Aucune MR pour ce créateur.</div>';
+}
+function select(n){sel=n;live=null;renderList();renderDetail();}
+
+function renderDetail(){
+  const m=MRS.find(x=>x.num===sel);const el=document.getElementById('detail');
+  if(!m){el.innerHTML='<div class="d-empty">← Clique une MR pour l\'ouvrir</div>';return;}
+  const mine=m.author===ME;const ok=m.appr>=m.need;const canShip=ok&&m.pipeline==='ok'&&m.ships!=='—';
+  const dots=Array.from({length:m.need},(_,i)=>`<span class="d ${i<m.appr?'on':''}"></span>`).join('');
+  if(live===m.num){el.innerHTML=trainView(m);return;}
+  el.innerHTML=`
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <span style="font-family:var(--fm);font-weight:800;color:var(--accent)">${m.num}</span>
+      <div><div class="d-title">${m.title}</div><div class="d-meta">${m.branch} → main · par ${m.author} · il y a ${m.at}</div></div></div>
+    <div>
+      <span class="pill ${m.pipeline==='ok'?'ok':'run'}">${m.pipeline==='ok'?'✅ pipeline OK':'⏳ pipeline…'}</span>
+      ${m.dev?'<span class="pill dev">🔧 déployée en dev</span>':''}
+      <span class="pill g">+${m.plus} −${m.minus}</span>
+      <span class="pill g">${mine?'🙋 la tienne':'👤 '+m.author}</span>
+    </div>
+    ${m.ships!=='—'?`<div class="box"><div class="bh">Ce que ça livre</div><div class="willship"><code>IMAGE_TAG ${m.ships}</code> → <b style="color:var(--ok)">PROD</b> <span style="color:var(--tm);font-size:12px">(merge main = deploy_production)</span></div></div>`:''}
+    <div class="box"><div class="bh">Fichiers (${m.files.length}) · via mr-reviewer</div>
+      ${m.files.map(f=>`<div class="f ${f.key?'key':''}"><span>${f.key?'🏷️':'📄'}</span><span style="flex:1">${f.f}</span>${f.key?`<span style="color:var(--deliver);font-size:11px">${f.key}</span>`:`<span><span class="plus">+${f.p}</span> <span class="minus">−${f.m}</span></span>`}</div>`).join('')}</div>
+    <div class="box"><div class="bh">Validation</div><div class="appr"><div style="display:flex;gap:5px">${dots}</div>
+      <div class="txt">${ok?'<b style="color:var(--ok)">Validée '+m.appr+'/'+m.need+'</b>':'En attente <b style="color:var(--warn)">'+m.appr+'/'+m.need+'</b>'}</div></div></div>
+    <div class="roles">
+      <div class="role"><div class="rl">👍 en tant que relecteur</div><div class="btns">
+        <button class="btn ghost ${mine?'off':''}" onclick="approve('${m.num}')" title="${mine?'tu es le créateur — pas relecteur de ta propre MR':''}">Approuver</button></div>
+        ${mine?'<div style="font-size:11px;color:var(--tm);margin-top:7px">Tu es le créateur — c\'est un autre qui approuve.</div>':''}</div>
+      <div class="role"><div class="rl">🚀 en tant que créateur</div><div class="btns">
+        <button class="btn ship ${(mine&&canShip)?'':'off'}" onclick="ship('${m.num}')">Merger &amp; livrer${m.ships!=='—'?' — '+m.ships:''}</button>
+        <button class="btn del ${mine?'':'off'}" onclick="del('${m.num}')">Supprimer</button></div>
+        ${(mine&&!canShip)?'<div style="font-size:11px;color:var(--tm);margin-top:7px">Livraison possible quand : validée '+m.need+'/'+m.need+' + pipeline OK.</div>':''}</div>
+    </div>`;
+}
+
+// TRAIN + LOGS
+const STAGES=[['initialize','⚙️'],['build_app','🔨'],['build_docker','📦'],['promote_stable','⏫'],['deploy_production','🏛️']];
+function trainView(m){
+  return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-family:var(--fm);font-weight:800;color:var(--accent)">${m.num}</span>
+    <div class="d-title" style="font-size:16px">🚀 Livraison ${m.ships} en cours</div></div>
+    <div class="d-meta" style="margin-bottom:14px">mergée sur main · pipeline <b style="color:var(--tp)">#1899</b></div>
+    <div class="train" id="train"></div>
+    <div class="console" id="console"></div>`;
+}
+let logT;
+function ship(n){
+  const m=MRS.find(x=>x.num===n);live=n;renderDetail();
+  toast('🚀 <b>'+n+'</b> validée &amp; mergée → <b>'+m.ships+'</b> part en prod <i>(simulé)</i>');
+  runTrain(m);
+}
+function runTrain(m){
+  let stage=0;const cons=document.getElementById('console');const lines=[
+   ['ts','$ pipeline #1899 déclenché par merge de '+m.num+' sur main'],
+   ['info','initialize: préparation du contexte…'],['ok','initialize: OK (4s)'],
+   ['info','build_app: mvn -q package'],['ok','build_app: OK (1m12)'],
+   ['info','build_docker: build image platformengineering:'+m.ships],['ok','build_docker: pushed registry (38s)'],
+   ['info','promote_stable: promote '+m.ships+' → registre stable'],['ok','promote_stable: OK'],
+   ['warn','deploy_production: application ArgoCD sync…'],['ok','deploy_production: '+m.ships+' LIVE en prod ✅'],
+  ];
+  const stageAt=[1,2,3,4,5,6,7,8,9,10,11];
+  function paint(){
+    document.getElementById('train').innerHTML=STAGES.map((s,i)=>{
+      const st=i<stage?'done':i===stage?'run':'';
+      return (i?`<div class="rail ${i<=stage?'done':''}"></div>`:'')+`<div class="stg ${st}"><div class="ic">${st==='done'?'✓':s[1]}</div><div class="nm">${s[0]}</div></div>`;
+    }).join('');
+  }
+  paint();let li=0;
+  clearInterval(logT);
+  logT=setInterval(()=>{
+    if(li>=lines.length){clearInterval(logT);stage=STAGES.length;paint();return;}
+    const [cls,txt]=lines[li];
+    cons.innerHTML+=`<div class="l"><span class="${cls==='ts'?'ts':cls}">${txt}</span></div>`;cons.scrollTop=cons.scrollHeight;
+    // advance stage roughly every 2 lines
+    stage=Math.min(STAGES.length-1,Math.floor(li/2));paint();
+    li++;
+  },650);
+}
+function approve(n){const m=MRS.find(x=>x.num===n);if(m.author===ME)return;if(m.appr<m.need)m.appr++;renderList();renderDetail();toast('👍 <b>'+n+'</b> approuvée ('+m.appr+'/'+m.need+') — <i>pas mergée</i>');}
+function del(n){const m=MRS.find(x=>x.num===n);const i=MRS.indexOf(m);MRS.splice(i,1);sel=null;renderList();renderDetail();toast('🗑️ <b>'+n+'</b> supprimée <i>(simulé)</i>');}
+let toastT;function toast(msg){const el=document.getElementById('toast');el.innerHTML=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3400);}
+
+renderList();
+</script>
+</body>
+</html>
