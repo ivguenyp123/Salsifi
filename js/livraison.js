@@ -4,14 +4,18 @@
  * Réutilise le socle plateforme : Salsifi.loadAuth / gitlabFetch / gitlabPaginate /
  * escapeHtml (mêmes appels que mr-reviewer, éprouvés). Aucune donnée fictive.
  *
- * TODO tranche 2 : Préparer (bump IMAGE_TAG + sync overlays + créer MR) — code de
- *                  l'ancien pipeline (syncOverlays). Tranche 3 : train + logs.
+ * Tranche 2 : Préparer (choisir branche + bump IMAGE_TAG + sync overlays + créer MR).
+ * TODO tranche 3 : suivi du train de pipeline + logs après merge.
  */
 (function () {
   'use strict';
   const HUB_URL = 'hub.html';
-  let GITLAB_URL = null, TOKEN = null, PROJECT_ID = null, PROJECT_PATH = '', USERNAME = '';
+  let GITLAB_URL = null, TOKEN = null, PROJECT_ID = null, PROJECT_PATH = '', USERNAME = '', DEFAULT_BRANCH = 'main';
   let mrList = [], selected = null, authorFilter = '', busy = false;
+  // Tranche 2 — préparation : bump IMAGE_TAG + sync overlays + création de MR.
+  let branches = [], prepBranch = '', prepBumpType = 'minor', prepCurTag = '';
+  const IMAGE_TAG_RX = /^(\s*IMAGE_TAG:\s*)(["']?)([^"'\n]+)(["']?)(\s*)$/m;
+  const OVERLAY_PATHS = ['Manifests/overlays/development/kustomization.yaml', 'Manifests/overlays/uat/kustomization.yaml'];
 
   const $ = (id) => document.getElementById(id);
   const esc = (v) => (window.Salsifi && window.Salsifi.escapeHtml) ? window.Salsifi.escapeHtml(v) : String(v == null ? '' : v);
@@ -37,9 +41,10 @@
     document.querySelectorAll('[data-hub]').forEach(a => { a.href = HUB_URL; });
     try {
       const r = await glFetch(`/projects/${PROJECT_ID}`);
-      if (r.ok) { const p = await r.json(); PROJECT_PATH = p.path_with_namespace || ''; const el = $('svcName'); if (el) el.textContent = p.name || PROJECT_PATH; }
+      if (r.ok) { const p = await r.json(); PROJECT_PATH = p.path_with_namespace || ''; DEFAULT_BRANCH = p.default_branch || 'main'; const el = $('svcName'); if (el) el.textContent = p.name || PROJECT_PATH; }
     } catch (e) { /* non bloquant */ }
     await loadMRs();
+    loadBranches(); // asynchrone, ne bloque pas l'affichage des MR
   }
 
   async function loadMRs() {
@@ -210,9 +215,96 @@
     });
   }
 
-  // exposé pour le filtre + refresh
+  // ── Tranche 2 : préparer une livraison (bump + overlays + MR) ──
+  async function readFile(path, ref) {
+    const r = await glFetch(`/projects/${PROJECT_ID}/repository/files/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`);
+    if (!r.ok) return null;
+    const d = await r.json().catch(() => null); if (!d || d.content == null) return null;
+    try { return decodeURIComponent(escape(atob(d.content))); } catch (e) { try { return atob(d.content); } catch (_) { return null; } }
+  }
+  function bumpVer(v, type) {
+    const m = (v || '').match(/^(\d+)\.(\d+)\.(\d+)/); if (!m) return '';
+    let a = +m[1], b = +m[2], c = +m[3];
+    if (type === 'major') { a++; b = 0; c = 0; } else if (type === 'minor') { b++; c = 0; } else c++;
+    return a + '.' + b + '.' + c;
+  }
+  function prepTarget() { return bumpVer(prepCurTag, prepBumpType); }
+  function renderPrepTarget() { const el = $('prepTgt'); if (el) el.textContent = prepTarget() || '—'; }
+
+  async function loadBranches() {
+    const sel = $('prepBranch'); if (!sel) return;
+    const dbl = $('prepDefBr'); if (dbl) dbl.textContent = DEFAULT_BRANCH;
+    try {
+      branches = await glAll(`/projects/${PROJECT_ID}/repository/branches`);
+      const opts = branches.filter(b => b.name !== DEFAULT_BRANCH)
+        .map(b => `<option value="${esc(b.name)}">${esc(b.name)}</option>`).join('');
+      sel.innerHTML = '<option value="">— choisir une branche —</option>' + opts;
+    } catch (e) { sel.innerHTML = '<option value="">erreur de chargement</option>'; }
+  }
+
+  async function prepOnBranch() {
+    prepBranch = ($('prepBranch') || {}).value || '';
+    prepCurTag = '';
+    const curEl = $('prepCur'), tgtEl = $('prepTgt');
+    if (!prepBranch) { if (curEl) curEl.textContent = '—'; if (tgtEl) tgtEl.textContent = '—'; return; }
+    if (curEl) curEl.textContent = '…';
+    const ci = await readFile('.gitlab-ci.yml', prepBranch);
+    if (ci != null) { const m = ci.match(IMAGE_TAG_RX); if (m) prepCurTag = m[3].trim(); }
+    if (curEl) curEl.textContent = prepCurTag || 'IMAGE_TAG introuvable';
+    renderPrepTarget();
+  }
+  function prepSetBump(type) {
+    prepBumpType = type;
+    ['major', 'minor', 'patch'].forEach(x => { const b = $('pb-' + x); if (b) b.classList.toggle('on', x === type); });
+    renderPrepTarget();
+  }
+
+  function prepGo() {
+    if (!prepBranch) return toast('⚠️ Choisis une branche à livrer.');
+    if (!prepCurTag) return toast('⚠️ IMAGE_TAG introuvable dans le .gitlab-ci.yml de cette branche.');
+    const target = prepTarget();
+    if (!target) return toast('⚠️ Version courante non SemVer (x.y.z) — bump impossible.');
+    if (!confirm(`Préparer la livraison ${target} ?\n\n• branche : ${prepBranch} → ${DEFAULT_BRANCH}\n• IMAGE_TAG : ${prepCurTag} → ${target}\n• sync overlays (si présents)\n• création d'une MR\n\nLe merge de la MR déclenchera la livraison.`)) return;
+    guard(async () => {
+      const actions = [];
+      const ci = await readFile('.gitlab-ci.yml', prepBranch);
+      if (ci == null) return toast('⚠️ .gitlab-ci.yml introuvable sur ' + esc(prepBranch));
+      const newCi = ci.replace(IMAGE_TAG_RX, (m, p, q, v, q2, s) => p + q + target + q2 + s);
+      if (newCi !== ci) actions.push({ action: 'update', file_path: '.gitlab-ci.yml', content: newCi });
+      // Overlays : best-effort, on n'inclut que ceux qui existent et changent.
+      let overlaysTouched = 0;
+      for (const path of OVERLAY_PATHS) {
+        const c = await readFile(path, prepBranch);
+        if (c == null) continue;
+        const nc = c.replace(/^(\s*newTag:\s*).*$/gm, `$1"${target}"`).replace(/^(\s*-\s+APP_VERSION=).*$/gm, `$1${target}`);
+        if (nc !== c) { actions.push({ action: 'update', file_path: path, content: nc }); overlaysTouched++; }
+      }
+      if (!actions.length) return toast(`⚠️ Rien à modifier — IMAGE_TAG est peut-être déjà à ${esc(target)}.`);
+      // Commit atomique sur la branche.
+      const cr = await glFetch(`/projects/${PROJECT_ID}/repository/commits`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch: prepBranch, commit_message: `[Livraison] Bump IMAGE_TAG → ${target}`, actions }) });
+      if (!cr.ok) { const b = await cr.json().catch(() => ({})); return toast('⚠️ Commit refusé : ' + esc(b.message || cr.status)); }
+      // Création de la MR vers la branche par défaut.
+      const mr = await glFetch(`/projects/${PROJECT_ID}/merge_requests`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_branch: prepBranch, target_branch: DEFAULT_BRANCH, title: `release ${target}` }) });
+      if (!mr.ok) {
+        const b = await mr.json().catch(() => ({}));
+        const msg = (b.message || b.error || cr.status); const txt = Array.isArray(msg) ? msg.join(', ') : msg;
+        // Cas fréquent : une MR existe déjà pour ce couple de branches → on rafraîchit quand même.
+        toast('⚠️ MR non créée : ' + esc(txt) + '. Le commit, lui, est passé.'); prepCurTag = target; await loadMRs(); return;
+      }
+      const created = await mr.json();
+      toast(`🔀 MR !${created.iid} « release ${target} » ouverte → ${esc(DEFAULT_BRANCH)}${overlaysTouched ? ' · overlays sync' : ''}.`);
+      prepCurTag = target; renderPrepTarget();
+      await loadMRs();
+      if (created.iid) selectMR(created.iid);
+    });
+  }
+
+  // exposé pour le filtre + refresh + préparation
   window.livraisonFilter = () => { authorFilter = ($('who') || {}).value || ''; renderList(); };
   window.livraisonRefresh = () => loadMRs();
+  window.livraisonPrepBranch = prepOnBranch;
+  window.livraisonPrepBump = prepSetBump;
+  window.livraisonPrepGo = prepGo;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

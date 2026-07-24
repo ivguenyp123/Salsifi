@@ -34,6 +34,19 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .section-title .soon{font-size:10px;color:var(--warn);background:rgba(251,191,36,.12);padding:2px 8px;border-radius:20px;letter-spacing:.04em}
 .card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(20px)}
 
+/* PREPARE (tranche 2, réel) */
+.prep{background:linear-gradient(135deg,rgba(45,212,191,.10),rgba(124,92,252,.06));border:1px solid rgba(45,212,191,.28);display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.prep .grp{display:flex;flex-direction:column;gap:5px}
+.prep .k{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.prep .ver{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--deliver);line-height:1;display:flex;align-items:baseline;gap:8px}
+.bumps{display:flex;gap:6px}
+.bumps button{all:unset;cursor:pointer;font-size:11px;font-weight:700;padding:6px 11px;border-radius:9px;border:1px solid var(--line);color:var(--ts)}
+.bumps button.on,.bumps button:hover{border-color:var(--deliver);color:var(--deliver);background:rgba(45,212,191,.08)}
+.gobtn{all:unset;cursor:pointer;margin-left:auto;background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800;font-size:13.5px;padding:12px 18px;border-radius:12px;transition:.15s}
+.gobtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.prep-note{font-size:11px;color:var(--tm);margin:8px 4px 0;line-height:1.6}
+.prep-note code{font-family:var(--fm);color:var(--ts)}
+
 /* placeholder tranches à venir (honnête, pas de fausse donnée) */
 .soon-card{border-style:dashed;opacity:.85;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .soon-card .ico{font-size:26px;opacity:.7}
@@ -108,13 +121,22 @@ textarea::placeholder{color:var(--tm)}
     <div class="svc"><span class="dot"></span> <span id="svcName">Chargement…</span></div>
   </header>
 
-  <!-- 1. PRÉPARER — tranche 2 (honnête : à venir, pas de fausse donnée) -->
-  <div class="section-title">Préparer ma livraison <span class="soon">à venir</span></div>
-  <div class="card soon-card">
-    <div class="ico">✏️</div>
-    <div class="txt"><b>Bump de version + création de MR</b> depuis la plateforme (choisir la branche, incrémenter <code style="font-family:var(--fm)">IMAGE_TAG</code>, sync overlay, ouvrir la MR). En cours de branchement — d'ici là, prépare ta branche dans ton IDE puis reviens ici pour la valider et la livrer.</div>
-    <div class="tag">tranche 2</div>
+  <!-- 1. PRÉPARER (réel, câblé GitLab) -->
+  <div class="section-title">Préparer ma livraison <span class="prio">priorité</span></div>
+  <div class="card prep">
+    <div class="grp"><span class="k">branche</span>
+      <select id="prepBranch" onchange="livraisonPrepBranch()"><option value="">— choisir une branche —</option></select>
+    </div>
+    <div style="color:var(--tm)">→ <b style="font-family:var(--fm);color:var(--tp)" id="prepDefBr">main</b></div>
+    <div class="grp"><span class="k">version (IMAGE_TAG)</span>
+      <div class="ver"><span id="prepCur" style="color:var(--tm);font-size:15px">—</span><span style="color:var(--tm);font-size:15px">→</span><span id="prepTgt">—</span></div>
+    </div>
+    <div class="grp"><span class="k">incrément</span>
+      <div class="bumps"><button onclick="livraisonPrepBump('major')" id="pb-major">MAJ</button><button onclick="livraisonPrepBump('minor')" id="pb-minor" class="on">MIN</button><button onclick="livraisonPrepBump('patch')" id="pb-patch">PAT</button></div>
+    </div>
+    <button class="gobtn" onclick="livraisonPrepGo()">✏️ Bump + 🔀 Créer la MR</button>
   </div>
+  <div class="prep-note">Lit l'<code>IMAGE_TAG</code> du <code>.gitlab-ci.yml</code> de la branche choisie, le bump, synchronise les overlays s'ils existent, commit, puis ouvre la MR vers la branche par défaut. Le <b>merge</b> de la MR déclenche la livraison (via les <code>rules</code> de la toolchain) — la plateforme ne déploie rien elle-même.</div>
 
   <!-- 2. MR DU REPO (réel, câblé GitLab) -->
   <div class="section-title">MR du repo <span class="prio">en direct</span></div>
