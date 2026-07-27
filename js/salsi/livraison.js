@@ -299,11 +299,36 @@
       var js = byStage[s], st = js.some(function (j) { return j.status === 'failed'; }) ? 'failed' : js.some(function (j) { return j.status === 'running'; }) ? 'running' : js.every(function (j) { return ['success', 'skipped', 'manual'].indexOf(j.status) >= 0; }) ? 'success' : 'pending';
       return pipeIcon(st) + ' ' + esc(s);
     }).join(' · ');
-    var failed = jobs.filter(function (j) { return j.status === 'failed'; }).map(function (j) { return esc(j.name); });
-    var html = '🚂 Pipeline <b>#' + esc(pipeline.id) + '</b> — ' + pipeIcon(pipeline.status) + ' <b>' + esc(pipeline.status || '') + '</b><br>' + line
-      + (failed.length ? '<br><span class="sqa-hint">❌ échec : ' + failed.join(', ') + '</span>' : '')
-      + refreshBar(pipeline.id) + openBtn(c);
+    var failedJobs = jobs.filter(function (j) { return j.status === 'failed'; });
+    var html = '🚂 Pipeline <b>#' + esc(pipeline.id) + '</b> — ' + pipeIcon(pipeline.status) + ' <b>' + esc(pipeline.status || '') + '</b><br>' + line;
+    if (failedJobs.length) {
+      // Quel job a planté + POURQUOI : extrait du log d'erreur du 1er job en échec.
+      var tail = await jobTail(c, failedJobs[0].id, 3);
+      var excerpt = tail.join(' · '); if (excerpt.length > 240) excerpt = '…' + excerpt.slice(-240);
+      html += '<br><span class="sqa-hint">❌ échec : <b>' + failedJobs.map(function (j) { return esc(j.name); }).join(', ') + '</b>'
+        + (excerpt ? '<br>↳ ' + esc(excerpt) : '') + '</span>';
+      html += '<div class="sqa-liv-actions">' + failedJobs.slice(0, 3).map(function (j) {
+        return '<button class="sqa-liv-btn danger" onclick="salsiLiv(\'joblog\',' + j.id + ')">📄 logs ' + esc(j.name) + '</button>';
+      }).join('') + '</div>';
+    }
+    html += refreshBar(pipeline.id) + openBtn(c);
     return { html: html, intent: 'liv_train' };
+  }
+  // Fin du trace d'un job : lignes d'erreur les plus parlantes (ANSI nettoyé).
+  async function jobTail(c, jobId, maxLines) {
+    try {
+      var r = await glFetch(c, '/projects/' + c.pid + '/jobs/' + jobId + '/trace');
+      if (!r.ok) return [];
+      var raw = await r.text();
+      var clean = raw.replace(/\x1b\[[0-9;]*m/g, '').replace(/\r/g, '');
+      var lines = clean.split('\n').map(function (l) { return l.replace(/\s+$/, ''); }).filter(function (l) { return l.trim(); });
+      if (!lines.length) return [];
+      // On centre la fenêtre sur la dernière ligne qui « sent » l'erreur.
+      var errIdx = -1;
+      for (var i = lines.length - 1; i >= 0; i--) { if (/error|fatal|failed|failure|exception|cannot|not found|no such|denied|refused|panic|\bERR!?\b|exit code [1-9]/i.test(lines[i])) { errIdx = i; break; } }
+      var end = errIdx >= 0 ? Math.min(lines.length, errIdx + 2) : lines.length;
+      return lines.slice(Math.max(0, end - (maxLines || 3)), end);
+    } catch (e) { return []; }
   }
   async function trainForMr(iid) {
     var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_train' };
@@ -419,7 +444,9 @@
   // ══════════════════════════════════════════════════════════════════
   window.salsiLiv = async function (action, arg) {
     var say = window.salsiQaSay || function (h) { console.log('[salsi]', h); return null; };
-    if (typeof arg === 'number') setLast(arg);   // le clic devient le contexte courant
+    // arg = iid d'une MR pour ces actions → devient le contexte courant.
+    // (PAS pour trainPipe/joblog/trainSha : l'arg y est un id de pipeline/job.)
+    if (typeof arg === 'number' && /^(detail|approve|mergeAsk|merge|closeAsk|close|train)$/.test(action)) setLast(arg);
     if (action === 'cancel') { say('👍 Ok, on ne touche à rien.'); return; }
     var pend = say('⏳ …');
     function done(r) { if (pend) pend.innerHTML = (r && r.html) || '😅 Rien à afficher.'; else say((r && r.html) || ''); }
@@ -433,6 +460,11 @@
       if (action === 'train') return done(await trainForMr(arg));
       if (action === 'trainPipe') return done(await trainSummary(arg));
       if (action === 'trainSha') { var c = ctx(); if (c.err) return done({ html: c.err }); var pl = await findDeliveryPipeline(c, arg); return done(pl ? await trainSummary(pl.id) : { html: '🚂 Pipeline pas encore visible — réessaie dans un instant.' }); }
+      if (action === 'joblog') {
+        var cj = ctx(); if (cj.err) return done({ html: cj.err });
+        var t = await jobTail(cj, arg, 25);
+        return done({ html: t.length ? '<b>📄 Fin du log</b><div style="font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);border-radius:8px;padding:8px 10px;margin-top:5px;max-height:230px;overflow:auto">' + esc(t.join('\n')) + '</div>' : 'Logs indisponibles pour ce job (pas encore démarré ?).' });
+      }
       done({ html: 'Action inconnue.' });
     } catch (e) { done({ html: '😅 Échec de l\'action — réessaie.' }); }
   };
