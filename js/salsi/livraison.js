@@ -328,7 +328,7 @@
     var hasRef = /\bmr\b|\bmerge request\b|\bla\b|\ble\b|\bca\b|\bcelle|\bcette|\-la\b/.test(n) || explicitIid || lastMr;
 
     // ── CRÉER UNE BRANCHE : « crée une branche feature/x depuis main » (base selon le flow)
-    if (/\bbranche\b/.test(n) && /\b(cree[rz]?|creer|nouvelle branche|fais( moi)? (une )?branche|branche moi|demarre[rz]? une branche|ajoute[rz]? une branche|part(ir|s)? sur une branche)\b/.test(n) && !OTHER.test(n)) {
+    if (/\bbranche\b/.test(n) && /\b(cree[rz]?|creer|nouvelle branche|fais( moi)? (une )?branche|branche moi|demarre[rz]? une branche|ajoute[rz]? une branche|part(ir|s)? sur une branche|je veux (creer )?une branche|il me faut une branche|besoin d une branche|peux tu (creer|faire) une branche|ouvre une branche)\b/.test(n) && !OTHER.test(n)) {
       var pb = parseNewBranch(q);
       var base = pb.base;
       if (!base && /gitflow|git flow|\bdevelop/.test(n)) base = 'develop';
