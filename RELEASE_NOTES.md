@@ -1,5 +1,55 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v2.0.0 — 2026-07-27 · Livraison — cockpit réel + Salsi qui livre en conversation
+
+Le module « Pipeline Generator » devient **Livraison** : un cockpit réel câblé GitLab
+(fini la maquette), et **Salsi sait désormais livrer en conversation** — préparer, valider,
+merger, suivre le train, et **prévenir tout seul** quand la MR est prête.
+
+### Module Livraison (remplace Pipeline Generator)
+
+- **Cockpit MR réel** (`pipeline-generator.html` + `js/livraison.js`) : liste des MR
+  ouvertes du repo, **filtre par créateur**, détail (diff réel, approbations, discussion)
+  et **toutes les fonctions d'une MR** : approuver, merger & livrer, fermer, commenter —
+  mêmes endpoints éprouvés que MR Reviewer. **Plus aucune donnée fictive.**
+- **Préparer une livraison** : choisir la branche, lire l'`IMAGE_TAG` du `.gitlab-ci.yml`,
+  **bump SemVer** (majeur / mineur / patch), **synchroniser les overlays kustomize**
+  (découverte dynamique de tous les `kustomization.yaml` → `newTag` + `APP_VERSION`),
+  commit atomique puis **création de la MR**. La plateforme ne déploie rien : le **merge**
+  déclenche la livraison via les `rules` de la toolchain déjà sur la branche.
+- **Le train de la pipeline** : suivi live après merge — stages colorés, jobs cliquables,
+  **logs en direct** (`/trace`, ANSI nettoyé), polling auto qui s'arrête à la fin. Se cale
+  sur la pipeline du **commit de merge** (par sha), jamais sur une ancienne.
+
+### Salsi sait livrer (`js/salsi/livraison.js`)
+
+Salsi passe de la lecture seule à l'**action réelle**, en langage naturel :
+
+- **MR** : « montre les MR », « les MR de bernard », « la mr 44 », « approuve-la »,
+  « merge-la », « ferme-la », « commente-la : … », « qui doit valider la 44 ? ».
+- **Préparer** : « prépare une livraison sur feature/x » → Salsi demande l'**environnement**
+  (dev / uat / prod, posé via `DEPLOY_TO_*`) puis le **niveau** (boutons avec les 3 versions
+  cibles), met à jour kustomize + crée la MR. Inline aussi : « prépare une livraison
+  mineure en uat sur feature/x ».
+- **Branches** : « crée une branche feature/x depuis main » (base **selon le flow** :
+  `develop` en gitflow), nom libre ; « j'ai quoi comme branche ? ».
+- **Suivi & pannes** : « où en est ? » → le train ; **si ça plante, Salsi dit quel job ET
+  pourquoi** (extrait du log d'erreur + bouton « logs »).
+- **Proactif** 🔔 : Salsi **surveille la MR** qu'il vient de préparer et **te prévient dès
+  qu'elle est approuvée** — « on livre ? » — sans que tu demandes (poll 45 s, persistant,
+  tant que le hub est ouvert ; « surveille la 48 » / « arrête de surveiller » pour piloter).
+- **Mémoire de contexte** : retient la dernière MR et la dernière branche → « approuve-la »,
+  « prépare une livraison » enchaînent sans répéter le numéro ni le nom de branche.
+- **Garde-fous** : actions destructrices (merge, fermeture) **confirmées par bouton** ; un
+  mot d'un autre module (DORA, badges, sécu, repo…) n'est **jamais détourné**.
+
+### Corrections
+
+- **Overlays kustomize** : mise à jour par **découverte dynamique** de l'arbre du repo —
+  fini les chemins codés en dur (`Manifests/overlays/…`) qui rataient selon l'arborescence.
+- **Train de livraison** : suit la pipeline du **commit de merge** (sha) — plus jamais une
+  ancienne pipeline attrapée comme « la plus récente de la branche ».
+
 ## v1.17.0 — 2026-07-24 · Pipeline Generator — nouveau format toolchain + stratégies de branchement
 
 Le générateur produit désormais le **nouveau format de toolchain appelante** (bloc
