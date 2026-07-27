@@ -84,6 +84,27 @@
     return { name: name, base: base };
   }
 
+  // Environnement de déploiement (piloté par DEPLOY_TO_DEV/UAT/PROD dans le .gitlab-ci.yml).
+  var ENV_LABEL = { dev: '🔧 dev', uat: '🧪 uat', prod: '🚀 prod' };
+  function parseEnv(n, branch) {
+    var t = n; if (branch) { t = t.split(norm(branch)).join(' '); } // retire le nom de branche (évite « feature/dev » → env dev)
+    if (/\bprod(uction)?\b/.test(t)) return 'prod';
+    if (/\buat\b|\brecette\b/.test(t)) return 'uat';
+    if (/\bdev\b|\bdeveloppement\b/.test(t)) return 'dev';
+    return null;
+  }
+  // Pose DEPLOY_TO_* selon l'env choisi (exclusif : la cible = true, les autres = false).
+  // Ne touche QUE les variables déjà présentes dans le fichier.
+  function setDeployVars(ci, env) {
+    var want = { DEV: env === 'dev', UAT: env === 'uat', PROD: env === 'prod' };
+    var out = ci, found = 0;
+    ['DEV', 'UAT', 'PROD'].forEach(function (E) {
+      var rx = new RegExp('^(\\s*DEPLOY_TO_' + E + ':\\s*)(["\']?)(true|false)(["\']?)(\\s*)$', 'mi');
+      if (rx.test(out)) { found++; out = out.replace(rx, function (m, p, q1, v, q2, s) { return p + '"' + (want[E] ? 'true' : 'false') + '"' + s; }); }
+    });
+    return { yaml: out, found: found };
+  }
+
   function parseBranch(q) {
     // Depuis la question ORIGINALE (les noms de branche ont des / et des majuscules).
     var m = q.match(/(?:\bsur\b|\bbranche\b|\bdepuis\b|\bde la branche\b)\s+([^\s,;]+)/i);
@@ -211,8 +232,20 @@
     var tree = await S.gitlabPaginate(c.url, c.token, '/projects/' + c.pid + '/repository/tree?recursive=true&ref=' + encodeURIComponent(ref), { throwOnError: false });
     return (tree || []).filter(function (t) { return t && t.type === 'blob' && KUSTO_RX.test(t.path); }).map(function (t) { return t.path; });
   }
-  // Pas de niveau précisé → on lit la version courante et on propose les 3 cibles en boutons.
-  async function prepPreview(branch) {
+  // Demande l'environnement (dev / uat / prod) — le niveau connu (bump) est reporté sur les boutons.
+  function askEnv(branch, bump) {
+    lastBranch = branch;
+    if (!/^[A-Za-z0-9._\/-]+$/.test(branch)) return { html: '📦 Livraison de <b>' + esc(branch) + '</b> — <b>quel environnement ?</b><br><span class="sqa-hint">Tape « prépare une livraison ' + (bump || 'patch') + ' <b>en prod</b> sur ' + esc(branch) + ' » (ou en dev / en uat).</span>', intent: 'liv_prepare' };
+    var b = jsq(branch), bp = bump || '';
+    var btns = '<div class="sqa-liv-actions">'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prepEnv\',\'' + b + '\',\'' + bp + '\',\'dev\')">🔧 dev</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prepEnv\',\'' + b + '\',\'' + bp + '\',\'uat\')">🧪 uat</button>'
+      + '<button class="sqa-liv-btn go" onclick="salsiLiv(\'prepEnv\',\'' + b + '\',\'' + bp + '\',\'prod\')">🚀 prod</button>'
+      + '</div>';
+    return { html: '📦 Livraison de <b>' + esc(branch) + '</b>' + (bump ? ' (' + esc(bump) + ')' : '') + ' — <b>vers quel environnement ?</b>' + btns, intent: 'liv_prepare' };
+  }
+  // Pas de niveau précisé → on lit la version courante et on propose les 3 cibles en boutons (env reporté).
+  async function prepPreview(branch, env) {
     var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_prepare' };
     var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
     if (branch === def) return { html: '🌿 <b>' + esc(branch) + '</b> est la branche par défaut — on prépare depuis une <i>autre</i> branche vers <b>' + esc(def) + '</b>.', intent: 'liv_prepare' };
@@ -223,17 +256,18 @@
     var cur = mt[3].trim(), maj = bumpVer(cur, 'major'), min = bumpVer(cur, 'minor'), pat = bumpVer(cur, 'patch');
     if (!pat) return { html: '⚠️ Version courante <code>' + esc(cur) + '</code> non SemVer — bump impossible.', intent: 'liv_prepare' };
     lastBranch = branch;
-    var head = '📦 Livraison de <b>' + esc(branch) + '</b> — version actuelle <code>' + esc(cur) + '</code>. <b>Quel niveau ?</b>';
-    if (!/^[A-Za-z0-9._\/-]+$/.test(branch)) return { html: head + '<br><span class="sqa-hint">Tape « prépare une livraison <b>patch</b> sur ' + esc(branch) +' » (ou minor / major).</span>', intent: 'liv_prepare' };
-    var b = jsq(branch);
+    var envTxt = env ? ' → ' + ENV_LABEL[env] : '';
+    var head = '📦 Livraison de <b>' + esc(branch) + '</b>' + envTxt + ' — version actuelle <code>' + esc(cur) + '</code>. <b>Quel niveau ?</b>';
+    if (!/^[A-Za-z0-9._\/-]+$/.test(branch)) return { html: head + '<br><span class="sqa-hint">Tape « prépare une livraison <b>patch</b> sur ' + esc(branch) + ' » (ou minor / major).</span>', intent: 'liv_prepare' };
+    var b = jsq(branch), e = env || '';
     var btns = '<div class="sqa-liv-actions">'
-      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'major\')">majeur → ' + esc(maj) + '</button>'
-      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'minor\')">mineur → ' + esc(min) + '</button>'
-      + '<button class="sqa-liv-btn go" onclick="salsiLiv(\'prep\',\'' + b + '\',\'patch\')">patch → ' + esc(pat) + '</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'major\',\'' + e + '\')">majeur → ' + esc(maj) + '</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'minor\',\'' + e + '\')">mineur → ' + esc(min) + '</button>'
+      + '<button class="sqa-liv-btn go" onclick="salsiLiv(\'prep\',\'' + b + '\',\'patch\',\'' + e + '\')">patch → ' + esc(pat) + '</button>'
       + '</div>';
     return { html: head + btns, intent: 'liv_prepare' };
   }
-  async function doPrepare(branch, bump) {
+  async function doPrepare(branch, bump, env) {
     var c = ctx(); if (c.err) return { html: c.err };
     lastBranch = branch;
     var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
@@ -245,7 +279,10 @@
     var cur = mtag[3].trim(), target = bumpVer(cur, bump);
     if (!target) return { html: '⚠️ Version courante <code>' + esc(cur) + '</code> non SemVer — bump impossible.' };
     var actions = [];
+    // .gitlab-ci.yml : bump IMAGE_TAG (+ pose DEPLOY_TO_* selon l'env si présents).
     var newCi = ci.replace(IMAGE_TAG_RX, function (m, p, q1, v, q2, s) { return p + q1 + target + q2 + s; });
+    var envFound = 0, envMissing = false;
+    if (env) { var dv = setDeployVars(newCi, env); newCi = dv.yaml; envFound = dv.found; envMissing = (dv.found === 0); }
     if (newCi !== ci) actions.push({ action: 'update', file_path: '.gitlab-ci.yml', content: newCi });
     var overlays = 0;
     var files = await findOverlays(c, branch);
@@ -255,13 +292,18 @@
       if (nc !== oc) { actions.push({ action: 'update', file_path: files[i], content: nc }); overlays++; }
     }
     if (!actions.length) return { html: '⚠️ Rien à modifier — <code>IMAGE_TAG</code> est peut-être déjà à <b>' + esc(target) + '</b>.' };
-    var cr = await glFetch(c, '/projects/' + c.pid + '/repository/commits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch: branch, commit_message: '[Livraison] Bump IMAGE_TAG → ' + target, actions: actions }) });
+    var envMsg = env ? ' + ' + env.toUpperCase() : '';
+    var cr = await glFetch(c, '/projects/' + c.pid + '/repository/commits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch: branch, commit_message: '[Livraison] Bump IMAGE_TAG → ' + target + envMsg, actions: actions }) });
     if (!cr.ok) { var eb = await cr.json().catch(function () { return {}; }); return { html: '⚠️ Commit refusé sur <b>' + esc(branch) + '</b> : ' + esc(eb.message || cr.status) + '.' }; }
     var mr = await glFetch(c, '/projects/' + c.pid + '/merge_requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_branch: branch, target_branch: def, title: 'release ' + target }) });
     if (!mr.ok) { var mb = await mr.json().catch(function () { return {}; }); var msg = mb.message || mb.error || cr.status; return { html: '✏️ Bump <b>' + esc(cur) + ' → ' + esc(target) + '</b> commité sur <b>' + esc(branch) + '</b> (' + overlays + ' overlay), mais MR non créée : ' + esc(Array.isArray(msg) ? msg.join(', ') : msg) + '.' }; }
     var created = await mr.json();
     setLast(created.iid);
-    return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + '<div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
+    var envLine = env ? (envMissing
+      ? '<br><span class="sqa-hint">⚠️ Aucune variable <code>DEPLOY_TO_*</code> dans ce <code>.gitlab-ci.yml</code> — l\'environnement <b>' + esc(env) + '</b> n\'a pas pu être posé (piloté autrement ?).</span>'
+      : '<br>🎯 Déploiement ciblé : <b>' + ENV_LABEL[env] + '</b> (<code>DEPLOY_TO_' + env.toUpperCase() + '=true</code>, les autres à false).')
+      : '';
+    return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + envLine + '<div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
   }
 
   // ── Brancher : lister / créer une branche (base selon le flow) ──
@@ -437,13 +479,19 @@
     // Verbe FAIBLE (livre/déploie/envoie…) : seulement si branche ou niveau présent (sinon = merge).
     var strongPrep = /\bprepare[rz]?\b|\bpreparer\b|\bpreparation\b|\bbump\b|\bincremente[rz]?\b|\bnouvelle (version|release)\b|\bsors?( moi)? (une )?(version|release)\b|\bfais( moi)? (une )?(livraison|release|version)\b|\bcree[rz]?( moi)? (une )?(release|version)\b/.test(n);
     var softPrep = /\blivre[rz]?\b|\bdeploie[rz]?\b|\bmets? en prod\b|\benvoie[rz]?\b|\bbalance[rz]?\b|\bmettre en prod\b/.test(n);
-    var hasBump = /\b(patch|minor|mineur|major|majeur|majeure|correctif|moyen|moyenne|intermediaire|grosse version|petite version|breaking)\b/.test(n);
+    var BUMP_RX = /\b(patch|minor|mineure?|major|majeure?|correctif|moyenne?|intermediaire|grosse version|petite version|breaking)\b/;
+    var hasBump = BUMP_RX.test(n);
     if (!explicitIid && !/\bsouvent\b|\bfrequence\b|\bplus vite\b|\bregulier/.test(n)
       && (strongPrep || (softPrep && (branch || hasBump)))) {
       var brc = branch || lastBranch;
-      if (!brc) return { html: 'Pour quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison sur <b>feature/xxx</b> » — tu choisiras <b>majeur / mineur / patch</b> juste après. 🌿', intent: 'liv_prepare' };
-      if (hasBump) { var rp = await doPrepare(brc, parseBump(n)); rp.intent = 'liv_prepare'; return rp; }
-      return await prepPreview(brc);   // pas de niveau → propose majeur / mineur / patch en boutons
+      if (!brc) return { html: 'Pour quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison sur <b>feature/xxx</b> » — tu choisiras l\'<b>environnement</b> et le <b>niveau</b> juste après. 🌿', intent: 'liv_prepare' };
+      // Niveau ET env sur le texte SANS le nom de branche (évite « fix/x » lu comme patch, « feature/dev » comme dev).
+      var nb = n.split(norm(brc)).join(' ');
+      var env = parseEnv(n, brc);
+      var bump = BUMP_RX.test(nb) ? parseBump(nb) : null;
+      if (!env) return askEnv(brc, bump);          // pas d'env → dev / uat / prod en boutons
+      if (!bump) return await prepPreview(brc, env); // pas de niveau → majeur / mineur / patch (env reporté)
+      var rp = await doPrepare(brc, bump, env); rp.intent = 'liv_prepare'; return rp;
     }
 
     // ── MERGER / LIVRER une MR : « merge la 44 », « merge-la », « livre la 44 », « envoie-la en prod »
@@ -474,7 +522,7 @@
   // ══════════════════════════════════════════════════════════════════
   //  Boutons du chat → window.salsiLiv(action, arg)
   // ══════════════════════════════════════════════════════════════════
-  window.salsiLiv = async function (action, arg, arg2) {
+  window.salsiLiv = async function (action, arg, arg2, arg3) {
     var say = window.salsiQaSay || function (h) { console.log('[salsi]', h); return null; };
     // arg = iid d'une MR pour ces actions → devient le contexte courant.
     // (PAS pour trainPipe/joblog/trainSha/prep : l'arg y est un id pipeline/job ou une branche.)
@@ -483,7 +531,9 @@
     var pend = say('⏳ …');
     function done(r) { if (pend) pend.innerHTML = (r && r.html) || '😅 Rien à afficher.'; else say((r && r.html) || ''); }
     try {
-      if (action === 'prep') return done(await doPrepare(arg, arg2 || 'patch'));
+      // Wizard de préparation : env choisi → soit on prépare (niveau connu), soit on demande le niveau.
+      if (action === 'prepEnv') { var bmp = arg2 || null; return done(bmp ? await doPrepare(arg, bmp, arg3) : await prepPreview(arg, arg3)); }
+      if (action === 'prep') return done(await doPrepare(arg, arg2 || 'patch', arg3 || null));
       if (action === 'detail') return done(await mrDetail(arg));
       if (action === 'approve') return done(await doApprove(arg));
       if (action === 'mergeAsk') return done(mergeAsk(arg));
