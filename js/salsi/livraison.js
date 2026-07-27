@@ -23,6 +23,11 @@
   var IMAGE_TAG_RX = /^(\s*IMAGE_TAG:\s*)(["']?)([^"'\n]+)(["']?)(\s*)$/m;
   var KUSTO_RX = /(^|\/)kustomization\.ya?ml$/i;
 
+  // Mémoire de contexte : la dernière MR dont on a parlé, pour comprendre
+  // « approuve-la », « merge ça », « ferme-la », « où en est ? » sans répéter le n°.
+  var lastMr = null;
+  function setLast(i) { if (i) lastMr = parseInt(i, 10); }
+
   // ── Contexte repo (auth + repo sélectionné dans le hub) ──
   function ctx() {
     var auth = S.loadAuth ? S.loadAuth({ redirect: false }) : null;
@@ -53,9 +58,10 @@
   // ── Parsing ──
   function parseIid(n) { var m = n.match(/\b(\d{1,6})\b/); return m ? parseInt(m[1], 10) : null; }
   function parseBump(n) {
-    if (/\bmaj(or|eur)?\b|\bmajeure?\b/.test(n)) return 'major';
-    if (/\bmin(or|eur)?\b|\bmineure?\b/.test(n)) return 'minor';
-    if (/\bpat(ch)?\b|\bcorrectif\b|\bfix\b/.test(n)) return 'patch';
+    if (/\bmaj(or|eur)?\b|\bmajeure?\b|\bgrosse? version\b|\bbreaking\b/.test(n)) return 'major';
+    // « moyenne » = le chiffre du milieu (Y) = minor, par défaut (à confirmer avec l'équipe).
+    if (/\bmin(or|eur)?\b|\bmineure?\b|\bmoyen(ne)?\b|\bintermediaire\b/.test(n)) return 'minor';
+    if (/\bpat(ch)?\b|\bcorrectif\b|\bfix\b|\bpetite? version\b/.test(n)) return 'patch';
     return 'patch';
   }
   function parseBranch(q) {
@@ -125,6 +131,25 @@
     return { html: html, intent: 'liv_detail' };
   }
 
+  async function whoApproves(iid) {
+    var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_who' };
+    var res = await Promise.all([
+      glJson(c, '/projects/' + c.pid + '/merge_requests/' + iid),
+      glJson(c, '/projects/' + c.pid + '/merge_requests/' + iid + '/approvals')
+    ]);
+    var m = res[0], appr = res[1];
+    if (!m || !m.iid) return { html: '🔀 Je ne trouve pas la MR <b>!' + esc(iid) + '</b>.', intent: 'liv_who' };
+    var need = (appr && appr.approvals_required) || 0;
+    var by = (appr && appr.approved_by || []).map(function (a) { return esc((a.user && a.user.username) || '?'); });
+    var got = by.length || (need - ((appr && appr.approvals_left) || 0));
+    if (!need) return { html: '🔀 <b>!' + m.iid + '</b> — pas de règle d\'approbation : elle peut être mergée telle quelle (selon la protection de branche).', intent: 'liv_who' };
+    var left = Math.max(0, need - got);
+    var html = '🔀 <b>!' + m.iid + '</b> — validation <b>' + got + '/' + need + '</b>. '
+      + (by.length ? 'Ont approuvé : ' + by.join(', ') + '. ' : 'Personne n\'a encore approuvé. ')
+      + (left ? '👉 il manque <b>' + left + '</b> approbation(s).' : '✅ quota atteint.')
+      + actionsBar(m, appr);
+    return { html: html, intent: 'liv_who' };
+  }
   async function doApprove(iid) {
     var c = ctx(); if (c.err) return { html: c.err };
     var r = await glFetch(c, '/projects/' + c.pid + '/merge_requests/' + iid + '/approve', { method: 'POST' });
@@ -192,6 +217,7 @@
     var mr = await glFetch(c, '/projects/' + c.pid + '/merge_requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_branch: branch, target_branch: def, title: 'release ' + target }) });
     if (!mr.ok) { var mb = await mr.json().catch(function () { return {}; }); var msg = mb.message || mb.error || cr.status; return { html: '✏️ Bump <b>' + esc(cur) + ' → ' + esc(target) + '</b> commité sur <b>' + esc(branch) + '</b> (' + overlays + ' overlay), mais MR non créée : ' + esc(Array.isArray(msg) ? msg.join(', ') : msg) + '.' }; }
     var created = await mr.json();
+    setLast(created.iid);
     return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + '<div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
   }
 
@@ -240,42 +266,82 @@
   // ══════════════════════════════════════════════════════════════════
   //  ROUTEUR — appelé par qa.js. Renvoie {html,intent} ou null.
   // ══════════════════════════════════════════════════════════════════
+  // Mots d'un AUTRE module : on ne détourne pas « où en est mon DORA », « montre-la sécu »…
+  var OTHER = /\bdora\b|\bscore\b|\bbadge|\bbus factor|\bsecu|\bsecurite|\brepo\b|\bmaturite|\bflag|\bfeature flag|\bdaily|\bpriorite|\bbilan\b/;
+
   S.livraisonRoute = async function livraisonRoute(n, q) {
-    // Commenter : "commente la 44 : texte"
-    if (/\bcommente(r)?\b|\bcommentaire\b/.test(n) && /\d/.test(n)) {
-      var iidC = parseIid(n); var mBody = q.split(/[:：]/).slice(1).join(':').trim();
-      if (iidC) return await doComment(iidC, mBody);
+    var explicitIid = parseIid(n);
+    var iid = explicitIid || lastMr;           // ← mémoire de contexte
+    var branch = parseBranch(q);
+    var hasRef = /\bmr\b|\bmerge request\b|\bla\b|\ble\b|\bca\b|\bcelle|\bcette|\-la\b/.test(n) || explicitIid || lastMr;
+
+    // ── COMMENTER : « commente la 44 : … », « réponds : … », « commente-la : … »
+    if (/\bcommente(r)?\b|\bcommentaire\b|\breponds?\b|\bajoute un (mot|commentaire)\b/.test(n)) {
+      var body = q.split(/[:：]/).slice(1).join(':').trim();
+      if (iid && body) { setLast(iid); return await doComment(iid, body); }
+      if (iid) return { html: 'Quel commentaire pour <b>!' + iid + '</b> ? Dis « commente : ton message ». 💬', intent: 'liv_comment' };
+      return { html: 'Sur quelle MR ? « commente la <b>44</b> : ton message ». 💬', intent: 'liv_comment' };
     }
-    // Approuver : "approuve la 44", "valide la mr 44"
-    if (/\bapprouv(e|er)\b|\bvalide[rz]?\b.*\bmr\b|\bvalider la mr\b/.test(n) && /\d/.test(n)) {
-      var iidA = parseIid(n); if (iidA) return await doApprove(iidA);
+
+    // ── QUI DOIT VALIDER : « qui doit valider la 44 ? », « qui peut approuver ? », « il manque quoi ? »
+    if (/(qui).*(valid|approu|doit merger|peut merger)|combien d approbation|il manque.*(validation|approbation)|c est valide|est ce (que c est )?valide|est ce approuve/.test(n) && !OTHER.test(n)) {
+      if (iid) { setLast(iid); return await whoApproves(iid); }
+      return { html: 'De quelle MR parle-t-on ? « qui doit valider la <b>44</b> ? » 🌱', intent: 'liv_who' };
     }
-    // Fermer : "ferme la 44"
-    if (/\bferm(e|er)\b|\bclot(ure|urer)?\b|\bcloture[rz]?\b|\babandonne\b/.test(n) && /\d/.test(n) && /\bmr\b|\d/.test(n)) {
-      var iidF = parseIid(n); if (iidF) return closeAsk(iidF);
+
+    // ── APPROUVER : « approuve la 44 », « valide-la », « je valide », « ok pour la 44 », « feu vert »
+    if ((/\bapprouv(e|er|ee)?\b|\bje valide\b|\bok pour\b|\bfeu vert\b|\bvalide[rz]?[- ]?(la|le|ca|cette mr)\b|\bvalide[rz]? (la )?mr\b/.test(n))
+      && !/\bqui\b/.test(n) && !OTHER.test(n)) {
+      if (iid) { setLast(iid); return await doApprove(iid); }
+      return { html: 'Quelle MR j\'approuve ? « approuve la <b>44</b> » — ou clique 👍 sur une MR. 🌱', intent: 'liv_approve' };
     }
-    // Train / statut : "le train de la 44", "où en est la pipeline 44", "statut livraison"
-    if (/\btrain\b|\bou en est\b|\bstatut\b|\bstatus\b|\bavancement\b/.test(n) && /\d/.test(n)) {
-      var iidT = parseIid(n); if (iidT) return await trainForMr(iidT);
+
+    // ── FERMER : « ferme la 44 », « ferme-la », « abandonne / jette / annule la MR »
+    if ((/\bferm(e|er|ee)?\b|\bclot(ure|urer|ee)?\b|\bcloture[rz]?\b|\babandonne[rz]?\b|\bjette\b|\bannule[rz]? (la )?mr\b|\bsupprime[rz]? (la )?mr\b/.test(n))
+      && !OTHER.test(n) && hasRef) {
+      if (iid) { setLast(iid); return closeAsk(iid); }
+      return { html: 'Quelle MR je ferme ? « ferme la <b>44</b> ». 🌱', intent: 'liv_close' };
     }
-    // Merger / livrer une MR précise (numéro présent) : "merge la 44", "livre la 44"
-    if (/\bmerge[rz]?\b|\bfusionne[rz]?\b|\blivre[rz]?\b|\bmets? en prod\b|\bdeploie\b/.test(n) && /\d/.test(n) && !parseBranch(q)) {
-      var iidM = parseIid(n); if (iidM) return mergeAsk(iidM);
+
+    // ── TRAIN / statut : « le train », « où en est ? », « ça avance ? », « la pipeline de la 44 »
+    var trainWord = /\btrain\b/.test(n) || /\bla pipeline\b.*(mr|livraison|\d)|\bpipeline de (la|ma)\b/.test(n);
+    var statusWord = /\bou (en est|ca en est|c en est)\b|\bca avance\b|\bavancement\b|\bstatut\b|\bstatus\b|\bou ca en est\b/.test(n);
+    if ((trainWord || (statusWord && (explicitIid || lastMr))) && !OTHER.test(n)) {
+      if (iid) { setLast(iid); return await trainForMr(iid); }
+      if (trainWord) return { html: 'Le train de quelle livraison ? « le train de la <b>44</b> ». 🚂', intent: 'liv_train' };
     }
-    // Préparer une livraison : verbe de prépa/livraison + branche (ou bump) — pas "livrer plus souvent"
-    var prepVerb = /\bprepare[rz]?\b|\bpreparer\b|\bbump\b|\bincremente[rz]?\b/.test(n) || (/\blivre[rz]?\b|\bdeploie[rz]?\b|\bmettre en prod\b/.test(n));
-    var brc = parseBranch(q);
-    if (prepVerb && !/\bsouvent\b|\bfrequence\b|\bplus vite\b|\bregulier/.test(n) && (brc || /\b(patch|minor|mineur|major|majeur|correctif)\b/.test(n))) {
-      if (!brc) return { html: 'Sur quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison <b>patch</b> sur <b>feature/xxx</b> ». 🌿', intent: 'liv_prepare' };
-      var r = await doPrepare(brc, parseBump(n)); r.intent = 'liv_prepare'; return r;
+
+    // ── PRÉPARER : « prépare une livraison patch sur feature/x », « livre-moi feature/x en minor »,
+    //    « sors une release », « nouvelle version sur … » — mais pas « livrer plus souvent » (DORA)
+    var prepVerb = /\bprepare[rz]?\b|\bbump\b|\bincremente[rz]?\b|\bnouvelle (version|release)\b|\bsors?( moi)? (une )?(version|release)\b|\bfais( moi)? (une )?(livraison|release|version)\b|\bcree[rz]?( moi)? (une )?(release|version|livraison)\b/.test(n)
+      || /\blivre[rz]?\b|\bdeploie[rz]?\b|\bmets? en prod\b|\benvoie[rz]?\b|\bbalance[rz]?\b|\bmettre en prod\b/.test(n);
+    if (prepVerb && !/\bsouvent\b|\bfrequence\b|\bplus vite\b|\bregulier/.test(n)
+      && (branch || /\b(patch|minor|mineur|major|majeur|majeure|correctif|moyen|moyenne|intermediaire)\b/.test(n))
+      && !explicitIid) {
+      if (!branch) return { html: 'Sur quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison <b>patch</b> sur <b>feature/xxx</b> ». 🌿', intent: 'liv_prepare' };
+      var rp = await doPrepare(branch, parseBump(n)); rp.intent = 'liv_prepare'; return rp;
     }
-    // Détail d'une MR : "la mr 44", "montre la 44", "détail 44"
-    if (/\bmr\b|\bmerge request\b/.test(n) && /\d/.test(n) && /\b(montre|affiche|detail|ouvre|voir|regarde|la mr|mr numero)\b/.test(n)) {
-      var iidD = parseIid(n); if (iidD) return await mrDetail(iidD);
+
+    // ── MERGER / LIVRER une MR : « merge la 44 », « merge-la », « livre la 44 », « envoie-la en prod »
+    if ((/\bmerge[rz]?[- ]?(la|le|ca)?\b|\bfusionne[rz]?\b|\blivre[rz]? (la|le|ca|cette mr|ma mr)\b|\bmets? (la|ca)? ?en prod\b|\bdeploie[rz]?[- ]?(la|le|ca)?\b|\benvoie[rz]?[- ]?(la|le|ca)?( en prod)?\b|\bbalance[rz]?[- ]?(la|le|ca)?( en prod)?\b|\bgo pour\b/.test(n))
+      && !branch && !OTHER.test(n) && hasRef) {
+      if (iid) { setLast(iid); return mergeAsk(iid); }
+      return { html: 'Quelle MR je merge ? « merge la <b>44</b> » — ou clique 🚀 sur une MR. 🌱', intent: 'liv_merge' };
     }
-    // Lister les MR : "les MR", "MR à valider", "montre les MR", "mes MR" — mais pas "combien"
-    if (/\bmr\b|\bmerge request\b/.test(n) && !/\bcombien\b|\bnombre\b/.test(n)
-      && /\b(les mr|mr ouvertes|mr a valider|mr a relire|mr a merger|liste|montre|affiche|mes mr|mr du repo|a livrer|a valider)\b/.test(n)) {
+
+    // ── DÉTAIL d'une MR : « la mr 44 », « montre la 44 », « ouvre-la », « détaille la 44 »
+    if (explicitIid && /\b(montre|affiche|detail|detaille|ouvre|voir|regarde|c est quoi|dis moi|la mr|mr numero|mr|merge request)\b/.test(n) && !/\bles mr\b|\btoutes\b|\bliste\b/.test(n) && !OTHER.test(n)) {
+      setLast(explicitIid); return await mrDetail(explicitIid);
+    }
+    if (/\b(montre|affiche|ouvre|detaille?|voir|regarde)[- ]?(la|le|moi)\b/.test(n) && lastMr && !/\bles mr\b|\btoutes\b|\bliste\b/.test(n) && !OTHER.test(n)) {
+      return await mrDetail(lastMr);
+    }
+
+    // ── LISTER : « les MR », « MR à valider », « quoi à merger ? », « mes livraisons en cours »
+    var listAsk =
+      /\b(les mr|mr ouvertes|mr a valider|mr a relire|mr a merger|mes mr|mr du repo|livraisons?( en cours| a valider| ouvertes?)|quoi a (valider|merger|relire|livrer)|qu y a t il a (valider|merger|livrer)|(a|à) (valider|merger|relire))\b/.test(n)
+      || ((/\bmr\b|\bmerge request\b/.test(n)) && /\b(liste|montre|affiche|en attente|en cours|a livrer|a valider)\b/.test(n));
+    if (listAsk && !/\bcombien\b|\bnombre\b/.test(n) && !OTHER.test(n)) {
       return await listMRs(n, q);
     }
     return null;
@@ -286,6 +352,7 @@
   // ══════════════════════════════════════════════════════════════════
   window.salsiLiv = async function (action, arg) {
     var say = window.salsiQaSay || function (h) { console.log('[salsi]', h); return null; };
+    if (typeof arg === 'number') setLast(arg);   // le clic devient le contexte courant
     if (action === 'cancel') { say('👍 Ok, on ne touche à rien.'); return; }
     var pend = say('⏳ …');
     function done(r) { if (pend) pend.innerHTML = (r && r.html) || '😅 Rien à afficher.'; else say((r && r.html) || ''); }
