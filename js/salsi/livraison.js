@@ -299,11 +299,12 @@
     if (!mr.ok) { var mb = await mr.json().catch(function () { return {}; }); var msg = mb.message || mb.error || cr.status; return { html: '✏️ Bump <b>' + esc(cur) + ' → ' + esc(target) + '</b> commité sur <b>' + esc(branch) + '</b> (' + overlays + ' overlay), mais MR non créée : ' + esc(Array.isArray(msg) ? msg.join(', ') : msg) + '.' }; }
     var created = await mr.json();
     setLast(created.iid);
+    startWatch(created.iid, 'release ' + target);   // Salsi préviendra quand elle sera approuvée
     var envLine = env ? (envMissing
       ? '<br><span class="sqa-hint">⚠️ Aucune variable <code>DEPLOY_TO_*</code> dans ce <code>.gitlab-ci.yml</code> — l\'environnement <b>' + esc(env) + '</b> n\'a pas pu être posé (piloté autrement ?).</span>'
       : '<br>🎯 Déploiement ciblé : <b>' + ENV_LABEL[env] + '</b> (<code>DEPLOY_TO_' + env.toUpperCase() + '=true</code>, les autres à false).')
       : '';
-    return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + envLine + '<div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
+    return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + envLine + '<br><span class="sqa-hint">🔔 Je surveille la MR — je te préviens dès qu\'elle est approuvée pour livrer.</span><div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
   }
 
   // ── Brancher : lister / créer une branche (base selon le flow) ──
@@ -411,6 +412,60 @@
   function openBtn(c) { return '<div class="sqa-hint">Train live complet → <a href="pipeline-generator.html?repo=' + esc(c.pid) + '" target="_blank" rel="noopener">module Livraison ↗</a></div>'; }
 
   // ══════════════════════════════════════════════════════════════════
+  //  SURVEILLANCE PROACTIVE — prévenir quand une MR devient livrable.
+  //  Salsi poll l'état d'appro en tâche de fond (tant que le hub est ouvert),
+  //  persiste en localStorage (survit à un reload), et propose de livrer.
+  // ══════════════════════════════════════════════════════════════════
+  var WATCH_KEY = 'salsi_liv_watch', POLL_MS = 45000, WATCH_TTL = 24 * 3600 * 1000, poller = null;
+  function loadWatch() { try { return JSON.parse(localStorage.getItem(WATCH_KEY) || '[]'); } catch (e) { return []; } }
+  function saveWatch(a) { try { localStorage.setItem(WATCH_KEY, JSON.stringify(a)); } catch (e) { } }
+  function isReady(mr, appr) {
+    var need = (appr && appr.approvals_required) || 0;
+    if (need > 0) return (appr.approvals_left === 0) || (appr.approved_by && appr.approved_by.length >= need); // approuvée
+    return mr.merge_status === 'can_be_merged'; // pas de règle d'appro → prête quand mergeable
+  }
+  function startWatch(iid, title) {
+    var c = ctx(); if (c.err || !iid) return false;
+    var a = loadWatch().filter(function (w) { return !(String(w.pid) === String(c.pid) && w.iid === iid); });
+    a.push({ pid: String(c.pid), iid: iid, title: title || ('!' + iid), at: Date.now(), notified: false });
+    saveWatch(a); ensurePoller(); return true;
+  }
+  function stopWatchAll() { saveWatch([]); if (poller) { clearInterval(poller); poller = null; } }
+  function ensurePoller() { if (poller) return; poller = setInterval(pollWatch, POLL_MS); setTimeout(pollWatch, 4000); }
+  async function pollWatch() {
+    var auth = S.loadAuth ? S.loadAuth({ redirect: false }) : null;
+    var list = loadWatch();
+    if (!auth || !list.length) { if (poller) { clearInterval(poller); poller = null; } return; }
+    var now = Date.now(), keep = [];
+    for (var i = 0; i < list.length; i++) {
+      var w = list[i];
+      if (now - w.at > WATCH_TTL) continue; // expiré → on lâche
+      try {
+        var mr = await S.gitlabJson(auth.gitlabUrl, auth.token, '/projects/' + w.pid + '/merge_requests/' + w.iid);
+        if (!mr || !mr.iid) { keep.push(w); continue; }
+        if (mr.state !== 'opened') continue; // mergée / fermée → plus rien à surveiller
+        var appr = await S.gitlabJson(auth.gitlabUrl, auth.token, '/projects/' + w.pid + '/merge_requests/' + w.iid + '/approvals');
+        if (!w.notified && isReady(mr, appr)) { notifyReady(w, mr, appr); continue; } // notifié une fois → on retire
+        keep.push(w);
+      } catch (e) { keep.push(w); }
+    }
+    saveWatch(keep);
+    if (!keep.length && poller) { clearInterval(poller); poller = null; }
+  }
+  function notifyReady(w, mr, appr) {
+    var need = (appr && appr.approvals_required) || 0;
+    var lbl = need > 0 ? '<b>approuvée</b> ✅' : '<b>prête à merger</b> ✅';
+    var pj = jsq(String(w.pid));
+    var html = '🎉 Ta MR <b>!' + w.iid + '</b> « ' + esc(mr.title || w.title) + ' » est ' + lbl + ' — on <b>livre</b> ?'
+      + '<div class="sqa-liv-actions">'
+      + '<button class="sqa-liv-btn go" onclick="salsiLiv(\'mergeCtx\',' + w.iid + ',\'' + pj + '\')">🚀 Livrer maintenant</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + w.iid + ')">Voir</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'later\',' + w.iid + ')">Plus tard</button>'
+      + '</div>';
+    if (window.salsiQaSay) window.salsiQaSay(html);
+  }
+
+  // ══════════════════════════════════════════════════════════════════
   //  ROUTEUR — appelé par qa.js. Renvoie {html,intent} ou null.
   // ══════════════════════════════════════════════════════════════════
   // Mots d'un AUTRE module : on ne détourne pas « où en est mon DORA », « montre-la sécu »…
@@ -435,6 +490,23 @@
       && !/\bmorte|stale|obsolete|vieille|dead|inactive|nettoy|supprim|purge|protege|pousse|merge(e|es)? non/.test(n)
       && /\b(j ai quoi comme branche|quoi comme branches?|quelle?s? branches?|mes branches|liste (des |les )?branches|montre (moi )?(les )?branches|branches (du repo|dispo|dispos|existantes|ouvertes)|toutes les branches|il y a quoi comme branche)\b/.test(n)) {
       return await listBranches();
+    }
+
+    // ── ARRÊTER la surveillance (avant « surveiller », sinon « arrête de surveiller » l'active)
+    if (/\b(arrete[rz]?|stop|ne (me )?previens? plus|laisse tomber la surveillance)\b/.test(n) && /surveil|previen|notif|watch/.test(n)) {
+      stopWatchAll();
+      return { html: '🔕 Ok, j\'arrête de surveiller les MR. Dis « surveille la 48 » quand tu veux relancer.', intent: 'liv_watch' };
+    }
+    // ── SURVEILLER : « préviens-moi quand la 48 est validée », « surveille la 48 »
+    if (/\b(surveille[rz]?|previen(s|ds)? moi|notifie moi|tiens moi au courant|dis moi quand|previens moi quand|watch)\b/.test(n)
+      && !/\barrete[rz]?\b|\bstop\b|ne (me )?previens? plus/.test(n)
+      && (/\b(valid|approu|prete|mergeable|livr|mr)\b/.test(n) || explicitIid) && !OTHER.test(n)) {
+      var iidW = explicitIid || lastMr;
+      if (!iidW) return { html: 'Quelle MR je surveille ? « surveille la <b>48</b> » — je te préviens dès qu\'elle est approuvée. 🔔', intent: 'liv_watch' };
+      setLast(iidW);
+      var mrW = await glJson(ctx(), '/projects/' + (ctx().pid) + '/merge_requests/' + iidW);
+      var ok = startWatch(iidW, mrW && mrW.title);
+      return { html: ok ? '🔔 OK — je surveille <b>!' + iidW + '</b> et je te préviens dès qu\'elle est approuvée pour livrer.' : '⚠️ Impossible de surveiller (repo/auth ?).', intent: 'liv_watch' };
     }
 
     // ── COMMENTER : « commente la 44 : … », « réponds : … », « commente-la : … »
@@ -528,6 +600,14 @@
     // (PAS pour trainPipe/joblog/trainSha/prep : l'arg y est un id pipeline/job ou une branche.)
     if (typeof arg === 'number' && /^(detail|approve|mergeAsk|merge|closeAsk|close|train)$/.test(action)) setLast(arg);
     if (action === 'cancel') { say('👍 Ok, on ne touche à rien.'); return; }
+    if (action === 'later') { setLast(arg); say('👌 Ok, on garde <b>!' + arg + '</b> sous le coude. Dis « merge la ' + arg + ' » quand tu veux livrer.'); return; }
+    // Livraison depuis une notif proactive : la MR peut être sur un autre repo que le courant.
+    if (action === 'mergeCtx') {
+      var cc = ctx();
+      if (cc.err) { say(cc.err); return; }
+      if (String(cc.pid) !== String(arg2)) { say('🔀 La MR <b>!' + arg + '</b> est sur un autre repo. Sélectionne-le dans le hub, puis dis « merge la ' + arg + ' ».'); return; }
+      setLast(arg); say(mergeAsk(arg).html); return;
+    }
     var pend = say('⏳ …');
     function done(r) { if (pend) pend.innerHTML = (r && r.html) || '😅 Rien à afficher.'; else say((r && r.html) || ''); }
     try {
@@ -551,4 +631,11 @@
       done({ html: 'Action inconnue.' });
     } catch (e) { done({ html: '😅 Échec de l\'action — réessaie.' }); }
   };
+
+  // Au chargement du hub : ré-arme la surveillance des MR laissées en attente.
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      try { if (S.loadAuth && S.loadAuth({ redirect: false }) && loadWatch().length) ensurePoller(); } catch (e) { }
+    }, 2500);
+  });
 })();
