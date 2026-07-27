@@ -1280,6 +1280,8 @@
         if (/que (fait|fais|font)|a quoi (sert|ca sert|servent|serts)|qu est ce que (tu sais|tu peux|salsifi|la plateforme|le hub|c est)|c est quoi (la plateforme|salsifi|le hub)|tes (fonctionnalites|capacites|features|possibilites)|que (peux|sais) tu faire|(comment|est ce que) (tu peux|pourrais|peux tu|tu pourrais).* ?m aider|tu peux m aider|(liste|tous|quels) (des )?modules|les modules|toutes les fonctionnalites|montre moi ce que tu sais|presente (toi|la plateforme)|a quoi tu sers|ton aide/.test(n)) {
             var rh = d_help(); rh.intent = 'help'; return rh;
         }
+        // ── Livraison : actions réelles (approuver / merger / fermer / commenter / préparer / train) ──
+        try { var lv = Salsifi.livraisonRoute ? await Salsifi.livraisonRoute(n, q) : null; if (lv) return lv; } catch (e) { /* on retombe sur le routage normal */ }
         // ── DORA d'abord (le module qu'on travaille en profondeur) ──
         var doraCtx = /\bdora\b|deploiement|deployment|lead time|\blt\b|\bcfr\b|taux d echec|change failure|\bmttr\b|ttrs|restauration|frequence/.test(n);
         var improveVerb = /ameliorer|optimiser|augmenter|reduire|baisser|progresser|booster|accelerer|muscler|monter|passer elite|atteindre elite|comment (faire|augmenter|reduire|ameliorer|optimiser|progresser)/.test(n);
@@ -1434,6 +1436,8 @@
 
     window.salsiQaAsk = ask;
     window.salsiQaToggle = togglePanel;
+    // Permet aux actions de livraison (boutons du chat) de parler dans le panneau.
+    window.salsiQaSay = function (html) { if (!msgsEl) build(); togglePanel(true); return addMsg('salsi', html); };
 
     document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { if (getAuth()) build(); }, 500); });
 })();

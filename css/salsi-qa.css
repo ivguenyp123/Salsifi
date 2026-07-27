@@ -46,6 +46,17 @@
 
 @media (max-width: 480px) { .salsi-qa-panel { right: 10px; left: 10px; width: auto; bottom: 84px; } .salsi-fab { right: 16px; bottom: 16px; } }
 
+/* Actions de LIVRAISON dans le chat (MR : approuver / merger / fermer / train) */
+.sqa-liv-row { margin-top: 8px; padding: 8px 11px; border-radius: 11px; cursor: pointer; background: var(--ov-04, rgba(255,255,255,.04)); border: 1px solid var(--ov-08, rgba(255,255,255,.08)); transition: .14s; }
+.sqa-liv-row:hover { border-color: var(--accent, #7c5cff); background: var(--ov-06, rgba(255,255,255,.06)); }
+.sqa-liv-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.sqa-liv-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 9px; cursor: pointer; color: var(--text-primary, #f5f1ff); background: var(--ov-08, rgba(255,255,255,.08)); border: 1px solid var(--ov-18, rgba(255,255,255,.18)); transition: .14s; }
+.sqa-liv-btn:hover { border-color: var(--accent, #7c5cff); }
+.sqa-liv-btn.go { background: linear-gradient(135deg, #2dd4bf, #14b8a6); color: #06231f; border: none; }
+.sqa-liv-btn.danger { color: #f87171; border-color: rgba(248,113,113,.4); }
+.sqa-liv-btn.danger:hover { background: rgba(248,113,113,.12); }
+.sqa-liv-btn.off, .sqa-liv-btn:disabled { opacity: .4; pointer-events: none; }
+
 /* Résultats « ateliers » dans le chat */
 .sqa-atl { margin-top: 8px; padding: 9px 11px; border-radius: 11px; background: var(--ov-04, rgba(255,255,255,.04)); border: 1px solid var(--ov-08, rgba(255,255,255,.08)); }
 .sqa-atl a { color: var(--accent, #a78bfa); font-weight: 700; text-decoration: none; font-size: 13px; }
