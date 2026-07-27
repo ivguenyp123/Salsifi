@@ -41,6 +41,7 @@
   function glAll(c, ep) { return S.gitlabPaginate(c.url, c.token, ep, { throwOnError: false }); }
 
   function initials(nm) { return (nm || '?').split(/[\s_.@-]/).filter(Boolean).slice(0, 2).map(function (p) { return p[0].toUpperCase(); }).join('') || '?'; }
+  function ago(iso) { if (!iso) return ''; var s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000)); if (s < 3600) return Math.round(s / 60) + ' min'; if (s < 86400) return Math.round(s / 3600) + ' h'; return Math.round(s / 86400) + ' j'; }
   function pipeIcon(s) { return s === 'success' ? '✅' : s === 'failed' ? '❌' : (s === 'running' || s === 'pending') ? '⏳' : s === 'canceled' ? '⏹️' : (s ? '•' : ''); }
   async function readFile(c, path, ref) {
     var r = await glFetch(c, '/projects/' + c.pid + '/repository/files/' + encodeURIComponent(path) + '?ref=' + encodeURIComponent(ref));
@@ -64,6 +65,21 @@
     if (/\bpat(ch)?\b|\bcorrectif\b|\bfix\b|\bpetite? version\b/.test(n)) return 'patch';
     return 'patch';
   }
+  // Parse « crée une branche <nom> depuis <base> » → {name, base} (depuis q, casse + / préservés).
+  function parseNewBranch(q) {
+    var base = null;
+    var mb = q.match(/(?:depuis|a partir de|à partir de|sur (?:la )?base de|basee? sur|from|en partant de)\s+([A-Za-z0-9][\w.\/-]*)/i);
+    if (mb) base = mb[1];
+    var qn = q.replace(/(?:depuis|a partir de|à partir de|sur (?:la )?base de|basee? sur|from|en partant de)\s+[A-Za-z0-9][\w.\/-]*/ig, ' ');
+    var name = null;
+    var slash = qn.match(/([A-Za-z0-9][\w.-]*\/[\w.\/-]+)/); if (slash) name = slash[1];
+    if (!name) {
+      var af = qn.match(/branche\s+(?:(?:appelee?|nommee?|:)\s+)?["']?([A-Za-z0-9][\w.\/-]{1,})["']?/i);
+      if (af && !/^(depuis|de|du|la|le|les|une|un|sur|pour|et|ma|mon|mes)$/i.test(af[1])) name = af[1];
+    }
+    return { name: name, base: base };
+  }
+
   function parseBranch(q) {
     // Depuis la question ORIGINALE (les noms de branche ont des / et des majuscules).
     var m = q.match(/(?:\bsur\b|\bbranche\b|\bdepuis\b|\bde la branche\b)\s+([^\s,;]+)/i);
@@ -221,6 +237,42 @@
     return { html: '✅ Livraison préparée : <code>IMAGE_TAG ' + esc(cur) + ' → ' + esc(target) + '</code> + <b>' + overlays + '</b> overlay(s), MR <b>!' + esc(created.iid) + ' « release ' + esc(target) + ' »</b> ouverte → <b>' + esc(def) + '</b>.' + '<div class="sqa-liv-actions"><button class="sqa-liv-btn" onclick="salsiLiv(\'detail\',' + created.iid + ')">Ouvrir la MR</button></div>' };
   }
 
+  // ── Brancher : lister / créer une branche (base selon le flow) ──
+  async function branchExists(c, name) { var b = await glJson(c, '/projects/' + c.pid + '/repository/branches/' + encodeURIComponent(name)); return !!(b && b.name); }
+  async function listBranches() {
+    var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_branches' };
+    var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
+    var arr = await S.gitlabPaginate(c.url, c.token, '/projects/' + c.pid + '/repository/branches', { maxPages: 3, throwOnError: false }) || [];
+    if (!arr.length) return { html: '🌿 Aucune branche visible (droits du token ?).', intent: 'liv_branches' };
+    arr.sort(function (a, b) { if (a.name === def) return -1; if (b.name === def) return 1; var da = (a.commit && a.commit.committed_date) || '', db = (b.commit && b.commit.committed_date) || ''; return db.localeCompare(da); });
+    var rows = arr.slice(0, 15).map(function (b) {
+      var age = ago(b.commit && b.commit.committed_date); var tags = [];
+      if (b.name === def) tags.push('défaut'); if (b.protected) tags.push('🔒 protégée');
+      var meta = tags.concat(age ? ['maj ' + age] : []).join(' · ');
+      return '🌿 <code>' + esc(b.name) + '</code>' + (meta ? ' <span class="sqa-hint">' + meta + '</span>' : '');
+    }).join('<br>');
+    return { html: '🌿 <b>' + arr.length + '</b> branche(s)' + (arr.length > 15 ? ' (15 récentes)' : '') + ' sur ce repo :<br>' + rows, intent: 'liv_branches' };
+  }
+  async function doCreateBranch(name, base, mentionedFlow) {
+    var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_branch' };
+    if (!name) return { html: '🌿 Quel nom pour la branche ? Ex. « crée une branche <b>feature/iban</b> depuis <b>main</b> ». (nom libre — feature/…, fix/…, release/…)', intent: 'liv_branch' };
+    var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
+    var autoBase = false;
+    if (!base) { base = def; autoBase = true; }
+    // Flow gitflow : « depuis develop » / « en gitflow » → develop (ou development).
+    if (/^develop/i.test(base) && !(await branchExists(c, base))) {
+      var alt = base.toLowerCase() === 'develop' ? 'development' : 'develop';
+      if (await branchExists(c, alt)) base = alt;
+    }
+    if (!(await branchExists(c, base))) return { html: '⚠️ La branche de base <b>' + esc(base) + '</b> n\'existe pas ici. Dis-moi depuis quelle branche partir (« depuis <b>' + esc(def) + '</b> »).', intent: 'liv_branch' };
+    var r = await glFetch(c, '/projects/' + c.pid + '/repository/branches?branch=' + encodeURIComponent(name) + '&ref=' + encodeURIComponent(base), { method: 'POST' });
+    if (!r.ok) { var b = await r.json().catch(function () { return {}; }); return { html: '⚠️ Création refusée pour <b>' + esc(name) + '</b> : ' + esc(b.message || r.status) + '.', intent: 'liv_branch' }; }
+    // Astuce flow si une develop existe et qu'on a pris la branche par défaut sans le dire.
+    var hint = '';
+    if (autoBase && base === def && def !== 'develop' && (await branchExists(c, 'develop'))) hint = '<br><span class="sqa-hint">💡 Ton repo a une branche <b>develop</b> — en gitflow, dis « depuis develop ».</span>';
+    return { html: '🌿 Branche <b>' + esc(name) + '</b> créée depuis <b>' + esc(base) + '</b>. Code dedans, puis reviens : « prépare une livraison <b>patch</b> sur <b>' + esc(name) + '</b> ».' + hint, intent: 'liv_branch' };
+  }
+
   // ── Train (résumé texte, pas de polling permanent dans le chat) ──
   async function findDeliveryPipeline(c, sha) {
     for (var i = 0; i < 6; i++) {
@@ -274,6 +326,21 @@
     var iid = explicitIid || lastMr;           // ← mémoire de contexte
     var branch = parseBranch(q);
     var hasRef = /\bmr\b|\bmerge request\b|\bla\b|\ble\b|\bca\b|\bcelle|\bcette|\-la\b/.test(n) || explicitIid || lastMr;
+
+    // ── CRÉER UNE BRANCHE : « crée une branche feature/x depuis main » (base selon le flow)
+    if (/\bbranche\b/.test(n) && /\b(cree[rz]?|creer|nouvelle branche|fais( moi)? (une )?branche|branche moi|demarre[rz]? une branche|ajoute[rz]? une branche|part(ir|s)? sur une branche)\b/.test(n) && !OTHER.test(n)) {
+      var pb = parseNewBranch(q);
+      var base = pb.base;
+      if (!base && /gitflow|git flow|\bdevelop/.test(n)) base = 'develop';
+      if (!base && /\btrunk\b/.test(n)) base = null; // → branche par défaut dans le handler
+      return await doCreateBranch(pb.name, base);
+    }
+    // ── LISTER LES BRANCHES : « j'ai quoi comme branche », « quelles branches », « mes branches »
+    if (/\bbranches?\b/.test(n) && !OTHER.test(n)
+      && !/\bmorte|stale|obsolete|vieille|dead|inactive|nettoy|supprim|purge|protege|pousse|merge(e|es)? non/.test(n)
+      && /\b(j ai quoi comme branche|quoi comme branches?|quelle?s? branches?|mes branches|liste (des |les )?branches|montre (moi )?(les )?branches|branches (du repo|dispo|dispos|existantes|ouvertes)|toutes les branches|il y a quoi comme branche)\b/.test(n)) {
+      return await listBranches();
+    }
 
     // ── COMMENTER : « commente la 44 : … », « réponds : … », « commente-la : … »
     if (/\bcommente(r)?\b|\bcommentaire\b|\breponds?\b|\bajoute un (mot|commentaire)\b/.test(n)) {
