@@ -27,6 +27,10 @@
   // « approuve-la », « merge ça », « ferme-la », « où en est ? » sans répéter le n°.
   var lastMr = null;
   function setLast(i) { if (i) lastMr = parseInt(i, 10); }
+  // …et la dernière branche créée/préparée, pour « prépare une livraison » sans re-nommer.
+  var lastBranch = null;
+  // Échappe une chaîne pour une string JS entre quotes simples dans un onclick.
+  function jsq(s) { return String(s).replace(/[\\']/g, '\\$&'); }
 
   // ── Contexte repo (auth + repo sélectionné dans le hub) ──
   function ctx() {
@@ -207,8 +211,31 @@
     var tree = await S.gitlabPaginate(c.url, c.token, '/projects/' + c.pid + '/repository/tree?recursive=true&ref=' + encodeURIComponent(ref), { throwOnError: false });
     return (tree || []).filter(function (t) { return t && t.type === 'blob' && KUSTO_RX.test(t.path); }).map(function (t) { return t.path; });
   }
+  // Pas de niveau précisé → on lit la version courante et on propose les 3 cibles en boutons.
+  async function prepPreview(branch) {
+    var c = ctx(); if (c.err) return { html: c.err, intent: 'liv_prepare' };
+    var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
+    if (branch === def) return { html: '🌿 <b>' + esc(branch) + '</b> est la branche par défaut — on prépare depuis une <i>autre</i> branche vers <b>' + esc(def) + '</b>.', intent: 'liv_prepare' };
+    var ci = await readFile(c, '.gitlab-ci.yml', branch);
+    if (ci == null) return { html: '⚠️ Pas de <code>.gitlab-ci.yml</code> sur <b>' + esc(branch) + '</b> (ou branche introuvable).', intent: 'liv_prepare' };
+    var mt = ci.match(IMAGE_TAG_RX);
+    if (!mt) return { html: '⚠️ Pas d\'<code>IMAGE_TAG</code> dans le <code>.gitlab-ci.yml</code> de <b>' + esc(branch) + '</b>.', intent: 'liv_prepare' };
+    var cur = mt[3].trim(), maj = bumpVer(cur, 'major'), min = bumpVer(cur, 'minor'), pat = bumpVer(cur, 'patch');
+    if (!pat) return { html: '⚠️ Version courante <code>' + esc(cur) + '</code> non SemVer — bump impossible.', intent: 'liv_prepare' };
+    lastBranch = branch;
+    var head = '📦 Livraison de <b>' + esc(branch) + '</b> — version actuelle <code>' + esc(cur) + '</code>. <b>Quel niveau ?</b>';
+    if (!/^[A-Za-z0-9._\/-]+$/.test(branch)) return { html: head + '<br><span class="sqa-hint">Tape « prépare une livraison <b>patch</b> sur ' + esc(branch) +' » (ou minor / major).</span>', intent: 'liv_prepare' };
+    var b = jsq(branch);
+    var btns = '<div class="sqa-liv-actions">'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'major\')">majeur → ' + esc(maj) + '</button>'
+      + '<button class="sqa-liv-btn" onclick="salsiLiv(\'prep\',\'' + b + '\',\'minor\')">mineur → ' + esc(min) + '</button>'
+      + '<button class="sqa-liv-btn go" onclick="salsiLiv(\'prep\',\'' + b + '\',\'patch\')">patch → ' + esc(pat) + '</button>'
+      + '</div>';
+    return { html: head + btns, intent: 'liv_prepare' };
+  }
   async function doPrepare(branch, bump) {
     var c = ctx(); if (c.err) return { html: c.err };
+    lastBranch = branch;
     var proj = await glJson(c, '/projects/' + c.pid); var def = (proj && proj.default_branch) || 'main';
     if (branch === def) return { html: '🌿 <b>' + esc(branch) + '</b> est la branche par défaut — on livre <i>depuis une autre branche</i> vers <b>' + esc(def) + '</b>.' };
     var ci = await readFile(c, '.gitlab-ci.yml', branch);
@@ -267,6 +294,7 @@
     if (!(await branchExists(c, base))) return { html: '⚠️ La branche de base <b>' + esc(base) + '</b> n\'existe pas ici. Dis-moi depuis quelle branche partir (« depuis <b>' + esc(def) + '</b> »).', intent: 'liv_branch' };
     var r = await glFetch(c, '/projects/' + c.pid + '/repository/branches?branch=' + encodeURIComponent(name) + '&ref=' + encodeURIComponent(base), { method: 'POST' });
     if (!r.ok) { var b = await r.json().catch(function () { return {}; }); return { html: '⚠️ Création refusée pour <b>' + esc(name) + '</b> : ' + esc(b.message || r.status) + '.', intent: 'liv_branch' }; }
+    lastBranch = name;   // « prépare une livraison » enchaînera sur cette branche
     // Astuce flow si une develop existe et qu'on a pris la branche par défaut sans le dire.
     var hint = '';
     if (autoBase && base === def && def !== 'develop' && (await branchExists(c, 'develop'))) hint = '<br><span class="sqa-hint">💡 Ton repo a une branche <b>develop</b> — en gitflow, dis « depuis develop ».</span>';
@@ -403,15 +431,19 @@
       if (trainWord) return { html: 'Le train de quelle livraison ? « le train de la <b>44</b> ». 🚂', intent: 'liv_train' };
     }
 
-    // ── PRÉPARER : « prépare une livraison patch sur feature/x », « livre-moi feature/x en minor »,
-    //    « sors une release », « nouvelle version sur … » — mais pas « livrer plus souvent » (DORA)
-    var prepVerb = /\bprepare[rz]?\b|\bbump\b|\bincremente[rz]?\b|\bnouvelle (version|release)\b|\bsors?( moi)? (une )?(version|release)\b|\bfais( moi)? (une )?(livraison|release|version)\b|\bcree[rz]?( moi)? (une )?(release|version|livraison)\b/.test(n)
-      || /\blivre[rz]?\b|\bdeploie[rz]?\b|\bmets? en prod\b|\benvoie[rz]?\b|\bbalance[rz]?\b|\bmettre en prod\b/.test(n);
-    if (prepVerb && !/\bsouvent\b|\bfrequence\b|\bplus vite\b|\bregulier/.test(n)
-      && (branch || /\b(patch|minor|mineur|major|majeur|majeure|correctif|moyen|moyenne|intermediaire)\b/.test(n))
-      && !explicitIid) {
-      if (!branch) return { html: 'Sur quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison <b>patch</b> sur <b>feature/xxx</b> ». 🌿', intent: 'liv_prepare' };
-      var rp = await doPrepare(branch, parseBump(n)); rp.intent = 'liv_prepare'; return rp;
+    // ── PRÉPARER : « prépare une livraison [patch] [sur feature/x] », « livre feature/x en minor »,
+    //    « sors une release » — mais pas « livrer plus souvent » (DORA).
+    // Verbe FORT (prépare/bump/release…) : engage même sans branche ni niveau (on demande).
+    // Verbe FAIBLE (livre/déploie/envoie…) : seulement si branche ou niveau présent (sinon = merge).
+    var strongPrep = /\bprepare[rz]?\b|\bpreparer\b|\bpreparation\b|\bbump\b|\bincremente[rz]?\b|\bnouvelle (version|release)\b|\bsors?( moi)? (une )?(version|release)\b|\bfais( moi)? (une )?(livraison|release|version)\b|\bcree[rz]?( moi)? (une )?(release|version)\b/.test(n);
+    var softPrep = /\blivre[rz]?\b|\bdeploie[rz]?\b|\bmets? en prod\b|\benvoie[rz]?\b|\bbalance[rz]?\b|\bmettre en prod\b/.test(n);
+    var hasBump = /\b(patch|minor|mineur|major|majeur|majeure|correctif|moyen|moyenne|intermediaire|grosse version|petite version|breaking)\b/.test(n);
+    if (!explicitIid && !/\bsouvent\b|\bfrequence\b|\bplus vite\b|\bregulier/.test(n)
+      && (strongPrep || (softPrep && (branch || hasBump)))) {
+      var brc = branch || lastBranch;
+      if (!brc) return { html: 'Pour quelle <b>branche</b> je prépare la livraison ? Ex. « prépare une livraison sur <b>feature/xxx</b> » — tu choisiras <b>majeur / mineur / patch</b> juste après. 🌿', intent: 'liv_prepare' };
+      if (hasBump) { var rp = await doPrepare(brc, parseBump(n)); rp.intent = 'liv_prepare'; return rp; }
+      return await prepPreview(brc);   // pas de niveau → propose majeur / mineur / patch en boutons
     }
 
     // ── MERGER / LIVRER une MR : « merge la 44 », « merge-la », « livre la 44 », « envoie-la en prod »
@@ -442,15 +474,16 @@
   // ══════════════════════════════════════════════════════════════════
   //  Boutons du chat → window.salsiLiv(action, arg)
   // ══════════════════════════════════════════════════════════════════
-  window.salsiLiv = async function (action, arg) {
+  window.salsiLiv = async function (action, arg, arg2) {
     var say = window.salsiQaSay || function (h) { console.log('[salsi]', h); return null; };
     // arg = iid d'une MR pour ces actions → devient le contexte courant.
-    // (PAS pour trainPipe/joblog/trainSha : l'arg y est un id de pipeline/job.)
+    // (PAS pour trainPipe/joblog/trainSha/prep : l'arg y est un id pipeline/job ou une branche.)
     if (typeof arg === 'number' && /^(detail|approve|mergeAsk|merge|closeAsk|close|train)$/.test(action)) setLast(arg);
     if (action === 'cancel') { say('👍 Ok, on ne touche à rien.'); return; }
     var pend = say('⏳ …');
     function done(r) { if (pend) pend.innerHTML = (r && r.html) || '😅 Rien à afficher.'; else say((r && r.html) || ''); }
     try {
+      if (action === 'prep') return done(await doPrepare(arg, arg2 || 'patch'));
       if (action === 'detail') return done(await mrDetail(arg));
       if (action === 'approve') return done(await doApprove(arg));
       if (action === 'mergeAsk') return done(mergeAsk(arg));
