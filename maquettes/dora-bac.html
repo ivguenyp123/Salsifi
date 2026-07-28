@@ -179,15 +179,30 @@ svg text{font-family:var(--fb)}
 .calmonth{font-family:var(--fd);font-weight:800;font-size:16px}
 .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .cal-h{font-size:10px;color:var(--tm);text-transform:uppercase;text-align:center;font-weight:700;padding-bottom:2px}
-.cal-c{min-height:50px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.02);padding:5px 7px;position:relative}
-.cal-c.empty{border:0;background:transparent}
-.cal-c.has{cursor:pointer;background:rgba(255,255,255,.045)}
-.cal-c.has:hover{border-color:var(--line2)}
+.cal-c{min-height:50px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.02);padding:5px 7px;position:relative;cursor:pointer;transition:.14s}
+.cal-c:hover{border-color:var(--line2)}
+.cal-c.empty{border:0;background:transparent;cursor:default}
+.cal-c.has{background:rgba(255,255,255,.045)}
 .cal-c.big{border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.1)}
 .cal-d{font-size:11px;color:var(--tm);font-weight:700}
 .cal-a{position:absolute;bottom:5px;right:7px;font-size:15px}
 .cal-detail-head{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 10px}
 @media(max-width:640px){.cal-c{min-height:40px}.cal-a{font-size:12px}}
+/* Pop-up jour */
+.overlay{position:fixed;inset:0;background:rgba(10,7,22,.72);backdrop-filter:blur(4px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.daymodal{background:#150e2b;border:1px solid var(--line2);border-radius:18px;max-width:440px;width:100%;padding:20px 22px;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pop .2s ease}
+.dm-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dm-date{font-family:var(--fd);font-weight:800;font-size:17px}
+.dm-x{all:unset;cursor:pointer;font-size:16px;color:var(--tm);margin-left:auto}
+.dm-x:hover{color:var(--tp)}
+.dm-act{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.dm-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;border:1px solid var(--line2);flex-shrink:0}
+.dm-t{font-family:var(--fd);font-weight:800;font-size:15px}
+.dm-type{font-size:11px;color:var(--tm);font-weight:600;margin-top:2px}
+.dm-note{font-size:12.5px;color:var(--ts);line-height:1.6;margin-top:12px}
+.dm-impact{margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);font-size:12.5px;color:var(--ts);line-height:1.7}
+.dm-empty{font-size:12.5px;color:var(--tm);margin-top:6px;line-height:1.6}
 .spark{margin:2px 0}
 .coach-intro{font-size:12.5px;color:var(--ts);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
 .coach-ava{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:14px;flex-shrink:0}
@@ -380,6 +395,9 @@ svg text{font-family:var(--fb)}
 
   <div class="foot">Maquette statique · données fictives · aucune donnée réelle · Salsi DevOps Hub · pensée pour le back « historien » (interventions + snapshots stockés)</div>
 </div>
+<div class="overlay" id="dayModal" onclick="if(event.target===this)closeDay()">
+  <div class="daymodal" id="dayBody"></div>
+</div>
 <div id="toast"></div>
 <script>
 const MK={form:{f:.17,c:'var(--info)',l:'📚 Formation'},coach:{f:.40,c:'var(--deliver)',l:'🎯 Coaching'},atl:{f:.64,c:'var(--accent)',l:'🧩 Atelier'}};
@@ -444,19 +462,52 @@ function selectMetric(k){
   renderCoach(k);
 }
 // Calendrier mensuel (Avril 2026, 1er avril = mercredi → 2 cases vides).
-const CAL={1:['🎯','coaching hebdo'],2:['👥','pair — module paiement'],3:['👀','review MR !482'],
-  7:['👀','review MR !491'],8:['👥','pair prog'],9:['🔧','outillage CI (cache)'],10:['🎯','coaching hebdo'],
-  12:['🧩','Atelier flow — limites de WIP'],13:['👀','review'],15:['👥','pair prog'],16:['👀','review MR !503'],17:['🎯','coaching hebdo'],
-  20:['👥','pair prog'],22:['🔥','incident prod (rollback)'],23:['👀','review'],24:['🎯','coaching hebdo'],27:['👥','pair'],29:['📚','formation observabilité']};
+const CAL={
+  1:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo',note:'Revue des MR de la semaine avec le coach, objectifs de découpage pour la suivante.'},
+  2:{ic:'👥',t:'Pair / mob',l:'Pair programming — module paiement'},
+  3:{ic:'👀',t:'Grosse review',l:'Review approfondie de la MR !482'},
+  7:{ic:'👀',t:'Grosse review',l:'Review de la MR !491'},
+  8:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
+  9:{ic:'🔧',t:'Outillage',l:'Outillage CI — cache des dépendances',note:'Mise en cache des deps pour accélérer le pipeline (build ~2× plus rapide).'},
+  10:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
+  12:{ic:'🧩',t:'Atelier',l:'Atelier flow — limites de WIP',note:'Atelier d\'équipe : on a posé une limite de MR ouvertes en parallèle et un SLA de review à 4 h.',impact:'⚡ Lead time <b>2,5 j → 20 h</b> ▲<br>📊 Score DORA <b>64 → 74</b> ▲ <span style="color:var(--tm)">(mesuré 30 j après)</span>'},
+  13:{ic:'👀',t:'Grosse review',l:'Review de MR'},
+  15:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
+  16:{ic:'👀',t:'Grosse review',l:'Review de la MR !503'},
+  17:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
+  20:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
+  22:{ic:'🔥',t:'Incident',l:'Incident prod — rollback 2.0.4',note:'Régression sur le calcul du montant. Rollback en un geste, service restauré en ~25 min.',impact:'⏱️ MTTR du jour : <b>25 min</b> — sous la barre, bon réflexe rollback 👍'},
+  23:{ic:'👀',t:'Grosse review',l:'Review de MR'},
+  24:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
+  27:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
+  29:{ic:'📚',t:'Formation',l:'Formation observabilité',note:'Alerting + traces distribuées : viser un MTTR sous 1 h (palier Elite).'}
+};
+const TYPECOL={'Coaching':'var(--deliver)','Atelier':'var(--accent)','Formation':'var(--info)','Incident':'var(--err)','Outillage':'var(--warn)'};
 function renderCalendar(){
   const grid=document.getElementById('calGrid');if(!grid)return;
   let html='';['L','M','M','J','V','S','D'].forEach(d=>html+='<div class="cal-h">'+d+'</div>');
   for(let i=0;i<2;i++)html+='<div class="cal-c empty"></div>';
   for(let d=1;d<=30;d++){const a=CAL[d];
-    html+='<div class="cal-c'+(a?' has':'')+(d===12?' big':'')+'"'+(a?' onclick="toast(\''+d+' avril : '+a[0]+' '+a[1].replace(/'/g,"\\'")+' — maquette\')"':'')+'><span class="cal-d">'+d+'</span>'+(a?'<span class="cal-a">'+a[0]+'</span>':'')+'</div>';
+    html+='<div class="cal-c'+(a?' has':'')+(d===12?' big':'')+'" onclick="openDay('+d+')"><span class="cal-d">'+d+'</span>'+(a?'<span class="cal-a">'+a.ic+'</span>':'')+'</div>';
   }
   grid.innerHTML=html;
 }
+function openDay(d){
+  const a=CAL[d],body=document.getElementById('dayBody');if(!body)return;
+  let inner;
+  if(a){
+    const col=TYPECOL[a.t]||'var(--line2)';
+    inner='<div class="dm-act"><div class="dm-ic" style="border-color:'+col+'">'+a.ic+'</div><div><div class="dm-t">'+a.l+'</div><div class="dm-type">'+a.t+'</div></div></div>'
+      +(a.note?'<div class="dm-note">'+a.note+'</div>':'')
+      +(a.impact?'<div class="dm-impact">📈 <b>Impact mesuré</b><br>'+a.impact+'</div>':'');
+  } else {
+    inner='<div class="dm-empty">Rien de noté ce jour-là.<br><span style="color:var(--accent);cursor:pointer;font-weight:700" onclick="closeDay();toast(\'Ouvre « Ma journée » pour saisir — maquette\')">＋ Ajouter une activité</span></div>';
+  }
+  body.innerHTML='<div class="dm-h"><span style="font-size:20px">📅</span><span class="dm-date">'+d+' avril 2026</span><button class="dm-x" onclick="closeDay()">✕</button></div>'+inner;
+  document.getElementById('dayModal').classList.add('show');
+}
+function closeDay(){document.getElementById('dayModal').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDay();});
 selectMetric('score');
 renderCalendar();
 let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
