@@ -40,6 +40,10 @@ select{font-family:var(--fb);font-size:13px;font-weight:600;background:transpare
 .tile .v{font-family:var(--fd);font-size:26px;font-weight:800;margin-top:6px;line-height:1}
 .tile .lv{font-size:12px;font-weight:700;margin-top:5px}
 .lv.elite{color:var(--ok)} .lv.high{color:var(--info)} .lv.medium{color:var(--warn)} .lv.low{color:var(--err)}
+.tile.clickable{cursor:pointer;transition:.15s;position:relative}
+.tile.clickable:hover{border-color:var(--line2);background:var(--bg-card-h);transform:translateY(-2px)}
+.tile .more{position:absolute;top:13px;right:14px;font-size:10px;color:var(--tm);opacity:0;transition:.15s}
+.tile.clickable:hover .more{opacity:1}
 .delta{font-size:11.5px;font-weight:700;margin-top:6px;display:inline-flex;gap:4px;align-items:center}
 .delta.up{color:var(--ok)} .delta.down{color:var(--err)} .delta.flat{color:var(--tm)}
 
@@ -138,6 +142,26 @@ svg text{font-family:var(--fb)}
 .wday .d{width:100%;height:7px;border-radius:6px;background:rgba(255,255,255,.06);margin-top:6px}
 .wday.filled .d{background:var(--ok)}
 .wday.today .d{box-shadow:0 0 0 2px rgba(167,139,250,.5)}
+/* Fiche métrique (modal) */
+.overlay{position:fixed;inset:0;background:rgba(10,7,22,.72);backdrop-filter:blur(4px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.modal{background:#150e2b;border:1px solid var(--line2);border-radius:18px;max-width:520px;width:100%;padding:22px 24px;max-height:88vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pop .2s ease}
+.modal .mh{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.modal .mi{font-size:26px}
+.modal .mt{font-family:var(--fd);font-size:18px;font-weight:800}
+.modal .msub{font-size:11px;color:var(--tm);font-family:var(--fm)}
+.modal .mv{margin-left:auto;font-family:var(--fd);font-size:15px;font-weight:800;color:var(--ts);white-space:nowrap}
+.modal .mx{all:unset;cursor:pointer;font-size:16px;color:var(--tm);padding:2px 6px}
+.modal .mx:hover{color:var(--tp)}
+.modal .mdef{font-size:13px;color:var(--ts);line-height:1.6;margin:10px 0 4px}
+.modal .bh{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+.lvrow{display:flex;justify-content:space-between;padding:8px 11px;border-radius:9px;font-size:12.5px;margin-bottom:5px;border:1px solid var(--line)}
+.lvrow.on{border-color:var(--accent);background:rgba(167,139,250,.1)}
+.lvrow .n{font-weight:800}
+.movd{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:7px 0;border-bottom:1px solid var(--line)}
+.movd:last-child{border-bottom:0}
+.movd .arw{color:var(--ok);font-weight:800}
+.capbox{font-size:12.5px;color:var(--ts);line-height:1.55;background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.25);border-radius:11px;padding:11px 13px}
 .foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
 #toast.show{transform:translateX(-50%) translateY(0)}
@@ -159,12 +183,12 @@ svg text{font-family:var(--fb)}
       <div class="k">📊 Score DORA</div>
       <div class="v">78<span style="font-size:14px;color:var(--tm)">/100</span></div>
       <div class="lv elite">🟢 Elite</div>
-      <div class="delta up">▲ +17 pts</div>
+      <div class="delta up">▲ +24 pts</div>
     </div>
-    <div class="tile"><div class="k">🚀 Déploiement</div><div class="v">1.9<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
-    <div class="tile"><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 3j → 18h</div></div>
-    <div class="tile"><div class="k">🔧 CFR</div><div class="v">6<span style="font-size:13px;color:var(--tm)">%</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 12% → 6%</div></div>
-    <div class="tile"><div class="k">⏱️ MTTR</div><div class="v">2.1<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 8h → 2h</div></div>
+    <div class="tile clickable" onclick="openMetric('df')"><span class="more">détail ↗</span><div class="k">🚀 Fréq. déploiement</div><div class="v">8.4<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
+    <div class="tile clickable" onclick="openMetric('lt')"><span class="more">détail ↗</span><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 9j → 18h</div></div>
+    <div class="tile clickable" onclick="openMetric('cfr')"><span class="more">détail ↗</span><div class="k">🔧 CFR</div><div class="v">6<span style="font-size:13px;color:var(--tm)">%</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 12% → 6%</div></div>
+    <div class="tile clickable" onclick="openMetric('mttr')"><span class="more">détail ↗</span><div class="k">⏱️ MTTR</div><div class="v">2.1<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 8h → 2.1h</div></div>
   </div>
 
   <!-- Courbe + interventions -->
@@ -228,8 +252,8 @@ svg text{font-family:var(--fb)}
     <table class="cmp">
       <thead><tr><th>Mesure</th><th>Avant (fév)</th><th>Après (auj.)</th><th>Évolution</th></tr></thead>
       <tbody>
-        <tr><td class="metric">🚀 Fréquence de déploiement</td><td class="before">0.9 /sem · High</td><td class="after">1.9 /sem · Elite</td><td class="d up">▲ meilleur</td></tr>
-        <tr><td class="metric">⚡ Lead time</td><td class="before">3 j · Medium</td><td class="after">18 h · Elite</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">🚀 Fréquence de déploiement</td><td class="before">1.5 /sem · High</td><td class="after">8.4 /sem · Elite</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">⚡ Lead time</td><td class="before">9 j · Medium</td><td class="after">18 h · Elite</td><td class="d up">▲ meilleur</td></tr>
         <tr><td class="metric">🔧 Change Failure Rate</td><td class="before">12 % · Medium</td><td class="after">6 % · High</td><td class="d up">▲ meilleur</td></tr>
         <tr><td class="metric">⏱️ Temps de restauration</td><td class="before">8 h · High</td><td class="after">2.1 h · High</td><td class="d up">▲ meilleur</td></tr>
         <tr><td class="metric">📊 Score global</td><td class="before">54 · Medium</td><td class="after">78 · Elite</td><td class="d up">▲ +24</td></tr>
@@ -286,7 +310,7 @@ svg text{font-family:var(--fb)}
           <div class="top"><span class="ttl">Atelier flow — limites de WIP</span><span class="pill atelier">atelier</span><span class="date">12 avril</span></div>
           <div class="note">Travail sur le nombre de MR ouvertes en parallèle + SLA de review 4 h.</div>
           <div class="impact">
-            <span class="im">⚡ Lead time <b>2.1 j → 20 h</b> <span class="arw">▲</span></span>
+            <span class="im">⚡ Lead time <b>2.5 j → 20 h</b> <span class="arw">▲</span></span>
             <span class="im">📊 Score <b>64 → 74</b> <span class="arw">▲</span></span>
             <span class="im" style="color:var(--tm)">mesuré 30 j après</span>
           </div>
@@ -309,7 +333,7 @@ svg text{font-family:var(--fb)}
           <div class="top"><span class="ttl">Formation CI/CD</span><span class="pill formation">formation</span><span class="date">5 février</span></div>
           <div class="note">Pipeline as code, stages build/test/deploy, quality gates.</div>
           <div class="impact">
-            <span class="im">🚀 Déploiement <b>0.6 → 0.9 /sem</b> <span class="arw">▲</span></span>
+            <span class="im">🚀 Fréq. déploiement <b>0.6 → 1.5 /sem</b> <span class="arw">▲</span></span>
             <span class="im" style="color:var(--tm)">effet modéré, amplifié par le coaching</span>
           </div>
         </div>
@@ -335,13 +359,53 @@ svg text{font-family:var(--fb)}
   <!-- Salsi -->
   <div class="salsi">
     <div class="ava">🌱</div>
-    <div class="bubble">Depuis ton <b>atelier flow du 12 avril</b>, ton lead time est passé de <b>2,1 j à 20 h</b> ▲. Et le <b>coaching</b> (depuis le 1ᵉʳ mars) t'a fait gagner <b>+24 pts</b> de score DORA — surtout porté par la fréquence de déploiement (High → Elite). Continue : ton prochain palier, c'est le <b>MTTR</b>.</div>
+    <div class="bubble">Depuis ton <b>atelier flow du 12 avril</b>, ton lead time est passé de <b>2,5 j à 20 h</b> ▲. Et le <b>coaching</b> (depuis le 1ᵉʳ mars) t'a fait gagner <b>+24 pts</b> de score DORA — surtout porté par la <b>fréquence de déploiement</b> (High → Elite). Continue : ton prochain palier, c'est le <b>MTTR</b> (passer sous 1 h).</div>
   </div>
 
   <div class="foot">Maquette statique · données fictives · aucune donnée réelle · Salsi DevOps Hub · pensée pour le back « historien » (interventions + snapshots stockés)</div>
 </div>
+<div class="overlay" id="metricModal" onclick="if(event.target===this)closeMetric()">
+  <div class="modal" id="metricBody"></div>
+</div>
 <div id="toast"></div>
 <script>
+const LVCOLOR={Elite:'var(--ok)',High:'var(--info)',Medium:'var(--warn)',Low:'var(--err)'};
+const METRICS={
+  df:{ic:'🚀',name:'Fréquence de déploiement',sub:'DF · Deployment Frequency',val:'8.4 /sem · Elite',lvl:'Elite',
+    def:'À quelle fréquence tu livres en prod. Souvent = petits lots, moins de risque à chaque mise en prod, retour terrain rapide.',
+    levels:[['Elite','≥ 7 /sem'],['High','1 à 7 /sem'],['Medium','0.25 à 1 /sem'],['Low','< 0.25 /sem']],
+    moved:[['🎯 Coaching flow','High → Elite'],['📚 Formation CI/CD','0.6 → 1.5 /sem']],
+    cap:'Palier <b>Elite</b> atteint 🎉 Continue l\'automatisation du déploiement (un merge = une prod) pour tenir le rythme.'},
+  lt:{ic:'⚡',name:'Lead Time for Changes',sub:'LT · Lead Time',val:'18 h · Elite',lvl:'Elite',
+    def:'Le délai entre le 1ᵉʳ commit et la mise en prod. Long = de la valeur qui dort et des reviews qui traînent.',
+    levels:[['Elite','≤ 24 h'],['High','≤ 1 semaine'],['Medium','≤ 1 mois'],['Low','> 1 mois']],
+    moved:[['🎯 Coaching flow','9 j → 18 h'],['🧩 Atelier flow (WIP)','2.5 j → 20 h']],
+    cap:'Palier <b>Elite</b> via le découpage des MR + le SLA de review 4 h. Maintiens le cap, ne relâche pas la taille des MR.'},
+  cfr:{ic:'🔧',name:'Change Failure Rate',sub:'CFR',val:'6 % · High',lvl:'High',
+    def:'La part de tes livraisons prod qui cassent (échec / rollback). Trop haut : tu vas vite mais tu casses souvent.',
+    levels:[['Elite','≤ 5 %'],['High','≤ 10 %'],['Medium','≤ 15 %'],['Low','> 15 %']],
+    moved:[['🎯 Coaching flow','12 % → 6 %']],
+    cap:'Prochain palier <b>Elite</b> : ≤ 5 %. Renforce les quality gates avant merge (pipeline vert + review obligatoires).'},
+  mttr:{ic:'⏱️',name:'Temps de restauration',sub:'MTTR · Time to Restore',val:'2.1 h · High',lvl:'High',
+    def:'Le temps pour revenir à la normale après un incident. La résilience compte autant que la vitesse.',
+    levels:[['Elite','≤ 1 h'],['High','≤ 24 h'],['Medium','≤ 1 semaine'],['Low','> 1 semaine']],
+    moved:[['🎯 Coaching flow','8 h → 2.1 h']],
+    cap:'Ton <b>prochain gros palier</b> : passer sous 1 h (Elite) — rollback en un geste + alerting sur les pipelines prod en échec.'}
+};
+function openMetric(k){
+  const m=METRICS[k];if(!m)return;
+  const levels=m.levels.map(l=>`<div class="lvrow ${l[0]===m.lvl?'on':''}"><span class="n" style="color:${LVCOLOR[l[0]]}">${l[0]}</span><span style="color:var(--ts)">${l[1]}</span></div>`).join('');
+  const moved=m.moved.map(x=>`<div class="movd"><span>${x[0]}</span><span class="arw">${x[1]} ▲</span></div>`).join('');
+  document.getElementById('metricBody').innerHTML=
+    `<div class="mh"><span class="mi">${m.ic}</span><div><div class="mt">${m.name}</div><div class="msub">${m.sub}</div></div><span class="mv">${m.val}</span><button class="mx" onclick="closeMetric()">✕</button></div>`
+    +`<div class="mdef">${m.def}</div>`
+    +`<div class="bh">Barème DORA</div>${levels}`
+    +`<div class="bh">Ce qui l'a fait bouger</div>${moved}`
+    +`<div class="bh">Le cap</div><div class="capbox">${m.cap}</div>`;
+  document.getElementById('metricModal').classList.add('show');
+}
+function closeMetric(){document.getElementById('metricModal').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMetric();});
 let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 let selType=null;
