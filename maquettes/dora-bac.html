@@ -209,6 +209,23 @@ svg text{font-family:var(--fb)}
 .conf-mid{background:rgba(251,191,36,.13);color:var(--warn)} .conf-hi{background:rgba(52,211,153,.13);color:var(--ok)} .conf-lo{background:rgba(255,255,255,.06);color:var(--tm)}
 .disclaimer{margin-top:13px;font-size:12px;color:var(--tm);line-height:1.6;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:11px;padding:10px 13px}
 .auto-note{margin-top:14px;font-size:12px;color:var(--ts);line-height:1.6;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.25);border-radius:11px;padding:10px 13px}
+.period{display:flex;gap:2px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:3px}
+.pchip{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ts);padding:6px 11px;border-radius:8px;transition:.14s}
+.pchip:hover{color:var(--tp)}
+.pchip.on{background:rgba(167,139,250,.16);color:var(--tp)}
+.fiche{margin-top:13px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fi-row{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12.5px}
+.fi-row:last-child{border-bottom:0}
+.fi-k{color:var(--tm);font-weight:600;min-width:132px;flex-shrink:0}
+.fi-v{color:var(--tp);font-weight:600}
+.fi-v a{color:var(--accent);text-decoration:none;cursor:pointer}
+.conf-line{margin-top:11px}
+.salsi-caveat{margin-top:10px;font-size:12px;color:var(--ts);line-height:1.6;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.22);border-radius:11px;padding:10px 12px}
+.loop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.btn-loop{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ts);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;transition:.14s}
+.btn-loop:hover{border-color:var(--accent);color:var(--tp)}
+.btn-loop.go{background:linear-gradient(135deg,var(--accent),#7c5cfc);color:#fff;border:none}
+.btn-loop.go:hover{filter:brightness(1.08)}
 .spark{margin:2px 0}
 .coach-intro{font-size:12.5px;color:var(--ts);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
 .coach-ava{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:14px;flex-shrink:0}
@@ -230,6 +247,12 @@ svg text{font-family:var(--fb)}
     <div class="logo">📊</div>
     <div><h1>DORA Insights</h1><div class="sub">La mesure devient une <b>trajectoire</b> — interventions &amp; impact.</div></div>
     <div class="pick">📦 <select><option>platformengineering</option><option>squad Iban</option><option>toute la direction</option></select></div>
+    <div class="period">
+      <button class="pchip" onclick="setPeriod(this,'30 jours')">30 j</button>
+      <button class="pchip" onclick="setPeriod(this,'90 jours')">90 j</button>
+      <button class="pchip on" onclick="setPeriod(this,'6 mois')">6 mois</button>
+      <button class="pchip" onclick="setPeriod(this,'personnalisé')" title="Période personnalisée">⋯</button>
+    </div>
     <div class="mock-badge">◆ MAQUETTE — données fictives · mode bac</div>
   </header>
 
@@ -443,7 +466,10 @@ function renderCoach(k){
       +'<div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Clique une mesure ↑ — je te fais un <b>plan complet</b> et je te suis dans le temps.<br>👉 Je te suggère de commencer par le <b>⏱️ MTTR</b> — c\'est ton palier le plus proche (passer sous 1 h).</div>';
   } else {
     const levers=m.levers.map(l=>'<div class="lever"><div class="lever-t">'+l.t+' '+pill('effort',l.e)+' '+pill('impact',l.i)+'</div><div class="lever-d">'+l.d+'</div>'+(l.mod?'<span class="lever-mod" onclick="toast(\'Ouvre le module '+l.mod+' — maquette\')">🧰 '+l.mod+' ↗</span>':'')+'</div>').join('');
-    inner='<div class="coach-sub">'+m.coachIntro+(m.target?' <span style="color:var(--tm)">· cap : '+m.target+'</span>':'')+'</div>'+levers;
+    inner='<div class="coach-sub">'+m.coachIntro+(m.target?' <span style="color:var(--tm)">· cap : '+m.target+'</span>':'')+'</div>'+levers
+      +'<div class="loop-actions"><button class="btn-loop go" onclick="toast(\'📋 Plan d\\\'action créé (leviers ci-dessus) — <i>maquette</i>\')">📋 Créer le plan d\'action</button>'
+      +'<button class="btn-loop" onclick="toast(\'🎫 US Jira créées, liées à '+m.name+' — <i>maquette</i>\')">🎫 Créer les US Jira</button>'
+      +'<button class="btn-loop" onclick="toast(\'⏰ Vérification planifiée dans 30 jours — <i>maquette</i>\')">⏰ Planifier une vérif (J+30)</button></div>';
   }
   host.innerHTML='<div class="coach-head2"><span class="coach-ava">🌱</span><div class="coach-title2">Coach Salsi</div>'+(k!=='score'?'<span class="coach-metric">'+m.ic+' '+m.name+'</span>':'')+'</div>'+inner;
 }
@@ -458,21 +484,21 @@ function selectMetric(k){
 }
 // Calendrier mensuel (Avril 2026, 1er avril = mercredi → 2 cases vides).
 const CAL={
-  1:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo',note:'Revue des MR de la semaine avec le coach, objectifs de découpage pour la suivante.'},
+  1:{ic:'🎯',t:'Coaching',l:'Coaching flow — programme',fiche:{hypothese:'Fluidifier la livraison de bout en bout',metrique:'📊 Indice delivery · fréquence de déploiement',responsable:'coach externe + a.bernard',debut:'1ᵉʳ mars',verif:'revue mensuelle',us:'DEVOPS-455',resultat:'+24 d\'indice sur la période',conf:'corrélation forte · plusieurs changements simultanés'}},
   3:{ic:'👀',t:'Revue',l:'MR !482 relue & mergée',auto:true},
   5:{ic:'🚀',t:'Déploiement',l:'2 déploiements en prod',auto:true},
   7:{ic:'👀',t:'Revue',l:'MR !491 relue',auto:true},
   9:{ic:'🔧',t:'Config',l:'Changement de conf — cache CI',auto:true},
   10:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
   11:{ic:'🚀',t:'Déploiement',l:'3 déploiements en prod',auto:true},
-  12:{ic:'🧩',t:'Atelier',l:'Atelier flow — limites de WIP',note:'Atelier d\'équipe : on a posé une limite de MR ouvertes en parallèle et un SLA de review à 4 h.',impact:'⚡ Lead time <b>2,5 j → 20 h</b> ▲<br>📊 Indice delivery <b>64 → 74</b> ▲ <span style="color:var(--tm)">(30 j après · plusieurs facteurs)</span>'},
+  12:{ic:'🧩',t:'Atelier',l:'Atelier branches courtes / limites de WIP',fiche:{hypothese:'Diminuer le lead time',metrique:'⚡ Lead time',responsable:'j.dupont (tech lead)',debut:'12 avr',verif:'J+30 · 12 mai',us:'DEVOPS-482',resultat:'−31 % (2,5 j → 20 h)',conf:'corrélation forte · plusieurs changements simultanés',caveat:'l\'amélioration commence après l\'atelier, mais un changement de pipeline (9 avr) a aussi été déployé sur la période — à attribuer avec prudence.'}},
   16:{ic:'👀',t:'Revue',l:'MR !503 relue',auto:true},
   17:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
   18:{ic:'🚀',t:'Déploiement',l:'2 déploiements en prod',auto:true},
   22:{ic:'🔥',t:'Incident',l:'Incident prod — rollback 2.0.4',auto:true,note:'Régression sur le calcul du montant. Rollback en un geste, service restauré en ~25 min.',impact:'⏱️ Temps de restauration ce jour : <b>25 min</b> — sous la barre, bon réflexe rollback 👍'},
   24:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
   25:{ic:'🚀',t:'Déploiement',l:'4 déploiements en prod',auto:true},
-  29:{ic:'📚',t:'Formation',l:'Formation observabilité',note:'Alerting + traces distribuées : viser un temps de restauration sous 1 h (palier Elite).'}
+  29:{ic:'📚',t:'Formation',l:'Formation observabilité',fiche:{hypothese:'Réduire le temps de restauration (MTTR)',metrique:'⏱️ Temps de restauration',responsable:'a.bernard',debut:'29 avr',verif:'J+30 · 29 mai',us:'DEVOPS-511',resultat:'à vérifier — trop récent',conf:'données partielles'}}
 };
 const TYPECOL={'Coaching':'var(--deliver)','Atelier':'var(--accent)','Formation':'var(--info)','Incident':'var(--err)','Déploiement':'var(--ok)','Revue':'var(--ts)','Config':'var(--warn)'};
 function renderCalendar(){
@@ -484,22 +510,44 @@ function renderCalendar(){
   }
   grid.innerHTML=html;
 }
+function frow(k,v){return '<div class="fi-row"><span class="fi-k">'+k+'</span><span class="fi-v">'+v+'</span></div>';}
+function confClass(c){return /partielles/.test(c)?'conf-lo':/plusieurs/.test(c)?'conf-mid':'conf-hi';}
+const LOOP='<div class="loop-actions">'
+  +'<button class="btn-loop go" onclick="toast(\'📋 Plan d\\\'action créé et suivi — <i>maquette</i>\')">📋 Créer le plan d\'action</button>'
+  +'<button class="btn-loop" onclick="toast(\'🎫 US Jira créées (liées à la mesure) — <i>maquette</i>\')">🎫 Créer les US Jira</button>'
+  +'<button class="btn-loop" onclick="toast(\'⏰ Vérification planifiée dans 30 jours — <i>maquette</i>\')">⏰ Planifier une vérif (J+30)</button>'
+  +'</div>';
 function openDay(d){
   const a=CAL[d],body=document.getElementById('dayBody');if(!body)return;
   let inner;
   if(a){
     const col=TYPECOL[a.t]||'var(--line2)';
     inner='<div class="dm-act"><div class="dm-ic" style="border-color:'+col+'">'+a.ic+'</div><div><div class="dm-t">'+a.l+'</div><div class="dm-type">'+a.t+'</div></div></div>'
-      +'<div class="dm-src">'+(a.auto?'🔗 détecté automatiquement via GitLab':'✍️ intervention saisie au journal')+'</div>'
-      +(a.note?'<div class="dm-note">'+a.note+'</div>':'')
-      +(a.impact?'<div class="dm-impact">📈 <b>Évolution observée après</b><br>'+a.impact+'</div>':'');
+      +'<div class="dm-src">'+(a.auto?'🔗 détecté automatiquement via GitLab':'✍️ intervention saisie au journal')+'</div>';
+    if(a.fiche){const f=a.fiche;
+      inner+='<div class="fiche">'
+        +frow('🎯 Hypothèse',f.hypothese)
+        +frow('📏 Métrique ciblée',f.metrique)
+        +frow('👤 Responsable',f.responsable)
+        +frow('📅 Début → vérif',f.debut+' → <b>'+f.verif+'</b>')
+        +frow('🔗 US associée','<a onclick="toast(\'Ouvre '+f.us+' dans Jira — maquette\')">'+f.us+'</a>')
+        +frow('📈 Résultat observé','<span style="color:var(--ok)">'+f.resultat+'</span>')
+        +'</div>'
+        +'<div class="conf-line"><span class="conf '+confClass(f.conf)+'">🔎 '+f.conf+'</span></div>'
+        +(f.caveat?'<div class="salsi-caveat"><b>🌱 Salsi :</b> '+f.caveat+'</div>':'')
+        +LOOP;
+    } else {
+      inner+=(a.note?'<div class="dm-note">'+a.note+'</div>':'')
+        +(a.impact?'<div class="dm-impact">📈 <b>Évolution observée après</b><br>'+a.impact+'</div>':'');
+    }
   } else {
-    inner='<div class="dm-empty">Rien de noté ce jour-là.<br><span style="color:var(--accent);cursor:pointer;font-weight:700" onclick="closeDay();toast(\'Ouvre « Ma journée » pour saisir — maquette\')">＋ Ajouter une activité</span></div>';
+    inner='<div class="dm-empty">Rien de noté ce jour-là.<br><span style="color:var(--accent);cursor:pointer;font-weight:700" onclick="closeDay();toast(\'Ouvre le journal des interventions pour ajouter — maquette\')">＋ Ajouter une intervention</span></div>';
   }
   body.innerHTML='<div class="dm-h"><span style="font-size:20px">📅</span><span class="dm-date">'+d+' avril 2026</span><button class="dm-x" onclick="closeDay()">✕</button></div>'+inner;
   document.getElementById('dayModal').classList.add('show');
 }
 function closeDay(){document.getElementById('dayModal').classList.remove('show');}
+function setPeriod(el,label){document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');toast('📅 Période d\'analyse : <b>'+label+'</b> — le graphe et les comparaisons s\'ajustent <i>(maquette)</i>');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDay();});
 selectMetric('score');
 renderCalendar();
