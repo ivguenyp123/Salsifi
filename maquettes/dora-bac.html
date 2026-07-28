@@ -161,7 +161,16 @@ svg text{font-family:var(--fb)}
 .movd{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:7px 0;border-bottom:1px solid var(--line)}
 .movd:last-child{border-bottom:0}
 .movd .arw{color:var(--ok);font-weight:800}
-.capbox{font-size:12.5px;color:var(--ts);line-height:1.55;background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.25);border-radius:11px;padding:11px 13px}
+.spark{margin:2px 0}
+.coach-intro{font-size:12.5px;color:var(--ts);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
+.coach-ava{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.lever{padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.03);margin-bottom:7px}
+.lever-t{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.lever-d{font-size:12px;color:var(--ts);line-height:1.5;margin-top:4px}
+.lever-mod{display:inline-block;font-size:11px;color:var(--accent);margin-top:7px;font-weight:700;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.28);padding:3px 9px;border-radius:20px}
+.pl{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+.pl-ok{background:rgba(52,211,153,.14);color:var(--ok)} .pl-warn{background:rgba(251,191,36,.14);color:var(--warn)} .pl-err{background:rgba(248,113,113,.14);color:var(--err)}
+.pl-accent{background:rgba(167,139,250,.16);color:var(--accent)} .pl-info{background:rgba(96,165,250,.14);color:var(--info)} .pl-tm{background:rgba(255,255,255,.06);color:var(--tm)}
 .foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
 #toast.show{transform:translateX(-50%) translateY(0)}
@@ -370,38 +379,70 @@ svg text{font-family:var(--fb)}
 <div id="toast"></div>
 <script>
 const LVCOLOR={Elite:'var(--ok)',High:'var(--info)',Medium:'var(--warn)',Low:'var(--err)'};
+const MARK_COACH='var(--deliver)',MARK_ATL='var(--accent)',MARK_FORM='var(--info)';
 const METRICS={
   df:{ic:'🚀',name:'Fréquence de déploiement',sub:'DF · Deployment Frequency',val:'8.4 /sem · Elite',lvl:'Elite',
     def:'À quelle fréquence tu livres en prod. Souvent = petits lots, moins de risque à chaque mise en prod, retour terrain rapide.',
+    series:[.15,.32,.42,.62,.82,.95], marks:[{f:.17,c:MARK_FORM},{f:.40,c:MARK_COACH}],
     levels:[['Elite','≥ 7 /sem'],['High','1 à 7 /sem'],['Medium','0.25 à 1 /sem'],['Low','< 0.25 /sem']],
     moved:[['🎯 Coaching flow','High → Elite'],['📚 Formation CI/CD','0.6 → 1.5 /sem']],
-    cap:'Palier <b>Elite</b> atteint 🎉 Continue l\'automatisation du déploiement (un merge = une prod) pour tenir le rythme.'},
+    coachIntro:'Tu es déjà à <b>Elite</b> 🎉 — pour <b>tenir le cap</b>, voici tes 2 leviers clés :',
+    levers:[{t:'Automatiser le déploiement (CD)',d:'Un merge sur main déclenche la prod, sans geste manuel. Tant qu\'un humain doit « lancer », la fréquence plafonne.',e:'moyen',i:'fort',mod:'Livraison'},
+            {t:'Découper en petites MR',d:'Plus tu fusionnes petit et souvent, plus tu déploies. Vise des MR sous ~200 lignes.',e:'faible',i:'fort'}]},
   lt:{ic:'⚡',name:'Lead Time for Changes',sub:'LT · Lead Time',val:'18 h · Elite',lvl:'Elite',
     def:'Le délai entre le 1ᵉʳ commit et la mise en prod. Long = de la valeur qui dort et des reviews qui traînent.',
+    series:[.20,.26,.32,.55,.82,.96], marks:[{f:.40,c:MARK_COACH},{f:.64,c:MARK_ATL}],
     levels:[['Elite','≤ 24 h'],['High','≤ 1 semaine'],['Medium','≤ 1 mois'],['Low','> 1 mois']],
     moved:[['🎯 Coaching flow','9 j → 18 h'],['🧩 Atelier flow (WIP)','2.5 j → 20 h']],
-    cap:'Palier <b>Elite</b> via le découpage des MR + le SLA de review 4 h. Maintiens le cap, ne relâche pas la taille des MR.'},
+    coachIntro:'Elite atteint via le découpage des MR — pour <b>ne pas régresser</b> :',
+    levers:[{t:'Réduire la taille des MR',d:'Une petite MR se relit en minutes ; une grosse traîne des jours. C\'est le levier n°1 sur le lead time.',e:'faible',i:'fort',mod:'MR Reviewer'},
+            {t:'Un SLA de review (4 h)',d:'Revieweurs désignés + notifications. La review qui dort est souvent le plus gros du délai.',e:'faible',i:'fort'}]},
   cfr:{ic:'🔧',name:'Change Failure Rate',sub:'CFR',val:'6 % · High',lvl:'High',
     def:'La part de tes livraisons prod qui cassent (échec / rollback). Trop haut : tu vas vite mais tu casses souvent.',
+    series:[.30,.34,.40,.55,.70,.80], marks:[{f:.40,c:MARK_COACH}],
     levels:[['Elite','≤ 5 %'],['High','≤ 10 %'],['Medium','≤ 15 %'],['Low','> 15 %']],
     moved:[['🎯 Coaching flow','12 % → 6 %']],
-    cap:'Prochain palier <b>Elite</b> : ≤ 5 %. Renforce les quality gates avant merge (pipeline vert + review obligatoires).'},
+    coachIntro:'Prochain palier <b>Elite</b> (≤ 5 %) — Salsi te propose :',
+    levers:[{t:'Quality gates avant merge',d:'Pipeline vert + review obligatoires, main protégée : merger un changement non vérifié devient impossible.',e:'faible',i:'fort',mod:'Security Scanner'},
+            {t:'Tests sur les chemins critiques',d:'Sans filet, chaque déploiement est un pari. Couvre d\'abord les parcours qui font mal.',e:'fort',i:'fort'}]},
   mttr:{ic:'⏱️',name:'Temps de restauration',sub:'MTTR · Time to Restore',val:'2.1 h · High',lvl:'High',
     def:'Le temps pour revenir à la normale après un incident. La résilience compte autant que la vitesse.',
+    series:[.35,.40,.45,.55,.68,.78], marks:[{f:.40,c:MARK_COACH}],
     levels:[['Elite','≤ 1 h'],['High','≤ 24 h'],['Medium','≤ 1 semaine'],['Low','> 1 semaine']],
     moved:[['🎯 Coaching flow','8 h → 2.1 h']],
-    cap:'Ton <b>prochain gros palier</b> : passer sous 1 h (Elite) — rollback en un geste + alerting sur les pipelines prod en échec.'}
+    suggested:true,
+    coachIntro:'👉 <b>Salsi te suggère de bosser ça</b> — c\'est ton palier le plus proche : passer sous 1 h (Elite).',
+    levers:[{t:'Rollback en un geste',d:'Revenir à la version précédente en un clic transforme un incident d\'1 h en 5 min.',e:'moyen',i:'fort',mod:'Livraison'},
+            {t:'Détecter vite (alerting)',d:'Alerte sur les pipelines/déploiements prod en échec. On ne restaure pas ce qu\'on n\'a pas vu tomber.',e:'moyen',i:'fort'},
+            {t:'Couper via un feature flag',d:'Désactiver la fonctionnalité fautive sans redéployer : la remédiation la plus rapide qui soit.',e:'moyen',i:'moyen',mod:'Feature Flag Manager'}]}
 };
+function sparkSvg(m){
+  const W=472,H=98,pl=8,pr=8,pt=14,pb=16,n=m.series.length;
+  const xs=i=>pl+i*((W-pl-pr)/(n-1)), ys=q=>pt+(1-q)*(H-pt-pb);
+  const pts=m.series.map((q,i)=>xs(i).toFixed(1)+','+ys(q).toFixed(1));
+  const line='M'+pts.join(' L');
+  const area='M'+pl+','+(H-pb)+' L'+pts.join(' L')+' L'+(W-pr).toFixed(1)+','+(H-pb)+' Z';
+  const marks=(m.marks||[]).map(k=>{const x=(pl+k.f*(W-pl-pr)).toFixed(1);return '<line x1="'+x+'" y1="6" x2="'+x+'" y2="'+(H-pb)+'" stroke="'+k.c+'" stroke-width="1.5" stroke-dasharray="3 4" opacity=".75"/><circle cx="'+x+'" cy="8" r="3" fill="'+k.c+'"/>';}).join('');
+  const dots=m.series.map((q,i)=>'<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(q).toFixed(1)+'" r="'+(i===n-1?4:2.5)+'" fill="var(--accent)"'+(i===n-1?' stroke="#fff" stroke-width="1.5"':'')+'/>').join('');
+  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'" width="100%">'
+    +'<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.30)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>'
+    +marks+'<path d="'+area+'" fill="url(#sg)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots
+    +'<g fill="var(--tm)" font-size="9" text-anchor="middle"><text x="'+pl+'" y="'+(H-2)+'">Jan</text><text x="'+(W-pr).toFixed(1)+'" y="'+(H-2)+'">Juin</text></g></svg>';
+}
+function pill(kind,val){const c={faible:'ok',moyen:'warn',fort:'err'};const ci={fort:'accent',moyen:'info',faible:'tm'};
+  const cls=kind==='effort'?(c[val]||'tm'):(ci[val]||'tm');return '<span class="pl pl-'+cls+'">'+kind+' '+val+'</span>';}
 function openMetric(k){
   const m=METRICS[k];if(!m)return;
-  const levels=m.levels.map(l=>`<div class="lvrow ${l[0]===m.lvl?'on':''}"><span class="n" style="color:${LVCOLOR[l[0]]}">${l[0]}</span><span style="color:var(--ts)">${l[1]}</span></div>`).join('');
-  const moved=m.moved.map(x=>`<div class="movd"><span>${x[0]}</span><span class="arw">${x[1]} ▲</span></div>`).join('');
+  const levels=m.levels.map(l=>'<div class="lvrow '+(l[0]===m.lvl?'on':'')+'"><span class="n" style="color:'+LVCOLOR[l[0]]+'">'+l[0]+'</span><span style="color:var(--ts)">'+l[1]+'</span></div>').join('');
+  const moved=m.moved.map(x=>'<div class="movd"><span>'+x[0]+'</span><span class="arw">'+x[1]+' ▲</span></div>').join('');
+  const levers=m.levers.map(l=>'<div class="lever"><div class="lever-t">'+l.t+' '+pill('effort',l.e)+' '+pill('impact',l.i)+'</div><div class="lever-d">'+l.d+'</div>'+(l.mod?'<span class="lever-mod" onclick="toast(\'Ouvre le module '+l.mod+' — maquette\')">🧰 '+l.mod+' ↗</span>':'')+'</div>').join('');
   document.getElementById('metricBody').innerHTML=
-    `<div class="mh"><span class="mi">${m.ic}</span><div><div class="mt">${m.name}</div><div class="msub">${m.sub}</div></div><span class="mv">${m.val}</span><button class="mx" onclick="closeMetric()">✕</button></div>`
-    +`<div class="mdef">${m.def}</div>`
-    +`<div class="bh">Barème DORA</div>${levels}`
-    +`<div class="bh">Ce qui l'a fait bouger</div>${moved}`
-    +`<div class="bh">Le cap</div><div class="capbox">${m.cap}</div>`;
+    '<div class="mh"><span class="mi">'+m.ic+'</span><div><div class="mt">'+m.name+'</div><div class="msub">'+m.sub+'</div></div><span class="mv">'+m.val+'</span><button class="mx" onclick="closeMetric()">✕</button></div>'
+    +'<div class="mdef">'+m.def+'</div>'
+    +'<div class="bh">Évolution · 6 mois</div>'+sparkSvg(m)
+    +'<div class="bh">Barème DORA</div>'+levels
+    +'<div class="bh">Ce qui l\'a fait bouger</div>'+moved
+    +'<div class="bh">🌱 Coach Salsi</div><div class="coach-intro"><span class="coach-ava">🌱</span><span>'+m.coachIntro+'</span></div>'+levers;
   document.getElementById('metricModal').classList.add('show');
 }
 function closeMetric(){document.getElementById('metricModal').classList.remove('show');}
