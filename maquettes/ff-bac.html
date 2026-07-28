@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Flags — mode bac (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚩</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 12% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 92% 8%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:16px;padding:22px 0 8px;flex-wrap:wrap}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:22px}
+header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.pick{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:7px 12px;font-size:13px;font-weight:600}
+select{font-family:var(--fb);font-size:13px;font-weight:600;background:transparent;color:var(--tp);border:none;cursor:pointer;outline:none}
+.mock-badge{font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
+/* role selector (RBAC demo) */
+.rolebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;flex-wrap:wrap}
+.rolebar .lbl{font-size:12px;color:var(--tm);font-weight:700}
+.rchip{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ts);border:1px solid var(--line);border-radius:20px;padding:6px 12px;transition:.14s}
+.rchip:hover{border-color:var(--line2)}
+.rchip.on{border-color:var(--accent);background:rgba(167,139,250,.15);color:var(--tp)}
+.rolebar .hint{font-size:11.5px;color:var(--tm);margin-left:6px}
+
+.section-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:24px 4px 12px;display:flex;align-items:center;gap:8px}
+.section-title .tag{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:none}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(20px)}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:820px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--bg-card);border:1px solid var(--line);border-radius:16px;padding:15px 16px}
+.tile .k{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.tile .v{font-family:var(--fd);font-size:26px;font-weight:800;margin-top:6px;line-height:1}
+.tile .s{font-size:11.5px;color:var(--ts);margin-top:5px}
+.alert{margin-top:12px;padding:12px 14px;border-radius:13px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);font-size:12.5px;color:var(--ts);line-height:1.6;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.alert .go{margin-left:auto;all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--warn);border:1px solid rgba(251,191,36,.4);border-radius:10px;padding:7px 12px}
+
+/* table */
+.fftable{width:100%;border-collapse:collapse}
+.fftable th{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700;text-align:left;padding:8px 12px}
+.fftable td{padding:11px 12px;border-top:1px solid var(--line);font-size:13px;vertical-align:middle}
+.fftable tr.row{cursor:pointer}
+.fftable tr.row:hover td{background:rgba(255,255,255,.03)}
+.fkey{font-family:var(--fm);font-weight:700;color:var(--tp)}
+.fdesc{font-size:11px;color:var(--tm);margin-top:2px}
+.env{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.05);color:var(--ts);margin-right:4px}
+.env.prod{background:rgba(248,113,113,.13);color:var(--err)} .env.stg{background:rgba(96,165,250,.13);color:var(--info)} .env.all{background:rgba(52,211,153,.13);color:var(--ok)}
+.owner{font-size:12px;color:var(--ts)}
+.rollpill{font-family:var(--fm);font-size:12px;font-weight:700}
+.rollbar{width:74px;height:6px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:4px;overflow:hidden}
+.rollbar i{display:block;height:100%;background:linear-gradient(90deg,var(--deliver),var(--accent))}
+.dead{font-size:10px;font-weight:800;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);padding:2px 7px;border-radius:20px}
+.pend{font-size:10px;font-weight:800;color:var(--info);background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);padding:2px 7px;border-radius:20px}
+/* toggle */
+.sw{width:42px;height:23px;border-radius:20px;background:rgba(255,255,255,.13);position:relative;cursor:pointer;transition:.15s;display:inline-block;flex-shrink:0;vertical-align:middle}
+.sw.on{background:var(--ok)}
+.sw::after{content:'';position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
+.sw.on::after{left:21px}
+.sw.locked{opacity:.35;cursor:not-allowed}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,7,22,.72);backdrop-filter:blur(4px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.modal{background:#150e2b;border:1px solid var(--line2);border-radius:18px;max-width:600px;width:100%;padding:22px 24px;max-height:90vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.mh{display:flex;align-items:center;gap:11px;margin-bottom:4px;flex-wrap:wrap}
+.mh .mt{font-family:var(--fm);font-weight:800;font-size:17px}
+.mh .mx{all:unset;cursor:pointer;font-size:16px;color:var(--tm);margin-left:auto}
+.mh .mx:hover{color:var(--tp)}
+.msub{font-size:12px;color:var(--ts);margin-bottom:14px}
+.bh{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 9px;display:flex;align-items:center;gap:8px}
+.bh .star{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.03em;text-transform:none}
+/* progressive rollout stepper */
+.stepper{display:flex;align-items:center;gap:0;margin:4px 0 10px}
+.step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:70px}
+.step .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:2px solid var(--line2);background:rgba(255,255,255,.03);color:var(--tm)}
+.step.done .dot{border-color:var(--ok);color:var(--ok);background:rgba(52,211,153,.1)}
+.step.live .dot{border-color:var(--deliver);color:var(--deliver);background:rgba(45,212,191,.12);box-shadow:0 0 0 4px rgba(45,212,191,.15)}
+.step .nm{font-size:11px;font-weight:700;color:var(--tm)}
+.step.done .nm,.step.live .nm{color:var(--ts)}
+.rail{flex:1;height:2px;background:var(--line);min-width:12px}
+.rail.done{background:var(--ok)}
+.stage-health{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ts);background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.2);border-radius:11px;padding:10px 13px;margin-bottom:10px}
+.stage-health b{color:var(--tp)}
+.roll-actions{display:flex;gap:8px;flex-wrap:wrap}
+.box{margin-top:4px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--tm);font-weight:600} .kv .v{color:var(--tp);font-weight:600}
+.audit-item{display:flex;gap:10px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--line);color:var(--ts)}
+.audit-item:last-child{border-bottom:0}
+.audit-item .at{color:var(--tm);font-family:var(--fm);font-size:11px;white-space:nowrap}
+.btn{all:unset;cursor:pointer;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:11px;transition:.15s}
+.btn.ghost{border:1px solid var(--line2);color:var(--ts)} .btn.ghost:hover{background:var(--bg-card-h);color:var(--tp)}
+.btn.go{background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800}
+.btn.go:hover{filter:brightness(1.08)}
+.btn.warn{color:var(--warn);border:1px solid rgba(251,191,36,.35)} .btn.warn:hover{background:rgba(251,191,36,.1)}
+.btn.danger{color:var(--err);border:1px solid rgba(248,113,113,.3)} .btn.danger:hover{background:rgba(248,113,113,.1)}
+.btn:disabled,.btn.off{opacity:.4;pointer-events:none}
+.rbac-note{font-size:11px;color:var(--tm);margin-top:8px}
+.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🚩</div>
+    <div><h1>Feature Flags</h1><div class="sub">Cycle de vie complet · rollout progressif · audit · gouvernance.</div></div>
+    <div class="pick" style="margin-left:auto">📦 <select><option>platformengineering</option><option>squad Paiement</option></select></div>
+    <div class="mock-badge">◆ MAQUETTE — données fictives · mode bac</div>
+  </header>
+
+  <!-- RBAC : ton rôle change ce que tu peux faire -->
+  <div class="rolebar">
+    <span class="lbl">Ton rôle :</span>
+    <button class="rchip" data-r="viewer" onclick="setRole('viewer')">👁️ viewer</button>
+    <button class="rchip" data-r="contributor" onclick="setRole('contributor')">✏️ contributor</button>
+    <button class="rchip on" data-r="maintainer" onclick="setRole('maintainer')">🛠️ maintainer</button>
+    <button class="rchip" data-r="admin" onclick="setRole('admin')">👑 admin</button>
+    <span class="hint" id="roleHint"></span>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="section-title">Vue d'ensemble</div>
+  <div class="tiles">
+    <div class="tile"><div class="k">🚩 Flags</div><div class="v" id="tTotal">–</div><div class="s">total</div></div>
+    <div class="tile"><div class="k">🟢 Actifs</div><div class="v" id="tOn">–</div><div class="s">ON quelque part</div></div>
+    <div class="tile"><div class="k">📈 En rollout</div><div class="v" id="tRoll">–</div><div class="s">10 % / 50 %</div></div>
+    <div class="tile"><div class="k">💀 Dette</div><div class="v" id="tDead" style="color:var(--warn)">–</div><div class="s">flags morts</div></div>
+    <div class="tile"><div class="k">🩺 Santé</div><div class="v" style="color:var(--ok)">B+</div><div class="s">gouvernance</div></div>
+  </div>
+  <div class="alert" id="deadAlert" style="display:none">💀 <b>Dette de flags</b> — <span id="deadTxt"></span> <span style="color:var(--tm)">Un flag à 100 % depuis longtemps devrait être retiré du code.</span><button class="go" onclick="showTab('cleanup')">Voir le nettoyage →</button></div>
+
+  <!-- Flags -->
+  <div class="section-title">Flags du repo <span class="tag" id="roleTag">rôle : maintainer</span></div>
+  <div class="card" style="padding:6px 6px">
+    <table class="fftable">
+      <thead><tr><th>Flag</th><th>Statut</th><th>Environnements</th><th>Rollout</th><th>Owner</th><th>Âge</th></tr></thead>
+      <tbody id="ffBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Nettoyage / dette -->
+  <div class="section-title" id="cleanup">Nettoyage &amp; dette <span class="tag">décommission gouvernée</span></div>
+  <div class="card">
+    <div id="cleanupBody"></div>
+  </div>
+
+  <!-- Historique / audit -->
+  <div class="section-title">Journal d'audit <span class="tag">persistant · qui a changé quoi</span></div>
+  <div class="card">
+    <div id="auditBody"></div>
+  </div>
+
+  <div class="foot">Maquette statique · données fictives · reprend le module Feature Flag + couches bac (audit persistant, dette, ownership, approbation) · rollout progressif &amp; RBAC en plus</div>
+</div>
+
+<div class="overlay" id="ffModal" onclick="if(event.target===this)closeFlag()"><div class="modal" id="ffBodyModal"></div></div>
+<div id="toast"></div>
+<script>
+let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// ── RBAC ──
+const CAP={
+  viewer:{toggle:false,rollout:false,approve:false,create:false,decommission:false,label:'lecture seule'},
+  contributor:{toggle:false,rollout:'request',approve:false,create:true,decommission:false,label:'crée & propose, ne bascule pas la prod'},
+  maintainer:{toggle:true,rollout:true,approve:true,create:true,decommission:false,label:'change le statut, étend le rollout, approuve'},
+  admin:{toggle:true,rollout:true,approve:true,create:true,decommission:true,label:'tout + décommission + owners'}
+};
+let ROLE='maintainer';
+function setRole(r){ROLE=r;document.querySelectorAll('.rchip').forEach(c=>c.classList.toggle('on',c.dataset.r===r));
+  document.getElementById('roleHint').textContent='— '+CAP[r].label;
+  document.getElementById('roleTag').textContent='rôle : '+r;
+  renderFlags();
+}
+
+// ── Données ──
+const STAGES=['off','10%','50%','100%'];
+const FLAGS=[
+  {key:'new-checkout',on:true,envs:['production','staging'],stage:2,owner:'squad Paiement',age:12,lastBy:'a.bernard',lastAt:'il y a 2 j',desc:'Nouveau tunnel de paiement',health:{err:'0.2 %',users:'12 400'},
+    audit:[['a.bernard','étendu à 50 %','il y a 2 j'],['a.bernard','étendu à 10 %','il y a 6 j'],['j.dupont','activé (off→10 %)','il y a 9 j'],['j.dupont','créé le flag','il y a 12 j']]},
+  {key:'promo-banner',on:true,envs:['production'],stage:2,owner:'squad Growth',age:20,lastBy:'a.bernard',lastAt:'il y a 5 j',desc:'Bannière promo saisonnière',pending:{by:'m.leroy',to:3},health:{err:'0.1 %',users:'8 100'},
+    audit:[['m.leroy','demande d\'extension à 100 %','il y a 3 h'],['a.bernard','étendu à 50 %','il y a 5 j'],['a.bernard','créé le flag','il y a 20 j']]},
+  {key:'iban-tile',on:false,envs:['staging'],stage:0,owner:'squad Paiement',age:3,lastBy:'j.dupont',lastAt:'il y a 3 j',desc:'Tuile IBAN (en test staging)',health:null,
+    audit:[['j.dupont','créé le flag','il y a 3 j']]},
+  {key:'dark-mode',on:true,envs:['*'],stage:3,owner:'squad UI',age:210,lastBy:'c.martin',lastAt:'il y a 6 mois',desc:'Thème sombre',dead:true,health:{err:'0.0 %',users:'100 %'},
+    audit:[['c.martin','étendu à 100 %','il y a 6 mois'],['c.martin','créé le flag','il y a 7 mois']]},
+];
+const envCls=e=>e==='production'?'prod':e==='*'?'all':'stg';
+const envLbl=e=>e==='*'?'tous':e;
+function rollPct(s){return [0,10,50,100][s];}
+
+// ── Dashboard ──
+function renderDash(){
+  document.getElementById('tTotal').textContent=FLAGS.length;
+  document.getElementById('tOn').textContent=FLAGS.filter(f=>f.on).length;
+  document.getElementById('tRoll').textContent=FLAGS.filter(f=>f.stage===1||f.stage===2).length;
+  const dead=FLAGS.filter(f=>f.dead);
+  document.getElementById('tDead').textContent=dead.length;
+  if(dead.length){document.getElementById('deadAlert').style.display='flex';
+    document.getElementById('deadTxt').innerHTML='<b>'+dead.map(f=>esc(f.key)).join(', ')+'</b> — actif(s) à 100 % depuis longtemps.';}
+}
+
+// ── Table des flags ──
+function renderFlags(){
+  const cap=CAP[ROLE];
+  document.getElementById('ffBody').innerHTML=FLAGS.map((f,i)=>{
+    const envs=f.envs.map(e=>'<span class="env '+envCls(e)+'">'+envLbl(e)+'</span>').join('');
+    const pct=rollPct(f.stage);
+    const lock=cap.toggle?'':' locked';
+    const badges=(f.dead?'<span class="dead">💀 mort</span> ':'')+(f.pending?'<span class="pend">⏳ appro</span> ':'');
+    return '<tr class="row" onclick="openFlag('+i+')">'
+      +'<td><div class="fkey">'+esc(f.key)+' '+badges+'</div><div class="fdesc">'+esc(f.desc)+'</div></td>'
+      +'<td><span class="sw'+(f.on?' on':'')+lock+'" onclick="event.stopPropagation();toggleFlag('+i+')" title="'+(cap.toggle?'basculer ON/OFF':'🔒 rôle '+ROLE)+'"></span></td>'
+      +'<td>'+envs+'</td>'
+      +'<td><span class="rollpill" style="color:'+(pct===100?'var(--ok)':pct?'var(--deliver)':'var(--tm)')+'">'+STAGES[f.stage]+'</span><div class="rollbar"><i style="width:'+pct+'%"></i></div></td>'
+      +'<td class="owner">'+esc(f.owner)+'</td>'
+      +'<td style="color:var(--tm)">'+f.age+' j</td></tr>';
+  }).join('');
+}
+function toggleFlag(i){
+  const cap=CAP[ROLE],f=FLAGS[i];
+  if(!cap.toggle){toast('🔒 Rôle <b>'+ROLE+'</b> : seul un <b>maintainer</b> peut changer le statut d\'un flag.');return;}
+  f.on=!f.on; if(!f.on){f.stage=0;}
+  f.audit.unshift(['(toi)',f.on?'activé le flag':'désactivé (kill switch)','à l\'instant']);
+  renderFlags();renderAudit();
+  toast('🚩 <b>'+esc(f.key)+'</b> '+(f.on?'activé':'désactivé (kill switch)')+' — tracé au journal.');
+}
+
+// ── Fiche flag + rollout progressif ──
+function openFlag(i){
+  const f=FLAGS[i],cap=CAP[ROLE];
+  // stepper
+  const steps=STAGES.map((s,si)=>{
+    const st=si<f.stage?'done':si===f.stage?'live':'';
+    const ic=si<f.stage?'✓':s==='off'?'⏻':s;
+    const rail=si?'<div class="rail '+(si<=f.stage?'done':'')+'"></div>':'';
+    return rail+'<div class="step '+st+'"><div class="dot">'+ic+'</div><div class="nm">'+(s==='off'?'OFF':s)+'</div></div>';
+  }).join('');
+  const health=f.health&&f.stage>0?'<div class="stage-health">🩺 Étape live <b>'+STAGES[f.stage]+'</b> · erreurs <b>'+f.health.err+'</b> · exposés <b>'+f.health.users+'</b> · <span style="color:var(--ok)">stable ✅</span></div>':'';
+  // rollout actions (guarded)
+  let rollBtns='';
+  const isProd=f.envs.includes('production');
+  if(f.stage<3){
+    const next=STAGES[f.stage+1];
+    if(cap.rollout===true){
+      rollBtns+='<button class="btn go" onclick="advance('+i+')">▶ Étendre à '+next+' (au prochain deploy)</button>';
+    } else if(cap.rollout==='request'){
+      rollBtns+='<button class="btn warn" onclick="requestAdvance('+i+')">✋ Demander l\'extension à '+next+'</button>';
+    } else {
+      rollBtns+='<button class="btn off">▶ Étendre à '+next+'</button>';
+    }
+  }
+  if(f.stage>0 && cap.rollout===true) rollBtns+='<button class="btn danger" onclick="rollback('+i+')">↩ Rollback à '+STAGES[f.stage-1]+'</button>';
+  // pending approval
+  let approval='';
+  if(f.pending){
+    approval='<div class="box" style="border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.06);margin-top:10px">⏳ <b>'+esc(f.pending.by)+'</b> demande l\'extension à <b>'+STAGES[f.pending.to]+'</b>.'
+      +(cap.approve?'<div class="roll-actions" style="margin-top:10px"><button class="btn go" onclick="approve('+i+')">✅ Approuver la bascule</button><button class="btn ghost" onclick="rejectApp('+i+')">Refuser</button></div>':'<div class="rbac-note">🔒 Seul un <b>maintainer</b> peut approuver.</div>')+'</div>';
+  }
+  // audit
+  const audit=f.audit.map(a=>'<div class="audit-item"><span class="at">'+a[2]+'</span><span><b style="color:var(--ts)">'+esc(a[0])+'</b> — '+esc(a[1])+'</span></div>').join('');
+  // decommission
+  const canDec=cap.decommission||(cap.toggle&&f.dead);
+  const dec=f.dead?'<div class="bh">🧹 Décommission</div><div class="box">Flag à 100 % depuis longtemps → à retirer du code. '+(canDec?'<div class="roll-actions" style="margin-top:10px"><button class="btn danger" onclick="decommission('+i+')">🗑 Décommissionner + créer l\'US Jira</button></div>':'<div class="rbac-note">🔒 Décommission réservée à l\'<b>admin</b>.</div>')+'</div>':'';
+
+  document.getElementById('ffBodyModal').innerHTML=
+    '<div class="mh"><span class="mt">'+esc(f.key)+'</span>'+(f.dead?'<span class="dead">💀 mort</span>':'')+'<span class="sw'+(f.on?' on':'')+(cap.toggle?'':' locked')+'" onclick="toggleFlag('+i+');closeFlag();openFlag('+i+')"></span><button class="mx" onclick="closeFlag()">✕</button></div>'
+    +'<div class="msub">'+esc(f.desc)+' · env '+f.envs.map(e=>envLbl(e)).join(', ')+'</div>'
+    +'<div class="bh">🚀 Déploiement progressif <span class="star">off → 10% → 50% → 100% · au deploy</span></div>'
+    +'<div class="stepper">'+steps+'</div>'+health
+    +'<div class="roll-actions">'+rollBtns+'</div>'
+    +(isProd?'<div class="rbac-note">⚙️ Chaque extension s\'applique <b>au prochain déploiement</b> et est soumise aux droits ci-dessous.</div>':'')
+    +approval
+    +'<div class="bh">🪪 Propriété &amp; gouvernance</div><div class="box"><div class="kv"><span class="k">Owner</span><span class="v">'+esc(f.owner)+'</span></div><div class="kv"><span class="k">Créé il y a</span><span class="v">'+f.age+' jours</span></div><div class="kv"><span class="k">Dernière modif</span><span class="v">'+esc(f.lastBy)+' · '+esc(f.lastAt)+'</span></div><div class="kv"><span class="k">Peut changer le statut</span><span class="v">maintainer, admin</span></div></div>'
+    +'<div class="bh">🧾 Journal d\'audit du flag</div><div class="box">'+audit+'</div>'
+    +dec;
+  document.getElementById('ffModal').classList.add('show');
+}
+function closeFlag(){document.getElementById('ffModal').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFlag();});
+
+function advance(i){const f=FLAGS[i];if(f.stage>=3)return;f.stage++;if(f.stage>0)f.on=true;
+  f.audit.unshift(['(toi)','étendu à '+STAGES[f.stage]+' (planifié au prochain deploy)','à l\'instant']);
+  renderFlags();renderAudit();closeFlag();openFlag(i);
+  toast('🚀 <b>'+esc(f.key)+'</b> → <b>'+STAGES[f.stage]+'</b> au prochain déploiement. Canary sous surveillance.');}
+function rollback(i){const f=FLAGS[i];if(f.stage<=0)return;f.stage--;f.audit.unshift(['(toi)','rollback à '+STAGES[f.stage],'à l\'instant']);
+  renderFlags();renderAudit();closeFlag();openFlag(i);toast('↩ <b>'+esc(f.key)+'</b> ramené à <b>'+STAGES[f.stage]+'</b>.');}
+function requestAdvance(i){const f=FLAGS[i];f.pending={by:'(toi)',to:Math.min(3,f.stage+1)};f.audit.unshift(['(toi)','demande d\'extension à '+STAGES[f.pending.to],'à l\'instant']);
+  renderFlags();renderAudit();closeFlag();openFlag(i);toast('✋ Demande envoyée — un <b>maintainer</b> doit approuver l\'extension à '+STAGES[f.pending.to]+'.');}
+function approve(i){const f=FLAGS[i];const to=f.pending.to;f.stage=to;f.on=true;const by=f.pending.by;f.pending=null;
+  f.audit.unshift(['(toi)','approuvé + appliqué l\'extension à '+STAGES[to]+' (demande de '+by+')','à l\'instant']);
+  renderFlags();renderAudit();closeFlag();openFlag(i);toast('✅ Bascule approuvée — <b>'+esc(f.key)+'</b> passe à <b>'+STAGES[to]+'</b>.');}
+function rejectApp(i){const f=FLAGS[i];f.pending=null;f.audit.unshift(['(toi)','refusé la demande d\'extension','à l\'instant']);renderFlags();renderAudit();closeFlag();openFlag(i);toast('🚫 Demande refusée.');}
+function decommission(i){const f=FLAGS[i];toast('🗑 <b>'+esc(f.key)+'</b> marqué à décommissionner + US <b>DEVOPS-'+(600+i)+'</b> créée (retrait du code) — <i>maquette</i>.');closeFlag();}
+
+// ── Cleanup & audit sections ──
+function renderCleanup(){
+  const dead=FLAGS.filter(f=>f.dead);
+  document.getElementById('cleanupBody').innerHTML= dead.length?dead.map(f=>{const i=FLAGS.indexOf(f);
+    return '<div class="kv"><span class="v">💀 <b>'+esc(f.key)+'</b> <span style="color:var(--tm);font-weight:500">· à 100 % depuis '+Math.round(f.age/30)+' mois · owner '+esc(f.owner)+'</span></span><button class="btn danger" onclick="openFlag('+i+')">Traiter →</button></div>';
+  }).join(''):'<div style="color:var(--tm);font-size:13px">Aucune dette 🎉 tous les flags sont récents ou en rollout.</div>';
+}
+function renderAudit(){
+  const all=[];FLAGS.forEach(f=>f.audit.slice(0,2).forEach(a=>all.push({key:f.key,who:a[0],what:a[1],at:a[2]})));
+  document.getElementById('auditBody').innerHTML=all.slice(0,8).map(a=>'<div class="audit-item"><span class="at">'+a.at+'</span><span><b style="color:var(--ts)">'+esc(a.who)+'</b> — '+esc(a.what)+' · <span class="fkey" style="font-size:11px">'+esc(a.key)+'</span></span></div>').join('');
+}
+function showTab(){document.getElementById('cleanup').scrollIntoView({behavior:'smooth'});}
+
+setRole('maintainer');renderDash();renderCleanup();renderAudit();
+</script>
+</body>
+</html>
