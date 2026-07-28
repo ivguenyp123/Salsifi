@@ -52,6 +52,7 @@ select{font-family:var(--fb);font-size:13px;font-weight:600;background:transpare
 .chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--ts)}
 .chart-legend .li{display:inline-flex;align-items:center;gap:6px}
 .chart-legend .dot{width:9px;height:9px;border-radius:50%}
+.chart-note{margin-top:9px;font-size:11.5px;color:var(--tm);font-style:italic}
 svg text{font-family:var(--fb)}
 
 /* Timeline interventions */
@@ -290,6 +291,7 @@ svg text{font-family:var(--fb)}
       <span class="li"><span class="dot" style="background:var(--deliver)"></span> 🎯 Coaching</span>
       <span class="li"><span class="dot" style="background:var(--accent)"></span> 🧩 Atelier</span>
     </div>
+    <div class="chart-note" id="chartNote"></div>
   </div>
 
   <!-- Coaching : évolution observée (pas de causalité affirmée) -->
@@ -443,18 +445,31 @@ const METRICS={
             {t:'Détecter vite (alerting)',d:'Alerte sur les pipelines/déploiements prod en échec. On ne restaure pas ce qu\'on n\'a pas vu tomber.',e:'moyen',i:'fort'},
             {t:'Couper via un feature flag',d:'Désactiver la fonctionnalité fautive sans redéployer : la remédiation la plus rapide qui soit.',e:'moyen',i:'moyen',mod:'Feature Flag Manager'}]}
 };
-const MONTHS=['Jan','Fév','Mar','Avr','Mai','Juin'];
-function bigChartSvg(m){
-  const W=960,H=300,pl=40,pr=30,pt=36,pb=32,n=m.series.length;
+const ALLM=['Jan','Fév','Mar','Avr','Mai','Juin'];
+// Découpe la série 6 mois selon la période choisie (le graphe ET les interventions s'ajustent).
+function periodData(m,p){
+  const full=m.series;
+  if(p==='90'){ // 3 derniers mois (Avr→Juin) — l'amélioration tient-elle ?
+    const marks=[];(m.marks||[]).forEach(k=>{if(k.f>=0.6)marks.push({f:(k.f-0.6)/0.4,c:k.c,l:k.l});});
+    return {series:full.slice(3),labels:ALLM.slice(3),marks:marks,note:'90 jours · l\'amélioration se maintient après les interventions.'};
+  }
+  if(p==='30'){ // dernier mois, granularité hebdo — plateau, pas d\'intervention récente
+    const last=full[full.length-1];
+    return {series:[Math.max(0,last-0.06),last-0.035,last-0.02,last-0.008,last],labels:['-4 sem','-3 sem','-2 sem','-1 sem','auj.'],marks:[],note:'30 jours · aucune intervention récente — le niveau se maintient au plateau.'};
+  }
+  return {series:full,labels:ALLM,marks:m.marks,note:'6 mois · formation, coaching et atelier marqués sur la trajectoire.'};
+}
+function bigChartSvg(series,labels,marks){
+  const W=960,H=300,pl=40,pr=30,pt=36,pb=32,n=series.length;
   const xs=i=>pl+i*((W-pl-pr)/(n-1)), ys=q=>pt+(1-q)*(H-pt-pb);
-  const pts=m.series.map((q,i)=>xs(i).toFixed(1)+','+ys(q).toFixed(1));
+  const pts=series.map((q,i)=>xs(i).toFixed(1)+','+ys(q).toFixed(1));
   const grid=[0,.25,.5,.75,1].map(g=>'<line x1="'+pl+'" y1="'+(pt+(1-g)*(H-pt-pb)).toFixed(1)+'" x2="'+(W-pr)+'" y2="'+(pt+(1-g)*(H-pt-pb)).toFixed(1)+'" stroke="rgba(255,255,255,.06)"/>').join('');
-  const marks=(m.marks||[]).map(k=>{const x=(pl+k.f*(W-pl-pr)).toFixed(1);return '<line x1="'+x+'" y1="28" x2="'+x+'" y2="'+(H-pb)+'" stroke="'+k.c+'" stroke-width="1.5" stroke-dasharray="4 5" opacity=".7"/><text x="'+x+'" y="18" fill="'+k.c+'" font-size="11" font-weight="700" text-anchor="middle">'+k.l+'</text>';}).join('');
+  const mk=(marks||[]).map(k=>{const x=(pl+k.f*(W-pl-pr)).toFixed(1);return '<line x1="'+x+'" y1="28" x2="'+x+'" y2="'+(H-pb)+'" stroke="'+k.c+'" stroke-width="1.5" stroke-dasharray="4 5" opacity=".7"/><text x="'+x+'" y="18" fill="'+k.c+'" font-size="11" font-weight="700" text-anchor="middle">'+k.l+'</text>';}).join('');
   const line='M'+pts.join(' L');
   const area='M'+pl+','+(H-pb)+' L'+pts.join(' L')+' L'+(W-pr)+','+(H-pb)+' Z';
-  const dots=m.series.map((q,i)=>'<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(q).toFixed(1)+'" r="'+(i===n-1?6:5)+'" fill="var(--accent)"'+(i===n-1?' stroke="#fff" stroke-width="2"':'')+'/>').join('');
-  const mo=MONTHS.map((x,i)=>'<text x="'+xs(i).toFixed(1)+'" y="'+(H-10)+'" fill="var(--tm)" font-size="11" text-anchor="middle">'+x+'</text>').join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.32)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>'+grid+marks+'<path d="'+area+'" fill="url(#bg)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+mo+'</svg>';
+  const dots=series.map((q,i)=>'<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(q).toFixed(1)+'" r="'+(i===n-1?6:5)+'" fill="var(--accent)"'+(i===n-1?' stroke="#fff" stroke-width="2"':'')+'/>').join('');
+  const mo=labels.map((x,i)=>'<text x="'+xs(i).toFixed(1)+'" y="'+(H-10)+'" fill="var(--tm)" font-size="11" text-anchor="middle">'+x+'</text>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.32)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>'+grid+mk+'<path d="'+area+'" fill="url(#bg)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+mo+'</svg>';
 }
 function pill(kind,val){const c={faible:'ok',moyen:'warn',fort:'err'};const ci={fort:'accent',moyen:'info',faible:'tm'};
   const cls=kind==='effort'?(c[val]||'tm'):(ci[val]||'tm');return '<span class="pl pl-'+cls+'">'+kind+' '+val+'</span>';}
@@ -473,14 +488,23 @@ function renderCoach(k){
   }
   host.innerHTML='<div class="coach-head2"><span class="coach-ava">🌱</span><div class="coach-title2">Coach Salsi</div>'+(k!=='score'?'<span class="coach-metric">'+m.ic+' '+m.name+'</span>':'')+'</div>'+inner;
 }
-let cur='score';
+let cur='score',curPeriod='6m';
 function selectMetric(k){
   if(!METRICS[k])return;cur=k;const m=METRICS[k];
   document.querySelectorAll('.tile[data-m]').forEach(t=>t.classList.toggle('selected',t.dataset.m===k));
   document.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('on',t.dataset.m===k));
   document.getElementById('bigChartHead').innerHTML='<span class="bch-ic">'+m.ic+'</span><span class="bch-t">'+m.name+'</span><span class="bch-j">'+m.journey+'</span>';
-  document.getElementById('bigChart').innerHTML=bigChartSvg(m);
+  const pd=periodData(m,curPeriod);
+  document.getElementById('bigChart').innerHTML=bigChartSvg(pd.series,pd.labels,pd.marks);
+  const note=document.getElementById('chartNote');if(note)note.textContent='📅 '+pd.note;
   renderCoach(k);
+}
+function setPeriod(el,label){
+  document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');
+  curPeriod=(/30/.test(label))?'30':(/90/.test(label))?'90':(/6 mois/.test(label))?'6m':'6m';
+  if(/personnalis/.test(label)){toast('📅 Période personnalisée — sélecteur de dates <i>(maquette)</i>');return;}
+  selectMetric(cur);
+  toast('📅 Période d\'analyse : <b>'+label+'</b> — graphe &amp; interventions ajustés.');
 }
 // Calendrier mensuel (Avril 2026, 1er avril = mercredi → 2 cases vides).
 const CAL={
@@ -547,7 +571,6 @@ function openDay(d){
   document.getElementById('dayModal').classList.add('show');
 }
 function closeDay(){document.getElementById('dayModal').classList.remove('show');}
-function setPeriod(el,label){document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');toast('📅 Période d\'analyse : <b>'+label+'</b> — le graphe et les comparaisons s\'ajustent <i>(maquette)</i>');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDay();});
 selectMetric('score');
 renderCalendar();
