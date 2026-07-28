@@ -161,6 +161,33 @@ svg text{font-family:var(--fb)}
 .movd{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:7px 0;border-bottom:1px solid var(--line)}
 .movd:last-child{border-bottom:0}
 .movd .arw{color:var(--ok);font-weight:800}
+.tile.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 4px 12px}
+.mtab{all:unset;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--ts);border:1px solid var(--line);border-radius:20px;padding:7px 13px;transition:.14s}
+.mtab:hover{border-color:var(--line2)}
+.mtab.on{border-color:var(--accent);background:rgba(167,139,250,.14);color:var(--tp)}
+.bch{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.bch-ic{font-size:20px}
+.bch-t{font-family:var(--fd);font-weight:800;font-size:16px}
+.bch-j{margin-left:auto;font-family:var(--fm);font-size:13px;font-weight:800;color:var(--ok)}
+.coach-head2{display:flex;align-items:center;gap:11px;margin-bottom:11px;flex-wrap:wrap}
+.coach-title2{font-family:var(--fd);font-weight:800;font-size:16px}
+.coach-metric{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--ts);background:rgba(255,255,255,.05);padding:5px 11px;border-radius:20px}
+.coach-sub{font-size:13px;color:var(--ts);line-height:1.6;margin-bottom:11px}
+/* Calendrier mensuel */
+.calbar{display:flex;align-items:center;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.calmonth{font-family:var(--fd);font-weight:800;font-size:16px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-h{font-size:10px;color:var(--tm);text-transform:uppercase;text-align:center;font-weight:700;padding-bottom:2px}
+.cal-c{min-height:50px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.02);padding:5px 7px;position:relative}
+.cal-c.empty{border:0;background:transparent}
+.cal-c.has{cursor:pointer;background:rgba(255,255,255,.045)}
+.cal-c.has:hover{border-color:var(--line2)}
+.cal-c.big{border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.1)}
+.cal-d{font-size:11px;color:var(--tm);font-weight:700}
+.cal-a{position:absolute;bottom:5px;right:7px;font-size:15px}
+.cal-detail-head{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 10px}
+@media(max-width:640px){.cal-c{min-height:40px}.cal-a{font-size:12px}}
 .spark{margin:2px 0}
 .coach-intro{font-size:12.5px;color:var(--ts);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
 .coach-ava{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:14px;flex-shrink:0}
@@ -188,64 +215,36 @@ svg text{font-family:var(--fb)}
   <!-- Mesures actuelles -->
   <div class="section-title">Tes 4 mesures · aujourd'hui <span class="tag">vs mois dernier</span></div>
   <div class="tiles">
-    <div class="tile score">
+    <div class="tile score clickable" data-m="score" onclick="selectMetric('score')"><span class="more">voir ↓</span>
       <div class="k">📊 Score DORA</div>
       <div class="v">78<span style="font-size:14px;color:var(--tm)">/100</span></div>
       <div class="lv elite">🟢 Elite</div>
       <div class="delta up">▲ +24 pts</div>
     </div>
-    <div class="tile clickable" onclick="openMetric('df')"><span class="more">détail ↗</span><div class="k">🚀 Fréq. déploiement</div><div class="v">8.4<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
-    <div class="tile clickable" onclick="openMetric('lt')"><span class="more">détail ↗</span><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 9j → 18h</div></div>
-    <div class="tile clickable" onclick="openMetric('cfr')"><span class="more">détail ↗</span><div class="k">🔧 CFR</div><div class="v">6<span style="font-size:13px;color:var(--tm)">%</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 12% → 6%</div></div>
-    <div class="tile clickable" onclick="openMetric('mttr')"><span class="more">détail ↗</span><div class="k">⏱️ MTTR</div><div class="v">2.1<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 8h → 2.1h</div></div>
+    <div class="tile clickable" data-m="df" onclick="selectMetric('df')"><span class="more">voir ↓</span><div class="k">🚀 Fréq. déploiement</div><div class="v">8.4<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
+    <div class="tile clickable" data-m="lt" onclick="selectMetric('lt')"><span class="more">voir ↓</span><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 9j → 18h</div></div>
+    <div class="tile clickable" data-m="cfr" onclick="selectMetric('cfr')"><span class="more">voir ↓</span><div class="k">🔧 CFR</div><div class="v">6<span style="font-size:13px;color:var(--tm)">%</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 12% → 6%</div></div>
+    <div class="tile clickable" data-m="mttr" onclick="selectMetric('mttr')"><span class="more">voir ↓</span><div class="k">⏱️ MTTR</div><div class="v">2.1<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 8h → 2.1h</div></div>
   </div>
 
-  <!-- Courbe + interventions -->
-  <div class="section-title">Évolution &amp; interventions <span class="tag">6 mois · historique bac</span></div>
-  <div class="card chartwrap">
-    <svg viewBox="0 0 960 360" width="100%" role="img" aria-label="Évolution du score DORA avec marqueurs d'intervention">
-      <!-- gridlines -->
-      <g stroke="rgba(255,255,255,.06)" stroke-width="1">
-        <line x1="60" y1="53"  x2="920" y2="53"/>
-        <line x1="60" y1="118" x2="920" y2="118"/>
-        <line x1="60" y1="183" x2="920" y2="183"/>
-        <line x1="60" y1="248" x2="920" y2="248"/>
-        <line x1="60" y1="300" x2="920" y2="300"/>
-      </g>
-      <g fill="var(--tm)" font-size="11" text-anchor="end">
-        <text x="50" y="57">80</text><text x="50" y="122">70</text><text x="50" y="187">60</text><text x="50" y="252">50</text><text x="50" y="304">40</text>
-      </g>
-      <!-- intervention markers (vertical) -->
-      <g stroke-dasharray="4 5" stroke-width="1.5">
-        <line x1="150" y1="24" x2="150" y2="300" stroke="var(--info)" opacity=".5"/>
-        <line x1="360" y1="24" x2="360" y2="300" stroke="var(--deliver)" opacity=".7"/>
-        <line x1="610" y1="24" x2="610" y2="300" stroke="var(--accent)" opacity=".6"/>
-      </g>
-      <g font-size="10.5" font-weight="700" text-anchor="middle">
-        <text x="150" y="18" fill="var(--info)">📚 Formation</text>
-        <text x="360" y="18" fill="var(--deliver)">🎯 Coaching</text>
-        <text x="610" y="18" fill="var(--accent)">🧩 Atelier flow</text>
-      </g>
-      <!-- area + line : scores 48,52,55,64,72,78 -->
-      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="rgba(167,139,250,.35)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/>
-      </linearGradient></defs>
-      <path d="M60,248 L220,222 L380,202 L540,144 L700,92 L860,53 L860,300 L60,300 Z" fill="url(#g)"/>
-      <path d="M60,248 L220,222 L380,202 L540,144 L700,92 L860,53" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <g fill="var(--accent)">
-        <circle cx="60" cy="248" r="5"/><circle cx="220" cy="222" r="5"/><circle cx="380" cy="202" r="5"/>
-        <circle cx="540" cy="144" r="5"/><circle cx="700" cy="92" r="5"/><circle cx="860" cy="53" r="6" stroke="#fff" stroke-width="2"/>
-      </g>
-      <g fill="var(--tm)" font-size="11" text-anchor="middle">
-        <text x="60" y="322">Jan</text><text x="220" y="322">Fév</text><text x="380" y="322">Mar</text>
-        <text x="540" y="322">Avr</text><text x="700" y="322">Mai</text><text x="860" y="322">Juin</text>
-      </g>
-    </svg>
+  <!-- Coach Salsi + grand graphe de la mesure sélectionnée -->
+  <div class="section-title">Évolution &amp; coach <span class="tag">clique une mesure ↑</span></div>
+  <div class="mtabs" id="mtabs">
+    <button class="mtab" data-m="score" onclick="selectMetric('score')">📊 Score</button>
+    <button class="mtab" data-m="df" onclick="selectMetric('df')">🚀 Fréq. déploiement</button>
+    <button class="mtab" data-m="lt" onclick="selectMetric('lt')">⚡ Lead time</button>
+    <button class="mtab" data-m="cfr" onclick="selectMetric('cfr')">🔧 CFR</button>
+    <button class="mtab" data-m="mttr" onclick="selectMetric('mttr')">⏱️ MTTR</button>
+  </div>
+  <div class="card"><div id="coachPanel"></div></div>
+  <div class="card chartwrap" style="margin-top:12px">
+    <div class="bch" id="bigChartHead"></div>
+    <div id="bigChart"></div>
     <div class="chart-legend">
-      <span class="li"><span class="dot" style="background:var(--accent)"></span> Score DORA</span>
-      <span class="li"><span class="dot" style="background:var(--info)"></span> 📚 Formation CI/CD</span>
-      <span class="li"><span class="dot" style="background:var(--deliver)"></span> 🎯 Début coaching flow</span>
-      <span class="li"><span class="dot" style="background:var(--accent)"></span> 🧩 Atelier flow (WIP limits)</span>
+      <span class="li"><span class="dot" style="background:var(--accent)"></span> la mesure</span>
+      <span class="li"><span class="dot" style="background:var(--info)"></span> 📚 Formation</span>
+      <span class="li"><span class="dot" style="background:var(--deliver)"></span> 🎯 Coaching</span>
+      <span class="li"><span class="dot" style="background:var(--accent)"></span> 🧩 Atelier</span>
     </div>
   </div>
 
@@ -310,8 +309,16 @@ svg text{font-family:var(--fb)}
   </div>
 
   <!-- Calendrier d'activité -->
-  <div class="section-title">Calendrier d'activité <span class="tag">interventions &amp; impact</span></div>
+  <div class="section-title">Calendrier d'activité <span class="tag">mois · chaque jour</span></div>
   <div class="card">
+    <div class="calbar">
+      <button class="nav" onclick="toast('◀ Mois précédent — <i>maquette</i>')">◀</button>
+      <span class="calmonth">Avril 2026</span>
+      <button class="nav" onclick="toast('▶ Mois suivant — <i>maquette</i>')">▶</button>
+      <span style="margin-left:auto;font-size:11px;color:var(--tm)">🎯 coaching · 🧩 atelier · 📚 formation · 👥 pair · 👀 review · 🔥 incident</span>
+    </div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="cal-detail-head">Détail des interventions marquantes</div>
     <div class="tl">
       <div class="ev">
         <div class="rail"><div class="ic atelier">🧩</div></div>
@@ -373,80 +380,85 @@ svg text{font-family:var(--fb)}
 
   <div class="foot">Maquette statique · données fictives · aucune donnée réelle · Salsi DevOps Hub · pensée pour le back « historien » (interventions + snapshots stockés)</div>
 </div>
-<div class="overlay" id="metricModal" onclick="if(event.target===this)closeMetric()">
-  <div class="modal" id="metricBody"></div>
-</div>
 <div id="toast"></div>
 <script>
-const LVCOLOR={Elite:'var(--ok)',High:'var(--info)',Medium:'var(--warn)',Low:'var(--err)'};
-const MARK_COACH='var(--deliver)',MARK_ATL='var(--accent)',MARK_FORM='var(--info)';
+const MK={form:{f:.17,c:'var(--info)',l:'📚 Formation'},coach:{f:.40,c:'var(--deliver)',l:'🎯 Coaching'},atl:{f:.64,c:'var(--accent)',l:'🧩 Atelier'}};
 const METRICS={
-  df:{ic:'🚀',name:'Fréquence de déploiement',sub:'DF · Deployment Frequency',val:'8.4 /sem · Elite',lvl:'Elite',
-    def:'À quelle fréquence tu livres en prod. Souvent = petits lots, moins de risque à chaque mise en prod, retour terrain rapide.',
-    series:[.15,.32,.42,.62,.82,.95], marks:[{f:.17,c:MARK_FORM},{f:.40,c:MARK_COACH}],
-    levels:[['Elite','≥ 7 /sem'],['High','1 à 7 /sem'],['Medium','0.25 à 1 /sem'],['Low','< 0.25 /sem']],
-    moved:[['🎯 Coaching flow','High → Elite'],['📚 Formation CI/CD','0.6 → 1.5 /sem']],
-    coachIntro:'Tu es déjà à <b>Elite</b> 🎉 — pour <b>tenir le cap</b>, voici tes 2 leviers clés :',
+  score:{ic:'📊',name:'Score DORA global',journey:'54 → 78 ▲ +24  (Medium → Elite)',
+    series:[.20,.30,.375,.60,.80,.95], marks:[MK.form,MK.coach,MK.atl]},
+  df:{ic:'🚀',name:'Fréquence de déploiement',journey:'0.6 → 8.4 /sem ▲  (High → Elite)',target:'≥ 7 /sem (Elite)',
+    series:[.15,.32,.42,.62,.82,.95], marks:[MK.form,MK.coach],
+    coachIntro:'Tu es déjà à <b>Elite</b> 🎉 — pour <b>tenir le cap</b> :',
     levers:[{t:'Automatiser le déploiement (CD)',d:'Un merge sur main déclenche la prod, sans geste manuel. Tant qu\'un humain doit « lancer », la fréquence plafonne.',e:'moyen',i:'fort',mod:'Livraison'},
             {t:'Découper en petites MR',d:'Plus tu fusionnes petit et souvent, plus tu déploies. Vise des MR sous ~200 lignes.',e:'faible',i:'fort'}]},
-  lt:{ic:'⚡',name:'Lead Time for Changes',sub:'LT · Lead Time',val:'18 h · Elite',lvl:'Elite',
-    def:'Le délai entre le 1ᵉʳ commit et la mise en prod. Long = de la valeur qui dort et des reviews qui traînent.',
-    series:[.20,.26,.32,.55,.82,.96], marks:[{f:.40,c:MARK_COACH},{f:.64,c:MARK_ATL}],
-    levels:[['Elite','≤ 24 h'],['High','≤ 1 semaine'],['Medium','≤ 1 mois'],['Low','> 1 mois']],
-    moved:[['🎯 Coaching flow','9 j → 18 h'],['🧩 Atelier flow (WIP)','2.5 j → 20 h']],
+  lt:{ic:'⚡',name:'Lead Time for Changes',journey:'9 j → 18 h ▲  (Medium → Elite)',target:'≤ 24 h (Elite)',
+    series:[.20,.26,.32,.55,.82,.96], marks:[MK.coach,MK.atl],
     coachIntro:'Elite atteint via le découpage des MR — pour <b>ne pas régresser</b> :',
     levers:[{t:'Réduire la taille des MR',d:'Une petite MR se relit en minutes ; une grosse traîne des jours. C\'est le levier n°1 sur le lead time.',e:'faible',i:'fort',mod:'MR Reviewer'},
             {t:'Un SLA de review (4 h)',d:'Revieweurs désignés + notifications. La review qui dort est souvent le plus gros du délai.',e:'faible',i:'fort'}]},
-  cfr:{ic:'🔧',name:'Change Failure Rate',sub:'CFR',val:'6 % · High',lvl:'High',
-    def:'La part de tes livraisons prod qui cassent (échec / rollback). Trop haut : tu vas vite mais tu casses souvent.',
-    series:[.30,.34,.40,.55,.70,.80], marks:[{f:.40,c:MARK_COACH}],
-    levels:[['Elite','≤ 5 %'],['High','≤ 10 %'],['Medium','≤ 15 %'],['Low','> 15 %']],
-    moved:[['🎯 Coaching flow','12 % → 6 %']],
+  cfr:{ic:'🔧',name:'Change Failure Rate',journey:'12 % → 6 % ▲  (Medium → High)',target:'≤ 5 % (Elite)',
+    series:[.30,.34,.40,.55,.70,.80], marks:[MK.coach],
     coachIntro:'Prochain palier <b>Elite</b> (≤ 5 %) — Salsi te propose :',
     levers:[{t:'Quality gates avant merge',d:'Pipeline vert + review obligatoires, main protégée : merger un changement non vérifié devient impossible.',e:'faible',i:'fort',mod:'Security Scanner'},
             {t:'Tests sur les chemins critiques',d:'Sans filet, chaque déploiement est un pari. Couvre d\'abord les parcours qui font mal.',e:'fort',i:'fort'}]},
-  mttr:{ic:'⏱️',name:'Temps de restauration',sub:'MTTR · Time to Restore',val:'2.1 h · High',lvl:'High',
-    def:'Le temps pour revenir à la normale après un incident. La résilience compte autant que la vitesse.',
-    series:[.35,.40,.45,.55,.68,.78], marks:[{f:.40,c:MARK_COACH}],
-    levels:[['Elite','≤ 1 h'],['High','≤ 24 h'],['Medium','≤ 1 semaine'],['Low','> 1 semaine']],
-    moved:[['🎯 Coaching flow','8 h → 2.1 h']],
-    suggested:true,
+  mttr:{ic:'⏱️',name:'Temps de restauration',journey:'8 h → 2.1 h ▲  (reste High)',target:'≤ 1 h (Elite)',
+    series:[.35,.40,.45,.55,.68,.78], marks:[MK.coach],
     coachIntro:'👉 <b>Salsi te suggère de bosser ça</b> — c\'est ton palier le plus proche : passer sous 1 h (Elite).',
     levers:[{t:'Rollback en un geste',d:'Revenir à la version précédente en un clic transforme un incident d\'1 h en 5 min.',e:'moyen',i:'fort',mod:'Livraison'},
             {t:'Détecter vite (alerting)',d:'Alerte sur les pipelines/déploiements prod en échec. On ne restaure pas ce qu\'on n\'a pas vu tomber.',e:'moyen',i:'fort'},
             {t:'Couper via un feature flag',d:'Désactiver la fonctionnalité fautive sans redéployer : la remédiation la plus rapide qui soit.',e:'moyen',i:'moyen',mod:'Feature Flag Manager'}]}
 };
-function sparkSvg(m){
-  const W=472,H=98,pl=8,pr=8,pt=14,pb=16,n=m.series.length;
+const MONTHS=['Jan','Fév','Mar','Avr','Mai','Juin'];
+function bigChartSvg(m){
+  const W=960,H=300,pl=40,pr=30,pt=36,pb=32,n=m.series.length;
   const xs=i=>pl+i*((W-pl-pr)/(n-1)), ys=q=>pt+(1-q)*(H-pt-pb);
   const pts=m.series.map((q,i)=>xs(i).toFixed(1)+','+ys(q).toFixed(1));
+  const grid=[0,.25,.5,.75,1].map(g=>'<line x1="'+pl+'" y1="'+(pt+(1-g)*(H-pt-pb)).toFixed(1)+'" x2="'+(W-pr)+'" y2="'+(pt+(1-g)*(H-pt-pb)).toFixed(1)+'" stroke="rgba(255,255,255,.06)"/>').join('');
+  const marks=(m.marks||[]).map(k=>{const x=(pl+k.f*(W-pl-pr)).toFixed(1);return '<line x1="'+x+'" y1="28" x2="'+x+'" y2="'+(H-pb)+'" stroke="'+k.c+'" stroke-width="1.5" stroke-dasharray="4 5" opacity=".7"/><text x="'+x+'" y="18" fill="'+k.c+'" font-size="11" font-weight="700" text-anchor="middle">'+k.l+'</text>';}).join('');
   const line='M'+pts.join(' L');
-  const area='M'+pl+','+(H-pb)+' L'+pts.join(' L')+' L'+(W-pr).toFixed(1)+','+(H-pb)+' Z';
-  const marks=(m.marks||[]).map(k=>{const x=(pl+k.f*(W-pl-pr)).toFixed(1);return '<line x1="'+x+'" y1="6" x2="'+x+'" y2="'+(H-pb)+'" stroke="'+k.c+'" stroke-width="1.5" stroke-dasharray="3 4" opacity=".75"/><circle cx="'+x+'" cy="8" r="3" fill="'+k.c+'"/>';}).join('');
-  const dots=m.series.map((q,i)=>'<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(q).toFixed(1)+'" r="'+(i===n-1?4:2.5)+'" fill="var(--accent)"'+(i===n-1?' stroke="#fff" stroke-width="1.5"':'')+'/>').join('');
-  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'" width="100%">'
-    +'<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.30)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>'
-    +marks+'<path d="'+area+'" fill="url(#sg)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots
-    +'<g fill="var(--tm)" font-size="9" text-anchor="middle"><text x="'+pl+'" y="'+(H-2)+'">Jan</text><text x="'+(W-pr).toFixed(1)+'" y="'+(H-2)+'">Juin</text></g></svg>';
+  const area='M'+pl+','+(H-pb)+' L'+pts.join(' L')+' L'+(W-pr)+','+(H-pb)+' Z';
+  const dots=m.series.map((q,i)=>'<circle cx="'+xs(i).toFixed(1)+'" cy="'+ys(q).toFixed(1)+'" r="'+(i===n-1?6:5)+'" fill="var(--accent)"'+(i===n-1?' stroke="#fff" stroke-width="2"':'')+'/>').join('');
+  const mo=MONTHS.map((x,i)=>'<text x="'+xs(i).toFixed(1)+'" y="'+(H-10)+'" fill="var(--tm)" font-size="11" text-anchor="middle">'+x+'</text>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.32)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>'+grid+marks+'<path d="'+area+'" fill="url(#bg)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+mo+'</svg>';
 }
 function pill(kind,val){const c={faible:'ok',moyen:'warn',fort:'err'};const ci={fort:'accent',moyen:'info',faible:'tm'};
   const cls=kind==='effort'?(c[val]||'tm'):(ci[val]||'tm');return '<span class="pl pl-'+cls+'">'+kind+' '+val+'</span>';}
-function openMetric(k){
-  const m=METRICS[k];if(!m)return;
-  const levels=m.levels.map(l=>'<div class="lvrow '+(l[0]===m.lvl?'on':'')+'"><span class="n" style="color:'+LVCOLOR[l[0]]+'">'+l[0]+'</span><span style="color:var(--ts)">'+l[1]+'</span></div>').join('');
-  const moved=m.moved.map(x=>'<div class="movd"><span>'+x[0]+'</span><span class="arw">'+x[1]+' ▲</span></div>').join('');
-  const levers=m.levers.map(l=>'<div class="lever"><div class="lever-t">'+l.t+' '+pill('effort',l.e)+' '+pill('impact',l.i)+'</div><div class="lever-d">'+l.d+'</div>'+(l.mod?'<span class="lever-mod" onclick="toast(\'Ouvre le module '+l.mod+' — maquette\')">🧰 '+l.mod+' ↗</span>':'')+'</div>').join('');
-  document.getElementById('metricBody').innerHTML=
-    '<div class="mh"><span class="mi">'+m.ic+'</span><div><div class="mt">'+m.name+'</div><div class="msub">'+m.sub+'</div></div><span class="mv">'+m.val+'</span><button class="mx" onclick="closeMetric()">✕</button></div>'
-    +'<div class="mdef">'+m.def+'</div>'
-    +'<div class="bh">Évolution · 6 mois</div>'+sparkSvg(m)
-    +'<div class="bh">Barème DORA</div>'+levels
-    +'<div class="bh">Ce qui l\'a fait bouger</div>'+moved
-    +'<div class="bh">🌱 Coach Salsi</div><div class="coach-intro"><span class="coach-ava">🌱</span><span>'+m.coachIntro+'</span></div>'+levers;
-  document.getElementById('metricModal').classList.add('show');
+function renderCoach(k){
+  const m=METRICS[k],host=document.getElementById('coachPanel');if(!host)return;
+  let inner;
+  if(k==='score'){
+    inner='<div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Clique une mesure ↑ — je te fais un <b>plan complet</b> et je te suis dans le temps.<br>👉 Je te suggère de commencer par le <b>⏱️ MTTR</b> — c\'est ton palier le plus proche (passer sous 1 h).</div>';
+  } else {
+    const levers=m.levers.map(l=>'<div class="lever"><div class="lever-t">'+l.t+' '+pill('effort',l.e)+' '+pill('impact',l.i)+'</div><div class="lever-d">'+l.d+'</div>'+(l.mod?'<span class="lever-mod" onclick="toast(\'Ouvre le module '+l.mod+' — maquette\')">🧰 '+l.mod+' ↗</span>':'')+'</div>').join('');
+    inner='<div class="coach-sub">'+m.coachIntro+(m.target?' <span style="color:var(--tm)">· cap : '+m.target+'</span>':'')+'</div>'+levers;
+  }
+  host.innerHTML='<div class="coach-head2"><span class="coach-ava">🌱</span><div class="coach-title2">Coach Salsi</div>'+(k!=='score'?'<span class="coach-metric">'+m.ic+' '+m.name+'</span>':'')+'</div>'+inner;
 }
-function closeMetric(){document.getElementById('metricModal').classList.remove('show');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMetric();});
+let cur='score';
+function selectMetric(k){
+  if(!METRICS[k])return;cur=k;const m=METRICS[k];
+  document.querySelectorAll('.tile[data-m]').forEach(t=>t.classList.toggle('selected',t.dataset.m===k));
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('on',t.dataset.m===k));
+  document.getElementById('bigChartHead').innerHTML='<span class="bch-ic">'+m.ic+'</span><span class="bch-t">'+m.name+'</span><span class="bch-j">'+m.journey+'</span>';
+  document.getElementById('bigChart').innerHTML=bigChartSvg(m);
+  renderCoach(k);
+}
+// Calendrier mensuel (Avril 2026, 1er avril = mercredi → 2 cases vides).
+const CAL={1:['🎯','coaching hebdo'],2:['👥','pair — module paiement'],3:['👀','review MR !482'],
+  7:['👀','review MR !491'],8:['👥','pair prog'],9:['🔧','outillage CI (cache)'],10:['🎯','coaching hebdo'],
+  12:['🧩','Atelier flow — limites de WIP'],13:['👀','review'],15:['👥','pair prog'],16:['👀','review MR !503'],17:['🎯','coaching hebdo'],
+  20:['👥','pair prog'],22:['🔥','incident prod (rollback)'],23:['👀','review'],24:['🎯','coaching hebdo'],27:['👥','pair'],29:['📚','formation observabilité']};
+function renderCalendar(){
+  const grid=document.getElementById('calGrid');if(!grid)return;
+  let html='';['L','M','M','J','V','S','D'].forEach(d=>html+='<div class="cal-h">'+d+'</div>');
+  for(let i=0;i<2;i++)html+='<div class="cal-c empty"></div>';
+  for(let d=1;d<=30;d++){const a=CAL[d];
+    html+='<div class="cal-c'+(a?' has':'')+(d===12?' big':'')+'"'+(a?' onclick="toast(\''+d+' avril : '+a[0]+' '+a[1].replace(/'/g,"\\'")+' — maquette\')"':'')+'><span class="cal-d">'+d+'</span>'+(a?'<span class="cal-a">'+a[0]+'</span>':'')+'</div>';
+  }
+  grid.innerHTML=html;
+}
+selectMetric('score');
+renderCalendar();
 let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 let selType=null;
