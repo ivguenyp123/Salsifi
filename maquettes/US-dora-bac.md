@@ -53,12 +53,18 @@ Navigateur (module DORA)                FastAPI (bac)              MongoDB
 ```
 
 **Modèle « historien »** : le back **ne parle jamais** à GitLab avec un token
-utilisateur et n'en **stocke aucun**. Deux règles :
+utilisateur et n'en **stocke aucun**. Trois règles :
 - **Identité sans stockage** : chaque requête porte le token en en-tête
   (`Authorization: Bearer <PAT>` + `X-GitLab-URL`) ; le back le valide **en direct**
   (`GET /user`) pour connaître l'utilisateur, puis le **jette**.
+- **Frontière de confiance** ⚠️ : le snapshot est **calculé côté navigateur** → c'est un
+  **input non fiable**. Un client pourrait poster un indice ou des métriques falsifiés,
+  ou viser un `repo_id` arbitraire. Le back **ne croit pas le snapshot sur parole** : il
+  (1) **vérifie l'accès** de l'utilisateur au `repo_id` (appel GitLab en son nom), (2)
+  **stampe la provenance** (instance, version de calcul, fenêtre, **compteurs sources**),
+  (3) borne par une **clé d'unicité** et une **idempotency-key**. Détail en §7.
 - **Jobs hors-ligne** (agrégation nocturne, alertes régression) : via **webhooks GitLab**
-  (aucun token) ou un **compte de service** dédié dont le token vit dans **Vault**
+  (signés + anti-rejeu) ou un **compte de service** dédié dont le token vit dans **Vault**
   (jamais un token utilisateur).
 
 ---
@@ -92,13 +98,24 @@ Le back valide le token en direct, en déduit `user`, puis l'oublie.
 ### Snapshots (trajectoire)
 ```
 POST /api/v1/snapshots
-  body: { repo_id, at (ISO date), metrics:{df,lt,cfr,mttr}, levels:{df,lt,cfr,mttr}, index }
-  → 201 { id }
-  # upsert par (repo_id, at) — un point par jour
+  headers: Authorization, X-GitLab-URL, Idempotency-Key: <uuid>
+  body: {
+    gitlab_instance, repo_id, at (ISO date), calculation_version,
+    metrics:{df,lt,cfr,mttr}, levels:{df,lt,cfr,mttr}, index, index_version,
+    source_window:{ from, to },
+    source_counts:{ deployments, pipelines, merged_mrs, incidents }
+  }
+  # Le serveur :
+  #  1) valide le token (GET /user) → user
+  #  2) VÉRIFIE l'accès de user au repo_id (GET /projects/:id en son nom) → sinon 403
+  #  3) stampe calculated_by=user, received_at, gitlab_instance
+  #  4) upsert par clé d'unicité (gitlab_instance, repo_id, at, calculation_version)
+  → 201 { id } | 403 pas d'accès au repo | 409 idempotency/conflit
 
 GET /api/v1/snapshots?repo_id=&period=90d
   # period ∈ 30d | 90d | 180d | custom(&from=&to=)
-  → 200 { repo_id, period, points:[ { at, metrics, levels, index } ] }
+  # accès au repo re-vérifié (GET /projects/:id en tant que l'appelant)
+  → 200 { repo_id, period, calculation_version, points:[ { at, metrics, levels, index } ] }
 
 GET /api/v1/metrics/{metric}/series?repo_id=&period=90d
   # metric ∈ df|lt|cfr|mttr|index
@@ -161,8 +178,12 @@ GET /api/v1/teams/{team_id}/dora?period=90d
 ## 6. Modèle de données (MongoDB)
 
 ```jsonc
-// snapshots  (un point par repo et par jour)
-{ _id, repo_id, at, metrics:{df,lt,cfr,mttr}, levels:{...}, index, source:"front" }
+// snapshots  (un point par repo/jour/version) — provenance stampée, jamais cru sur parole
+{ _id, gitlab_instance, repo_id, at, calculation_version, index_version,
+  metrics:{df,lt,cfr,mttr}, levels:{...}, index,
+  source_window:{from,to},
+  source_counts:{ deployments, pipelines, merged_mrs, incidents }, // preuve du calcul
+  calculated_by, received_at, source:"front" }
 
 // interventions  (le journal + la fiche)
 { _id, repo_id, type, title, hypothesis, target_metric, owner,
@@ -173,24 +194,124 @@ GET /api/v1/teams/{team_id}/dora?period=90d
 { _id, ref:{kind:"intervention|action_plan", id}, due_at, done_at, outcome }
 
 // action_plans  (les recos Salsi transformées en actions)
-{ _id, repo_id, target_metric, levers:[...], jira_keys:[...],
-  verification_id, created_by, created_at }
+{ _id, repo_id, target_metric, levers:[...],
+  jira_keys:[...], jira_status:"succeeded|partially_succeeded|failed",
+  verification_id, idempotency_key, created_by, created_at }
+
+// audit_log  (toute modif d'intervention / de résultat / de snapshot rejeté)
+{ _id, entity:"intervention|result|snapshot", entity_id, action,
+  before, after, actor, at, ip? }
 ```
 
-**Index conseillés** : `snapshots (repo_id, at)`, `interventions (repo_id, started_at)`,
-`verifications (due_at)`.
+**Index** : `snapshots` **unique** `(gitlab_instance, repo_id, at, calculation_version)` ·
+`interventions (repo_id, started_at)` · `verifications (due_at)` ·
+`action_plans` **unique** `(idempotency_key)` · `audit_log (entity, entity_id, at)`.
 
 ---
 
-## 7. Règles clés
+## 7. Sécurité & intégrité — le socle réutilisable (à appliquer à TOUS les modules)
+
+> Comme les données sont calculées côté client puis envoyées au bac, la sécurité ne peut
+> pas être un ajout : c'est le **contrat**. Ces règles valent pour DORA **et** pour tout
+> module futur qui persiste des données au bac.
+
+1. **Vérif d'accès au projet** (obligatoire) — après `GET /user`, le serveur confirme que
+   l'utilisateur a **réellement accès** au `repo_id` (`GET /projects/:id` en son nom) avant
+   d'**accepter** (POST) ou de **servir** (GET) la moindre donnée. Sinon `403`. Empêche de
+   poster/lire sur un `repo_id` arbitraire.
+2. **Provenance stampée** — chaque snapshot porte `gitlab_instance`, `calculation_version`,
+   `source_window` et surtout `source_counts` (deployments / pipelines / merged_mrs /
+   incidents). On garde la **preuve du calcul** → on peut détecter une valeur incohérente
+   (indice élevé mais 0 déploiement) et recalculer/auditer plus tard.
+3. **Clé d'unicité** `(gitlab_instance, repo_id, at, calculation_version)` — pas seulement
+   `(repo_id, at)` : deux instances homonymes ou deux versions de formule ne s'écrasent pas.
+4. **Idempotency-Key** sur tous les `POST` à effet de bord — **surtout la création Jira** :
+   un rejeu réseau ne crée pas 4 US en double.
+5. **Définition de « production »** — un déploiement compte pour la prod si son environnement
+   matche un motif **configurable par repo** (`env_prod_pattern`, défaut `^prod(uction)?$`).
+   Explicite, versionné, auditable — pas d'ambiguïté sur le DF/CFR.
+6. **Versionnage des formules** — `calculation_version` (DORA) + `index_version` (indice
+   Salsifi) stockés sur chaque snapshot. Une évolution de formule est **traçable** et ne
+   corrompt pas l'historique ; les comparaisons se font à version égale.
+7. **Journal d'audit** — toute modification d'une **intervention** ou d'un **résultat**
+   (et tout snapshot rejeté) est tracée `{actor, at, before, after}`.
+8. **Webhooks** — **signature HMAC** (secret partagé, en-tête `X-Gitlab-Token`) +
+   **anti-rejeu** (timestamp + nonce, fenêtre courte). Un webhook non signé/rejoué est
+   refusé.
+9. **Politique d'accès (RBAC)** — rôles `viewer | contributor | maintainer | admin` :
+   qui **voit** une squad/direction, qui **crée** une intervention, qui **corrige** un
+   résultat. Le viewer lit, ne modifie pas.
+10. **Jira partiellement réussi** — si 3 US/4 sont créées, statut `partially_succeeded`
+    (jamais un faux « tout ok ») ; l'idempotency permet de **rejouer** les manquantes.
+
+---
+
+## 8. Critères d'acceptation (Gherkin)
+
+**US-01 — Trajectoire sur période**
+```
+Étant donné des snapshots sur 6 mois
+Quand je choisis la période « 90 jours »
+Alors le graphe et la fenêtre d'analyse ne portent que sur 90 jours.
+Et si moins de 2 snapshots existent sur la période, aucune tendance
+n'est affichée (message « données insuffisantes »).
+```
+
+**US-02 — Journal des interventions**
+```
+Étant donné des événements GitLab (MR, incident, déploiement, conf)
+et des interventions saisies
+Quand j'ouvre le calendrier
+Alors les événements GitLab sont marqués « détecté automatiquement » et non éditables,
+et les interventions sont marquées « saisi » et éditables.
+Et je ne peux pas saisir manuellement un type déjà couvert par GitLab.
+```
+
+**US-03 — Fiche d'intervention**
+```
+Étant donné une intervention existante
+Quand l'utilisateur ouvre sa fiche
+Alors il voit l'hypothèse, la métrique, le responsable,
+les dates, l'US Jira et le résultat observé.
+Et si la date de vérification n'est pas atteinte,
+le résultat est affiché comme « à vérifier ».
+Et si plusieurs changements sont détectés dans la fenêtre,
+le niveau de confiance ne peut pas être « strong ».
+```
+
+**US-04 — Niveau de confiance**
+```
+Étant donné un impact calculé autour d'une intervention
+Quand la fenêtre contient au moins un changement concomitant
+Alors la confiance est au plus « concurrent » (jamais « strong »).
+Et si le nombre de snapshots est insuffisant, la confiance est « partial ».
+```
+
+**US-05 — Coach & boucle d'action**
+```
+Étant donné une recommandation Salsi sur une métrique
+Quand je clique « Créer les US Jira » et que 3 US sur 4 réussissent
+Alors le statut est « partiellement créé », les 3 clés sont listées,
+et un rejeu (même idempotency-key) ne crée que la 4ᵉ manquante.
+Et « Planifier une vérif J+30 » crée une vérification à due_at = début + 30 jours.
+```
+
+**US-06 — Vue équipe & accès**
+```
+Étant donné un utilisateur au rôle « viewer » d'une squad
+Quand il ouvre la vue équipe
+Alors il voit les métriques mais ne peut ni créer ni corriger.
+Et un POST de snapshot sur un repo_id auquel il n'a pas accès renvoie 403.
+```
+
+---
+
+## 9. Règles produit
 
 - **Période** : `30d | 90d | 180d | custom` pilote la série renvoyée **et** la fenêtre
   d'analyse avant/après. Le front redessine le graphe à partir de `points`.
-- **Confiance** (`GET /interventions/{id}/impact`) : combine la **force de corrélation**
-  (ampleur du delta vs bruit), la **présence de changements concomitants** (autres
-  interventions / conf déployée dans la fenêtre) et la **suffisance des données** (nombre
-  de snapshots) → `strong | concurrent | partial`. Jamais « X a causé Y ».
-- **Jamais de token stocké** : identité validée en direct ; jobs hors-ligne via webhooks
-  ou compte de service Vault.
+- **Confiance** (`GET /interventions/{id}/impact`) : combine **force de corrélation** ×
+  **changements concomitants** × **suffisance des données** → `strong | concurrent |
+  partial`. Jamais « X a causé Y ».
 - **Auto vs manuel** : GitLab aspire MR / incidents / déploiements / conf ; l'humain ne
   saisit que coaching / atelier / formation / décision / orga.
