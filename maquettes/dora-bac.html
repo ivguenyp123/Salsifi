@@ -107,6 +107,37 @@ svg text{font-family:var(--fb)}
 .salsi .ava{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:20px;flex-shrink:0}
 .salsi .bubble{background:var(--bg-card);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:13px 15px;font-size:13.5px;line-height:1.6;color:var(--ts)}
 .salsi .bubble b{color:var(--tp)}
+/* Saisie quotidienne */
+.daybar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.daybar .nav{all:unset;cursor:pointer;width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--ts);font-size:12px}
+.daybar .nav:hover{background:var(--bg-card-h)}
+.daybar .dt{font-family:var(--fd);font-weight:800;font-size:16px}
+.streak{margin-left:auto;font-size:12px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);padding:4px 10px;border-radius:20px}
+.q{font-size:13px;color:var(--ts);margin-bottom:10px}
+.typechips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+.tchip{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ts);border:1px solid var(--line);border-radius:20px;padding:7px 12px;transition:.14s}
+.tchip:hover{border-color:var(--line2)}
+.tchip.on{border-color:var(--accent);background:rgba(167,139,250,.14);color:var(--tp)}
+.dayrow{display:flex;gap:8px;flex-wrap:wrap}
+.dayrow input{flex:1;min-width:220px;font-family:var(--fb);font-size:13px;background:var(--bg-card);border:1px solid var(--line2);border-radius:10px;color:var(--tp);padding:10px 12px}
+.dayrow input:focus{outline:none;border-color:var(--accent)}
+.dayrow input::placeholder{color:var(--tm)}
+.dayadd{all:unset;cursor:pointer;background:linear-gradient(135deg,var(--accent),#7c5cfc);color:#fff;font-weight:800;font-size:13px;padding:10px 16px;border-radius:10px}
+.dayadd:hover{filter:brightness(1.08)}
+.today-head{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+.today-item{display:flex;gap:10px;align-items:center;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--line);margin-bottom:7px;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.today-item .ti-ic{font-size:17px;flex-shrink:0}
+.today-item .ti-t{font-size:13px;font-weight:600}
+.today-item .ti-m{font-size:11px;color:var(--tm)}
+.today-empty{font-size:12.5px;color:var(--tm);padding:6px 2px}
+.weekstrip{display:flex;gap:8px;margin-top:18px}
+.wday{flex:1;text-align:center}
+.wday .lbl{font-size:10.5px;color:var(--tm);font-weight:600}
+.wday.today .lbl{color:var(--accent);font-weight:800}
+.wday .d{width:100%;height:7px;border-radius:6px;background:rgba(255,255,255,.06);margin-top:6px}
+.wday.filled .d{background:var(--ok)}
+.wday.today .d{box-shadow:0 0 0 2px rgba(167,139,250,.5)}
 .foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
 #toast.show{transform:translateX(-50%) translateY(0)}
@@ -206,6 +237,45 @@ svg text{font-family:var(--fb)}
     </table>
   </div>
 
+  <!-- Saisie quotidienne -->
+  <div class="section-title">Ma journée <span class="tag">saisie quotidienne · 30 s</span></div>
+  <div class="card">
+    <div class="daybar">
+      <button class="nav" onclick="toast('◀ Jour précédent — <i>maquette</i>')">◀</button>
+      <span class="dt">📅 Aujourd'hui · mar. 12 mars</span>
+      <button class="nav" onclick="toast('▶ Jour suivant — <i>maquette</i>')">▶</button>
+      <span class="streak">🔥 5 jours de suite</span>
+    </div>
+    <div class="q">Qu'as-tu fait aujourd'hui qui compte pour ton flow ? <span style="color:var(--tm)">(choisis un type, décris en 3 mots)</span></div>
+    <div class="typechips">
+      <button class="tchip" onclick="pickType(this,'coaching')">🎯 Coaching</button>
+      <button class="tchip" onclick="pickType(this,'atelier')">🧩 Atelier</button>
+      <button class="tchip" onclick="pickType(this,'formation')">📚 Formation</button>
+      <button class="tchip" onclick="pickType(this,'review')">👀 Grosse review</button>
+      <button class="tchip" onclick="pickType(this,'pair')">👥 Pair / mob</button>
+      <button class="tchip" onclick="pickType(this,'incident')">🔥 Incident</button>
+      <button class="tchip" onclick="pickType(this,'outil')">🔧 Outillage</button>
+      <button class="tchip" onclick="pickType(this,'libre')">✏️ Libre</button>
+    </div>
+    <div class="dayrow">
+      <input id="actLabel" placeholder="ex. atelier limites de WIP avec la squad" onkeydown="if(event.key==='Enter')addEntry()">
+      <button class="dayadd" onclick="addEntry()">➕ Ajouter à ma journée</button>
+    </div>
+    <div class="today-head">Aujourd'hui</div>
+    <div id="todayList">
+      <div class="today-item"><span class="ti-ic">👥</span><div><div class="ti-t">Pair programming sur le module paiement</div><div class="ti-m">pair / mob · ce matin</div></div></div>
+    </div>
+    <div class="weekstrip">
+      <div class="wday filled"><div class="lbl">Lun</div><div class="d"></div></div>
+      <div class="wday filled"><div class="lbl">Mar</div><div class="d"></div></div>
+      <div class="wday filled"><div class="lbl">Mer</div><div class="d"></div></div>
+      <div class="wday filled"><div class="lbl">Jeu</div><div class="d"></div></div>
+      <div class="wday today filled" id="wd-today"><div class="lbl">Ven</div><div class="d"></div></div>
+      <div class="wday"><div class="lbl">Sam</div><div class="d"></div></div>
+      <div class="wday"><div class="lbl">Dim</div><div class="d"></div></div>
+    </div>
+  </div>
+
   <!-- Calendrier d'activité -->
   <div class="section-title">Calendrier d'activité <span class="tag">interventions &amp; impact</span></div>
   <div class="card">
@@ -273,6 +343,22 @@ svg text{font-family:var(--fb)}
 <div id="toast"></div>
 <script>
 let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+let selType=null;
+function pickType(el,type){document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');selType=type;}
+const TYPES={coaching:['🎯','coaching'],atelier:['🧩','atelier'],formation:['📚','formation'],review:['👀','grosse review'],pair:['👥','pair / mob'],incident:['🔥','incident'],outil:['🔧','outillage'],libre:['✏️','libre']};
+function addEntry(){
+  const inp=document.getElementById('actLabel');const v=(inp.value||'').trim();
+  if(!selType){toast('Choisis d\'abord un <b>type</b> 🌱');return;}
+  if(!v){toast('Ajoute un petit libellé (3 mots).');return;}
+  const [ic,lbl]=TYPES[selType]||['✏️','libre'];
+  const row=document.createElement('div');row.className='today-item';
+  row.innerHTML=`<span class="ti-ic">${ic}</span><div><div class="ti-t">${esc(v)}</div><div class="ti-m">${lbl} · à l'instant</div></div>`;
+  document.getElementById('todayList').prepend(row);
+  inp.value='';document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('on'));selType=null;
+  const wt=document.getElementById('wd-today');if(wt)wt.classList.add('filled');
+  toast(`✅ « ${esc(v)} » ajouté à ta journée — Salsi mesurera l'impact DORA après <i>(maquette)</i>`);
+}
 </script>
 </body>
 </html>
