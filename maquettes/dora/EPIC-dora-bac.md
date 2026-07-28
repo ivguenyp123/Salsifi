@@ -3,7 +3,7 @@
 > Cet EPIC porte **l'architecture, l'auth, la sécurité et les référentiels** communs.
 > Les US (`US-dora-bac.md`) **ne répètent pas** ça : chacune ne contient que
 > *valeur · périmètre · dépendances · endpoints/collections · critères d'acceptation*.
-> Maquette de référence : `maquettes/dora-bac.html`.
+> Maquette de référence : `dora-bac.html` (même dossier).
 
 ## 1. Vision
 

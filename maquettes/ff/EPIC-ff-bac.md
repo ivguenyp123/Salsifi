@@ -1,8 +1,8 @@
 # EPIC — Feature Flags « mode bac » : cycle de vie, rollout progressif & gouvernance
 
 > Architecture, auth, sécurité et référentiels communs. Les US (`US-ff-bac.md`) ne
-> répètent pas ça. **Socle sécurité/intégrité : réutilise `EPIC-dora-bac.md` §3.**
-> Maquette de référence : `maquettes/ff-bac.html`.
+> répètent pas ça. **Socle sécurité/intégrité : réutilise `../dora/EPIC-dora-bac.md` §3.**
+> Maquette de référence : `ff-bac.html` (même dossier).
 
 ## 1. Vision
 
@@ -31,7 +31,7 @@ identité validée en direct, **vérif d'accès au repo** avant toute opération
 
 ## 3. Socle sécurité & intégrité
 
-Identique à `EPIC-dora-bac.md` §3, avec ces spécificités FF :
+Identique à `../dora/EPIC-dora-bac.md` §3, avec ces spécificités FF :
 - **RBAC = cœur** : `viewer` lit · `contributor` crée & **propose** · `maintainer` **change
   le statut / étend le rollout / approuve** · `admin` + décommission + owners. `403` sinon.
 - **Idempotency** sur `change-requests`, `approve`, `decommission` (Jira).
