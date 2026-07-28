@@ -203,6 +203,12 @@ svg text{font-family:var(--fb)}
 .dm-note{font-size:12.5px;color:var(--ts);line-height:1.6;margin-top:12px}
 .dm-impact{margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);font-size:12.5px;color:var(--ts);line-height:1.7}
 .dm-empty{font-size:12.5px;color:var(--tm);margin-top:6px;line-height:1.6}
+.dm-src{font-size:11px;color:var(--tm);margin-top:9px;font-weight:600}
+.contrib{font-size:12.5px;color:var(--ts);margin:2px 0 12px;line-height:1.6;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.conf{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.conf-mid{background:rgba(251,191,36,.13);color:var(--warn)} .conf-hi{background:rgba(52,211,153,.13);color:var(--ok)} .conf-lo{background:rgba(255,255,255,.06);color:var(--tm)}
+.disclaimer{margin-top:13px;font-size:12px;color:var(--tm);line-height:1.6;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:11px;padding:10px 13px}
+.auto-note{margin-top:14px;font-size:12px;color:var(--ts);line-height:1.6;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.25);border-radius:11px;padding:10px 13px}
 .spark{margin:2px 0}
 .coach-intro{font-size:12.5px;color:var(--ts);line-height:1.55;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
 .coach-ava{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:14px;flex-shrink:0}
@@ -231,10 +237,10 @@ svg text{font-family:var(--fb)}
   <div class="section-title">Tes 4 mesures · aujourd'hui <span class="tag">vs mois dernier</span></div>
   <div class="tiles">
     <div class="tile score clickable" data-m="score" onclick="selectMetric('score')"><span class="more">voir ↓</span>
-      <div class="k">📊 Score DORA</div>
+      <div class="k">📊 Indice delivery Salsifi</div>
       <div class="v">78<span style="font-size:14px;color:var(--tm)">/100</span></div>
-      <div class="lv elite">🟢 Elite</div>
-      <div class="delta up">▲ +24 pts</div>
+      <div class="lv elite">🟢 niveau Elite <span style="color:var(--tm);font-weight:600">(DORA)</span></div>
+      <div class="delta up">▲ +24 sur la période</div>
     </div>
     <div class="tile clickable" data-m="df" onclick="selectMetric('df')"><span class="more">voir ↓</span><div class="k">🚀 Fréq. déploiement</div><div class="v">8.4<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
     <div class="tile clickable" data-m="lt" onclick="selectMetric('lt')"><span class="more">voir ↓</span><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 9j → 18h</div></div>
@@ -263,64 +269,51 @@ svg text{font-family:var(--fb)}
     </div>
   </div>
 
-  <!-- Coaching : avant / après -->
-  <div class="section-title">Impact du coaching <span class="tag">avant → après</span></div>
+  <!-- Coaching : évolution observée (pas de causalité affirmée) -->
+  <div class="section-title">Évolution observée depuis le début du coaching <span class="tag">sur la période</span></div>
   <div class="card">
     <div class="coach-head">
       <span style="font-size:19px">🎯</span>
       <div><div style="font-family:var(--fd);font-weight:800;font-size:16px">Coaching flow — en cours</div>
-        <div class="coach-since">Démarré le <b style="font-family:var(--fm);color:var(--tp)">1ᵉʳ mars</b> · comparaison médiane 30 j avant vs 30 j après</div></div>
-      <div class="big-delta">+24 pts</div>
+        <div class="coach-since">Depuis le <b style="font-family:var(--fm);color:var(--tp)">1ᵉʳ mars</b> · médiane 30 j avant vs 30 j après</div></div>
+      <div class="big-delta">+24<div style="font-size:11px;font-weight:600;color:var(--tm);font-family:var(--fb)">sur la période</div></div>
     </div>
+    <div class="contrib">Contribution probable : <b>fréquence de déploiement</b> &amp; <b>lead time</b>. <span class="conf conf-mid">🔎 corrélation forte · plusieurs changements concomitants</span></div>
     <table class="cmp">
       <thead><tr><th>Mesure</th><th>Avant (fév)</th><th>Après (auj.)</th><th>Évolution</th></tr></thead>
       <tbody>
-        <tr><td class="metric">🚀 Fréquence de déploiement</td><td class="before">1.5 /sem · High</td><td class="after">8.4 /sem · Elite</td><td class="d up">▲ meilleur</td></tr>
-        <tr><td class="metric">⚡ Lead time</td><td class="before">9 j · Medium</td><td class="after">18 h · Elite</td><td class="d up">▲ meilleur</td></tr>
-        <tr><td class="metric">🔧 Change Failure Rate</td><td class="before">12 % · Medium</td><td class="after">6 % · High</td><td class="d up">▲ meilleur</td></tr>
-        <tr><td class="metric">⏱️ Temps de restauration</td><td class="before">8 h · High</td><td class="after">2.1 h · High</td><td class="d up">▲ meilleur</td></tr>
-        <tr><td class="metric">📊 Score global</td><td class="before">54 · Medium</td><td class="after">78 · Elite</td><td class="d up">▲ +24</td></tr>
+        <tr><td class="metric">🚀 Fréquence de déploiement</td><td class="before">1.5 /sem · High</td><td class="after">8.4 /sem · Elite</td><td class="d up">▲</td></tr>
+        <tr><td class="metric">⚡ Lead time</td><td class="before">9 j · Medium</td><td class="after">18 h · Elite</td><td class="d up">▲</td></tr>
+        <tr><td class="metric">🔧 Change Failure Rate</td><td class="before">12 % · Medium</td><td class="after">6 % · High</td><td class="d up">▲</td></tr>
+        <tr><td class="metric">⏱️ Temps de restauration</td><td class="before">8 h · High</td><td class="after">2.1 h · High</td><td class="d up">▲</td></tr>
+        <tr><td class="metric">📊 Indice delivery Salsifi</td><td class="before">54 · Medium</td><td class="after">78 · Elite</td><td class="d up">▲ +24</td></tr>
       </tbody>
     </table>
+    <div class="disclaimer">⚠️ Évolution <b>observée</b>, pas une preuve de causalité : une <b>formation</b> (5 fév) et un <b>atelier flow</b> (12 avr) tombent sur la même période. À attribuer avec prudence.</div>
   </div>
 
-  <!-- Saisie quotidienne -->
-  <div class="section-title">Ma journée <span class="tag">saisie quotidienne · 30 s</span></div>
+  <!-- Journal des interventions (ce que GitLab ne détecte pas) -->
+  <div class="section-title">Journal des interventions <span class="tag">ce que GitLab ne voit pas</span></div>
   <div class="card">
-    <div class="daybar">
-      <button class="nav" onclick="toast('◀ Jour précédent — <i>maquette</i>')">◀</button>
-      <span class="dt">📅 Aujourd'hui · mar. 12 mars</span>
-      <button class="nav" onclick="toast('▶ Jour suivant — <i>maquette</i>')">▶</button>
-      <span class="streak">🔥 5 jours de suite</span>
-    </div>
-    <div class="q">Qu'as-tu fait aujourd'hui qui compte pour ton flow ? <span style="color:var(--tm)">(choisis un type, décris en 3 mots)</span></div>
+    <div class="q">Ajoute une <b>intervention humaine</b> — atelier, coaching, formation, décision d'équipe, changement d'orga. <span style="color:var(--tm)">Pas de saisie quotidienne : les MR, incidents et déploiements sont aspirés <b>automatiquement</b> de GitLab.</span></div>
     <div class="typechips">
       <button class="tchip" onclick="pickType(this,'coaching')">🎯 Coaching</button>
       <button class="tchip" onclick="pickType(this,'atelier')">🧩 Atelier</button>
       <button class="tchip" onclick="pickType(this,'formation')">📚 Formation</button>
-      <button class="tchip" onclick="pickType(this,'review')">👀 Grosse review</button>
-      <button class="tchip" onclick="pickType(this,'pair')">👥 Pair / mob</button>
-      <button class="tchip" onclick="pickType(this,'incident')">🔥 Incident</button>
-      <button class="tchip" onclick="pickType(this,'outil')">🔧 Outillage</button>
+      <button class="tchip" onclick="pickType(this,'decision')">🤝 Décision d'équipe</button>
+      <button class="tchip" onclick="pickType(this,'orga')">🏢 Changement d'orga</button>
       <button class="tchip" onclick="pickType(this,'libre')">✏️ Libre</button>
     </div>
     <div class="dayrow">
-      <input id="actLabel" placeholder="ex. atelier limites de WIP avec la squad" onkeydown="if(event.key==='Enter')addEntry()">
-      <button class="dayadd" onclick="addEntry()">➕ Ajouter à ma journée</button>
+      <input id="actLabel" placeholder="ex. atelier limites de WIP · 12 avril" onkeydown="if(event.key==='Enter')addEntry()">
+      <button class="dayadd" onclick="addEntry()">➕ Ajouter au journal</button>
     </div>
-    <div class="today-head">Aujourd'hui</div>
+    <div class="today-head">Dernières interventions saisies</div>
     <div id="todayList">
-      <div class="today-item"><span class="ti-ic">👥</span><div><div class="ti-t">Pair programming sur le module paiement</div><div class="ti-m">pair / mob · ce matin</div></div></div>
+      <div class="today-item"><span class="ti-ic">🧩</span><div><div class="ti-t">Atelier flow — limites de WIP</div><div class="ti-m">atelier · 12 avril</div></div></div>
+      <div class="today-item"><span class="ti-ic">🎯</span><div><div class="ti-t">Coaching flow — point hebdo</div><div class="ti-m">coaching · 10 avril</div></div></div>
     </div>
-    <div class="weekstrip">
-      <div class="wday filled"><div class="lbl">Lun</div><div class="d"></div></div>
-      <div class="wday filled"><div class="lbl">Mar</div><div class="d"></div></div>
-      <div class="wday filled"><div class="lbl">Mer</div><div class="d"></div></div>
-      <div class="wday filled"><div class="lbl">Jeu</div><div class="d"></div></div>
-      <div class="wday today filled" id="wd-today"><div class="lbl">Ven</div><div class="d"></div></div>
-      <div class="wday"><div class="lbl">Sam</div><div class="d"></div></div>
-      <div class="wday"><div class="lbl">Dim</div><div class="d"></div></div>
-    </div>
+    <div class="auto-note">🔗 <b>Aspiré automatiquement de GitLab</b> ce mois-ci : <b>23 MR</b>, <b>1 incident</b>, <b>18 déploiements</b>, <b>4 changements de conf</b> — rien à saisir à la main.</div>
   </div>
 
   <!-- Calendrier d'activité -->
@@ -342,8 +335,8 @@ svg text{font-family:var(--fb)}
           <div class="note">Travail sur le nombre de MR ouvertes en parallèle + SLA de review 4 h.</div>
           <div class="impact">
             <span class="im">⚡ Lead time <b>2.5 j → 20 h</b> <span class="arw">▲</span></span>
-            <span class="im">📊 Score <b>64 → 74</b> <span class="arw">▲</span></span>
-            <span class="im" style="color:var(--tm)">mesuré 30 j après</span>
+            <span class="im">📊 Indice <b>64 → 74</b> <span class="arw">▲</span></span>
+            <span class="im" style="color:var(--tm)">évolution observée · 30 j après</span>
           </div>
         </div>
       </div>
@@ -353,8 +346,9 @@ svg text{font-family:var(--fb)}
           <div class="top"><span class="ttl">Début du coaching flow</span><span class="pill coach">coaching</span><span class="pill live">en cours</span><span class="date">1ᵉʳ mars</span></div>
           <div class="note">Accompagnement hebdo sur le découpage des MR et l'automatisation du déploiement.</div>
           <div class="impact">
-            <span class="im">📊 Score <b>54 → 78</b> <span class="arw">▲ +24</span></span>
-            <span class="im">🚀 Déploiement <b>High → Elite</b> <span class="arw">▲</span></span>
+            <span class="im">📊 Indice <b>54 → 78</b> <span class="arw">▲ +24</span></span>
+            <span class="im">🚀 Fréq. déploiement <b>High → Elite</b> <span class="arw">▲</span></span>
+            <span class="im" style="color:var(--tm)">observé sur la période · plusieurs facteurs</span>
           </div>
         </div>
       </div>
@@ -390,7 +384,7 @@ svg text{font-family:var(--fb)}
   <!-- Salsi -->
   <div class="salsi">
     <div class="ava">🌱</div>
-    <div class="bubble">Depuis ton <b>atelier flow du 12 avril</b>, ton lead time est passé de <b>2,5 j à 20 h</b> ▲. Et le <b>coaching</b> (depuis le 1ᵉʳ mars) t'a fait gagner <b>+24 pts</b> de score DORA — surtout porté par la <b>fréquence de déploiement</b> (High → Elite). Continue : ton prochain palier, c'est le <b>MTTR</b> (passer sous 1 h).</div>
+    <div class="bubble">Après ton <b>atelier flow du 12 avril</b>, ton lead time est passé de <b>2,5 j à 20 h</b> ▲ — <span style="color:var(--tm)">évolution observée</span>. Sur la période du <b>coaching</b> (depuis le 1ᵉʳ mars) : <b>+24</b> d'indice, portés surtout par la <b>fréquence de déploiement</b> &amp; le <b>lead time</b>. <span style="color:var(--tm)">Plusieurs changements concomitants — à attribuer avec prudence.</span> Ton prochain palier : le <b>MTTR</b> (sous 1 h).</div>
   </div>
 
   <div class="foot">Maquette statique · données fictives · aucune donnée réelle · Salsi DevOps Hub · pensée pour le back « historien » (interventions + snapshots stockés)</div>
@@ -402,7 +396,7 @@ svg text{font-family:var(--fb)}
 <script>
 const MK={form:{f:.17,c:'var(--info)',l:'📚 Formation'},coach:{f:.40,c:'var(--deliver)',l:'🎯 Coaching'},atl:{f:.64,c:'var(--accent)',l:'🧩 Atelier'}};
 const METRICS={
-  score:{ic:'📊',name:'Score DORA global',journey:'54 → 78 ▲ +24  (Medium → Elite)',
+  score:{ic:'📊',name:'Indice de performance delivery Salsifi',journey:'54 → 78 ▲ +24 sur la période  (niveau Medium → Elite)',
     series:[.20,.30,.375,.60,.80,.95], marks:[MK.form,MK.coach,MK.atl]},
   df:{ic:'🚀',name:'Fréquence de déploiement',journey:'0.6 → 8.4 /sem ▲  (High → Elite)',target:'≥ 7 /sem (Elite)',
     series:[.15,.32,.42,.62,.82,.95], marks:[MK.form,MK.coach],
@@ -445,7 +439,8 @@ function renderCoach(k){
   const m=METRICS[k],host=document.getElementById('coachPanel');if(!host)return;
   let inner;
   if(k==='score'){
-    inner='<div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Clique une mesure ↑ — je te fais un <b>plan complet</b> et je te suis dans le temps.<br>👉 Je te suggère de commencer par le <b>⏱️ MTTR</b> — c\'est ton palier le plus proche (passer sous 1 h).</div>';
+    inner='<div class="coach-sub" style="color:var(--tm)">ℹ️ <b>Indice composite interne</b> — calculé à partir des 4 métriques DORA. Pas une norme officielle ; sert à suivre une tendance dans le temps.</div>'
+      +'<div class="coach-sub">Sur quelle des 4 mesures veux-tu progresser ? Clique une mesure ↑ — je te fais un <b>plan complet</b> et je te suis dans le temps.<br>👉 Je te suggère de commencer par le <b>⏱️ MTTR</b> — c\'est ton palier le plus proche (passer sous 1 h).</div>';
   } else {
     const levers=m.levers.map(l=>'<div class="lever"><div class="lever-t">'+l.t+' '+pill('effort',l.e)+' '+pill('impact',l.i)+'</div><div class="lever-d">'+l.d+'</div>'+(l.mod?'<span class="lever-mod" onclick="toast(\'Ouvre le module '+l.mod+' — maquette\')">🧰 '+l.mod+' ↗</span>':'')+'</div>').join('');
     inner='<div class="coach-sub">'+m.coachIntro+(m.target?' <span style="color:var(--tm)">· cap : '+m.target+'</span>':'')+'</div>'+levers;
@@ -464,25 +459,22 @@ function selectMetric(k){
 // Calendrier mensuel (Avril 2026, 1er avril = mercredi → 2 cases vides).
 const CAL={
   1:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo',note:'Revue des MR de la semaine avec le coach, objectifs de découpage pour la suivante.'},
-  2:{ic:'👥',t:'Pair / mob',l:'Pair programming — module paiement'},
-  3:{ic:'👀',t:'Grosse review',l:'Review approfondie de la MR !482'},
-  7:{ic:'👀',t:'Grosse review',l:'Review de la MR !491'},
-  8:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
-  9:{ic:'🔧',t:'Outillage',l:'Outillage CI — cache des dépendances',note:'Mise en cache des deps pour accélérer le pipeline (build ~2× plus rapide).'},
+  3:{ic:'👀',t:'Revue',l:'MR !482 relue & mergée',auto:true},
+  5:{ic:'🚀',t:'Déploiement',l:'2 déploiements en prod',auto:true},
+  7:{ic:'👀',t:'Revue',l:'MR !491 relue',auto:true},
+  9:{ic:'🔧',t:'Config',l:'Changement de conf — cache CI',auto:true},
   10:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
-  12:{ic:'🧩',t:'Atelier',l:'Atelier flow — limites de WIP',note:'Atelier d\'équipe : on a posé une limite de MR ouvertes en parallèle et un SLA de review à 4 h.',impact:'⚡ Lead time <b>2,5 j → 20 h</b> ▲<br>📊 Score DORA <b>64 → 74</b> ▲ <span style="color:var(--tm)">(mesuré 30 j après)</span>'},
-  13:{ic:'👀',t:'Grosse review',l:'Review de MR'},
-  15:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
-  16:{ic:'👀',t:'Grosse review',l:'Review de la MR !503'},
+  11:{ic:'🚀',t:'Déploiement',l:'3 déploiements en prod',auto:true},
+  12:{ic:'🧩',t:'Atelier',l:'Atelier flow — limites de WIP',note:'Atelier d\'équipe : on a posé une limite de MR ouvertes en parallèle et un SLA de review à 4 h.',impact:'⚡ Lead time <b>2,5 j → 20 h</b> ▲<br>📊 Indice delivery <b>64 → 74</b> ▲ <span style="color:var(--tm)">(30 j après · plusieurs facteurs)</span>'},
+  16:{ic:'👀',t:'Revue',l:'MR !503 relue',auto:true},
   17:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
-  20:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
-  22:{ic:'🔥',t:'Incident',l:'Incident prod — rollback 2.0.4',note:'Régression sur le calcul du montant. Rollback en un geste, service restauré en ~25 min.',impact:'⏱️ MTTR du jour : <b>25 min</b> — sous la barre, bon réflexe rollback 👍'},
-  23:{ic:'👀',t:'Grosse review',l:'Review de MR'},
+  18:{ic:'🚀',t:'Déploiement',l:'2 déploiements en prod',auto:true},
+  22:{ic:'🔥',t:'Incident',l:'Incident prod — rollback 2.0.4',auto:true,note:'Régression sur le calcul du montant. Rollback en un geste, service restauré en ~25 min.',impact:'⏱️ Temps de restauration ce jour : <b>25 min</b> — sous la barre, bon réflexe rollback 👍'},
   24:{ic:'🎯',t:'Coaching',l:'Coaching flow — point hebdo'},
-  27:{ic:'👥',t:'Pair / mob',l:'Pair programming'},
-  29:{ic:'📚',t:'Formation',l:'Formation observabilité',note:'Alerting + traces distribuées : viser un MTTR sous 1 h (palier Elite).'}
+  25:{ic:'🚀',t:'Déploiement',l:'4 déploiements en prod',auto:true},
+  29:{ic:'📚',t:'Formation',l:'Formation observabilité',note:'Alerting + traces distribuées : viser un temps de restauration sous 1 h (palier Elite).'}
 };
-const TYPECOL={'Coaching':'var(--deliver)','Atelier':'var(--accent)','Formation':'var(--info)','Incident':'var(--err)','Outillage':'var(--warn)'};
+const TYPECOL={'Coaching':'var(--deliver)','Atelier':'var(--accent)','Formation':'var(--info)','Incident':'var(--err)','Déploiement':'var(--ok)','Revue':'var(--ts)','Config':'var(--warn)'};
 function renderCalendar(){
   const grid=document.getElementById('calGrid');if(!grid)return;
   let html='';['L','M','M','J','V','S','D'].forEach(d=>html+='<div class="cal-h">'+d+'</div>');
@@ -498,8 +490,9 @@ function openDay(d){
   if(a){
     const col=TYPECOL[a.t]||'var(--line2)';
     inner='<div class="dm-act"><div class="dm-ic" style="border-color:'+col+'">'+a.ic+'</div><div><div class="dm-t">'+a.l+'</div><div class="dm-type">'+a.t+'</div></div></div>'
+      +'<div class="dm-src">'+(a.auto?'🔗 détecté automatiquement via GitLab':'✍️ intervention saisie au journal')+'</div>'
       +(a.note?'<div class="dm-note">'+a.note+'</div>':'')
-      +(a.impact?'<div class="dm-impact">📈 <b>Impact mesuré</b><br>'+a.impact+'</div>':'');
+      +(a.impact?'<div class="dm-impact">📈 <b>Évolution observée après</b><br>'+a.impact+'</div>':'');
   } else {
     inner='<div class="dm-empty">Rien de noté ce jour-là.<br><span style="color:var(--accent);cursor:pointer;font-weight:700" onclick="closeDay();toast(\'Ouvre « Ma journée » pour saisir — maquette\')">＋ Ajouter une activité</span></div>';
   }
@@ -514,7 +507,7 @@ let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 let selType=null;
 function pickType(el,type){document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');selType=type;}
-const TYPES={coaching:['🎯','coaching'],atelier:['🧩','atelier'],formation:['📚','formation'],review:['👀','grosse review'],pair:['👥','pair / mob'],incident:['🔥','incident'],outil:['🔧','outillage'],libre:['✏️','libre']};
+const TYPES={coaching:['🎯','coaching'],atelier:['🧩','atelier'],formation:['📚','formation'],decision:['🤝','décision d\'équipe'],orga:['🏢','changement d\'orga'],libre:['✏️','libre']};
 function addEntry(){
   const inp=document.getElementById('actLabel');const v=(inp.value||'').trim();
   if(!selType){toast('Choisis d\'abord un <b>type</b> 🌱');return;}
