@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORA — mode bac (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 12% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 92% 8%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:16px;padding:22px 0 8px;flex-wrap:wrap}
+.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--info));display:grid;place-items:center;font-size:22px}
+header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.pick{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:7px 12px;font-size:13px;font-weight:600}
+select{font-family:var(--fb);font-size:13px;font-weight:600;background:transparent;color:var(--tp);border:none;cursor:pointer;outline:none}
+.mock-badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
+.section-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:26px 4px 12px;display:flex;align-items:center;gap:8px}
+.section-title .tag{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:none}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(20px)}
+
+/* Tiles DORA */
+.tiles{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--bg-card);border:1px solid var(--line);border-radius:16px;padding:15px 16px}
+.tile.score{background:linear-gradient(135deg,rgba(124,92,252,.14),rgba(45,212,191,.08));border-color:rgba(167,139,250,.3)}
+.tile .k{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700;display:flex;align-items:center;gap:5px}
+.tile .v{font-family:var(--fd);font-size:26px;font-weight:800;margin-top:6px;line-height:1}
+.tile .lv{font-size:12px;font-weight:700;margin-top:5px}
+.lv.elite{color:var(--ok)} .lv.high{color:var(--info)} .lv.medium{color:var(--warn)} .lv.low{color:var(--err)}
+.delta{font-size:11.5px;font-weight:700;margin-top:6px;display:inline-flex;gap:4px;align-items:center}
+.delta.up{color:var(--ok)} .delta.down{color:var(--err)} .delta.flat{color:var(--tm)}
+
+/* Chart */
+.chartwrap{position:relative}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--ts)}
+.chart-legend .li{display:inline-flex;align-items:center;gap:6px}
+.chart-legend .dot{width:9px;height:9px;border-radius:50%}
+svg text{font-family:var(--fb)}
+
+/* Timeline interventions */
+.tl{display:flex;flex-direction:column;gap:0}
+.ev{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .rail{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.ev .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:17px;border:1px solid var(--line2)}
+.ic.coach{background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.4)}
+.ic.atelier{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.4)}
+.ic.formation{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.4)}
+.ev .body{flex:1;min-width:0}
+.ev .top{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.ev .ttl{font-family:var(--fd);font-size:15px;font-weight:800}
+.ev .date{font-size:11.5px;color:var(--tm);font-family:var(--fm)}
+.ev .pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.pill.coach{background:rgba(45,212,191,.14);color:var(--deliver)}
+.pill.atelier{background:rgba(167,139,250,.14);color:var(--accent)}
+.pill.formation{background:rgba(96,165,250,.14);color:var(--info)}
+.pill.live{background:rgba(52,211,153,.14);color:var(--ok)}
+.ev .note{font-size:12.5px;color:var(--ts);margin-top:4px;line-height:1.5}
+.impact{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px}
+.impact .im{font-size:12px;color:var(--ts)}
+.impact .im b{color:var(--tp)}
+.im .arw{color:var(--ok);font-weight:800}
+.addbtn{all:unset;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--accent);border:1px dashed var(--line2);border-radius:11px;padding:11px 14px;text-align:center;margin-top:12px;display:block}
+.addbtn:hover{border-color:var(--accent);background:rgba(167,139,250,.06)}
+
+/* Coaching before/after */
+.cmp{width:100%;border-collapse:collapse}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;font-size:13px;border-bottom:1px solid var(--line)}
+.cmp th{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.cmp td.metric{font-weight:600}
+.cmp td.before{color:var(--ts);font-family:var(--fm)}
+.cmp td.after{color:var(--tp);font-family:var(--fm);font-weight:700}
+.cmp td.d{font-weight:800}
+.cmp td.d.up{color:var(--ok)} .cmp td.d.down{color:var(--err)}
+.cmp tr:last-child td{border-bottom:0;font-family:var(--fd)}
+.coach-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.coach-since{font-size:12.5px;color:var(--ts)}
+.big-delta{margin-left:auto;font-family:var(--fd);font-size:26px;font-weight:800;color:var(--ok)}
+
+/* Team view */
+.team{width:100%;border-collapse:collapse}
+.team th,.team td{text-align:left;padding:10px 12px;font-size:13px;border-bottom:1px solid var(--line)}
+.team th{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.team td:last-child,.team th:last-child{text-align:right}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.badge.elite{background:rgba(52,211,153,.14);color:var(--ok)}
+.badge.high{background:rgba(96,165,250,.14);color:var(--info)}
+.badge.medium{background:rgba(251,191,36,.14);color:var(--warn)}
+.badge.low{background:rgba(248,113,113,.14);color:var(--err)}
+.alert{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);font-size:12.5px;color:var(--ts);line-height:1.6}
+
+/* Salsi bubble */
+.salsi{display:flex;gap:12px;margin-top:14px;align-items:flex-start}
+.salsi .ava{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#7c5cfc,#2dd4bf);display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.salsi .bubble{background:var(--bg-card);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:13px 15px;font-size:13.5px;line-height:1.6;color:var(--ts)}
+.salsi .bubble b{color:var(--tp)}
+.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">📊</div>
+    <div><h1>DORA Insights</h1><div class="sub">La mesure devient une <b>trajectoire</b> — interventions &amp; impact.</div></div>
+    <div class="pick">📦 <select><option>platformengineering</option><option>squad Iban</option><option>toute la direction</option></select></div>
+    <div class="mock-badge">◆ MAQUETTE — données fictives · mode bac</div>
+  </header>
+
+  <!-- Mesures actuelles -->
+  <div class="section-title">Tes 4 mesures · aujourd'hui <span class="tag">vs mois dernier</span></div>
+  <div class="tiles">
+    <div class="tile score">
+      <div class="k">📊 Score DORA</div>
+      <div class="v">78<span style="font-size:14px;color:var(--tm)">/100</span></div>
+      <div class="lv elite">🟢 Elite</div>
+      <div class="delta up">▲ +17 pts</div>
+    </div>
+    <div class="tile"><div class="k">🚀 Déploiement</div><div class="v">1.9<span style="font-size:13px;color:var(--tm)">/sem</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ High→Elite</div></div>
+    <div class="tile"><div class="k">⚡ Lead time</div><div class="v">18<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv elite">🟢 Elite</div><div class="delta up">▲ 3j → 18h</div></div>
+    <div class="tile"><div class="k">🔧 CFR</div><div class="v">6<span style="font-size:13px;color:var(--tm)">%</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 12% → 6%</div></div>
+    <div class="tile"><div class="k">⏱️ MTTR</div><div class="v">2.1<span style="font-size:13px;color:var(--tm)">h</span></div><div class="lv high">🔵 High</div><div class="delta up">▲ 8h → 2h</div></div>
+  </div>
+
+  <!-- Courbe + interventions -->
+  <div class="section-title">Évolution &amp; interventions <span class="tag">6 mois · historique bac</span></div>
+  <div class="card chartwrap">
+    <svg viewBox="0 0 960 360" width="100%" role="img" aria-label="Évolution du score DORA avec marqueurs d'intervention">
+      <!-- gridlines -->
+      <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+        <line x1="60" y1="53"  x2="920" y2="53"/>
+        <line x1="60" y1="118" x2="920" y2="118"/>
+        <line x1="60" y1="183" x2="920" y2="183"/>
+        <line x1="60" y1="248" x2="920" y2="248"/>
+        <line x1="60" y1="300" x2="920" y2="300"/>
+      </g>
+      <g fill="var(--tm)" font-size="11" text-anchor="end">
+        <text x="50" y="57">80</text><text x="50" y="122">70</text><text x="50" y="187">60</text><text x="50" y="252">50</text><text x="50" y="304">40</text>
+      </g>
+      <!-- intervention markers (vertical) -->
+      <g stroke-dasharray="4 5" stroke-width="1.5">
+        <line x1="150" y1="24" x2="150" y2="300" stroke="var(--info)" opacity=".5"/>
+        <line x1="360" y1="24" x2="360" y2="300" stroke="var(--deliver)" opacity=".7"/>
+        <line x1="610" y1="24" x2="610" y2="300" stroke="var(--accent)" opacity=".6"/>
+      </g>
+      <g font-size="10.5" font-weight="700" text-anchor="middle">
+        <text x="150" y="18" fill="var(--info)">📚 Formation</text>
+        <text x="360" y="18" fill="var(--deliver)">🎯 Coaching</text>
+        <text x="610" y="18" fill="var(--accent)">🧩 Atelier flow</text>
+      </g>
+      <!-- area + line : scores 48,52,55,64,72,78 -->
+      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="rgba(167,139,250,.35)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/>
+      </linearGradient></defs>
+      <path d="M60,248 L220,222 L380,202 L540,144 L700,92 L860,53 L860,300 L60,300 Z" fill="url(#g)"/>
+      <path d="M60,248 L220,222 L380,202 L540,144 L700,92 L860,53" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="var(--accent)">
+        <circle cx="60" cy="248" r="5"/><circle cx="220" cy="222" r="5"/><circle cx="380" cy="202" r="5"/>
+        <circle cx="540" cy="144" r="5"/><circle cx="700" cy="92" r="5"/><circle cx="860" cy="53" r="6" stroke="#fff" stroke-width="2"/>
+      </g>
+      <g fill="var(--tm)" font-size="11" text-anchor="middle">
+        <text x="60" y="322">Jan</text><text x="220" y="322">Fév</text><text x="380" y="322">Mar</text>
+        <text x="540" y="322">Avr</text><text x="700" y="322">Mai</text><text x="860" y="322">Juin</text>
+      </g>
+    </svg>
+    <div class="chart-legend">
+      <span class="li"><span class="dot" style="background:var(--accent)"></span> Score DORA</span>
+      <span class="li"><span class="dot" style="background:var(--info)"></span> 📚 Formation CI/CD</span>
+      <span class="li"><span class="dot" style="background:var(--deliver)"></span> 🎯 Début coaching flow</span>
+      <span class="li"><span class="dot" style="background:var(--accent)"></span> 🧩 Atelier flow (WIP limits)</span>
+    </div>
+  </div>
+
+  <!-- Coaching : avant / après -->
+  <div class="section-title">Impact du coaching <span class="tag">avant → après</span></div>
+  <div class="card">
+    <div class="coach-head">
+      <span style="font-size:19px">🎯</span>
+      <div><div style="font-family:var(--fd);font-weight:800;font-size:16px">Coaching flow — en cours</div>
+        <div class="coach-since">Démarré le <b style="font-family:var(--fm);color:var(--tp)">1ᵉʳ mars</b> · comparaison médiane 30 j avant vs 30 j après</div></div>
+      <div class="big-delta">+24 pts</div>
+    </div>
+    <table class="cmp">
+      <thead><tr><th>Mesure</th><th>Avant (fév)</th><th>Après (auj.)</th><th>Évolution</th></tr></thead>
+      <tbody>
+        <tr><td class="metric">🚀 Fréquence de déploiement</td><td class="before">0.9 /sem · High</td><td class="after">1.9 /sem · Elite</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">⚡ Lead time</td><td class="before">3 j · Medium</td><td class="after">18 h · Elite</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">🔧 Change Failure Rate</td><td class="before">12 % · Medium</td><td class="after">6 % · High</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">⏱️ Temps de restauration</td><td class="before">8 h · High</td><td class="after">2.1 h · High</td><td class="d up">▲ meilleur</td></tr>
+        <tr><td class="metric">📊 Score global</td><td class="before">54 · Medium</td><td class="after">78 · Elite</td><td class="d up">▲ +24</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Calendrier d'activité -->
+  <div class="section-title">Calendrier d'activité <span class="tag">interventions &amp; impact</span></div>
+  <div class="card">
+    <div class="tl">
+      <div class="ev">
+        <div class="rail"><div class="ic atelier">🧩</div></div>
+        <div class="body">
+          <div class="top"><span class="ttl">Atelier flow — limites de WIP</span><span class="pill atelier">atelier</span><span class="date">12 avril</span></div>
+          <div class="note">Travail sur le nombre de MR ouvertes en parallèle + SLA de review 4 h.</div>
+          <div class="impact">
+            <span class="im">⚡ Lead time <b>2.1 j → 20 h</b> <span class="arw">▲</span></span>
+            <span class="im">📊 Score <b>64 → 74</b> <span class="arw">▲</span></span>
+            <span class="im" style="color:var(--tm)">mesuré 30 j après</span>
+          </div>
+        </div>
+      </div>
+      <div class="ev">
+        <div class="rail"><div class="ic coach">🎯</div></div>
+        <div class="body">
+          <div class="top"><span class="ttl">Début du coaching flow</span><span class="pill coach">coaching</span><span class="pill live">en cours</span><span class="date">1ᵉʳ mars</span></div>
+          <div class="note">Accompagnement hebdo sur le découpage des MR et l'automatisation du déploiement.</div>
+          <div class="impact">
+            <span class="im">📊 Score <b>54 → 78</b> <span class="arw">▲ +24</span></span>
+            <span class="im">🚀 Déploiement <b>High → Elite</b> <span class="arw">▲</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="ev">
+        <div class="rail"><div class="ic formation">📚</div></div>
+        <div class="body">
+          <div class="top"><span class="ttl">Formation CI/CD</span><span class="pill formation">formation</span><span class="date">5 février</span></div>
+          <div class="note">Pipeline as code, stages build/test/deploy, quality gates.</div>
+          <div class="impact">
+            <span class="im">🚀 Déploiement <b>0.6 → 0.9 /sem</b> <span class="arw">▲</span></span>
+            <span class="im" style="color:var(--tm)">effet modéré, amplifié par le coaching</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="addbtn" onclick="toast('➕ Nouvel événement : type (coaching / atelier / formation / libre), date, note — <i>maquette</i>')">➕ Ajouter une intervention (coaching, atelier, formation…)</button>
+  </div>
+
+  <!-- Vue équipe (débloquée par le bac) -->
+  <div class="section-title">Vue équipe <span class="tag">agrégation · débloqué par le bac</span></div>
+  <div class="card">
+    <table class="team">
+      <thead><tr><th>Squad</th><th>Score</th><th>Niveau</th><th>Tendance</th><th>Interventions récentes</th></tr></thead>
+      <tbody>
+        <tr><td><b>Iban</b></td><td>78</td><td><span class="badge elite">🟢 Elite</span></td><td class="delta up" style="margin:0">▲ +24</td><td style="text-align:right;color:var(--ts)">🎯 coaching · 🧩 atelier</td></tr>
+        <tr><td><b>Paie</b></td><td>61</td><td><span class="badge high">🔵 High</span></td><td class="delta flat" style="margin:0">▬ stable</td><td style="text-align:right;color:var(--ts)">📚 formation</td></tr>
+        <tr><td><b>CBS</b></td><td>45</td><td><span class="badge low">🔴 Low</span></td><td class="delta down" style="margin:0">▼ −8</td><td style="text-align:right;color:var(--tm)">aucune</td></tr>
+      </tbody>
+    </table>
+    <div class="alert">🔔 <b style="color:var(--err)">Alerte régression</b> — Squad <b>CBS</b> : le CFR est passé de 9 % à 17 % (Medium → Low) sur 30 j, sans intervention enregistrée. <span style="color:var(--tm)">Le bac t'aurait envoyé ça par mail/Teams, hub fermé.</span></div>
+  </div>
+
+  <!-- Salsi -->
+  <div class="salsi">
+    <div class="ava">🌱</div>
+    <div class="bubble">Depuis ton <b>atelier flow du 12 avril</b>, ton lead time est passé de <b>2,1 j à 20 h</b> ▲. Et le <b>coaching</b> (depuis le 1ᵉʳ mars) t'a fait gagner <b>+24 pts</b> de score DORA — surtout porté par la fréquence de déploiement (High → Elite). Continue : ton prochain palier, c'est le <b>MTTR</b>.</div>
+  </div>
+
+  <div class="foot">Maquette statique · données fictives · aucune donnée réelle · Salsi DevOps Hub · pensée pour le back « historien » (interventions + snapshots stockés)</div>
+</div>
+<div id="toast"></div>
+<script>
+let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
+</script>
+</body>
+</html>
