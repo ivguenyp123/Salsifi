@@ -1220,7 +1220,7 @@
             'Ça fait plaisir 🌱 Je continue à te sortir les bons chiffres quand tu veux.'
         ],
         whoru: [
-            'Moi c\'est <b>Salsi</b> 🌱 le compagnon de la plateforme : je réponds sur tes <b>mesures</b> (DORA), tes <b>badges</b>, ton <b>bus factor</b>, ta <b>sécu</b>… et je t\'oriente vers le bon module. 100 % déterministe, <b>zéro IA</b> pour l\'instant.'
+            'Moi c\'est <b>Salsi</b> 🌱 le compagnon de la plateforme : je réponds sur tes <b>mesures</b> (DORA), tes <b>badges</b>, ton <b>bus factor</b>, ta <b>sécu</b>… je t\'oriente vers le bon module, et je sais aussi <b>livrer avec toi</b>. Je réponds direct sur tes données, et l\'<b>IA</b> prend le relais quand il faut.'
         ]
     };
     var _stN = 0;
@@ -1415,8 +1415,7 @@
         var mascot = Salsifi.mascotSVG ? Salsifi.mascotSVG('happy') : '🌱';
         var fab = document.createElement('button'); fab.id = 'salsiFab'; fab.className = 'salsi-fab'; fab.title = 'Demande à Salsi (plateforme)'; fab.innerHTML = mascot;
         var panel = document.createElement('div'); panel.id = 'salsiQaPanel'; panel.className = 'salsi-qa-panel'; panel.style.display = 'none';
-        var aiOn = !!(Salsifi.aiConfigured && Salsifi.aiConfigured());
-        var sub = aiOn ? 'plateforme · IA en secours' : 'questions sur la plateforme · 0 IA';
+        var sub = 'plateforme · IA quand il faut';
         panel.innerHTML =
             '<div class="sqa-head"><span class="sqa-ava">' + mascot + '</span><div><div class="sqa-title">Salsi</div><div class="sqa-sub">' + sub + '</div></div><button class="sqa-x" id="sqaX">✕</button></div>' +
             '<div class="sqa-msgs" id="sqaMsgs"></div>' +

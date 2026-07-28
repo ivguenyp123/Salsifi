@@ -1,5 +1,17 @@
 # Salsifi — DevOps Hub · Notes de version
 
+## v2.0.1 — 2026-07-27 · Salsi IA — prêt à brancher + libellé « IA quand il faut »
+
+- **Back IA de référence** (`salsi-ai-back/`) : un relais Node minimal vers
+  **Vertex AI (Gemini)**, **sans aucun secret en dur** — tout en variables
+  d'environnement (injectées par la CI depuis **Vault**), auth GCP par ADC. Il
+  respecte le contrat déjà figé côté front (`POST /salsi/ask` → `{answer,
+  horsPerimetre}`). Déployer + coller l'URL (`salsi_ai_url`) = IA allumée.
+  Garde-fou dans le prompt système : l'IA **explique**, elle **n'exécute jamais**
+  d'action (livraison/merge).
+- **Fenêtre Salsi** : le libellé « 0 IA » disparaît au profit de « **IA quand il
+  faut** » — reflète le vrai design (déterministe d'abord, IA en renfort).
+
 ## v2.0.0 — 2026-07-27 · Livraison — cockpit réel + Salsi qui livre en conversation
 
 Le module « Pipeline Generator » devient **Livraison** : un cockpit réel câblé GitLab
