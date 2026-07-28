@@ -1,328 +1,864 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Feature Flags — mode bac (maquette)</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚩</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.6); --bg-card-h:rgba(40,28,70,.75);
-  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
-  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
-  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
-  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{-webkit-font-smoothing:antialiased}
-body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;position:relative;overflow-x:hidden;padding:0 0 60px}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 12% 0%,rgba(124,92,252,.15),transparent),radial-gradient(50% 40% at 92% 8%,rgba(45,212,191,.10),transparent)}
-.wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
-header{display:flex;align-items:center;gap:16px;padding:22px 0 8px;flex-wrap:wrap}
-.logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:22px}
-header h1{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.02em}
-header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
-.pick{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:11px;padding:7px 12px;font-size:13px;font-weight:600}
-select{font-family:var(--fb);font-size:13px;font-weight:600;background:transparent;color:var(--tp);border:none;cursor:pointer;outline:none}
-.mock-badge{font-size:11px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);padding:5px 11px;border-radius:20px}
-/* role selector (RBAC demo) */
-.rolebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;flex-wrap:wrap}
-.rolebar .lbl{font-size:12px;color:var(--tm);font-weight:700}
-.rchip{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ts);border:1px solid var(--line);border-radius:20px;padding:6px 12px;transition:.14s}
-.rchip:hover{border-color:var(--line2)}
-.rchip.on{border-color:var(--accent);background:rgba(167,139,250,.15);color:var(--tp)}
-.rolebar .hint{font-size:11.5px;color:var(--tm);margin-left:6px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Flag Manager - LCL DevOps Hub</title>
+    <link rel="stylesheet" href="../css/feature-flag-manager.css">
+    <script src="../js/theme.js"></script>
+    <link rel="stylesheet" href="../css/core/tokens.css">
+    <link rel="stylesheet" href="../css/core/base.css">
+    <style>
+        /* Contrôles de regroupement par famille */
+        .family-select {
+            background: var(--ov-06);
+            color: var(--text-primary);
+            border: 1px solid var(--ov-14);
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: border-color .15s, background .15s;
+            max-width: 240px;
+        }
+        .family-select:hover { border-color: rgba(124,92,252,0.6); }
+        .family-select:focus { border-color: #7c5cfc; background: rgba(124,92,252,0.12); }
+        .family-select option { background: #1a1a2e; color: #e6e6f0; }
 
-.section-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:24px 4px 12px;display:flex;align-items:center;gap:8px}
-.section-title .tag{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:none}
-.card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(20px)}
-.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-@media(max-width:820px){.tiles{grid-template-columns:1fr 1fr}}
-.tile{background:var(--bg-card);border:1px solid var(--line);border-radius:16px;padding:15px 16px}
-.tile .k{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
-.tile .v{font-family:var(--fd);font-size:26px;font-weight:800;margin-top:6px;line-height:1}
-.tile .s{font-size:11.5px;color:var(--ts);margin-top:5px}
-.alert{margin-top:12px;padding:12px 14px;border-radius:13px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);font-size:12.5px;color:var(--ts);line-height:1.6;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.alert .go{margin-left:auto;all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--warn);border:1px solid rgba(251,191,36,.4);border-radius:10px;padding:7px 12px}
+        .grouped-toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ov-75);
+            cursor: pointer;
+            user-select: none;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--ov-12);
+            background: var(--ov-04);
+            transition: border-color .15s, background .15s;
+        }
+        .grouped-toggle-label:hover { border-color: rgba(124,92,252,0.5); }
+        .grouped-toggle-label input { accent-color: #7c5cfc; cursor: pointer; }
 
-/* table */
-.fftable{width:100%;border-collapse:collapse}
-.fftable th{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;font-weight:700;text-align:left;padding:8px 12px}
-.fftable td{padding:11px 12px;border-top:1px solid var(--line);font-size:13px;vertical-align:middle}
-.fftable tr.row{cursor:pointer}
-.fftable tr.row:hover td{background:rgba(255,255,255,.03)}
-.fkey{font-family:var(--fm);font-weight:700;color:var(--tp)}
-.fdesc{font-size:11px;color:var(--tm);margin-top:2px}
-.env{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.05);color:var(--ts);margin-right:4px}
-.env.prod{background:rgba(248,113,113,.13);color:var(--err)} .env.stg{background:rgba(96,165,250,.13);color:var(--info)} .env.all{background:rgba(52,211,153,.13);color:var(--ok)}
-.owner{font-size:12px;color:var(--ts)}
-.rollpill{font-family:var(--fm);font-size:12px;font-weight:700}
-.rollbar{width:74px;height:6px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:4px;overflow:hidden}
-.rollbar i{display:block;height:100%;background:linear-gradient(90deg,var(--deliver),var(--accent))}
-.dead{font-size:10px;font-weight:800;color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);padding:2px 7px;border-radius:20px}
-.pend{font-size:10px;font-weight:800;color:var(--info);background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);padding:2px 7px;border-radius:20px}
-/* toggle */
-.sw{width:42px;height:23px;border-radius:20px;background:rgba(255,255,255,.13);position:relative;cursor:pointer;transition:.15s;display:inline-block;flex-shrink:0;vertical-align:middle}
-.sw.on{background:var(--ok)}
-.sw::after{content:'';position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
-.sw.on::after{left:21px}
-.sw.locked{opacity:.35;cursor:not-allowed}
-
-/* modal */
-.overlay{position:fixed;inset:0;background:rgba(10,7,22,.72);backdrop-filter:blur(4px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
-.overlay.show{display:flex}
-.modal{background:#150e2b;border:1px solid var(--line2);border-radius:18px;max-width:600px;width:100%;padding:22px 24px;max-height:90vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pop .2s ease}
-@keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.mh{display:flex;align-items:center;gap:11px;margin-bottom:4px;flex-wrap:wrap}
-.mh .mt{font-family:var(--fm);font-weight:800;font-size:17px}
-.mh .mx{all:unset;cursor:pointer;font-size:16px;color:var(--tm);margin-left:auto}
-.mh .mx:hover{color:var(--tp)}
-.msub{font-size:12px;color:var(--ts);margin-bottom:14px}
-.bh{font-size:10.5px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 9px;display:flex;align-items:center;gap:8px}
-.bh .star{font-size:10px;color:var(--deliver);background:rgba(45,212,191,.13);padding:2px 8px;border-radius:20px;letter-spacing:.03em;text-transform:none}
-/* progressive rollout stepper */
-.stepper{display:flex;align-items:center;gap:0;margin:4px 0 10px}
-.step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:70px}
-.step .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:2px solid var(--line2);background:rgba(255,255,255,.03);color:var(--tm)}
-.step.done .dot{border-color:var(--ok);color:var(--ok);background:rgba(52,211,153,.1)}
-.step.live .dot{border-color:var(--deliver);color:var(--deliver);background:rgba(45,212,191,.12);box-shadow:0 0 0 4px rgba(45,212,191,.15)}
-.step .nm{font-size:11px;font-weight:700;color:var(--tm)}
-.step.done .nm,.step.live .nm{color:var(--ts)}
-.rail{flex:1;height:2px;background:var(--line);min-width:12px}
-.rail.done{background:var(--ok)}
-.stage-health{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ts);background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.2);border-radius:11px;padding:10px 13px;margin-bottom:10px}
-.stage-health b{color:var(--tp)}
-.roll-actions{display:flex;gap:8px;flex-wrap:wrap}
-.box{margin-top:4px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
-.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)}
-.kv:last-child{border-bottom:0}
-.kv .k{color:var(--tm);font-weight:600} .kv .v{color:var(--tp);font-weight:600}
-.audit-item{display:flex;gap:10px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--line);color:var(--ts)}
-.audit-item:last-child{border-bottom:0}
-.audit-item .at{color:var(--tm);font-family:var(--fm);font-size:11px;white-space:nowrap}
-.btn{all:unset;cursor:pointer;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:11px;transition:.15s}
-.btn.ghost{border:1px solid var(--line2);color:var(--ts)} .btn.ghost:hover{background:var(--bg-card-h);color:var(--tp)}
-.btn.go{background:linear-gradient(135deg,var(--deliver),#14b8a6);color:#06231f;font-weight:800}
-.btn.go:hover{filter:brightness(1.08)}
-.btn.warn{color:var(--warn);border:1px solid rgba(251,191,36,.35)} .btn.warn:hover{background:rgba(251,191,36,.1)}
-.btn.danger{color:var(--err);border:1px solid rgba(248,113,113,.3)} .btn.danger:hover{background:rgba(248,113,113,.1)}
-.btn:disabled,.btn.off{opacity:.4;pointer-events:none}
-.rbac-note{font-size:11px;color:var(--tm);margin-top:8px}
-.foot{text-align:center;color:var(--tm);font-size:11.5px;margin-top:26px}
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140%);background:rgba(20,14,38,.96);border:1px solid var(--line2);border-radius:13px;padding:13px 20px;font-size:13.5px;font-weight:600;z-index:99;transition:transform .3s cubic-bezier(.2,.9,.3,1.3);box-shadow:0 12px 40px rgba(0,0,0,.5)}
-#toast.show{transform:translateX(-50%) translateY(0)}
-</style>
+        .family-header-row td { user-select: none; }
+        .family-header-row:hover td { background: rgba(124,92,252,0.16) !important; }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="logo">🚩</div>
-    <div><h1>Feature Flags</h1><div class="sub">Cycle de vie complet · rollout progressif · audit · gouvernance.</div></div>
-    <div class="pick" style="margin-left:auto">📦 <select><option>platformengineering</option><option>squad Paiement</option></select></div>
-    <div class="mock-badge">◆ MAQUETTE — données fictives · mode bac</div>
-  </header>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <a href="hub.html" class="back-btn">←</a>
+                <h1>🚩 Feature Flag <span class="accent">Manager</span></h1>
+            </div>
+            <div class="header-actions">
+                <div class="sync-indicator"><span class="sync-dot"></span>Sync auto</div>
+                <div class="project-badge" id="projectName">Chargement...</div>
+            </div>
+        </div>
 
-  <!-- RBAC : ton rôle change ce que tu peux faire -->
-  <div class="rolebar">
-    <span class="lbl">Ton rôle :</span>
-    <button class="rchip" data-r="viewer" onclick="setRole('viewer')">👁️ viewer</button>
-    <button class="rchip" data-r="contributor" onclick="setRole('contributor')">✏️ contributor</button>
-    <button class="rchip on" data-r="maintainer" onclick="setRole('maintainer')">🛠️ maintainer</button>
-    <button class="rchip" data-r="admin" onclick="setRole('admin')">👑 admin</button>
-    <span class="hint" id="roleHint"></span>
-  </div>
+        <!-- TABS -->
+        <!--
+            Les onglets "Approbations" et "Permissions" sont masqués pour le bac à sable LCL :
+            le RBAC et le système d'approbations ne sont pas câblés sur l'authentification réelle
+            (currentUserRole hardcodé, demandes d'approbation stockées en localStorage uniquement).
+            À réactiver quand JWT/session porteront un vrai rôle utilisateur.
+        -->
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="flags">🏳 Flags <span id="flags-badge" class="badge" style="background:rgba(124,92,252,0.6);">—</span></button>
+            <button class="tab" data-tab="create">➕ Créer</button>
+            <button class="tab" data-tab="cleanup">🧹 Nettoyer</button>
+            <button class="tab" data-tab="doc">📚 Documentation</button>
+            <button class="tab" data-tab="history">📜 Historique</button>
+        </div>
 
-  <!-- Dashboard -->
-  <div class="section-title">Vue d'ensemble</div>
-  <div class="tiles">
-    <div class="tile"><div class="k">🚩 Flags</div><div class="v" id="tTotal">–</div><div class="s">total</div></div>
-    <div class="tile"><div class="k">🟢 Actifs</div><div class="v" id="tOn">–</div><div class="s">ON quelque part</div></div>
-    <div class="tile"><div class="k">📈 En rollout</div><div class="v" id="tRoll">–</div><div class="s">10 % / 50 %</div></div>
-    <div class="tile"><div class="k">💀 Dette</div><div class="v" id="tDead" style="color:var(--warn)">–</div><div class="s">flags morts</div></div>
-    <div class="tile"><div class="k">🩺 Santé</div><div class="v" style="color:var(--ok)">B+</div><div class="s">gouvernance</div></div>
-  </div>
-  <div class="alert" id="deadAlert" style="display:none">💀 <b>Dette de flags</b> — <span id="deadTxt"></span> <span style="color:var(--tm)">Un flag à 100 % depuis longtemps devrait être retiré du code.</span><button class="go" onclick="showTab('cleanup')">Voir le nettoyage →</button></div>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- MODE BAC : gouvernance (RBAC) + rollout progressif au déploiement -->
+        <!-- Ajout par-dessus le module existant, styles natifs (mêmes tokens) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div id="bac-panel" style="margin:18px 0 8px;border:1px solid var(--ov-14);border-radius:16px;background:linear-gradient(180deg,rgba(124,92,252,.06),rgba(45,212,191,.03));padding:18px 20px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+                <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.35);padding:4px 10px;border-radius:20px;">🧪 Mode bac</span>
+                <div style="font-size:15px;font-weight:800;color:var(--text);">Gouvernance &amp; rollout progressif</div>
+                <div style="flex:1;"></div>
+                <!-- RBAC : rôle de l'utilisateur courant -->
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2);">
+                    Vous êtes
+                    <select id="bac-role" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:10px;padding:6px 10px;cursor:pointer;outline:none;">
+                        <option value="viewer">👁 viewer</option>
+                        <option value="contributor">✏️ contributor</option>
+                        <option value="maintainer" selected>🔧 maintainer</option>
+                        <option value="admin">🛡 admin</option>
+                    </select>
+                </label>
+            </div>
+            <div id="bac-role-hint" style="font-size:12px;color:var(--text3);margin-bottom:16px;"></div>
 
-  <!-- Flags -->
-  <div class="section-title">Flags du repo <span class="tag" id="roleTag">rôle : maintainer</span></div>
-  <div class="card" style="padding:6px 6px">
-    <table class="fftable">
-      <thead><tr><th>Flag</th><th>Statut</th><th>Environnements</th><th>Rollout</th><th>Owner</th><th>Âge</th></tr></thead>
-      <tbody id="ffBody"></tbody>
-    </table>
-  </div>
+            <div style="display:grid;grid-template-columns:1fr;gap:16px;">
 
-  <!-- Nettoyage / dette -->
-  <div class="section-title" id="cleanup">Nettoyage &amp; dette <span class="tag">décommission gouvernée</span></div>
-  <div class="card">
-    <div id="cleanupBody"></div>
-  </div>
+                <!-- Bloc 1 : changer le statut (kill switch) gouverné par RBAC -->
+                <div style="border:1px solid var(--ov-12);border-radius:14px;background:var(--ov-04);padding:16px 18px;">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="font-size:13px;font-weight:800;color:var(--text);">🎚 Changer le statut</div>
+                        <span style="font-size:11px;color:var(--text3);">— seul un maintainer peut couper un flag (kill switch immédiat)</span>
+                        <div style="flex:1;"></div>
+                        <select id="bac-flag" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:10px;padding:6px 10px;cursor:pointer;outline:none;"></select>
+                    </div>
+                    <div id="bac-status-row" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;"></div>
+                </div>
 
-  <!-- Historique / audit -->
-  <div class="section-title">Journal d'audit <span class="tag">persistant · qui a changé quoi</span></div>
-  <div class="card">
-    <div id="auditBody"></div>
-  </div>
+                <!-- Bloc 2 : rollout progressif appliqué AU DÉPLOIEMENT -->
+                <div style="border:1px solid var(--ov-12);border-radius:14px;background:var(--ov-04);padding:16px 18px;">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                        <div style="font-size:13px;font-weight:800;color:var(--text);">🚦 Rollout progressif</div>
+                        <span style="font-size:11px;color:var(--text3);">— OFF → 10% → 50% → 100%, appliqué <b style="color:var(--accent);">au prochain déploiement</b> (pas à chaud)</span>
+                    </div>
+                    <div id="bac-rollout" style="margin-top:12px;"></div>
+                </div>
 
-  <div class="foot">Maquette statique · données fictives · reprend le module Feature Flag + couches bac (audit persistant, dette, ownership, approbation) · rollout progressif &amp; RBAC en plus</div>
-</div>
+            </div>
+        </div>
 
-<div class="overlay" id="ffModal" onclick="if(event.target===this)closeFlag()"><div class="modal" id="ffBodyModal"></div></div>
-<div id="toast"></div>
+        <!-- DASHBOARD -->
+        <div class="panel active" id="panel-dashboard">
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi k-blue">
+                    <div class="kpi-value" style="color:var(--blue);" id="kpi-total">—</div>
+                    <div class="kpi-label">Feature Flags</div>
+                    <div class="kpi-sub" id="kpi-total-sub">max 10</div>
+                </div>
+                <div class="kpi k-purple">
+                    <div class="kpi-value" style="color:var(--purple);" id="kpi-rollout">—</div>
+                    <div class="kpi-label">En rollout</div>
+                    <div class="kpi-sub" style="color:var(--text3);">5%→25%→50%→100%</div>
+                </div>
+                <div class="kpi k-yellow">
+                    <div class="kpi-value" style="color:var(--yellow);" id="kpi-dette">—</div>
+                    <div class="kpi-label">Dette technique</div>
+                    <div class="kpi-sub" id="kpi-dette-sub" style="color:var(--text3);">+30 jours</div>
+                </div>
+                <div class="kpi k-red">
+                    <div class="kpi-value" style="color:var(--red);" id="kpi-critique">—</div>
+                    <div class="kpi-label">Critiques</div>
+                    <div class="kpi-sub" id="kpi-critique-sub" style="color:var(--text3);">+60 jours</div>
+                </div>
+                <div class="kpi k-green">
+                    <div class="kpi-value" style="color:var(--green);" id="kpi-health">—</div>
+                    <div class="kpi-label">Score santé</div>
+                    <div class="kpi-sub" style="color:var(--text3);">/ 100</div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alerts-container"></div>
+
+            <!-- Charts row -->
+            <div class="dash-grid-top">
+
+                <!-- Donut distribution -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--purple);"></div>Distribution</div>
+                    <div class="donut-wrap">
+                        <div style="flex-shrink:0;" id="donut-svg-wrap">
+                            <svg width="100" height="100" viewBox="0 0 100 100" id="donut-svg">
+                                <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="13"/>
+                            </svg>
+                        </div>
+                        <div class="donut-legend" id="donut-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Health score -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--green);"></div>Score santé</div>
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                        <div style="flex-shrink:0;">
+                            <svg width="72" height="72" viewBox="0 0 80 80" id="health-svg">
+                                <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9"/>
+                                <circle cx="40" cy="40" r="30" fill="none" stroke="var(--yellow)" stroke-width="9" stroke-dasharray="0 189" stroke-dashoffset="47" stroke-linecap="round" id="health-ring"/>
+                                <text x="40" y="45" text-anchor="middle" fill="white" font-size="17" font-weight="800" id="health-score-text">-</text>
+                            </svg>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Tendance 7 jours</div>
+                            <div id="health-trend" style="margin-bottom:8px;"><span style="color:var(--text3);font-size:11px;">—</span></div>
+                            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">30 jours</div>
+                            <canvas id="health-sparkline" height="44" style="width:100%;display:block;border-radius:6px;"></canvas>
+                        </div>
+                    </div>
+                    <div class="health-items" id="health-items"></div>
+                </div>
+
+                <!-- Timeline chart -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--blue);"></div>Créations vs suppressions (8 sem.)</div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div id="timeline-legend" style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text3);flex-wrap:wrap;">
+                        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:rgba(124,92,252,0.75);display:inline-block;"></span>Créations</span>
+                        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:rgba(110,231,183,0.65);display:inline-block;"></span>Suppressions</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="dash-grid-bottom">
+
+                <!-- Age bar chart -->
+                <div class="card">
+                    <div class="card-title"><div class="card-title-dot" style="background:var(--orange);"></div>Âge des flags actifs</div>
+                    <div class="age-chart" id="age-chart-container"></div>
+                </div>
+
+            </div>
+
+
+            <!-- CTA flags shortcut -->
+            <div id="dashboard-flags-cta" style="display:none;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:13px;"></div>
+
+        </div>
+
+        <!-- CREATE -->
+        
+        <!-- ══ TAB: FLAGS ══ -->
+        <div class="panel" id="panel-flags">
+            <div class="flags-toolbar">
+                <input class="search-input" id="flagSearch" placeholder="🔍  Rechercher..."/>
+                <div class="filter-chip active" data-status="">Tous</div>
+                <div class="filter-chip" data-status="ROLLOUT">Rollout</div>
+                <div class="filter-chip" data-status="STABILISATION">Stabilisation</div>
+                <div class="filter-chip" data-status="CLEANUP">Cleanup</div>
+                <div class="filter-chip" data-status="DETTE">Dette</div>
+                <div class="filter-chip" data-status="CRITIQUE">Critique</div>
+                <div class="filter-chip" data-status="OPS">Ops</div>
+                <select id="family-filter" class="family-select" title="Filtrer par famille de flags">
+                    <option value="">Toutes les familles</option>
+                </select>
+                <label class="grouped-toggle-label" title="Regrouper les flags par famille">
+                    <input type="checkbox" id="grouped-view-toggle"/>
+                    <span>Vue groupée</span>
+                </label>
+                <select id="group-mode-select" class="family-select" title="Mode de la vue groupée : familles auto-détectées ou groupes manuels">
+                    <option value="auto">Groupes : Auto</option>
+                    <option value="manual">Groupes : Manuel</option>
+                </select>
+                <button class="btn btn-secondary" id="btn-manage-groups" title="Créer des groupes et y ranger les flags manuellement">🗂️ Gérer les groupes</button>
+                <button class="btn btn-secondary" id="btn-env-report" style="margin-left:auto;"
+                        title="Télécharger un rapport HTML de tous les flags, groupés par environnement (prod, staging…)">
+                    📥 Télécharger le rapport
+                </button>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <table class="flags-table" id="flags-main-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable-th" data-col="name" style="cursor:pointer;">
+                                Flag <span class="sort-icon" id="sort-icon-name">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="status" style="cursor:pointer;">
+                                Statut <span class="sort-icon" id="sort-icon-status">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="rollout" style="cursor:pointer;">
+                                Rollout <span class="sort-icon" id="sort-icon-rollout">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="age" style="cursor:pointer;">
+                                Âge <span class="sort-icon" id="sort-icon-age">↕</span>
+                            </th>
+                            <th class="sortable-th" data-col="prod" style="cursor:pointer;">
+                                En prod <span class="sort-icon" id="sort-icon-prod">↕</span>
+                            </th>
+                            <th>Envs</th>
+                            <th style="text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flagsTableBody">
+                        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">
+                            <div class="loading-spinner" style="margin:0 auto 12px;"></div>Chargement...
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:10px;text-align:right;" id="flags-count-info"></div>
+        </div>
+
+<div class="panel" id="panel-create">
+            <div class="wizard-step active" id="wizard-step-1">
+                <div class="wizard-progress">
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div class="wizard-question">🤔 Quel est ton besoin ?</div>
+                <div class="wizard-options">
+                    <div class="wizard-option" data-value="new-feature" data-result="flag">
+                        <div class="wizard-option-title">🆕 Nouvelle feature métier</div>
+                        <div class="wizard-option-desc">Nouveau parcours, refonte UI, nouvelle fonctionnalité utilisateur</div>
+                    </div>
+                    <div class="wizard-option" data-value="kill-switch" data-result="ops">
+                        <div class="wizard-option-title">🔴 Kill switch (Ops Flag)</div>
+                        <div class="wizard-option-desc">Désactiver rapidement un service externe en cas de problème</div>
+                    </div>
+                    <div class="wizard-option" data-value="config" data-result="no-env">
+                        <div class="wizard-option-title">⚙️ Configuration technique</div>
+                        <div class="wizard-option-desc">Cache Redis, URL base de données, paramètres techniques</div>
+                    </div>
+                    <div class="wizard-option" data-value="permission" data-result="no-iam">
+                        <div class="wizard-option-title">🔐 Permission utilisateur</div>
+                        <div class="wizard-option-desc">Qui peut exporter, supprimer, accéder à une feature</div>
+                    </div>
+                    <div class="wizard-option" data-value="business" data-result="no-db">
+                        <div class="wizard-option-title">💼 Règle métier / Contenu</div>
+                        <div class="wizard-option-desc">Bannière promo, plafonds, tarifs, thème saisonnier</div>
+                    </div>
+                    <div class="wizard-option" data-value="ab-test" data-result="no-ab">
+                        <div class="wizard-option-title">🧪 A/B Testing</div>
+                        <div class="wizard-option-desc">Tester 2 versions pour mesurer les conversions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-2">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div id="wizard-result-container"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-continue-checklist" style="display:none;">Continuer vers la checklist →</button>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-3">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                    <div class="wizard-progress-line"></div>
+                    <div class="wizard-dot"></div>
+                </div>
+                <div class="wizard-question">✅ Checklist obligatoire avant création</div>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Tu dois répondre OUI à <strong>TOUTES</strong> ces questions. Un seul NON = pas de feature flag.</p>
+                <div class="checklist" id="creation-checklist">
+                    <div class="checklist-item" data-check="1"><div class="checklist-checkbox"></div><div class="checklist-text">C'est bien une <strong>feature complète</strong> (pas de la config technique) ?</div></div>
+                    <div class="checklist-item" data-check="2"><div class="checklist-checkbox"></div><div class="checklist-text">La feature sera terminée dans <strong>moins de 4 semaines</strong> ?</div></div>
+                    <div class="checklist-item" data-check="3"><div class="checklist-checkbox"></div><div class="checklist-text">Le comportement <strong>flag OFF fonctionne parfaitement</strong> ?</div></div>
+                    <div class="checklist-item" data-check="4"><div class="checklist-checkbox"></div><div class="checklist-text">J'ai prévu de <strong>supprimer ce flag après stabilisation</strong> ?</div></div>
+                    <div class="checklist-item" data-check="5"><div class="checklist-checkbox"></div><div class="checklist-text">Le nom du flag est <strong>clair et suit la convention</strong> (enable-xxx) ?</div></div>
+                    <div class="checklist-item" data-check="6"><div class="checklist-checkbox"></div><div class="checklist-text">J'ai <strong>documenté la raison du flag</strong> dans GitLab ?</div></div>
+                    <div class="checklist-item" data-check="7"><div class="checklist-checkbox"></div><div class="checklist-text">Les tests Cucumber couvrent <strong>flag ON ET flag OFF</strong> ?</div></div>
+                    <div class="checklist-item" data-check="8"><div class="checklist-checkbox"></div><div class="checklist-text">Le flag <strong>ne dépend pas d'autres flags</strong> (pas d'imbrication) ?</div></div>
+                </div>
+                <div class="checklist-status incomplete" id="checklist-status">❌ 0/8 critères validés - Complète la checklist</div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-to-form" disabled>Continuer →</button>
+                </div>
+            </div>
+
+            <div class="wizard-step" id="wizard-step-4">
+                <div class="wizard-progress">
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot done"></div>
+                    <div class="wizard-progress-line done"></div>
+                    <div class="wizard-dot active"></div>
+                </div>
+                <div class="wizard-question">📝 Informations du flag</div>
+                <div class="form-group">
+                    <label class="form-label">Nom du flag *</label>
+                    <input type="text" class="form-input" id="flag-name" placeholder="enable-nouvelle-feature">
+                    <div class="form-hint">Format: enable-xxx (kebab-case, anglais, 3-5 mots max)</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description *</label>
+                    <textarea class="form-textarea" id="flag-description" placeholder="Décris clairement ce que fait cette feature..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="flag-type">
+                        <option value="development">Feature Flag (développement)</option>
+                        <option value="ops">Ops Flag (kill switch)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner (email) *</label>
+                    <input type="email" class="form-input" id="flag-owner" placeholder="prenom.nom@lcl.fr">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Issue GitLab liée</label>
+                    <input type="text" class="form-input" id="flag-issue" placeholder="https://gitlab.lcl.fr/.../issues/123">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stack technique</label>
+                    <div style="display:flex;gap:18px;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-java" checked> ☕ Java/Spring</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-python"> 🐍 Python</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="stack-angular"> 🅰️ Angular</label>
+                    </div>
+                </div>
+                <div class="form-group" style="padding:16px 18px;background:rgba(52,211,153,0.08);border-radius:11px;border:1px solid rgba(52,211,153,0.2);">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;">
+                        <input type="checkbox" id="create-in-gitlab" checked style="width:17px;height:17px;">
+                        🚀 Créer le flag dans GitLab (API)
+                    </label>
+                    <div class="form-hint" style="margin-left:27px;">Le flag sera créé OFF par défaut dans GitLab > Operations > Feature Flags</div>
+                </div>
+                <div class="form-group" style="margin-top:12px;padding:16px 18px;background:rgba(139,92,246,0.08);border-radius:11px;border:1px solid rgba(139,92,246,0.2);">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13px;">
+                        <input type="checkbox" id="sync-client-file" checked style="width:17px;height:17px;">
+                        📄 Synchroniser le fichier client (MR automatique)
+                    </label>
+                    <div class="form-hint" style="margin-left:27px;">Met à jour le type FeatureFlags dans le code</div>
+                    <div id="client-file-config" style="margin-top:13px;padding:13px;background:rgba(0,0,0,0.2);border-radius:9px;">
+                        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                            <div style="flex:1;min-width:180px;">
+                                <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">📁 Chemin du fichier</label>
+                                <input type="text" class="form-input" id="client-file-path" placeholder="src/app/core/feature-flags.ts" style="font-size:12px;">
+                            </div>
+                            <div style="min-width:130px;">
+                                <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">🔧 Stack</label>
+                                <select class="form-select" id="client-file-stack" style="font-size:12px;">
+                                    <option value="angular">🅰️ Angular/TS</option>
+                                    <option value="react">⚛️ React/TS</option>
+                                    <option value="java">☕ Java/Spring</option>
+                                    <option value="python">🐍 Python</option>
+                                </select>
+                            </div>
+                            <div style="padding-top:20px;">
+                                <button class="btn btn-secondary" id="btn-detect-client-file" style="font-size:12px;padding:7px 11px;">🔍 Détecter</button>
+                            </div>
+                        </div>
+                        <div id="client-file-status" style="margin-top:8px;font-size:12px;color:var(--text2);"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Environnement(s)</label>
+                    <div style="display:flex;gap:18px;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-dev" checked> 🔧 dev</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-staging"> 🧪 staging</label>
+                        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;"><input type="checkbox" id="env-prod" checked> 🚀 production</label>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" data-wizard-action="back">← Retour</button>
+                    <button class="btn btn-primary" id="btn-generate">🚀 Créer et générer</button>
+                </div>
+                <div id="api-result" style="display:none;margin-top:18px;"></div>
+                <div class="generated-files" id="generated-files" style="display:none;">
+                    <div class="panel-title" style="margin-top:24px;">📦 Fichiers générés</div>
+                    <div id="files-list"></div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="btn-reset-wizard">🔄 Nouveau flag</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLEANUP -->
+        <div class="panel" id="panel-cleanup">
+            <div class="panel-title">🧹 Décommissionnement des Flags</div>
+            <div class="alert alert-info">
+                <div class="alert-icon">📖</div>
+                <div class="alert-content">
+                    <div class="alert-title">Règles de décommissionnement</div>
+                    <div class="alert-text">
+                        • Flag à 100% depuis ≥ 2 semaines → <strong>Cleanup maintenant</strong><br>
+                        • Flag > 1 mois → <strong>Dette technique</strong> — Justification ou suppression<br>
+                        • Flag > 2 mois → <strong>Critique</strong> — Bloquer nouvelles features
+                    </div>
+                </div>
+            </div>
+            <div id="cleanup-container">
+                <div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:16px;">Analyse des flags...</p></div>
+            </div>
+        </div>
+
+        <!-- DOC -->
+        <div class="panel" id="panel-doc">
+            <div class="panel-title">📚 Documentation de Référence</div>
+            <div class="alert alert-success">
+                <div class="alert-icon">🏆</div>
+                <div class="alert-content">
+                    <div class="alert-title">Stratégie Feature Flags LCL</div>
+                    <div class="alert-text">Cette documentation est la référence officielle pour l'utilisation des feature flags chez LCL.</div>
+                </div>
+            </div>
+            <div style="margin:24px 0;">
+                <h3 style="margin-bottom:16px;font-size:16px;">🤔 Matrice de décision : Flag ou pas ?</h3>
+                <div style="background:var(--surface3);border-radius:13px;overflow:hidden;">
+                    <table class="doc-table">
+                        <thead><tr><th>Cas d'usage</th><th>Flag ?</th><th>Solution</th></tr></thead>
+                        <tbody id="decision-matrix">
+                            <tr><td>Nouveau parcours de paiement</td><td>✅ OUI</td><td>Feature Flag</td></tr>
+                            <tr><td>Refonte du tableau de bord</td><td>✅ OUI</td><td>Feature Flag</td></tr>
+                            <tr><td>Kill switch API externe</td><td>⚠️ OUI*</td><td>Ops Flag (validation TL+PO)</td></tr>
+                            <tr><td>Cache Redis</td><td>❌ NON</td><td>Variable d'environnement</td></tr>
+                            <tr><td>Permission utilisateur</td><td>❌ NON</td><td>Système IAM/RBAC</td></tr>
+                            <tr><td>Bannière promo</td><td>❌ NON</td><td>Base de données / CMS</td></tr>
+                            <tr><td>A/B Testing</td><td>❌ NON</td><td>Outil dédié (Optimizely...)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="panel" id="panel-history">
+            <div class="panel-title">📜 Historique des changements</div>
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+                <input type="text" class="form-input" id="history-search" placeholder="🔍 Rechercher un flag..." style="flex:1;min-width:180px;" oninput="filterAuditHistory()">
+                <select class="form-select" id="history-filter-env" style="width:170px;" onchange="filterAuditHistory()">
+                    <option value="">Tous environnements</option>
+                </select>
+                <select class="form-select" id="history-filter-status" style="width:150px;" onchange="filterAuditHistory()">
+                    <option value="">Tous statuts</option>
+                    <option value="active">Actifs</option>
+                    <option value="inactive">Inactifs</option>
+                    <option value="deleted">Supprimés</option>
+                </select>
+                <button class="btn btn-secondary" id="history-reload" style="padding:9px 14px;" title="Recharger depuis GitLab">🔄</button>
+            </div>
+            <div id="history-meta" style="font-size:12px;color:var(--text3);margin-bottom:12px;min-height:16px;"></div>
+            <div class="ff-history-list" id="history-list">
+                <div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:16px;">Chargement de l'historique…</p></div>
+            </div>
+        </div>
+
+        <!--
+            Panels "Approbations" et "Permissions" retirés du DOM pour le bac à sable.
+            Voir le commentaire en haut sur les tabs. Code JS associé désactivé via
+            le bloc "RBAC & APPROVALS - DÉSACTIVÉ POUR LE BAC À SABLE".
+        -->
+
+    </div>
+
+    <!-- Modal Cleanup -->
+    <dialog id="groups-modal" class="groups-dialog">
+        <div class="grp-header">
+            <div class="grp-title">🗂️ Groupes de flags</div>
+            <button class="cw-close" data-action="groups-close">✕</button>
+        </div>
+        <div class="grp-intro">
+            Crée des groupes et coche les flags à y ranger, puis affiche-les via « Groupes : Manuel » dans la vue groupée.
+            <span class="grp-local" id="grp-status">…</span>
+        </div>
+        <div class="grp-new">
+            <input type="text" id="grp-new-name" class="grp-input" placeholder="Nom du nouveau groupe (ex. Checkout, Paiement…)" maxlength="60"/>
+            <button class="btn btn-primary" id="grp-add-btn" data-action="group-create">+ Créer le groupe</button>
+        </div>
+        <div class="grp-list" id="grp-list"></div>
+        <div class="grp-footer">
+            <span class="grp-save" id="grp-save" style="margin-right:auto;"></span>
+            <button class="btn btn-secondary" data-action="groups-close">Fermer</button>
+        </div>
+    </dialog>
+
+    <dialog id="cleanup-modal" class="cleanup-dialog">
+        <div class="cw-header">
+            <div class="cw-flag-name" id="modal-flag-name">—</div>
+            <button class="cw-close" data-action="cleanup-close">✕</button>
+        </div>
+        <div class="cw-steps">
+            <div class="cw-step active" id="cw-step-dot-1"><span>1</span><small>Statut</small></div>
+            <div class="cw-step-line"></div>
+            <div class="cw-step" id="cw-step-dot-2"><span>2</span><small>Action</small></div>
+            <div class="cw-step-line"></div>
+            <div class="cw-step" id="cw-step-dot-3"><span>3</span><small>Checklist dev</small></div>
+        </div>
+
+        <div class="cw-panel active" id="cw-panel-1">
+            <div class="cw-section-title">État actuel du flag</div>
+            <div class="cw-status-grid" id="cw-status-grid"></div>
+            <div class="cw-info-box">
+                <span style="font-size:18px;flex-shrink:0;">💡</span>
+                <div><strong>Désactiver ≠ Supprimer</strong><br><span style="font-size:12px;opacity:0.75;">Le flag reste dans GitLab et peut être réactivé à tout moment. La suppression définitive est faite par le développeur après cleanup du code.</span></div>
+            </div>
+            <div class="cw-btns">
+                <button class="cw-btn-cancel" data-action="cleanup-close">Fermer</button>
+                <button class="cw-btn-primary" data-cw-goto="2">Continuer →</button>
+            </div>
+        </div>
+
+        <div class="cw-panel" id="cw-panel-2">
+            <div class="cw-section-title">Activer ou désactiver le flag</div>
+            <div class="cw-toggle-choice">
+                <button class="cw-choice-btn cw-choice-off" id="cw-btn-deactivate" data-cw-toggle="false">
+                    <span class="cw-choice-icon">⏸</span>
+                    <strong>Désactiver</strong>
+                    <small>La feature disparaît pour les utilisateurs</small>
+                </button>
+                <button class="cw-choice-btn cw-choice-on" id="cw-btn-activate" data-cw-toggle="true">
+                    <span class="cw-choice-icon">▶</span>
+                    <strong>Activer</strong>
+                    <small>La feature devient visible pour les utilisateurs</small>
+                </button>
+            </div>
+            <div id="modal-api-result" style="display:none;margin-top:14px;"></div>
+            <div class="cw-btns" style="margin-top:18px;">
+                <button class="cw-btn-cancel" data-cw-goto="1">← Retour</button>
+                <a id="btn-view-gitlab" href="#" target="_blank" class="cw-btn-secondary" style="text-decoration:none;">↗ Voir dans GitLab</a>
+            </div>
+        </div>
+
+        <div class="cw-panel" id="cw-panel-3">
+            <div class="cw-section-title">Checklist pour les développeurs</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:14px;">À transmettre à l'équipe dev pour finaliser le cleanup :</div>
+            <div class="checklist" id="cleanup-checklist">
+                <div class="checklist-item" data-check="c1"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer le <strong>if/else du code</strong> (garder le nouveau comportement)</div></div>
+                <div class="checklist-item" data-check="c2"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer les <strong>tests @flag-off</strong> (comportement legacy)</div></div>
+                <div class="checklist-item" data-check="c3"><div class="checklist-checkbox"></div><div class="checklist-text">Transformer les <strong>tests @flag-on → @regression</strong></div></div>
+                <div class="checklist-item" data-check="c4"><div class="checklist-checkbox"></div><div class="checklist-text">Merger la <strong>MR de cleanup</strong> sur main</div></div>
+                <div class="checklist-item" data-check="c5"><div class="checklist-checkbox"></div><div class="checklist-text">Supprimer le flag dans GitLab <strong>après merge</strong></div></div>
+            </div>
+            <div id="cw-checklist-status" class="cw-checklist-status">0/5 étapes complétées</div>
+            <div class="cw-btns">
+                <button class="cw-btn-cancel" data-cw-goto="2">← Retour</button>
+                <button class="cw-btn-primary" data-action="cleanup-close">✅ Terminé</button>
+            </div>
+        </div>
+    </dialog>
+
+
+
+    <!-- ═══ MAQUETTE : auth factice + données de démo (aucun appel GitLab réel) ═══ -->
+    <script>
+    (function(){
+      try{
+        localStorage.setItem('devops_hub_workspaces', JSON.stringify({token:'demo',gitlabUrl:'https://gitlab.demo',username:'j.dupont'}));
+        localStorage.setItem('hub_selected_repo_id','123');
+        sessionStorage.setItem('gitlab_project_id','123');
+        sessionStorage.setItem('gitlab_project','platformengineering');
+      }catch(e){}
+      function daysAgo(n){return new Date(Date.now()-n*86400000).toISOString();}
+      // Flags de démo (forme identique à l'API GitLab Feature Flags)
+      window.__FF_DEMO=[
+        {name:'enable-apple-pay',description:'Paiement Apple Pay',active:true,created_at:daysAgo(21),updated_at:daysAgo(7),strategies:[{name:'default',scopes:[{environment_scope:'production'}]}]},
+        {name:'new-checkout',description:'Nouveau tunnel de paiement',active:true,created_at:daysAgo(12),updated_at:daysAgo(2),strategies:[{name:'gradualRolloutUserId',parameters:{percentage:'50'},scopes:[{environment_scope:'production'}]}]},
+        {name:'instant-transfer',description:'Virement instantané',active:true,created_at:daysAgo(6),updated_at:daysAgo(1),strategies:[{name:'gradualRolloutUserId',parameters:{percentage:'25'},scopes:[{environment_scope:'production'}]}]},
+        {name:'iban-tile',description:'Tuile IBAN (en test staging)',active:false,created_at:daysAgo(3),updated_at:daysAgo(3),strategies:[{name:'default',scopes:[{environment_scope:'staging'}]}]},
+        {name:'old-scoring',description:'Ancien moteur de scoring',active:true,created_at:daysAgo(75),updated_at:daysAgo(65),strategies:[{name:'default'}]},
+        {name:'legacy-export',description:'Export legacy à retirer',active:true,created_at:daysAgo(140),updated_at:daysAgo(120),strategies:[{name:'default'}]},
+        {name:'dark-mode',description:'Thème sombre (100% depuis 6 mois)',active:true,created_at:daysAgo(210),updated_at:daysAgo(180),strategies:[{name:'default',scopes:[{environment_scope:'*'}]}]}
+      ];
+      var _fetch=window.fetch;
+      window.fetch=function(url,opt){
+        var u=String(url), path=u.split('?')[0];
+        if(/\/feature_flags$/.test(path)) return Promise.resolve(new Response(JSON.stringify(window.__FF_DEMO),{status:200,headers:{'content-type':'application/json'}}));
+        if(/audit_events|\/events$/.test(path)) return Promise.resolve(new Response('[]',{status:200,headers:{'content-type':'application/json'}}));
+        return Promise.resolve(new Response('[]',{status:200,headers:{'content-type':'application/json'}}));
+      };
+    })();
+    </script>
+    <script src="../js/common/utils.js"></script>
+    <script src="../js/common/gitlab.js"></script>
+    <script src="../js/common/auth.js"></script>
+    <script src="../js/modules/feature-flag-manager/state.js"></script>
+    <script src="../js/modules/feature-flag-manager/data.js"></script>
+    <script src="../js/modules/feature-flag-manager/compute.js"></script>
+    <script src="../js/modules/feature-flag-manager/render.js"></script>
+    <script src="../js/modules/feature-flag-manager/index.js"></script>
+
+
+
 <script>
-let t;function toast(m){const e=document.getElementById('toast');e.innerHTML=m;e.classList.add('show');clearTimeout(t);t=setTimeout(()=>e.classList.remove('show'),3600);}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// Timeline rendered by main renderTimelineChart()
+</script>
 
-// ── RBAC ──
-const CAP={
-  viewer:{toggle:false,rollout:false,approve:false,create:false,decommission:false,label:'lecture seule'},
-  contributor:{toggle:false,rollout:'request',approve:false,create:true,decommission:false,label:'crée & propose, ne bascule pas la prod'},
-  maintainer:{toggle:true,rollout:true,approve:true,create:true,decommission:false,label:'change le statut, étend le rollout, approuve'},
-  admin:{toggle:true,rollout:true,approve:true,create:true,decommission:true,label:'tout + décommission + owners'}
-};
-let ROLE='maintainer';
-function setRole(r){ROLE=r;document.querySelectorAll('.rchip').forEach(c=>c.classList.toggle('on',c.dataset.r===r));
-  document.getElementById('roleHint').textContent='— '+CAP[r].label;
-  document.getElementById('roleTag').textContent='rôle : '+r;
-  renderFlags();
-}
+<!-- ═══ MODE BAC : logique RBAC + rollout progressif (maquette autonome) ═══ -->
+<script>
+(function(){
+  var PALIERS = [
+    {k:'off',  label:'OFF', pct:0,   color:'var(--text3)'},
+    {k:'p10',  label:'10%', pct:10,  color:'var(--yellow)'},
+    {k:'p50',  label:'50%', pct:50,  color:'var(--blue)'},
+    {k:'p100', label:'100%',pct:100, color:'var(--green)'}
+  ];
+  // Ce que chaque rôle a le droit de faire (RBAC — cf. EPIC-ff-bac §3)
+  var CAN = {
+    viewer:      {toggle:false, rollout:false, propose:false, label:'lecture seule'},
+    contributor: {toggle:false, rollout:false, propose:true,  label:'peut proposer (demande d’approbation)'},
+    maintainer:  {toggle:true,  rollout:true,  propose:false, label:'change le statut, étend le rollout, approuve'},
+    admin:       {toggle:true,  rollout:true,  propose:false, label:'tout + décommission'}
+  };
+  function role(){ return document.getElementById('bac-role').value; }
 
-// ── Données ──
-const STAGES=['off','10%','50%','100%'];
-const FLAGS=[
-  {key:'new-checkout',on:true,envs:['production','staging'],stage:2,owner:'squad Paiement',age:12,lastBy:'a.bernard',lastAt:'il y a 2 j',desc:'Nouveau tunnel de paiement',health:{err:'0.2 %',users:'12 400'},
-    audit:[['a.bernard','étendu à 50 %','il y a 2 j'],['a.bernard','étendu à 10 %','il y a 6 j'],['j.dupont','activé (off→10 %)','il y a 9 j'],['j.dupont','créé le flag','il y a 12 j']]},
-  {key:'promo-banner',on:true,envs:['production'],stage:2,owner:'squad Growth',age:20,lastBy:'a.bernard',lastAt:'il y a 5 j',desc:'Bannière promo saisonnière',pending:{by:'m.leroy',to:3},health:{err:'0.1 %',users:'8 100'},
-    audit:[['m.leroy','demande d\'extension à 100 %','il y a 3 h'],['a.bernard','étendu à 50 %','il y a 5 j'],['a.bernard','créé le flag','il y a 20 j']]},
-  {key:'iban-tile',on:false,envs:['staging'],stage:0,owner:'squad Paiement',age:3,lastBy:'j.dupont',lastAt:'il y a 3 j',desc:'Tuile IBAN (en test staging)',health:null,
-    audit:[['j.dupont','créé le flag','il y a 3 j']]},
-  {key:'dark-mode',on:true,envs:['*'],stage:3,owner:'squad UI',age:210,lastBy:'c.martin',lastAt:'il y a 6 mois',desc:'Thème sombre',dead:true,health:{err:'0.0 %',users:'100 %'},
-    audit:[['c.martin','étendu à 100 %','il y a 6 mois'],['c.martin','créé le flag','il y a 7 mois']]},
-];
-const envCls=e=>e==='production'?'prod':e==='*'?'all':'stg';
-const envLbl=e=>e==='*'?'tous':e;
-function rollPct(s){return [0,10,50,100][s];}
+  // Palier initial déduit des données de démo
+  function initPalier(f){
+    if(!f.active) return 0;
+    var s=(f.strategies||[]).find(function(x){return x.parameters&&x.parameters.percentage;});
+    if(s){ var p=+s.parameters.percentage; return p<=10?1:(p<=50?2:3); }
+    return 3; // default/actif = 100%
+  }
+  // État bac par flag (applied = en prod, planned = prévu au prochain deploy)
+  var STATE={};
+  (window.__FF_DEMO||[]).forEach(function(f){
+    var i=initPalier(f);
+    STATE[f.name]={active:f.active, applied:i, planned:i, lastDeploy:null};
+  });
 
-// ── Dashboard ──
-function renderDash(){
-  document.getElementById('tTotal').textContent=FLAGS.length;
-  document.getElementById('tOn').textContent=FLAGS.filter(f=>f.on).length;
-  document.getElementById('tRoll').textContent=FLAGS.filter(f=>f.stage===1||f.stage===2).length;
-  const dead=FLAGS.filter(f=>f.dead);
-  document.getElementById('tDead').textContent=dead.length;
-  if(dead.length){document.getElementById('deadAlert').style.display='flex';
-    document.getElementById('deadTxt').innerHTML='<b>'+dead.map(f=>esc(f.key)).join(', ')+'</b> — actif(s) à 100 % depuis longtemps.';}
-}
+  var $=function(id){return document.getElementById(id);};
+  var cur=function(){return $('bac-flag').value;};
+  function toast(msg,ok){
+    var t=document.createElement('div');
+    t.textContent=msg;
+    t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9999;'+
+      'background:'+(ok===false?'rgba(248,113,113,.95)':(ok?'rgba(52,211,153,.95)':'rgba(40,28,70,.97)'))+';'+
+      'color:'+(ok!=null?'#0f0a1f':'#f0f4ff')+';font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;'+
+      'box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:80vw;text-align:center;';
+    document.body.appendChild(t);
+    setTimeout(function(){t.style.transition='opacity .3s';t.style.opacity='0';},2200);
+    setTimeout(function(){t.remove();},2600);
+  }
 
-// ── Table des flags ──
-function renderFlags(){
-  const cap=CAP[ROLE];
-  document.getElementById('ffBody').innerHTML=FLAGS.map((f,i)=>{
-    const envs=f.envs.map(e=>'<span class="env '+envCls(e)+'">'+envLbl(e)+'</span>').join('');
-    const pct=rollPct(f.stage);
-    const lock=cap.toggle?'':' locked';
-    const badges=(f.dead?'<span class="dead">💀 mort</span> ':'')+(f.pending?'<span class="pend">⏳ appro</span> ':'');
-    return '<tr class="row" onclick="openFlag('+i+')">'
-      +'<td><div class="fkey">'+esc(f.key)+' '+badges+'</div><div class="fdesc">'+esc(f.desc)+'</div></td>'
-      +'<td><span class="sw'+(f.on?' on':'')+lock+'" onclick="event.stopPropagation();toggleFlag('+i+')" title="'+(cap.toggle?'basculer ON/OFF':'🔒 rôle '+ROLE)+'"></span></td>'
-      +'<td>'+envs+'</td>'
-      +'<td><span class="rollpill" style="color:'+(pct===100?'var(--ok)':pct?'var(--deliver)':'var(--tm)')+'">'+STAGES[f.stage]+'</span><div class="rollbar"><i style="width:'+pct+'%"></i></div></td>'
-      +'<td class="owner">'+esc(f.owner)+'</td>'
-      +'<td style="color:var(--tm)">'+f.age+' j</td></tr>';
-  }).join('');
-}
-function toggleFlag(i){
-  const cap=CAP[ROLE],f=FLAGS[i];
-  if(!cap.toggle){toast('🔒 Rôle <b>'+ROLE+'</b> : seul un <b>maintainer</b> peut changer le statut d\'un flag.');return;}
-  f.on=!f.on; if(!f.on){f.stage=0;}
-  f.audit.unshift(['(toi)',f.on?'activé le flag':'désactivé (kill switch)','à l\'instant']);
-  renderFlags();renderAudit();
-  toast('🚩 <b>'+esc(f.key)+'</b> '+(f.on?'activé':'désactivé (kill switch)')+' — tracé au journal.');
-}
+  function renderRoleHint(){
+    var c=CAN[role()];
+    $('bac-role-hint').innerHTML='Droits : <b style="color:var(--text2)">'+c.label+'</b>. '+
+      (c.toggle?'':'Les actions sensibles sont verrouillées (403) pour ce rôle. ');
+  }
 
-// ── Fiche flag + rollout progressif ──
-function openFlag(i){
-  const f=FLAGS[i],cap=CAP[ROLE];
-  // stepper
-  const steps=STAGES.map((s,si)=>{
-    const st=si<f.stage?'done':si===f.stage?'live':'';
-    const ic=si<f.stage?'✓':s==='off'?'⏻':s;
-    const rail=si?'<div class="rail '+(si<=f.stage?'done':'')+'"></div>':'';
-    return rail+'<div class="step '+st+'"><div class="dot">'+ic+'</div><div class="nm">'+(s==='off'?'OFF':s)+'</div></div>';
-  }).join('');
-  const health=f.health&&f.stage>0?'<div class="stage-health">🩺 Étape live <b>'+STAGES[f.stage]+'</b> · erreurs <b>'+f.health.err+'</b> · exposés <b>'+f.health.users+'</b> · <span style="color:var(--ok)">stable ✅</span></div>':'';
-  // rollout actions (guarded)
-  let rollBtns='';
-  const isProd=f.envs.includes('production');
-  if(f.stage<3){
-    const next=STAGES[f.stage+1];
-    if(cap.rollout===true){
-      rollBtns+='<button class="btn go" onclick="advance('+i+')">▶ Étendre à '+next+' (au prochain deploy)</button>';
-    } else if(cap.rollout==='request'){
-      rollBtns+='<button class="btn warn" onclick="requestAdvance('+i+')">✋ Demander l\'extension à '+next+'</button>';
+  function renderStatus(){
+    var f=cur(), st=STATE[f], c=CAN[role()];
+    var on=st.active;
+    var badge='<span style="font-weight:800;font-size:13px;color:'+(on?'var(--green)':'var(--text3)')+';">'+
+      (on?'● ACTIF':'○ INACTIF')+'</span>';
+    var btn;
+    if(c.toggle){
+      btn='<button id="bac-toggle" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;'+
+        'border:1px solid '+(on?'rgba(248,113,113,.4)':'rgba(52,211,153,.4)')+';border-radius:10px;padding:8px 14px;'+
+        'background:'+(on?'rgba(248,113,113,.12)':'rgba(52,211,153,.12)')+';color:'+(on?'var(--red)':'var(--green)')+';">'+
+        (on?'⏸ Couper (kill switch)':'▶ Activer')+'</button>';
+    } else if(c.propose){
+      btn='<button id="bac-propose" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;'+
+        'border:1px solid var(--ov-2);border-radius:10px;padding:8px 14px;background:var(--ov-06);color:var(--text2);">'+
+        '✋ Demander l’approbation</button>';
     } else {
-      rollBtns+='<button class="btn off">▶ Étendre à '+next+'</button>';
+      btn='<span style="font-size:12px;color:var(--text3);border:1px dashed var(--ov-2);border-radius:10px;padding:8px 14px;">🔒 Verrouillé (viewer)</span>';
     }
+    $('bac-status-row').innerHTML=
+      '<span style="font-size:13px;font-weight:700;color:var(--text);">'+f+'</span>'+badge+
+      '<div style="flex:1"></div>'+btn;
+    var tb=$('bac-toggle'); if(tb) tb.onclick=function(){
+      st.active=!st.active;
+      if(!st.active){ st.planned=0; } // couper = OFF planifié
+      toast((st.active?'Activé':'Coupé (kill switch immédiat)')+' · '+f+' · tracé au journal', st.active);
+      renderStatus(); renderRollout();
+    };
+    var pb=$('bac-propose'); if(pb) pb.onclick=function(){
+      toast('Demande d’approbation créée · en attente d’un maintainer (rien appliqué)', false===false?null:null);
+    };
   }
-  if(f.stage>0 && cap.rollout===true) rollBtns+='<button class="btn danger" onclick="rollback('+i+')">↩ Rollback à '+STAGES[f.stage-1]+'</button>';
-  // pending approval
-  let approval='';
-  if(f.pending){
-    approval='<div class="box" style="border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.06);margin-top:10px">⏳ <b>'+esc(f.pending.by)+'</b> demande l\'extension à <b>'+STAGES[f.pending.to]+'</b>.'
-      +(cap.approve?'<div class="roll-actions" style="margin-top:10px"><button class="btn go" onclick="approve('+i+')">✅ Approuver la bascule</button><button class="btn ghost" onclick="rejectApp('+i+')">Refuser</button></div>':'<div class="rbac-note">🔒 Seul un <b>maintainer</b> peut approuver.</div>')+'</div>';
+
+  function renderRollout(){
+    var f=cur(), st=STATE[f], c=CAN[role()];
+    var steps=PALIERS.map(function(p,i){
+      var isApplied=i===st.applied, isPlanned=i===st.planned;
+      var bg=isApplied?p.color:(isPlanned?'transparent':'var(--ov-04)');
+      var border=isPlanned&&!isApplied?'2px dashed '+p.color:'1px solid var(--ov-12)';
+      var col=isApplied?'#0f0a1f':(isPlanned?p.color:'var(--text3)');
+      return '<div style="flex:1;text-align:center;padding:12px 4px;border-radius:10px;border:'+border+';'+
+        'background:'+bg+';color:'+col+';font-weight:800;font-size:14px;position:relative;">'+p.label+
+        (isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;opacity:.8;">EN PROD</div>':'')+
+        (isPlanned&&!isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;">PRÉVU</div>':'')+
+        '</div>';
+    }).join('<div style="align-self:center;color:var(--text3);font-weight:800;">→</div>');
+
+    var gated=c.rollout;
+    var changed=st.planned!==st.applied;
+    var canUp=st.planned<3, canDown=st.planned>0;
+    var controls;
+    if(gated){
+      controls=
+        '<button id="bac-down" '+(canDown?'':'disabled')+' style="cursor:'+(canDown?'pointer':'not-allowed')+';opacity:'+(canDown?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid var(--ov-2);border-radius:10px;padding:8px 12px;background:var(--ov-06);color:var(--text2);">− Réduire</button>'+
+        '<button id="bac-up" '+(canUp?'':'disabled')+' style="cursor:'+(canUp?'pointer':'not-allowed')+';opacity:'+(canUp?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid rgba(45,212,191,.4);border-radius:10px;padding:8px 12px;background:rgba(45,212,191,.12);color:var(--accent);">+ Étendre au palier suivant</button>'+
+        '<div style="flex:1"></div>'+
+        '<button id="bac-deploy" '+(changed?'':'disabled')+' style="cursor:'+(changed?'pointer':'not-allowed')+';opacity:'+(changed?1:.45)+';font-family:inherit;font-weight:800;font-size:12px;border:none;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,var(--purple),var(--accent));color:#0f0a1f;">▶ Simuler le déploiement</button>';
+    } else {
+      controls='<span style="font-size:12px;color:var(--text3);border:1px dashed var(--ov-2);border-radius:10px;padding:8px 14px;">🔒 '+
+        (c.propose?'contributor : proposez, un maintainer applique':'lecture seule')+'</span>';
+    }
+
+    var plan= changed
+      ? '<div style="margin-top:10px;font-size:12px;color:var(--text2);">📅 <b style="color:var(--accent)">'+PALIERS[st.planned].label+'</b> planifié pour le <b>prochain déploiement</b> — rien n’est appliqué à chaud.</div>'
+      : '<div style="margin-top:10px;font-size:12px;color:var(--text3);">Aucun changement planifié. Palier en prod : <b style="color:var(--text2)">'+PALIERS[st.applied].label+'</b>.</div>';
+
+    $('bac-rollout').innerHTML=
+      '<div style="display:flex;gap:8px;align-items:stretch;">'+steps+'</div>'+
+      plan+
+      '<div id="bac-health"></div>'+
+      '<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap;">'+controls+'</div>';
+
+    var up=$('bac-up'); if(up) up.onclick=function(){ st.planned=Math.min(3,st.planned+1); renderRollout(); };
+    var dn=$('bac-down'); if(dn) dn.onclick=function(){ st.planned=Math.max(0,st.planned-1); renderRollout(); };
+    var dp=$('bac-deploy'); if(dp) dp.onclick=function(){ doDeploy(f); };
   }
-  // audit
-  const audit=f.audit.map(a=>'<div class="audit-item"><span class="at">'+a[2]+'</span><span><b style="color:var(--ts)">'+esc(a[0])+'</b> — '+esc(a[1])+'</span></div>').join('');
-  // decommission
-  const canDec=cap.decommission||(cap.toggle&&f.dead);
-  const dec=f.dead?'<div class="bh">🧹 Décommission</div><div class="box">Flag à 100 % depuis longtemps → à retirer du code. '+(canDec?'<div class="roll-actions" style="margin-top:10px"><button class="btn danger" onclick="decommission('+i+')">🗑 Décommissionner + créer l\'US Jira</button></div>':'<div class="rbac-note">🔒 Décommission réservée à l\'<b>admin</b>.</div>')+'</div>':'';
 
-  document.getElementById('ffBodyModal').innerHTML=
-    '<div class="mh"><span class="mt">'+esc(f.key)+'</span>'+(f.dead?'<span class="dead">💀 mort</span>':'')+'<span class="sw'+(f.on?' on':'')+(cap.toggle?'':' locked')+'" onclick="toggleFlag('+i+');closeFlag();openFlag('+i+')"></span><button class="mx" onclick="closeFlag()">✕</button></div>'
-    +'<div class="msub">'+esc(f.desc)+' · env '+f.envs.map(e=>envLbl(e)).join(', ')+'</div>'
-    +'<div class="bh">🚀 Déploiement progressif <span class="star">off → 10% → 50% → 100% · au deploy</span></div>'
-    +'<div class="stepper">'+steps+'</div>'+health
-    +'<div class="roll-actions">'+rollBtns+'</div>'
-    +(isProd?'<div class="rbac-note">⚙️ Chaque extension s\'applique <b>au prochain déploiement</b> et est soumise aux droits ci-dessous.</div>':'')
-    +approval
-    +'<div class="bh">🪪 Propriété &amp; gouvernance</div><div class="box"><div class="kv"><span class="k">Owner</span><span class="v">'+esc(f.owner)+'</span></div><div class="kv"><span class="k">Créé il y a</span><span class="v">'+f.age+' jours</span></div><div class="kv"><span class="k">Dernière modif</span><span class="v">'+esc(f.lastBy)+' · '+esc(f.lastAt)+'</span></div><div class="kv"><span class="k">Peut changer le statut</span><span class="v">maintainer, admin</span></div></div>'
-    +'<div class="bh">🧾 Journal d\'audit du flag</div><div class="box">'+audit+'</div>'
-    +dec;
-  document.getElementById('ffModal').classList.add('show');
-}
-function closeFlag(){document.getElementById('ffModal').classList.remove('show');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFlag();});
+  function doDeploy(f){
+    var st=STATE[f];
+    var target=st.planned;
+    // Santé simulée : taux d'erreur proportionnel au saut + aléa
+    var jump=Math.max(0,target-st.applied);
+    var errRate=(Math.random()*1.4 + jump*0.5).toFixed(2); // %
+    var threshold=1.5;
+    var el=$('bac-health');
+    st.active = target>0;
+    if(parseFloat(errRate)>threshold && target>0){
+      // Auto-rollback au palier précédent
+      var back=Math.max(0,target-1);
+      st.applied=back; st.planned=back;
+      el.innerHTML='<div style="margin-top:12px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.1);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--red);">'+
+        '⚠ Taux d’erreur '+errRate+'% &gt; seuil '+threshold+'% au palier '+PALIERS[target].label+
+        ' → <b>rollback automatique</b> à '+PALIERS[back].label+' (tracé au journal).</div>';
+      toast('Déploiement '+PALIERS[target].label+' → rollback auto à '+PALIERS[back].label, false);
+    } else {
+      st.applied=target;
+      el.innerHTML='<div style="margin-top:12px;border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.1);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--green);">'+
+        '✓ Déploiement OK · palier <b>'+PALIERS[target].label+'</b> appliqué en prod · taux d’erreur '+errRate+'% (&lt; '+threshold+'%).</div>';
+      toast('Déploiement appliqué : '+PALIERS[target].label+' · santé OK', true);
+    }
+    renderStatus(); renderRollout();
+    // restaure le message de santé (renderRollout l'écrase)
+    var keep=el.innerHTML; setTimeout(function(){ var h=$('bac-health'); if(h) h.innerHTML=keep; },0);
+  }
 
-function advance(i){const f=FLAGS[i];if(f.stage>=3)return;f.stage++;if(f.stage>0)f.on=true;
-  f.audit.unshift(['(toi)','étendu à '+STAGES[f.stage]+' (planifié au prochain deploy)','à l\'instant']);
-  renderFlags();renderAudit();closeFlag();openFlag(i);
-  toast('🚀 <b>'+esc(f.key)+'</b> → <b>'+STAGES[f.stage]+'</b> au prochain déploiement. Canary sous surveillance.');}
-function rollback(i){const f=FLAGS[i];if(f.stage<=0)return;f.stage--;f.audit.unshift(['(toi)','rollback à '+STAGES[f.stage],'à l\'instant']);
-  renderFlags();renderAudit();closeFlag();openFlag(i);toast('↩ <b>'+esc(f.key)+'</b> ramené à <b>'+STAGES[f.stage]+'</b>.');}
-function requestAdvance(i){const f=FLAGS[i];f.pending={by:'(toi)',to:Math.min(3,f.stage+1)};f.audit.unshift(['(toi)','demande d\'extension à '+STAGES[f.pending.to],'à l\'instant']);
-  renderFlags();renderAudit();closeFlag();openFlag(i);toast('✋ Demande envoyée — un <b>maintainer</b> doit approuver l\'extension à '+STAGES[f.pending.to]+'.');}
-function approve(i){const f=FLAGS[i];const to=f.pending.to;f.stage=to;f.on=true;const by=f.pending.by;f.pending=null;
-  f.audit.unshift(['(toi)','approuvé + appliqué l\'extension à '+STAGES[to]+' (demande de '+by+')','à l\'instant']);
-  renderFlags();renderAudit();closeFlag();openFlag(i);toast('✅ Bascule approuvée — <b>'+esc(f.key)+'</b> passe à <b>'+STAGES[to]+'</b>.');}
-function rejectApp(i){const f=FLAGS[i];f.pending=null;f.audit.unshift(['(toi)','refusé la demande d\'extension','à l\'instant']);renderFlags();renderAudit();closeFlag();openFlag(i);toast('🚫 Demande refusée.');}
-function decommission(i){const f=FLAGS[i];toast('🗑 <b>'+esc(f.key)+'</b> marqué à décommissionner + US <b>DEVOPS-'+(600+i)+'</b> créée (retrait du code) — <i>maquette</i>.');closeFlag();}
+  function fillFlags(){
+    var sel=$('bac-flag');
+    sel.innerHTML=(window.__FF_DEMO||[]).map(function(f){return '<option value="'+f.name+'">'+f.name+'</option>';}).join('');
+    sel.value='new-checkout';
+  }
 
-// ── Cleanup & audit sections ──
-function renderCleanup(){
-  const dead=FLAGS.filter(f=>f.dead);
-  document.getElementById('cleanupBody').innerHTML= dead.length?dead.map(f=>{const i=FLAGS.indexOf(f);
-    return '<div class="kv"><span class="v">💀 <b>'+esc(f.key)+'</b> <span style="color:var(--tm);font-weight:500">· à 100 % depuis '+Math.round(f.age/30)+' mois · owner '+esc(f.owner)+'</span></span><button class="btn danger" onclick="openFlag('+i+')">Traiter →</button></div>';
-  }).join(''):'<div style="color:var(--tm);font-size:13px">Aucune dette 🎉 tous les flags sont récents ou en rollout.</div>';
-}
-function renderAudit(){
-  const all=[];FLAGS.forEach(f=>f.audit.slice(0,2).forEach(a=>all.push({key:f.key,who:a[0],what:a[1],at:a[2]})));
-  document.getElementById('auditBody').innerHTML=all.slice(0,8).map(a=>'<div class="audit-item"><span class="at">'+a.at+'</span><span><b style="color:var(--ts)">'+esc(a.who)+'</b> — '+esc(a.what)+' · <span class="fkey" style="font-size:11px">'+esc(a.key)+'</span></span></div>').join('');
-}
-function showTab(){document.getElementById('cleanup').scrollIntoView({behavior:'smooth'});}
-
-setRole('maintainer');renderDash();renderCleanup();renderAudit();
+  function boot(){
+    if(!$('bac-role')) return;
+    fillFlags();
+    $('bac-role').addEventListener('change',function(){ renderRoleHint(); renderStatus(); renderRollout(); });
+    $('bac-flag').addEventListener('change',function(){ renderStatus(); renderRollout(); });
+    renderRoleHint(); renderStatus(); renderRollout();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
 </script>
 </body>
 </html>
