@@ -1157,55 +1157,9 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
             <button class="tab" data-tab="flags">🏳 Flags <span id="flags-badge" class="badge" style="background:rgba(124,92,252,0.6);">—</span></button>
             <button class="tab" data-tab="create">➕ Créer</button>
             <button class="tab" data-tab="cleanup">🧹 Nettoyer</button>
+            <button class="tab" data-tab="droits">🔐 Droits</button>
             <button class="tab" data-tab="doc">📚 Documentation</button>
             <button class="tab" data-tab="history">📜 Historique</button>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <!-- MODE BAC : gouvernance (RBAC) + rollout progressif au déploiement -->
-        <!-- Ajout par-dessus le module existant, styles natifs (mêmes tokens) -->
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <div id="bac-panel" style="margin:18px 0 8px;border:1px solid var(--ov-14);border-radius:16px;background:linear-gradient(180deg,rgba(124,92,252,.06),rgba(45,212,191,.03));padding:18px 20px;">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
-                <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.35);padding:4px 10px;border-radius:20px;">🧪 Mode bac</span>
-                <div style="font-size:15px;font-weight:800;color:var(--text);">Gouvernance &amp; rollout progressif</div>
-                <div style="flex:1;"></div>
-                <!-- RBAC : rôle de l'utilisateur courant -->
-                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2);">
-                    Vous êtes
-                    <select id="bac-role" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:10px;padding:6px 10px;cursor:pointer;outline:none;">
-                        <option value="viewer">👁 viewer</option>
-                        <option value="contributor">✏️ contributor</option>
-                        <option value="maintainer" selected>🔧 maintainer</option>
-                        <option value="admin">🛡 admin</option>
-                    </select>
-                </label>
-            </div>
-            <div id="bac-role-hint" style="font-size:12px;color:var(--text3);margin-bottom:16px;"></div>
-
-            <div style="display:grid;grid-template-columns:1fr;gap:16px;">
-
-                <!-- Bloc 1 : changer le statut (kill switch) gouverné par RBAC -->
-                <div style="border:1px solid var(--ov-12);border-radius:14px;background:var(--ov-04);padding:16px 18px;">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-                        <div style="font-size:13px;font-weight:800;color:var(--text);">🎚 Changer le statut</div>
-                        <span style="font-size:11px;color:var(--text3);">— seul un maintainer peut couper un flag (kill switch immédiat)</span>
-                        <div style="flex:1;"></div>
-                        <select id="bac-flag" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:10px;padding:6px 10px;cursor:pointer;outline:none;"></select>
-                    </div>
-                    <div id="bac-status-row" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;"></div>
-                </div>
-
-                <!-- Bloc 2 : rollout progressif appliqué AU DÉPLOIEMENT -->
-                <div style="border:1px solid var(--ov-12);border-radius:14px;background:var(--ov-04);padding:16px 18px;">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-                        <div style="font-size:13px;font-weight:800;color:var(--text);">🚦 Rollout progressif</div>
-                        <span style="font-size:11px;color:var(--text3);">— OFF → 10% → 50% → 100%, appliqué <b style="color:var(--accent);">au prochain déploiement</b> (pas à chaud)</span>
-                    </div>
-                    <div id="bac-rollout" style="margin-top:12px;"></div>
-                </div>
-
-            </div>
         </div>
 
         <!-- DASHBOARD -->
@@ -1314,6 +1268,21 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
         
         <!-- ══ TAB: FLAGS ══ -->
         <div class="panel" id="panel-flags">
+
+            <!-- ═══ MODE BAC : statut + rollout, par flag (compact) ═══ -->
+            <div style="border:1px solid var(--ov-12);border-radius:12px;background:var(--ov-03);padding:12px 14px;margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.3);padding:3px 8px;border-radius:14px;">🧪 bac</span>
+                    <span style="font-size:12px;font-weight:700;color:var(--text);">Statut &amp; rollout</span>
+                    <span style="font-size:11px;color:var(--text3);">— disponible sur chaque flag en rollout (un flag naît à OFF)</span>
+                    <div style="flex:1;"></div>
+                    <span id="bac-role-readout" style="font-size:11px;color:var(--text3);"></span>
+                    <select id="bac-flag" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:9px;padding:5px 9px;cursor:pointer;outline:none;"></select>
+                </div>
+                <div id="bac-status-row" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;"></div>
+                <div id="bac-rollout" style="margin-top:12px;"></div>
+            </div>
+
             <div class="flags-toolbar">
                 <input class="search-input" id="flagSearch" placeholder="🔍  Rechercher..."/>
                 <div class="filter-chip active" data-status="">Tous</div>
@@ -1576,6 +1545,29 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
             </div>
             <div id="cleanup-container">
                 <div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:16px;">Analyse des flags...</p></div>
+            </div>
+        </div>
+
+        <!-- DROITS (RBAC — mode bac) -->
+        <div class="panel" id="panel-droits">
+            <div class="panel-title">🔐 Gestion des droits</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 16px;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text2);">
+                    Vous êtes
+                    <select id="bac-role" style="font-family:inherit;font-size:13px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:10px;padding:7px 11px;cursor:pointer;outline:none;">
+                        <option value="viewer">👁 viewer</option>
+                        <option value="contributor">✏️ contributor</option>
+                        <option value="maintainer" selected>🔧 maintainer</option>
+                        <option value="admin">🛡 admin</option>
+                    </select>
+                </label>
+                <span id="bac-role-hint" style="font-size:12px;color:var(--text3);"></span>
+            </div>
+            <div id="bac-matrix" style="overflow-x:auto;"></div>
+            <div style="font-size:11.5px;color:var(--text3);margin-top:14px;line-height:1.6;">
+                🛈 Le RBAC est <b>vérifié côté bac</b> (403 si le rôle n'a pas le droit). L'application du changement reste
+                <b>côté navigateur</b> (maintainer/approbateur) ou <b>côté job CI</b> (rollout au déploiement) — le bac n'écrit jamais dans GitLab.
+                Le <b>kill switch OFF</b> d'un maintainer prime sur la cérémonie d'approbation.
             </div>
         </div>
 
@@ -5971,8 +5963,49 @@ Flags existants: ${existingFlags.join(', ')}`
 
   function renderRoleHint(){
     var c=CAN[role()];
-    $('bac-role-hint').innerHTML='Droits : <b style="color:var(--text2)">'+c.label+'</b>. '+
-      (c.toggle?'':'Les actions sensibles sont verrouillées (403) pour ce rôle. ');
+    var h=$('bac-role-hint');
+    if(h) h.innerHTML='Droits : <b style="color:var(--text2)">'+c.label+'</b>. '+
+      (c.toggle?'':'Les actions sensibles sont verrouillées (403) pour ce rôle.');
+  }
+
+  // Petit rappel du rôle courant dans l'onglet Flags
+  function renderRoleReadout(){
+    var el=$('bac-role-readout'); if(!el) return;
+    el.innerHTML='rôle : <b style="color:var(--text2)">'+role()+'</b> · <span style="color:var(--purple)">gérer dans « Droits »</span>';
+  }
+
+  // Matrice RBAC (onglet Droits)
+  var ROLES=['viewer','contributor','maintainer','admin'];
+  var PERMS=[
+    {a:'Voir les flags',                  v:[1,1,1,1]},
+    {a:'Proposer un changement',          v:[0,1,1,1]},
+    {a:'Changer le statut (kill switch)', v:[0,0,1,1]},
+    {a:'Étendre le rollout (au deploy)',  v:[0,0,1,1]},
+    {a:'Approuver une bascule',           v:[0,0,1,1]},
+    {a:'Gérer les owners',                v:[0,0,0,1]},
+    {a:'Décommissionner un flag',         v:[0,0,0,1]}
+  ];
+  function renderMatrix(){
+    var box=$('bac-matrix'); if(!box) return;
+    var cur=role();
+    var th='<th style="text-align:left;padding:9px 12px;font-size:12px;color:var(--text3);font-weight:700;">Action</th>'+
+      ROLES.map(function(r){
+        var on=r===cur;
+        return '<th style="padding:9px 12px;font-size:12px;font-weight:800;text-align:center;'+
+          (on?'color:var(--purple);background:rgba(124,92,252,.12);border-radius:8px 8px 0 0;':'color:var(--text2);')+'">'+
+          r+(on?' ◄':'')+'</th>';
+      }).join('');
+    var rows=PERMS.map(function(p){
+      var tds=p.v.map(function(ok,i){
+        var on=ROLES[i]===cur;
+        return '<td style="text-align:center;padding:9px 12px;font-size:14px;'+
+          (on?'background:rgba(124,92,252,.07);':'')+'">'+
+          (ok?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--text3)">·</span>')+'</td>';
+      }).join('');
+      return '<tr style="border-top:1px solid var(--ov-08)"><td style="padding:9px 12px;font-size:12.5px;color:var(--text);font-weight:600;">'+p.a+'</td>'+tds+'</tr>';
+    }).join('');
+    box.innerHTML='<table style="width:100%;border-collapse:collapse;border:1px solid var(--ov-12);border-radius:12px;overflow:hidden;">'+
+      '<thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table>';
   }
 
   function renderStatus(){
@@ -6014,8 +6047,8 @@ Flags existants: ${existingFlags.join(', ')}`
       var bg=isApplied?p.color:(isPlanned?'transparent':'var(--ov-04)');
       var border=isPlanned&&!isApplied?'2px dashed '+p.color:'1px solid var(--ov-12)';
       var col=isApplied?'#0f0a1f':(isPlanned?p.color:'var(--text3)');
-      return '<div style="flex:1;text-align:center;padding:12px 4px;border-radius:10px;border:'+border+';'+
-        'background:'+bg+';color:'+col+';font-weight:800;font-size:14px;position:relative;">'+p.label+
+      return '<div style="flex:1;text-align:center;padding:8px 4px;border-radius:9px;border:'+border+';'+
+        'background:'+bg+';color:'+col+';font-weight:800;font-size:13px;position:relative;">'+p.label+
         (isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;opacity:.8;">EN PROD</div>':'')+
         (isPlanned&&!isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;">PRÉVU</div>':'')+
         '</div>';
@@ -6028,7 +6061,7 @@ Flags existants: ${existingFlags.join(', ')}`
     if(gated){
       controls=
         '<button id="bac-down" '+(canDown?'':'disabled')+' style="cursor:'+(canDown?'pointer':'not-allowed')+';opacity:'+(canDown?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid var(--ov-2);border-radius:10px;padding:8px 12px;background:var(--ov-06);color:var(--text2);">− Réduire</button>'+
-        '<button id="bac-up" '+(canUp?'':'disabled')+' style="cursor:'+(canUp?'pointer':'not-allowed')+';opacity:'+(canUp?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid rgba(45,212,191,.4);border-radius:10px;padding:8px 12px;background:rgba(45,212,191,.12);color:var(--accent);">+ Étendre au palier suivant</button>'+
+        '<button id="bac-up" '+(canUp?'':'disabled')+' style="cursor:'+(canUp?'pointer':'not-allowed')+';opacity:'+(canUp?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid rgba(45,212,191,.4);border-radius:10px;padding:8px 12px;background:rgba(45,212,191,.12);color:var(--accent);">+ Étendre</button>'+
         '<div style="flex:1"></div>'+
         '<button id="bac-deploy" '+(changed?'':'disabled')+' style="cursor:'+(changed?'pointer':'not-allowed')+';opacity:'+(changed?1:.45)+';font-family:inherit;font-weight:800;font-size:12px;border:none;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,var(--purple),var(--accent));color:#0f0a1f;">▶ Simuler le déploiement</button>';
     } else {
@@ -6085,12 +6118,13 @@ Flags existants: ${existingFlags.join(', ')}`
     sel.value='new-checkout';
   }
 
+  function renderAll(){ renderRoleHint(); renderRoleReadout(); renderMatrix(); renderStatus(); renderRollout(); }
   function boot(){
     if(!$('bac-role')) return;
     fillFlags();
-    $('bac-role').addEventListener('change',function(){ renderRoleHint(); renderStatus(); renderRollout(); });
+    $('bac-role').addEventListener('change', renderAll);
     $('bac-flag').addEventListener('change',function(){ renderStatus(); renderRollout(); });
-    renderRoleHint(); renderStatus(); renderRollout();
+    renderAll();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
