@@ -1,299 +1,11 @@
-        // ══════════════════════════════════════════════════════════════════
-        //  CONFIGURATION
-        // ══════════════════════════════════════════════════════════════════
+/* daily-report · render.js — rendu DOM : stats, sections, timeline, rapports. */
 
-        let GITLAB_URL = null;
-        let TOKEN = null;
-        let PROJECT_ID = null;
-        let currentDate = new Date(); // Par défaut: aujourd'hui
-
-        // Concurrence pour les fetches de détails (commit diffs, pipeline jobs,
-        // MR notes, pipelines des 7 derniers jours pour les tendances).
-        // Aligné sur conflict-radar / bus-factor / repo-diet.
-        const DETAILS_CONCURRENCY = 8;
-
-        // ══════════════════════════════════════════════════════════════════
-        //  HELPERS — fetchGitLab (retry 429), runWithConcurrency, escapeHtml.
-        //  Alignés sur l'écosystème.
-        // ══════════════════════════════════════════════════════════════════
-
-        async function fetchGitLab(endpoint, init = {}) {
-            return window.Salsifi.gitlabFetch(GITLAB_URL, TOKEN, endpoint, init);
-        }
-
-        function runWithConcurrency(tasks, limit) { return window.Salsifi.runWithConcurrency(tasks, limit); }
-
-        function escapeHtml(v) { return window.Salsifi.escapeHtml(v); }
-
-        // Échappement strict pour attributs HTML (href, data-*, etc.).
-        // Plus restrictif qu'escapeHtml — neutralise aussi ' et ".
-        function escapeAttr(v) { return window.Salsifi.escapeAttr(v); }
-
-        // ══════════════════════════════════════════════════════════════════
-        //  INITIALISATION
-        // ══════════════════════════════════════════════════════════════════
-
-        function init() {
-            // Nouveau format hub : localStorage 'devops_hub_workspaces' (JSON) + 'hub_selected_repo_id'
-            // Auth centralisee (devops_hub_workspaces + fallback sessionStorage legacy)
-            const _auth = window.Salsifi.loadAuth({ redirect: false });
-            if (_auth) { TOKEN = _auth.token; GITLAB_URL = _auth.gitlabUrl; }
-
-            // Project ID : nouveau format puis ancien
-            const selectedRepoId = localStorage.getItem('hub_selected_repo_id');
-            PROJECT_ID = selectedRepoId || sessionStorage.getItem('gitlab_project_id');
-
-            // Guard strict — les 3 clés sont nécessaires.
-            if (!TOKEN || !GITLAB_URL || !PROJECT_ID) {
-                window.location.href = 'login.html';
-                return;
-            }
-
-            attachEventDelegation();
-            updateDateDisplay();
-            loadReport();
-        }
-
-        // Event delegation centralisée (anciennement onclick inline dans le HTML).
-        const ACTION_HANDLERS = {
-            'prev-date':       () => changeDate(-1),
-            'next-date':       () => changeDate(1),
-            'go-today':        () => goToday(),
-            'week-report':     (e, el) => generateWeekReport(el),
-            'month-report':    (e, el) => generateMonthReport(el),
-            'load-report':     () => loadReport()
-        };
-
-        function attachEventDelegation() {
-            document.body.addEventListener('click', (e) => {
-                const el = e.target.closest('[data-action]');
-                if (!el) return;
-                const handler = ACTION_HANDLERS[el.dataset.action];
-                if (handler) handler(e, el);
-            });
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        //  NAVIGATION DATE
-        // ══════════════════════════════════════════════════════════════════
-        
-        function formatDateDisplay(date) {
-            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            const formatted = date.toLocaleDateString('fr-FR', options);
-            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-        }
-        
-        function formatDateISO(date) {
-            return date.toISOString().split('T')[0];
-        }
-        
         function updateDateDisplay() {
             document.getElementById('report-date').textContent = formatDateDisplay(currentDate);
             document.getElementById('intro-title').textContent = `Rapport du ${formatDateDisplay(currentDate)}`;
         }
         
-        function changeDate(delta) {
-            currentDate.setDate(currentDate.getDate() + delta);
-            updateDateDisplay();
-            loadReport();
-        }
-        
-        function goToday() {
-            currentDate = new Date(); // Aujourd'hui
-            updateDateDisplay();
-            loadReport();
-        }
 
-        // ══════════════════════════════════════════════════════════════════
-        //  CHARGEMENT DU RAPPORT
-        // ══════════════════════════════════════════════════════════════════
-        
-        async function loadReport() {
-            const btn = document.getElementById('btn-refresh');
-            btn.classList.add('loading');
-            btn.textContent = '⏳ Chargement...';
-            
-            // Reset stats
-            document.querySelectorAll('.stat-card').forEach(c => c.classList.add('loading'));
-            
-            const dateStart = new Date(currentDate);
-            dateStart.setHours(0, 0, 0, 0);
-            const dateEnd = new Date(currentDate);
-            dateEnd.setHours(23, 59, 59, 999);
-            
-            const after = dateStart.toISOString();
-            const before = dateEnd.toISOString();
-            
-            try {
-                // Charger en parallèle
-                const [
-                    pipelines,
-                    mrsMerged,
-                    mrsOpen,
-                    tags,
-                    deployments,
-                    branches,
-                    issuesClosed,
-                    issuesOpened,
-                    commits,
-                    mrsClosed
-                ] = await Promise.all([
-                    fetchPipelines(after, before),
-                    fetchMRsMerged(after, before),
-                    fetchMRsOpen(),
-                    fetchTags(after, before),
-                    fetchDeployments(after, before),
-                    fetchBranches(),
-                    fetchIssues('closed', after, before),
-                    fetchIssues('opened', after, before),
-                    fetchCommits(after, before),
-                    fetchMRsClosed(after, before)
-                ]);
-                
-                // Stats globales
-                updateStats(pipelines, mrsMerged, tags, deployments, commits);
-                
-                // Sections existantes
-                renderFailedPipelines(pipelines.filter(p => p.status === 'failed'));
-                renderDeployments(deployments);
-                renderTags(tags);
-                renderMRsMerged(mrsMerged);
-                renderMRsOpen(mrsOpen);
-                renderMRsClosed(mrsClosed);
-                renderBranches(branches);
-                renderIssues(issuesClosed, issuesOpened);
-                renderTimeline(pipelines, mrsMerged, tags, deployments, commits);
-                
-                // Nouvelles sections
-                renderLongPipelines(pipelines);
-                renderRiskyBranches(branches);
-                renderReverts(commits, mrsMerged);
-                await renderCoverage(pipelines);
-                await renderBugs(after, before, commits);
-                await renderCodeQuality(commits, pipelines);
-                await renderTests(pipelines);
-                await renderSecurity();
-                await renderReviews(mrsMerged, mrsOpen, after, before);
-                await renderDailyTips(pipelines, commits, mrsMerged, mrsOpen, mrsClosed, branches, deployments, issuesOpened);
-                await renderTrends(after, before, pipelines);
-                
-                document.getElementById('last-refresh').textContent = 
-                    `Dernière actualisation : ${new Date().toLocaleTimeString('fr-FR')}`;
-                
-            } catch (error) {
-                console.error('Erreur chargement rapport:', error);
-                alert('Erreur lors du chargement des données: ' + error.message);
-            } finally {
-                btn.classList.remove('loading');
-                btn.textContent = '🔄 Actualiser';
-                document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('loading'));
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        //  APPELS API GITLAB
-        // ══════════════════════════════════════════════════════════════════
-        
-        // Wrapper qui parse le JSON et lance une erreur sur non-OK.
-        // Utilise fetchGitLab (retry 429 inclus). Conservé sous ce nom pour
-        // limiter les changements dans tous les callers existants.
-        async function gitlabFetch(endpoint) {
-            const r = await fetchGitLab(endpoint);
-            if (!r.ok) throw new Error(`API Error: ${r.status}`);
-            return r.json();
-        }
-        
-        async function fetchPipelines(after, before) {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/pipelines?per_page=100&updated_after=${after}&updated_before=${before}`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchPipelines:', e); return []; }
-        }
-        
-        async function fetchMRsMerged(after, before) {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/merge_requests?state=merged&per_page=100&updated_after=${after}&updated_before=${before}`);
-                if (!Array.isArray(data)) return [];
-                // On filtre sur merged_at (et pas updated_at) : une MR mergée hier mais
-                // commentée aujourd'hui ne doit PAS compter comme mergée « aujourd'hui ».
-                const a = new Date(after), b = new Date(before);
-                return data.filter(mr => mr.merged_at && new Date(mr.merged_at) >= a && new Date(mr.merged_at) <= b);
-            } catch (e) { console.error('fetchMRsMerged:', e); return []; }
-        }
-        
-        async function fetchMRsOpen() {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/merge_requests?state=opened&per_page=50`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchMRsOpen:', e); return []; }
-        }
-        
-        async function fetchMRsClosed(after, before) {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/merge_requests?state=closed&per_page=100&updated_after=${after}&updated_before=${before}`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchMRsClosed:', e); return []; }
-        }
-        
-        async function fetchTags(after, before) {
-            try {
-                // GitLab API ne filtre pas les tags par date, on filtre côté client
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/repository/tags?per_page=50`);
-                if (!Array.isArray(data)) return [];
-                
-                const afterDate = new Date(after);
-                const beforeDate = new Date(before);
-                
-                return data.filter(tag => {
-                    if (!tag.commit || !tag.commit.created_at) return false;
-                    const tagDate = new Date(tag.commit.created_at);
-                    return tagDate >= afterDate && tagDate <= beforeDate;
-                });
-            } catch (e) { console.error('fetchTags:', e); return []; }
-        }
-        
-        async function fetchDeployments(after, before) {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/deployments?per_page=50&updated_after=${after}&updated_before=${before}`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchDeployments:', e); return []; }
-        }
-        
-        async function fetchBranches() {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/repository/branches?per_page=100`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchBranches:', e); return []; }
-        }
-        
-        async function fetchIssues(state, after, before) {
-            try {
-                // Borne HAUTE ajoutée (`before`) : sans elle, sur une date passée on
-                // remontait tout jusqu'à aujourd'hui. Pour les issues fermées on affine
-                // ensuite sur closed_at (une issue fermée hier mais commentée aujourd'hui
-                // ne doit pas compter comme fermée « ce jour »).
-                const prefix = state === 'closed' ? 'updated' : 'created';
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/issues?state=${state}&per_page=50&${prefix}_after=${after}&${prefix}_before=${before}`);
-                if (!Array.isArray(data)) return [];
-                if (state === 'closed') {
-                    const a = new Date(after), b = new Date(before);
-                    return data.filter(i => i.closed_at && new Date(i.closed_at) >= a && new Date(i.closed_at) <= b);
-                }
-                return data;
-            } catch (e) { console.error('fetchIssues:', e); return []; }
-        }
-        
-        async function fetchCommits(after, before) {
-            try {
-                const data = await gitlabFetch(`/projects/${PROJECT_ID}/repository/commits?per_page=100&since=${after}&until=${before}`);
-                return Array.isArray(data) ? data : [];
-            } catch (e) { console.error('fetchCommits:', e); return []; }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        //  MISE À JOUR DES STATS
-        // ══════════════════════════════════════════════════════════════════
-        
         function updateStats(pipelines, mrs, tags, deployments, commits) {
             const success = pipelines.filter(p => p.status === 'success').length;
             const failed = pipelines.filter(p => p.status === 'failed').length;
@@ -315,6 +27,7 @@
         //  RENDU DES SECTIONS
         // ══════════════════════════════════════════════════════════════════
         
+
         function renderFailedPipelines(pipelines) {
             const body = document.getElementById('body-failed-pipelines');
             const count = document.getElementById('count-failed-pipelines');
@@ -344,6 +57,7 @@
             }
         }
         
+
         function renderDeployments(deployments) {
             const body = document.getElementById('body-deploys');
             const count = document.getElementById('count-deploys');
@@ -369,6 +83,7 @@
             `).join('');
         }
         
+
         function renderTags(tags) {
             const body = document.getElementById('body-tags');
             const count = document.getElementById('count-tags');
@@ -394,6 +109,7 @@
             `).join('');
         }
         
+
         function renderMRsMerged(mrs) {
             const body = document.getElementById('body-mrs-merged');
             const count = document.getElementById('count-mrs-merged');
@@ -422,6 +138,7 @@
             }
         }
         
+
         function renderMRsOpen(mrs) {
             const body = document.getElementById('body-mrs-open');
             const count = document.getElementById('count-mrs-open');
@@ -459,6 +176,7 @@
             }
         }
         
+
         function renderMRsClosed(mrs) {
             const body = document.getElementById('body-mrs-closed');
             const count = document.getElementById('count-mrs-closed');
@@ -491,6 +209,7 @@
             }
         }
         
+
         function renderBranches(branches) {
             const count = document.getElementById('count-branches');
             count.textContent = branches.length;
@@ -516,12 +235,14 @@
             document.getElementById('branches-merged').textContent = merged;
         }
         
+
         function renderIssues(closed, opened) {
             document.getElementById('issues-closed').textContent = closed.length;
             document.getElementById('issues-opened').textContent = opened.length;
             document.getElementById('count-issues').textContent = `+${opened.length} / -${closed.length}`;
         }
         
+
         function renderTimeline(pipelines, mrs, tags, deployments, commits) {
             const timeline = document.getElementById('body-timeline');
             
@@ -594,6 +315,7 @@
         //  NOUVELLES SECTIONS
         // ══════════════════════════════════════════════════════════════════
 
+
         function renderLongPipelines(pipelines) {
             const container = document.getElementById('body-long-pipelines');
             const countEl = document.getElementById('count-long-pipelines');
@@ -626,6 +348,7 @@
                 `;
             }).join('');
         }
+
 
         function renderRiskyBranches(branches) {
             const container = document.getElementById('body-risky-branches');
@@ -664,6 +387,7 @@
                 `;
             }).join('');
         }
+
 
         function renderReverts(commits, mrs) {
             const container = document.getElementById('body-reverts');
@@ -716,6 +440,7 @@
             container.innerHTML = html;
         }
 
+
         async function renderCoverage(pipelines) {
             const container = document.getElementById('body-coverage');
             
@@ -747,6 +472,7 @@
                 </div>
             `;
         }
+
 
         async function renderBugs(after, before, commits) {
             const container = document.getElementById('body-bugs');
@@ -806,6 +532,7 @@
                 </div>
             `).join('');
         }
+
 
         async function renderCodeQuality(commits, pipelines) {
             const container = document.getElementById('body-code-quality');
@@ -905,6 +632,7 @@
                 </div>
             `).join('');
         }
+
 
         async function renderTests(pipelines) {
             const container = document.getElementById('body-tests');
@@ -1007,13 +735,6 @@
             container.innerHTML = html;
         }
 
-        function formatDuration(seconds) {
-            if (!seconds) return '-';
-            if (seconds < 60) return `${seconds}s`;
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}m ${secs}s`;
-        }
 
         async function renderSecurity() {
             const container = document.getElementById('body-security');
@@ -1052,6 +773,7 @@
                 countEl.textContent = '-';
             }
         }
+
 
         async function renderReviews(mrsMerged, mrsOpen, after, before) {
             const container = document.getElementById('body-reviews');
@@ -1111,6 +833,7 @@
                 </div>
             `).join('');
         }
+
 
         async function renderDailyTips(pipelines, commits, mrsMerged, mrsOpen, mrsClosed, branches, deploys, issuesOpened) {
             const container = document.getElementById('tips-list');
@@ -1344,11 +1067,6 @@
             `).join('');
         }
         
-        function getScoreClass(score) {
-            if (score >= 80) return 'good';
-            if (score >= 50) return 'warning';
-            return 'bad';
-        }
 
         async function renderTrends(after, before, pipelinesToday) {
             const trendYesterday = document.getElementById('trend-yesterday');
@@ -1442,34 +1160,16 @@
         //  UTILITAIRES
         // ══════════════════════════════════════════════════════════════════
         
-        function formatTime(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        function truncate(str, max) {
-            if (!str) return '';
-            return str.length > max ? str.substring(0, max) + '...' : str;
-        }
-        
-        function daysSince(dateStr) {
-            const date = new Date(dateStr);
-            const now = new Date();
-            return Math.floor((now - date) / (1000 * 60 * 60 * 24));
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        //  RAPPORT SEMAINE / MOIS
-        // ══════════════════════════════════════════════════════════════════
 
         async function generateWeekReport(btn) {
             await generateStandaloneReport(7, 'Semaine', btn);
         }
 
+
         async function generateMonthReport(btn) {
             await generateStandaloneReport(30, 'Mois', btn);
         }
+
 
         async function generateStandaloneReport(days, label, btn) {
             // btn passé en paramètre (avant : event.target global → fragile).
@@ -1565,6 +1265,7 @@
         //  BUILD STANDALONE HTML REPORT
         // ══════════════════════════════════════════════════════════════════
         
+
         function buildStandaloneHTML(d) {
             const total = d.pipelines.length;
             const success = d.pipelines.filter(p => p.status === 'success').length;
@@ -1917,10 +1618,3 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
         //  DÉMARRAGE
         // ══════════════════════════════════════════════════════════════════
 
-        // Wrapper DOMContentLoaded explicite (avant : init() direct en fin de
-        // fichier — fragile si le script est déplacé en haut avec defer).
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
