@@ -128,6 +128,7 @@
         <span class="pill g">${mine ? '🙋 la tienne' : '👤 ' + esc((m.author && m.author.username) || '?')}</span>
         <span class="pill ${m.merge_status === 'can_be_merged' ? 'ok' : 'g'}">${m.merge_status === 'can_be_merged' ? 'mergeable' : esc(m.merge_status || '')}</span>
         ${(m.head_pipeline && m.head_pipeline.id) ? `<button class="pill g" id="btnTrain" style="all:unset;cursor:pointer;display:inline-flex" data-pipe="${m.head_pipeline.id}">🚂 voir le train</button>` : ''}
+        <button class="pill g" id="btnAI" style="all:unset;cursor:pointer;display:inline-flex">🤖 Analyse IA</button>
       </div>
 
       <div class="box"><div class="bh">Fichiers (${files.length})</div>
@@ -157,11 +158,111 @@
     const bm = $('btnMerge'); if (bm && !bm.disabled) bm.addEventListener('click', () => doMerge(m.iid));
     const bc = $('btnClose'); if (bc) bc.addEventListener('click', () => doClose(m.iid));
     const bt = $('btnTrain'); if (bt) bt.addEventListener('click', () => showTrain(parseInt(bt.dataset.pipe, 10), { delivery: false }));
+    const bai = $('btnAI'); if (bai) bai.addEventListener('click', () => runAI(m.iid));
     // dépliage des diffs
     d.querySelectorAll('[data-diff]').forEach(h => h.addEventListener('click', () => {
       const el = $('diff-' + h.dataset.diff); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }));
   }
+
+  // ══════════════════════════════════════════════════════════════════
+  // ASSISTANT IA — un bouton sur la MR → analyse par le backend IA LCL.
+  // L'URL de l'assistant se colle dans localStorage 'mr_reviewer_api_url'
+  // (ou window.MR_REVIEWER_API_URL). Rien n'est stocké tant qu'elle n'est
+  // pas fournie ; l'IA reste un assistant (elle propose, l'humain décide).
+  // ══════════════════════════════════════════════════════════════════
+  function aiUrl() { return (localStorage.getItem('mr_reviewer_api_url') || window.MR_REVIEWER_API_URL || '').trim(); }
+
+  async function runAI(iid) {
+    const url = aiUrl();
+    if (!url) { aiModal(aiConfigForm("L'assistant IA n'est pas encore configuré.")); wireAiConfig(iid); return; }
+    aiModal('<div style="text-align:center;padding:28px;color:var(--tm)">⏳ Analyse IA de la MR en cours…</div>');
+    try {
+      const r = await fetch(url.replace(/\/+$/, '') + '/api/analyze-from-gitlab', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gitlab_url: GITLAB_URL, project_id: PROJECT_ID, mr_iid: iid, gitlab_token: TOKEN })
+      });
+      if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error('API ' + r.status + (t ? ' — ' + t.slice(0, 160) : '')); }
+      const a = await r.json();
+      aiModal(renderAiAnalysis(a, iid));
+      const bc = $('aiComment'); if (bc) bc.addEventListener('click', () => aiPostComment(iid, a));
+    } catch (e) {
+      aiModal('<div style="border:1px solid var(--err);background:rgba(248,113,113,.08);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--err)">Analyse indisponible : ' + esc(e.message) + '</div>'
+        + '<div style="margin-top:12px">' + aiConfigForm("Vérifie l'URL de l'assistant :") + '</div>');
+      wireAiConfig(iid);
+    }
+  }
+
+  function renderAiAnalysis(a, iid) {
+    const dec = a.decision === 'REJECT' ? ['❌', 'Rejet recommandé', 'var(--err)']
+      : a.decision === 'CHANGES_REQUESTED' ? ['📝', 'Changements suggérés', 'var(--warn)']
+      : ['✅', 'Prêt à merger', 'var(--ok)'];
+    const sc = a.scores || {};
+    const scoreRow = [['Global', sc.global], ['🔒 Sécu', sc.security], ['📐 Qualité', sc.quality], ['⚡ Perf', sc.performance]].map(s => aiScore(s[0], s[1])).join('');
+    const sec = (title, arr, color) => (arr && arr.length)
+      ? `<div style="margin-top:14px"><div style="font-weight:700;font-size:12px;color:${color};margin-bottom:6px">${title} (${arr.length})</div>${arr.map(aiFinding).join('')}</div>` : '';
+    return `
+      <div style="display:flex;align-items:center;gap:12px;border:1px solid ${dec[2]};background:rgba(255,255,255,.03);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:26px">${dec[0]}</div>
+        <div><div style="font-weight:800;color:${dec[2]}">${dec[1]}</div><div style="font-size:12px;color:var(--tm)">${esc(a.summary || '')}</div></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${scoreRow}</div>
+      ${sec('🔴 Critiques', a.critical_issues, 'var(--err)')}
+      ${sec("🟡 Points d'attention", a.warnings, 'var(--warn)')}
+      ${sec('✓ Points positifs', a.positives, 'var(--ok)')}
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn ghost" id="aiComment" style="cursor:pointer">💬 Commenter la MR avec l'analyse</button>
+      </div>
+      <div style="font-size:11px;color:var(--tm);margin-top:12px">Analyse IA — indicative. Tu approuves / merges comme d'habitude.</div>`;
+  }
+  function aiScore(label, val) {
+    const shown = (val == null) ? '—' : val;
+    const col = val == null ? 'var(--tm)' : (val >= 80 ? 'var(--ok)' : val >= 50 ? 'var(--warn)' : 'var(--err)');
+    return `<div style="flex:1;min-width:70px;text-align:center;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 4px"><div style="font-size:20px;font-weight:800;color:${col}">${shown}</div><div style="font-size:10px;color:var(--tm)">${label}</div></div>`;
+  }
+  function aiFinding(f) {
+    const sev = (f.severity === 'critical' || (f.title || '').includes('❌')) ? '🔴' : f.severity === 'positive' ? '✓' : '🟡';
+    return `<div style="border-left:2px solid rgba(255,255,255,.12);padding:6px 10px;margin-bottom:6px;background:rgba(255,255,255,.02);border-radius:6px">
+      <div style="font-size:12.5px;font-weight:600">${sev} ${esc(f.title || '')}${f.location ? ` <span style="color:var(--tm);font-weight:400">· ${esc(f.location)}</span>` : ''}</div>
+      ${f.description ? `<div style="font-size:11.5px;color:var(--tm);margin-top:2px">${esc(f.description)}</div>` : ''}</div>`;
+  }
+  function aiConfigForm(msg) {
+    return `<div style="font-size:13px;margin-bottom:8px">${esc(msg || '')}</div>
+      <div style="font-size:12px;color:var(--tm);margin-bottom:8px">Colle l'URL de l'assistant IA LCL, puis relance l'analyse :</div>
+      <div style="display:flex;gap:8px"><input id="aiUrlIn" placeholder="https://mr-reviewer-api.lcl.internal" value="${esc(aiUrl())}" style="flex:1;background:#0a0716;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#f5f1ff;padding:8px 10px;font-family:var(--fm)"><button class="btn" id="aiUrlSave" style="cursor:pointer">Enregistrer &amp; analyser</button></div>`;
+  }
+  function wireAiConfig(iid) {
+    const s = $('aiUrlSave'); if (!s) return;
+    s.addEventListener('click', () => {
+      const v = ($('aiUrlIn') || {}).value;
+      if (v && v.trim()) { localStorage.setItem('mr_reviewer_api_url', v.trim()); window.MR_REVIEWER_API_URL = v.trim(); runAI(iid); }
+      else toast('⚠️ Renseigne une URL.');
+    });
+  }
+  async function aiPostComment(iid, a) {
+    const lines = [];
+    lines.push('## 🤖 Analyse IA' + (a.decision ? ' — ' + a.decision : ''));
+    if (a.summary) lines.push('', a.summary);
+    const block = (title, arr) => { if (arr && arr.length) { lines.push('', '### ' + title); arr.forEach(f => lines.push('- **' + (f.title || '') + '**' + (f.location ? ' _(' + f.location + ')_' : '') + (f.description ? ' — ' + f.description : ''))); } };
+    block('🔴 Critiques', a.critical_issues); block("🟡 Points d'attention", a.warnings); block('✓ Points positifs', a.positives);
+    const r = await glFetch(`/projects/${PROJECT_ID}/merge_requests/${iid}/notes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: lines.join('\n') }) });
+    if (!r.ok) { const b = await r.json().catch(() => ({})); return toast('⚠️ Commentaire refusé : ' + esc(b.message || r.status)); }
+    toast('💬 Analyse postée sur la MR.'); closeAiModal(); await selectMR(iid);
+  }
+  function aiModal(inner) {
+    let ov = $('aiOverlay');
+    if (!ov) {
+      ov = document.createElement('div'); ov.id = 'aiOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(6,4,14,.72);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto';
+      ov.addEventListener('click', e => { if (e.target === ov) closeAiModal(); });
+      document.body.appendChild(ov);
+    }
+    ov.innerHTML = `<div style="width:100%;max-width:620px;background:#17122b;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="font-size:16px;font-weight:800">🤖 Analyse IA de la MR</div><div style="flex:1"></div><button id="aiClose" style="all:unset;cursor:pointer;font-size:18px;color:var(--tm)">✕</button></div>
+      ${inner}</div>`;
+    ov.style.display = 'flex';
+    const c = $('aiClose'); if (c) c.addEventListener('click', closeAiModal);
+  }
+  function closeAiModal() { const ov = $('aiOverlay'); if (ov) ov.style.display = 'none'; }
 
   function diffRow(f, i) {
     const path = f.new_path || f.old_path || '';
