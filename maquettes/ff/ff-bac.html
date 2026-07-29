@@ -1269,18 +1269,12 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
         <!-- ══ TAB: FLAGS ══ -->
         <div class="panel" id="panel-flags">
 
-            <!-- ═══ MODE BAC : statut + rollout, par flag (compact) ═══ -->
-            <div style="border:1px solid var(--ov-12);border-radius:12px;background:var(--ov-03);padding:12px 14px;margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.3);padding:3px 8px;border-radius:14px;">🧪 bac</span>
-                    <span style="font-size:12px;font-weight:700;color:var(--text);">Statut &amp; rollout</span>
-                    <span style="font-size:11px;color:var(--text3);">— disponible sur chaque flag en rollout (un flag naît à OFF)</span>
-                    <div style="flex:1;"></div>
-                    <span id="bac-role-readout" style="font-size:11px;color:var(--text3);"></span>
-                    <select id="bac-flag" style="font-family:inherit;font-size:12px;font-weight:700;color:var(--text);background:var(--ov-06);border:1px solid var(--ov-14);border-radius:9px;padding:5px 9px;cursor:pointer;outline:none;"></select>
-                </div>
-                <div id="bac-status-row" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;"></div>
-                <div id="bac-rollout" style="margin-top:12px;"></div>
+            <!-- ═══ MODE BAC : bandeau d'explication (contrôle rollout accroché à CHAQUE flag ci-dessous) ═══ -->
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--ov-12);border-radius:10px;background:var(--ov-03);padding:9px 12px;margin-bottom:14px;font-size:11.5px;color:var(--text3);">
+                <span style="font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.3);padding:3px 8px;border-radius:14px;">🧪 bac</span>
+                <span>Chaque flag <b style="color:var(--text2)">pas encore à 100 %</b> porte son <b style="color:var(--accent)">rollout progressif</b> (OFF → 10 → 50 → 100, appliqué au prochain déploiement).</span>
+                <div style="flex:1;"></div>
+                <span id="bac-role-readout"></span>
             </div>
 
             <div class="flags-toolbar">
@@ -5915,215 +5909,159 @@ Flags existants: ${existingFlags.join(', ')}`
 // Timeline rendered by main renderTimelineChart()
 </script>
 
-<!-- ═══ MODE BAC : logique RBAC + rollout progressif (maquette autonome) ═══ -->
+<!-- ═══ MODE BAC : RBAC (onglet Droits) + rollout progressif accroché à CHAQUE flag ═══ -->
 <script>
 (function(){
-  var PALIERS = [
-    {k:'off',  label:'OFF', pct:0,   color:'var(--text3)'},
-    {k:'p10',  label:'10%', pct:10,  color:'var(--yellow)'},
-    {k:'p50',  label:'50%', pct:50,  color:'var(--blue)'},
-    {k:'p100', label:'100%',pct:100, color:'var(--green)'}
+  var PALIERS=[
+    {label:'OFF',color:'var(--text3)'},
+    {label:'10%',color:'var(--yellow)'},
+    {label:'50%',color:'var(--blue)'},
+    {label:'100%',color:'var(--green)'}
   ];
-  // Ce que chaque rôle a le droit de faire (RBAC — cf. EPIC-ff-bac §3)
-  var CAN = {
-    viewer:      {toggle:false, rollout:false, propose:false, label:'lecture seule'},
-    contributor: {toggle:false, rollout:false, propose:true,  label:'peut proposer (demande d’approbation)'},
-    maintainer:  {toggle:true,  rollout:true,  propose:false, label:'change le statut, étend le rollout, approuve'},
-    admin:       {toggle:true,  rollout:true,  propose:false, label:'tout + décommission'}
+  var CAN={
+    viewer:{toggle:false,rollout:false,propose:false,label:'lecture seule'},
+    contributor:{toggle:false,rollout:false,propose:true,label:'peut proposer (demande d’approbation)'},
+    maintainer:{toggle:true,rollout:true,propose:false,label:'change le statut, étend le rollout, approuve'},
+    admin:{toggle:true,rollout:true,propose:false,label:'tout + décommission'}
   };
-  function role(){ return document.getElementById('bac-role').value; }
+  var $=function(id){return document.getElementById(id);};
+  function role(){ var r=$('bac-role'); return r?r.value:'maintainer'; }
 
-  // Palier initial déduit des données de démo
   function initPalier(f){
     if(!f.active) return 0;
     var s=(f.strategies||[]).find(function(x){return x.parameters&&x.parameters.percentage;});
-    if(s){ var p=+s.parameters.percentage; return p<=10?1:(p<=50?2:3); }
-    return 3; // default/actif = 100%
+    if(s){var p=+s.parameters.percentage; return p<=10?1:(p<=50?2:3);}
+    return 3;
   }
-  // État bac par flag (applied = en prod, planned = prévu au prochain deploy)
   var STATE={};
   (window.__FF_DEMO||[]).forEach(function(f){
     var i=initPalier(f);
-    STATE[f.name]={active:f.active, applied:i, planned:i, lastDeploy:null};
+    STATE[f.name]={active:f.active,applied:i,planned:i,health:null};
   });
 
-  var $=function(id){return document.getElementById(id);};
-  var cur=function(){return $('bac-flag').value;};
   function toast(msg,ok){
     var t=document.createElement('div');
     t.textContent=msg;
     t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9999;'+
       'background:'+(ok===false?'rgba(248,113,113,.95)':(ok?'rgba(52,211,153,.95)':'rgba(40,28,70,.97)'))+';'+
-      'color:'+(ok!=null?'#0f0a1f':'#f0f4ff')+';font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;'+
-      'box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:80vw;text-align:center;';
+      'color:'+(ok!=null?'#0f0a1f':'#f0f4ff')+';font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:80vw;text-align:center;';
     document.body.appendChild(t);
     setTimeout(function(){t.style.transition='opacity .3s';t.style.opacity='0';},2200);
     setTimeout(function(){t.remove();},2600);
   }
 
-  function renderRoleHint(){
-    var c=CAN[role()];
-    var h=$('bac-role-hint');
-    if(h) h.innerHTML='Droits : <b style="color:var(--text2)">'+c.label+'</b>. '+
-      (c.toggle?'':'Les actions sensibles sont verrouillées (403) pour ce rôle.');
-  }
-
-  // Petit rappel du rôle courant dans l'onglet Flags
-  function renderRoleReadout(){
-    var el=$('bac-role-readout'); if(!el) return;
-    el.innerHTML='rôle : <b style="color:var(--text2)">'+role()+'</b> · <span style="color:var(--purple)">gérer dans « Droits »</span>';
-  }
-
-  // Matrice RBAC (onglet Droits)
+  // ─── RBAC (onglet Droits) ───
+  function renderRoleHint(){var c=CAN[role()];var h=$('bac-role-hint'); if(h) h.innerHTML='Droits : <b style="color:var(--text2)">'+c.label+'</b>.';}
+  function renderRoleReadout(){var el=$('bac-role-readout'); if(el) el.innerHTML='rôle : <b style="color:var(--text2)">'+role()+'</b> · <span style="color:var(--purple)">gérer dans « Droits »</span>';}
   var ROLES=['viewer','contributor','maintainer','admin'];
   var PERMS=[
-    {a:'Voir les flags',                  v:[1,1,1,1]},
-    {a:'Proposer un changement',          v:[0,1,1,1]},
-    {a:'Changer le statut (kill switch)', v:[0,0,1,1]},
-    {a:'Étendre le rollout (au deploy)',  v:[0,0,1,1]},
-    {a:'Approuver une bascule',           v:[0,0,1,1]},
-    {a:'Gérer les owners',                v:[0,0,0,1]},
-    {a:'Décommissionner un flag',         v:[0,0,0,1]}
+    {a:'Voir les flags',v:[1,1,1,1]},
+    {a:'Proposer un changement',v:[0,1,1,1]},
+    {a:'Changer le statut (kill switch)',v:[0,0,1,1]},
+    {a:'Étendre le rollout (au deploy)',v:[0,0,1,1]},
+    {a:'Approuver une bascule',v:[0,0,1,1]},
+    {a:'Gérer les owners',v:[0,0,0,1]},
+    {a:'Décommissionner un flag',v:[0,0,0,1]}
   ];
   function renderMatrix(){
-    var box=$('bac-matrix'); if(!box) return;
-    var cur=role();
+    var box=$('bac-matrix'); if(!box) return; var cur=role();
     var th='<th style="text-align:left;padding:9px 12px;font-size:12px;color:var(--text3);font-weight:700;">Action</th>'+
-      ROLES.map(function(r){
-        var on=r===cur;
-        return '<th style="padding:9px 12px;font-size:12px;font-weight:800;text-align:center;'+
-          (on?'color:var(--purple);background:rgba(124,92,252,.12);border-radius:8px 8px 0 0;':'color:var(--text2);')+'">'+
-          r+(on?' ◄':'')+'</th>';
-      }).join('');
+      ROLES.map(function(r){var on=r===cur;return '<th style="padding:9px 12px;font-size:12px;font-weight:800;text-align:center;'+(on?'color:var(--purple);background:rgba(124,92,252,.12);border-radius:8px 8px 0 0;':'color:var(--text2);')+'">'+r+(on?' ◄':'')+'</th>';}).join('');
     var rows=PERMS.map(function(p){
-      var tds=p.v.map(function(ok,i){
-        var on=ROLES[i]===cur;
-        return '<td style="text-align:center;padding:9px 12px;font-size:14px;'+
-          (on?'background:rgba(124,92,252,.07);':'')+'">'+
-          (ok?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--text3)">·</span>')+'</td>';
-      }).join('');
+      var tds=p.v.map(function(ok,i){var on=ROLES[i]===cur;return '<td style="text-align:center;padding:9px 12px;font-size:14px;'+(on?'background:rgba(124,92,252,.07);':'')+'">'+(ok?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--text3)">·</span>')+'</td>';}).join('');
       return '<tr style="border-top:1px solid var(--ov-08)"><td style="padding:9px 12px;font-size:12.5px;color:var(--text);font-weight:600;">'+p.a+'</td>'+tds+'</tr>';
     }).join('');
-    box.innerHTML='<table style="width:100%;border-collapse:collapse;border:1px solid var(--ov-12);border-radius:12px;overflow:hidden;">'+
-      '<thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table>';
+    box.innerHTML='<table style="width:100%;border-collapse:collapse;border:1px solid var(--ov-12);border-radius:12px;overflow:hidden;"><thead><tr>'+th+'</tr></thead><tbody>'+rows+'</tbody></table>';
   }
 
-  function renderStatus(){
-    var f=cur(), st=STATE[f], c=CAN[role()];
-    var on=st.active;
-    var badge='<span style="font-weight:800;font-size:13px;color:'+(on?'var(--green)':'var(--text3)')+';">'+
-      (on?'● ACTIF':'○ INACTIF')+'</span>';
-    var btn;
+  // ─── Rollout progressif accroché à CHAQUE flag (onglet Flags) ───
+  function stepper(st){
+    return '<div style="display:flex;gap:5px;align-items:center;">'+PALIERS.map(function(p,i){
+      var ap=i===st.applied, pl=i===st.planned;
+      var bg=ap?p.color:'transparent';
+      var bd=pl&&!ap?'1px dashed '+p.color:'1px solid var(--ov-12)';
+      var col=ap?'#0f0a1f':(pl?p.color:'var(--text3)');
+      return '<span style="padding:3px 9px;border-radius:7px;border:'+bd+';background:'+bg+';color:'+col+';font-weight:800;font-size:11px;">'+p.label+(ap?' •':'')+'</span>';
+    }).join('<span style="color:var(--text3);font-size:10px;">→</span>')+'</div>';
+  }
+
+  function rolloutInline(name){
+    var st=STATE[name], c=CAN[role()];
+    var stabilized = st.active && st.applied===3 && st.planned===3;
+    var changed = st.planned!==st.applied;
+    var parts=[];
+    parts.push('<span style="font-size:11px;font-weight:800;color:'+(st.active?'var(--green)':'var(--text3)')+';min-width:50px;">'+(st.active?'● ACTIF':'○ OFF')+'</span>');
+    if(stabilized){
+      parts.push('<span style="font-size:11px;color:var(--text3);">100 % en prod · <b style="color:var(--text2)">stabilisé</b> (plus de rollout en cours)</span>');
+    } else {
+      parts.push(stepper(st));
+      if(c.rollout){
+        if(st.planned>0) parts.push('<button data-bac="down" data-flag="'+name+'" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;border:1px solid var(--ov-2);border-radius:8px;padding:4px 9px;background:var(--ov-06);color:var(--text2);">−</button>');
+        if(st.planned<3) parts.push('<button data-bac="up" data-flag="'+name+'" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;border:1px solid rgba(45,212,191,.4);border-radius:8px;padding:4px 10px;background:rgba(45,212,191,.12);color:var(--accent);">+ Étendre</button>');
+        if(changed) parts.push('<button data-bac="deploy" data-flag="'+name+'" style="cursor:pointer;font-family:inherit;font-weight:800;font-size:11px;border:none;border-radius:8px;padding:5px 11px;background:linear-gradient(135deg,var(--purple),var(--accent));color:#0f0a1f;">▶ Déployer</button>');
+      } else {
+        parts.push('<span style="font-size:11px;color:var(--text3);">🔒 '+(c.propose?'proposez — un maintainer applique':'lecture seule')+'</span>');
+      }
+    }
     if(c.toggle){
-      btn='<button id="bac-toggle" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;'+
-        'border:1px solid '+(on?'rgba(248,113,113,.4)':'rgba(52,211,153,.4)')+';border-radius:10px;padding:8px 14px;'+
-        'background:'+(on?'rgba(248,113,113,.12)':'rgba(52,211,153,.12)')+';color:'+(on?'var(--red)':'var(--green)')+';">'+
-        (on?'⏸ Couper (kill switch)':'▶ Activer')+'</button>';
+      parts.push('<button data-bac="toggle" data-flag="'+name+'" style="margin-left:auto;cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;border:1px solid '+(st.active?'rgba(248,113,113,.4)':'rgba(52,211,153,.4)')+';border-radius:8px;padding:4px 10px;background:'+(st.active?'rgba(248,113,113,.12)':'rgba(52,211,153,.12)')+';color:'+(st.active?'var(--red)':'var(--green)')+';">'+(st.active?'⏸ Couper':'▶ Activer')+'</button>');
     } else if(c.propose){
-      btn='<button id="bac-propose" style="cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;'+
-        'border:1px solid var(--ov-2);border-radius:10px;padding:8px 14px;background:var(--ov-06);color:var(--text2);">'+
-        '✋ Demander l’approbation</button>';
-    } else {
-      btn='<span style="font-size:12px;color:var(--text3);border:1px dashed var(--ov-2);border-radius:10px;padding:8px 14px;">🔒 Verrouillé (viewer)</span>';
+      parts.push('<button data-bac="propose" data-flag="'+name+'" style="margin-left:auto;cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;border:1px solid var(--ov-2);border-radius:8px;padding:4px 10px;background:var(--ov-06);color:var(--text2);">✋ Demander</button>');
     }
-    $('bac-status-row').innerHTML=
-      '<span style="font-size:13px;font-weight:700;color:var(--text);">'+f+'</span>'+badge+
-      '<div style="flex:1"></div>'+btn;
-    var tb=$('bac-toggle'); if(tb) tb.onclick=function(){
-      st.active=!st.active;
-      if(!st.active){ st.planned=0; } // couper = OFF planifié
-      toast((st.active?'Activé':'Coupé (kill switch immédiat)')+' · '+f+' · tracé au journal', st.active);
-      renderStatus(); renderRollout();
-    };
-    var pb=$('bac-propose'); if(pb) pb.onclick=function(){
-      toast('Demande d’approbation créée · en attente d’un maintainer (rien appliqué)', false===false?null:null);
-    };
+    var plan= changed ? '<div style="width:100%;font-size:11px;color:var(--text2);margin-top:2px;">📅 <b style="color:var(--accent)">'+PALIERS[st.planned].label+'</b> planifié au prochain déploiement (pas à chaud).</div>' : '';
+    var health = st.health ? '<div style="width:100%;margin-top:4px;font-size:11px;color:'+(st.health.ok?'var(--green)':'var(--red)')+';">'+st.health.msg+'</div>' : '';
+    return '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:8px 12px;background:var(--ov-03);border:1px solid var(--ov-08);border-left:2px solid var(--purple);border-radius:9px;">'+parts.join('')+plan+health+'</div>';
   }
 
-  function renderRollout(){
-    var f=cur(), st=STATE[f], c=CAN[role()];
-    var steps=PALIERS.map(function(p,i){
-      var isApplied=i===st.applied, isPlanned=i===st.planned;
-      var bg=isApplied?p.color:(isPlanned?'transparent':'var(--ov-04)');
-      var border=isPlanned&&!isApplied?'2px dashed '+p.color:'1px solid var(--ov-12)';
-      var col=isApplied?'#0f0a1f':(isPlanned?p.color:'var(--text3)');
-      return '<div style="flex:1;text-align:center;padding:8px 4px;border-radius:9px;border:'+border+';'+
-        'background:'+bg+';color:'+col+';font-weight:800;font-size:13px;position:relative;">'+p.label+
-        (isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;opacity:.8;">EN PROD</div>':'')+
-        (isPlanned&&!isApplied?'<div style="font-size:9px;font-weight:700;letter-spacing:.05em;margin-top:2px;">PRÉVU</div>':'')+
-        '</div>';
-    }).join('<div style="align-self:center;color:var(--text3);font-weight:800;">→</div>');
-
-    var gated=c.rollout;
-    var changed=st.planned!==st.applied;
-    var canUp=st.planned<3, canDown=st.planned>0;
-    var controls;
-    if(gated){
-      controls=
-        '<button id="bac-down" '+(canDown?'':'disabled')+' style="cursor:'+(canDown?'pointer':'not-allowed')+';opacity:'+(canDown?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid var(--ov-2);border-radius:10px;padding:8px 12px;background:var(--ov-06);color:var(--text2);">− Réduire</button>'+
-        '<button id="bac-up" '+(canUp?'':'disabled')+' style="cursor:'+(canUp?'pointer':'not-allowed')+';opacity:'+(canUp?1:.4)+';font-family:inherit;font-weight:700;font-size:12px;border:1px solid rgba(45,212,191,.4);border-radius:10px;padding:8px 12px;background:rgba(45,212,191,.12);color:var(--accent);">+ Étendre</button>'+
-        '<div style="flex:1"></div>'+
-        '<button id="bac-deploy" '+(changed?'':'disabled')+' style="cursor:'+(changed?'pointer':'not-allowed')+';opacity:'+(changed?1:.45)+';font-family:inherit;font-weight:800;font-size:12px;border:none;border-radius:10px;padding:9px 16px;background:linear-gradient(135deg,var(--purple),var(--accent));color:#0f0a1f;">▶ Simuler le déploiement</button>';
-    } else {
-      controls='<span style="font-size:12px;color:var(--text3);border:1px dashed var(--ov-2);border-radius:10px;padding:8px 14px;">🔒 '+
-        (c.propose?'contributor : proposez, un maintainer applique':'lecture seule')+'</span>';
-    }
-
-    var plan= changed
-      ? '<div style="margin-top:10px;font-size:12px;color:var(--text2);">📅 <b style="color:var(--accent)">'+PALIERS[st.planned].label+'</b> planifié pour le <b>prochain déploiement</b> — rien n’est appliqué à chaud.</div>'
-      : '<div style="margin-top:10px;font-size:12px;color:var(--text3);">Aucun changement planifié. Palier en prod : <b style="color:var(--text2)">'+PALIERS[st.applied].label+'</b>.</div>';
-
-    $('bac-rollout').innerHTML=
-      '<div style="display:flex;gap:8px;align-items:stretch;">'+steps+'</div>'+
-      plan+
-      '<div id="bac-health"></div>'+
-      '<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap;">'+controls+'</div>';
-
-    var up=$('bac-up'); if(up) up.onclick=function(){ st.planned=Math.min(3,st.planned+1); renderRollout(); };
-    var dn=$('bac-down'); if(dn) dn.onclick=function(){ st.planned=Math.max(0,st.planned-1); renderRollout(); };
-    var dp=$('bac-deploy'); if(dp) dp.onclick=function(){ doDeploy(f); };
-  }
-
-  function doDeploy(f){
-    var st=STATE[f];
-    var target=st.planned;
-    // Santé simulée : taux d'erreur proportionnel au saut + aléa
-    var jump=Math.max(0,target-st.applied);
-    var errRate=(Math.random()*1.4 + jump*0.5).toFixed(2); // %
-    var threshold=1.5;
-    var el=$('bac-health');
+  function doDeploy(name){
+    var st=STATE[name], target=st.planned, jump=Math.max(0,target-st.applied);
+    var errRate=(Math.random()*1.4 + jump*0.5).toFixed(2), threshold=1.5;
     st.active = target>0;
     if(parseFloat(errRate)>threshold && target>0){
-      // Auto-rollback au palier précédent
-      var back=Math.max(0,target-1);
-      st.applied=back; st.planned=back;
-      el.innerHTML='<div style="margin-top:12px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.1);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--red);">'+
-        '⚠ Taux d’erreur '+errRate+'% &gt; seuil '+threshold+'% au palier '+PALIERS[target].label+
-        ' → <b>rollback automatique</b> à '+PALIERS[back].label+' (tracé au journal).</div>';
-      toast('Déploiement '+PALIERS[target].label+' → rollback auto à '+PALIERS[back].label, false);
+      var back=Math.max(0,target-1); st.applied=back; st.planned=back;
+      st.health={ok:false,msg:'⚠ Taux d’erreur '+errRate+'% > seuil '+threshold+'% au palier '+PALIERS[target].label+' → rollback auto à '+PALIERS[back].label+' (tracé au journal).'};
+      toast(name+' · rollback auto à '+PALIERS[back].label, false);
     } else {
       st.applied=target;
-      el.innerHTML='<div style="margin-top:12px;border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.1);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--green);">'+
-        '✓ Déploiement OK · palier <b>'+PALIERS[target].label+'</b> appliqué en prod · taux d’erreur '+errRate+'% (&lt; '+threshold+'%).</div>';
-      toast('Déploiement appliqué : '+PALIERS[target].label+' · santé OK', true);
+      st.health={ok:true,msg:'✓ Palier '+PALIERS[target].label+' appliqué en prod · taux d’erreur '+errRate+'% (< '+threshold+'%).'};
+      toast(name+' · '+PALIERS[target].label+' déployé · santé OK', true);
     }
-    renderStatus(); renderRollout();
-    // restaure le message de santé (renderRollout l'écrase)
-    var keep=el.innerHTML; setTimeout(function(){ var h=$('bac-health'); if(h) h.innerHTML=keep; },0);
+    decorateFlags();
   }
 
-  function fillFlags(){
-    var sel=$('bac-flag');
-    sel.innerHTML=(window.__FF_DEMO||[]).map(function(f){return '<option value="'+f.name+'">'+f.name+'</option>';}).join('');
-    sel.value='new-checkout';
+  var _obs=null;
+  function decorateFlags(){
+    var tb=$('flagsTableBody'); if(!tb) return;
+    if(_obs) _obs.disconnect();
+    Array.prototype.slice.call(tb.querySelectorAll('tr.bac-rr')).forEach(function(r){r.remove();});
+    Array.prototype.slice.call(tb.children).forEach(function(tr){
+      if(tr.classList.contains('bac-rr')) return;
+      var nameEl=tr.querySelector('[data-flag-name]'); if(!nameEl) return;
+      var name=nameEl.getAttribute('data-flag-name'); if(!STATE[name]) return;
+      var rr=document.createElement('tr'); rr.className='bac-rr';
+      var td=document.createElement('td'); td.colSpan=7; td.style.cssText='border:none;padding:0 10px 10px;';
+      td.innerHTML=rolloutInline(name);
+      rr.appendChild(td); tr.after(rr);
+    });
+    if(_obs) _obs.observe(tb,{childList:true});
   }
 
-  function renderAll(){ renderRoleHint(); renderRoleReadout(); renderMatrix(); renderStatus(); renderRollout(); }
+  function renderAll(){ renderRoleHint(); renderRoleReadout(); renderMatrix(); decorateFlags(); }
+
   function boot(){
     if(!$('bac-role')) return;
-    fillFlags();
+    document.addEventListener('click',function(e){
+      var b=e.target.closest && e.target.closest('[data-bac]'); if(!b) return;
+      var act=b.getAttribute('data-bac'), name=b.getAttribute('data-flag'), st=STATE[name]; if(!st) return;
+      if(act==='up'){ st.planned=Math.min(3,st.planned+1); decorateFlags(); }
+      else if(act==='down'){ st.planned=Math.max(0,st.planned-1); decorateFlags(); }
+      else if(act==='deploy'){ doDeploy(name); }
+      else if(act==='toggle'){ st.active=!st.active; if(!st.active){st.planned=0;st.applied=0;} st.health=null; toast((st.active?'Activé':'Coupé (kill switch immédiat)')+' · '+name+' · tracé au journal', st.active); decorateFlags(); }
+      else if(act==='propose'){ toast('Demande d’approbation créée · en attente d’un maintainer (rien appliqué)'); }
+    });
     $('bac-role').addEventListener('change', renderAll);
-    $('bac-flag').addEventListener('change',function(){ renderStatus(); renderRollout(); });
+    var tb=$('flagsTableBody');
+    if(tb){ _obs=new MutationObserver(function(){ decorateFlags(); }); _obs.observe(tb,{childList:true}); }
     renderAll();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
