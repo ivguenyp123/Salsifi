@@ -6,8 +6,9 @@
 
 ## 1. Vision
 
-Le module actuel **scanne à la demande** (Surface / Historique / Supply-chain / CIS) et liste les
-secrets exposés — mais chaque scan repart de zéro : pas de mémoire, pas de suivi, pas d'alerte.
+Le module actuel (dernière version, « banc d'essai ») **scanne à la demande** — 6 modes :
+**Découverte (OSV.dev)**, **Blast Radius (IOC)**, **Surface**, **Historique**, **Supply-chain**, **CIS** —
+et liste secrets / composants exposés — mais chaque scan repart de zéro : pas de mémoire, pas de suivi, pas d'alerte.
 Le bac ajoute la **gouvernance** : un **cycle de vie** par finding (nouveau → confirmé → en
 rotation → résolu / faux positif), des **alertes sur nouveaux secrets** (scan planifié hors-ligne),
 et une **posture** dans le temps (secrets actifs, MTTR de remédiation, tendance, par type/repo).
@@ -45,7 +46,11 @@ Identique à `../dora/EPIC-dora-bac.md` §3, avec **la** spécificité Secrets S
 | Commits & diffs | `GET /projects/:id/repository/commits` · `.../diff` | Historique |
 | Manifestes / CI | `.../files/{package.json,pom.xml,.gitlab-ci.yml}/raw` | Supply-chain |
 | Conformité | `GET /projects/:id` · `.../protected_branches` · `.../approval_rules` | CIS |
+| Composants résolus (npm…) → **OSV.dev** | lock files · manifestes | Découverte / Blast Radius |
 | Auth/accès | `GET /user` · `GET /projects/:id` | tous |
+
+> **Découverte / Blast Radius** croisent les composants avec **OSV.dev** (API externe) : seuls des
+> **noms de packages publics** y sont envoyés — **jamais de code ni de secret** (même frontière de confiance qu'au §3).
 
 ## 5. Référentiel — API bac (FastAPI `/api/v1`)
 
