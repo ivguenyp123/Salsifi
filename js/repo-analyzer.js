@@ -901,17 +901,19 @@
                 lastPipelineEl.style.color = '#6b7280';
             }
 
-            renderOverviewDashboard();
-            renderHeatmap(); 
-            renderOverviewCharts(); 
-            renderBranches();
-            renderContributors();
-            renderBusFactor();
-            renderMRs();
-            renderMRStats();
-            renderCICD();
-            renderDeployments();
-            renderQuickWins();
+            // Chaque widget est rendu de façon ISOLÉE : si l'un jette sur des
+            // données inattendues, il ne doit pas empêcher les suivants de
+            // s'afficher (avant, un renderer en échec sautait tous ceux d'après —
+            // typiquement l'onglet Quick Wins, rendu en dernier, restait vide).
+            [
+                renderOverviewDashboard, renderHeatmap, renderOverviewCharts,
+                renderBranches, renderContributors, renderBusFactor,
+                renderMRs, renderMRStats, renderCICD, renderDeployments,
+                renderQuickWins
+            ].forEach(fn => {
+                try { fn(); }
+                catch (e) { console.warn('[repo-analyzer] widget « ' + (fn.name || '?') + ' » a échoué :', e); }
+            });
         }
 
         function switchMainTab(name, btn) {
