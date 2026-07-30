@@ -72,12 +72,42 @@ Le socle partagé vit dans `css/core/` (`tokens.css`, `base.css`). Le CSS d'un m
 
 | Module | JS `js/modules/` | CSS `css/modules/` |
 |---|:--:|:--:|
-| feature-flag-manager | ✅ | — |
+| feature-flag-manager | ✅ | ✅ |
 | gouvernance-repo | ✅ | — |
-| maturity | ✅ | — |
+| maturity | ✅ | ✅ |
 | daily-report | ✅ | ✅ |
 | repo-analyzer | ✅ | (petit — laissé mono) |
-| _à faire_ | gaming · insights · secrets-scanner · project-scaffolder · pipeline-generator · autoretro · bus-factor · releasenotes · … | gros CSS : hub · maturity · bus-factor · releasenotes · feature-flag-manager · gaming · insights |
+| gaming | ✅ | ✅ |
+| insights | ✅ | ✅ |
+| secrets-scanner | ✅ | (petit — mono) |
+| project-scaffolder | ✅ | — |
+| autoretro | ✅ | — |
+| bus-factor | ✅ | ✅ |
+| releasenotes | ✅ | ✅ |
+| dora-workspace | ✅ | — |
+| access-workspace | ✅ | — |
+| repo-diet | ✅ | — |
+| report-builder | ✅ | — |
+| branch-cleaner | ✅ | — |
+| platform-concierge | ✅ | — |
+| smart-estimate | ✅ | — |
+| hub | (page d'accueil) | ✅ |
 
-> Convention posée. Chaque module suivant se traite avec la **même méthode** (§3) — un module à
-> la fois, JS puis CSS si le CSS est gros.
+**Hors périmètre** (laissés en un seul fichier, à dessein) :
+- **Fichiers partagés** (`js/gaming-recipes.js`, `js/gaming-history.js`, `js/dora-history.js`,
+  `js/theme.js`) — chargés par plusieurs pages, ils relèvent du socle, pas d'un module de page.
+- **Maquettes** (`secret-scanner-test.js`, …) — démonstrateurs autonomes, on ne les découpe pas.
+- **`mr-reviewer`** (en cours de retrait), **`pipeline-generator`** (coquille HTML recyclée en
+  Livraison), **`livraison`** (petit, modifié récemment).
+
+### Note sur les modules enrobés dans une IIFE
+
+`secrets-scanner`, `report-builder` et `platform-concierge` étaient enrobés dans
+`(function () { 'use strict'; … })();`. Une IIFE = **une seule portée** : on ne peut pas la couper
+entre plusieurs `<script>`. Ils ont d'abord été **déballés en globales plates** (le motif de la
+plateforme), puis vérifiés **sans collision de global** (rendu headless : aucune erreur
+« already declared ») avant découpe.
+
+> Convention posée et **appliquée à tous les modules de page**. Tout nouveau module se traite
+> avec la **même méthode** (§3) : découpe par plages de lignes → assertion de reconstruction →
+> `node --check` → rendu headless (0 erreur) → bascule du HTML → `git rm` du monolithe.
