@@ -1,0 +1,278 @@
+        /* ===== DIRECTIONS GRID ===== */
+        .directions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 56px;
+        }
+        .direction-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 32px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0; animation: fadeInUp 0.6s ease forwards;
+        }
+        .direction-card:nth-child(1) { animation-delay: 0.25s; }
+        .direction-card:nth-child(2) { animation-delay: 0.32s; }
+        .direction-card:nth-child(3) { animation-delay: 0.39s; }
+        .direction-card:nth-child(4) { animation-delay: 0.46s; }
+
+        .direction-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at center, var(--accent-glow), transparent 50%);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        .direction-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+            box-shadow: 0 24px 60px -20px var(--accent-glow);
+        }
+        .direction-card:hover::before { opacity: 0.5; }
+
+        .direction-icon {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+            margin-bottom: 24px;
+            background: var(--accent);
+            box-shadow: 0 12px 32px -8px var(--accent-glow);
+            position: relative;
+            z-index: 1;
+        }
+
+        .direction-name {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 10px;
+            position: relative; z-index: 1;
+        }
+        .direction-tagline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-style: italic;
+            margin-bottom: 24px;
+            position: relative; z-index: 1;
+        }
+        .direction-modules {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            margin-bottom: 24px;
+            position: relative; z-index: 1;
+        }
+        .module-chip {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 11px;
+            border-radius: 100px;
+            background: var(--ov-06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .direction-card:hover .module-chip {
+            background: var(--ov-1);
+            border-color: var(--border-strong);
+            color: var(--text-primary);
+        }
+        .direction-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            position: relative; z-index: 1;
+        }
+        .direction-cta .arrow { transition: transform 0.3s; }
+        .direction-card:hover .direction-cta .arrow { transform: translateX(4px); }
+
+        /* Couleurs spécifiques par direction */
+        .card-measure  { --accent: var(--measure);  --accent-glow: var(--measure-glow); }
+        .card-deliver  { --accent: var(--deliver);  --accent-glow: var(--deliver-glow); }
+        .card-inspect  { --accent: var(--inspect);  --accent-glow: var(--inspect-glow); }
+        .card-collab   { --accent: var(--collab);   --accent-glow: var(--collab-glow); }
+
+        /* ===== SUGGESTIONS ===== */
+        .suggestions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+        .sugg-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .sugg-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); border-color: var(--border-strong); }
+        .sugg-tag {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 3px 9px;
+            border-radius: 6px;
+            align-self: flex-start;
+            background: var(--tag-bg);
+            color: var(--tag-color);
+        }
+        .sugg-tag.measure { --tag-bg: rgba(124, 92, 255, 0.15); --tag-color: #a78bfa; }
+        .sugg-tag.deliver { --tag-bg: rgba(45, 212, 191, 0.15); --tag-color: #5eead4; }
+        .sugg-tag.inspect { --tag-bg: rgba(251, 146, 60, 0.15); --tag-color: #fdba74; }
+        .sugg-tag.collab  { --tag-bg: rgba(244, 114, 182, 0.15); --tag-color: #f9a8d4; }
+        .sugg-card[data-loaded="true"] {
+            animation: synFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Skeleton pendant le chargement */
+        .sugg-card.sugg-skeleton { cursor: default; }
+        .sugg-card.sugg-skeleton:hover {
+            background: var(--bg-card);
+            transform: none;
+            border-color: var(--border-subtle);
+        }
+        .sugg-skel-tag, .sugg-skel-text, .sugg-skel-cta {
+            border-radius: 6px;
+            background: linear-gradient(90deg,
+                var(--ov-04) 0%,
+                var(--ov-08) 50%,
+                var(--ov-04) 100%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.4s infinite;
+        }
+        .sugg-skel-tag {
+            height: 22px;
+            width: 80px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+        .sugg-skel-text {
+            height: 14px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .sugg-skel-text + .sugg-skel-text { width: 70%; }
+        .sugg-skel-cta {
+            height: 12px;
+            width: 50%;
+            margin-top: 16px;
+        }
+        .sugg-text strong { color: var(--text-primary); font-weight: 700; }
+        .sugg-text { font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--text-primary); }
+        .sugg-cta { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-top: auto; }
+        .sugg-cta .arrow { transition: transform 0.25s; display: inline-block; }
+        .sugg-card:hover .sugg-cta .arrow { transform: translateX(3px); }
+
+        /* ===== EXPERT FOOTER ===== */
+        .expert-footer {
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .expert-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px dashed var(--border-strong);
+            padding-bottom: 2px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .expert-link:hover { color: var(--text-primary); }
+
+        /* ===== DIRECTION DRILLDOWN OVERLAY ===== */
+        .drilldown {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 760px 520px at 15% 8%, var(--mood-1, rgba(124,92,255,0.18)), transparent 60%),
+                radial-gradient(ellipse 640px 480px at 88% 18%, var(--mood-2, rgba(45,212,191,0.10)), transparent 60%),
+                linear-gradient(var(--glass-9), var(--glass-92));
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s, background 2.2s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+        }
+        @media (prefers-reduced-motion: reduce){
+            .drilldown { transition: opacity 0.4s; }
+        }
+        .drilldown.active { opacity: 1; pointer-events: auto; }
+        .drilldown-inner { max-width: 1100px; margin: 0 auto; padding: 32px 40px 80px; position: relative; z-index: 2; }
+
+        /* === Pattern de fond propre à chaque direction === */
+        .drilldown::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 0;
+            background-image: var(--bg-pattern);
+            background-size: var(--bg-pattern-size, 60px 60px);
+        }
+
+        /* === Ornement signature en haut à droite (grosse forme translucide) === */
+        .dd-ornament {
+            position: absolute;
+            top: 60px;
+            right: -100px;
+            width: 600px;
+            height: 600px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.35;
+            color: var(--accent);
+        }
+        .dd-ornament svg { width: 100%; height: 100%; }
+
+        /* === MESURER & PROGRESSER : grille de tableau de bord + axe XY === */
+        .drilldown.dir-measure {
+            --bg-pattern: linear-gradient(rgba(124,92,255,0.05) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(124,92,255,0.05) 1px, transparent 1px);
+            --bg-pattern-size: 50px 50px;
+        }
+
+        /* === LIVRER & DÉPLOYER : rails diagonaux, mouvement === */
+        .drilldown.dir-deliver {
+            --bg-pattern: repeating-linear-gradient(
+                115deg,
+                transparent 0,
+                transparent 38px,
+                rgba(45, 212, 191, 0.06) 38px,
+                rgba(45, 212, 191, 0.06) 40px
+            );
+            --bg-pattern-size: auto;
+        }
+
+        /* === INSPECTER & SÉCURISER : maille hexagonale === */
+        .drilldown.dir-inspect {
+            --bg-pattern: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'><path d='M28 0 L56 16 L56 50 L28 66 L0 50 L0 16 Z M28 50 L56 66 L56 100 L28 116 L0 100 L0 66 Z' fill='none' stroke='rgba(251,146,60,0.08)' stroke-width='1'/></svg>");
+            --bg-pattern-size: 56px 100px;
+        }

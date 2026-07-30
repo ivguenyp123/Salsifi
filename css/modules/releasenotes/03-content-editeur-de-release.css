@@ -1,0 +1,234 @@
+/* ══════════════════════════════════════════════════════════════════
+   CONTENT — Éditeur de release
+   ══════════════════════════════════════════════════════════════════ */
+.content {
+    display: flex;
+    flex-direction: column;
+    padding: 32px 40px;
+    overflow-y: auto;
+    max-width: 1100px;
+    width: 100%;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.content-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.content-actions { display: flex; gap: 10px; }
+
+/* Commits Section */
+.commits-section {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 22px;
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    letter-spacing: -0.005em;
+}
+
+.section-count {
+    background: var(--accent-glow);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    color: var(--accent-light);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.commits-list {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.commit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.commit-item:last-child { border-bottom: none; }
+
+.commit-type {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+    font-family: var(--font-body);
+}
+.commit-type.feat     { background: rgba(45, 212, 191, 0.18);  color: var(--accent-light); border-color: rgba(45, 212, 191, 0.35); }
+.commit-type.fix      { background: rgba(251, 113, 133, 0.18); color: #fda4af;             border-color: rgba(251, 113, 133, 0.35); }
+.commit-type.chore    { background: rgba(148, 163, 184, 0.18); color: #cbd5e1;             border-color: rgba(148, 163, 184, 0.35); }
+.commit-type.docs     { background: rgba(96, 165, 250, 0.18);  color: #93c5fd;             border-color: rgba(96, 165, 250, 0.35); }
+.commit-type.refactor { background: rgba(167, 139, 250, 0.18); color: #c4b5fd;             border-color: rgba(167, 139, 250, 0.35); }
+.commit-type.test     { background: rgba(244, 114, 182, 0.18); color: #f9a8d4;             border-color: rgba(244, 114, 182, 0.35); }
+.commit-type.other    { background: var(--ov-08); color: var(--text-secondary); border-color: var(--border-subtle); }
+
+.commit-content { flex: 1; min-width: 0; }
+.commit-message {
+    font-size: 13px;
+    margin-bottom: 4px;
+    word-break: break-word;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.commit-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Preview Section */
+.preview-section {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+    overflow: hidden;
+}
+
+.preview-header {
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+}
+
+.preview-tab {
+    padding: 7px 14px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 7px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.preview-tab:hover { color: var(--text-secondary); }
+.preview-tab.active {
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.preview-content {
+    flex: 1;
+    padding: 22px;
+    overflow-y: auto;
+}
+
+.preview-markdown {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: var(--text-secondary);
+}
+
+/* Editor */
+.editor-textarea {
+    width: 100%;
+    min-height: 360px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    resize: vertical;
+    transition: all 0.2s;
+}
+.editor-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.editor-textarea::placeholder { color: var(--text-muted); }
+
+.editor-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Markdown rendu */
+.preview-rendered { line-height: 1.65; color: var(--text-secondary); }
+.preview-rendered h1 {
+    font-family: var(--font-display);
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+}
+.preview-rendered h2 {
+    font-family: var(--font-display);
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--accent-light);
+    margin: 22px 0 10px;
+    letter-spacing: -0.01em;
+}
+.preview-rendered ul { padding-left: 24px; margin: 10px 0; }
+.preview-rendered li { margin-bottom: 6px; }
+.preview-rendered code {
+    font-family: var(--font-mono);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--accent-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}

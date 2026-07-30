@@ -1,0 +1,138 @@
+/* ══════════════════════════════════════════════════════════════════
+   ZONES À RISQUE
+   ══════════════════════════════════════════════════════════════════ */
+
+.risk-zones {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.risk-zone {
+    background: rgba(0, 0, 0, 0.20);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 250px 1fr auto;
+    gap: 24px;
+    align-items: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+.risk-zone:hover {
+    background: rgba(0, 0, 0, 0.30);
+    border-color: var(--border-strong);
+    transform: translateX(4px);
+}
+.risk-zone.critical { border-left: 4px solid var(--danger); }
+.risk-zone.warning  { border-left: 4px solid var(--warning); }
+.risk-zone.good     { border-left: 4px solid var(--success); }
+
+.zone-path {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+.zone-path-icon { font-size: 18px; }
+
+.zone-contributors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.contributor-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.contributor-avatar {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--collab));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: white;
+}
+
+.contributor-name {
+    font-size: 13px;
+    width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary);
+}
+
+.contributor-progress {
+    flex: 1;
+    height: 8px;
+    background: var(--ov-06);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 200px;
+}
+.contributor-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.contributor-progress-fill.dominant {
+    background: linear-gradient(90deg, var(--danger), #f43f5e);
+}
+.contributor-progress-fill.normal {
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+}
+
+.contributor-percent {
+    font-size: 12px;
+    font-weight: 700;
+    width: 46px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.zone-factor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.factor-value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+.factor-value.critical { color: var(--danger); }
+.factor-value.warning  { color: var(--warning); }
+.factor-value.good     { color: var(--success); }
+.factor-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   KNOWLEDGE DISTRIBUTION
+   ══════════════════════════════════════════════════════════════════ */
+
+.knowledge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}

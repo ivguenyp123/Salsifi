@@ -1,0 +1,147 @@
+/* ===== CATEGORY SECTION ===== */
+.category-section {
+    margin-bottom: 36px;
+}
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.category-icon { font-size: 24px; }
+.category-info { flex: 1; }
+.category-name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.category-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.category-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.category-progress-bar {
+    width: 120px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.category-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+.category-progress-fill.green  { background: var(--success); }
+.category-progress-fill.yellow { background: var(--warning); }
+.category-progress-fill.red    { background: var(--danger); }
+.category-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-width: 45px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* ===== BADGES GRID ===== */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+}
+
+/* ===== BADGE CARD ===== */
+/* Note design : on garde l'esprit "trophée" (carte un peu plus claire que le fond)
+   mais en restant dans le dark glass — pas de blanc cassé qui rompt la cohérence */
+.badge-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 22px;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-subtle);
+}
+.badge-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    border-color: var(--border-strong);
+}
+
+/* Unlocked — accent vert (success) */
+.badge-card.unlocked {
+    background: var(--bg-card-lift);
+    border-color: rgba(45, 212, 191, 0.35);
+}
+.badge-card.unlocked::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.08), transparent 50%);
+    pointer-events: none;
+}
+.badge-card.unlocked .badge-status {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: var(--success);
+    color: var(--bg-deep);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    z-index: 1;
+}
+
+/* Locked — discret */
+.badge-card.locked {
+    opacity: 0.65;
+    background: var(--card-4);
+}
+.badge-card.locked .badge-icon-wrap {
+    filter: grayscale(70%) opacity(0.7);
+}
+.badge-card.locked:hover {
+    opacity: 0.85;
+}
+
+/* Lost — accent rouge */
+.badge-card.lost {
+    border-color: rgba(251, 113, 133, 0.40);
+    background: var(--bg-card-lift);
+}
+.badge-card.lost::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(251, 113, 133, 0.08), transparent 50%);
+    pointer-events: none;
+}
+.badge-card.lost .badge-status {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    z-index: 1;
+}
+.badge-card.lost .badge-icon-wrap {
+    filter: grayscale(50%);
+}
