@@ -1,0 +1,80 @@
+/* daily-report · 05-responsive.css — empty state, footer, responsive, accessibilité. Chargé dans l'ordre (cascade). */
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 36px 20px;
+    color: var(--text-muted);
+}
+.empty-state .icon {
+    font-size: 38px;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+.empty-state p {
+    font-size: 13px;
+}
+
+/* More link */
+.more-link {
+    text-align: center;
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.more-link:hover { color: var(--accent-light); }
+
+/* ===== FOOTER ===== */
+.footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1024px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .practices-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .container { padding: 20px 16px 60px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .header {
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px 18px;
+    }
+    .header-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .header h1 { font-size: 20px; }
+}
+@media (max-width: 600px) {
+    .practices-grid { grid-template-columns: 1fr; }
+    .practices-summary {
+        flex-direction: column;
+        gap: 14px;
+        text-align: center;
+    }
+    .practices-summary-message { text-align: center; }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.1s !important;
+    }
+}
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
