@@ -1,0 +1,3094 @@
+{
+ "resolve": {
+  "1": "Notre premier daily",
+  "4": "Élargir nos rituels à QA, Sécu et Produit",
+  "5": "Mesurer l'efficacité de nos rituels",
+  "6": "Notre inventaire outillage",
+  "7": "Un outil, un usage",
+  "8": "Documenter nos conventions outillage",
+  "9": "Audit d'adoption de nos outils",
+  "10": "Automatiser nos outils collaboratifs",
+  "11": "Notre canal incidents",
+  "12": "Quand et comment communiquer en crise",
+  "13": "Notre template d'incident standard",
+  "14": "Notre point proactivité hebdo",
+  "15": "Nos angles morts de diffusion",
+  "16": "Notre matrice RACI delivery",
+  "17": "Qui décide quoi ?",
+  "18": "Afficher et diffuser la RACI",
+  "19": "Nos zones grises de responsabilité",
+  "20": "Revoir périodiquement la RACI",
+  "21": "Écrire une US technique",
+  "22": "Piloter le ratio dette / feature",
+  "23": "Visualiser l'impact de la dette",
+  "24": "Prévenir la dette par la Definition of Done",
+  "25": "Cartographie de nos dépendances",
+  "26": "Cartographie de nos dépendances",
+  "27": "Notre point de synchro inter-squads",
+  "28": "Les dépendances dans le sprint planning",
+  "31": "Co-construire notre première DevOps Review",
+  "32": "Notre première DevOps Review",
+  "33": "Le template de notre DevOps Review",
+  "35": "Ouvrir notre DevOps Review au management",
+  "36": "Introduire le post-mortem sans blâme",
+  "37": "On parle du système, jamais des gens",
+  "38": "Valoriser celui qui remonte un problème",
+  "39": "La rétrospective anonyme",
+  "40": "Étendre la sécurité psychologique au-delà de la squad",
+  "42": "Qu'est-ce qu'on sait faire ?",
+  "43": "Notre REX trimestriel",
+  "44": "Documenter nos REX sur Confluence",
+  "45": "Un format d'échange bidirectionnel inter-tribus",
+  "46": "Nos contraintes dans le miroir",
+  "47": "Négocier des SLA et des fast-tracks",
+  "48": "Automatiser nos validations manuelles",
+  "49": "Documenter nos contournements",
+  "50": "Traiter nos goulots résiduels",
+  "51": "Notre premier pipeline",
+  "54": "Notre premier feature flag",
+  "55": "Slicer une vraie US de notre backlog",
+  "56": "Pourquoi livrer souvent ?",
+  "57": "Autopsie de nos échecs de pipeline",
+  "58": "Stabilisation prioritaire",
+  "59": "Retry et résilience de notre pipeline",
+  "60": "Nos tests dans le miroir : vrais échecs ou faux positifs ?",
+  "62": "Éliminer nos derniers échecs intermittents",
+  "63": "Pourquoi déployer depuis main ?",
+  "64": "La gouvernance de nos branches",
+  "65": "Formaliser les exceptions : hotfix et release",
+  "66": "Nos déploiements hors main",
+  "67": "Le pipeline qui refuse de déployer hors main",
+  "68": "Notre première release",
+  "69": "Pourquoi versionner ? Le point de vue de ceux qui dépendent de nous",
+  "70": "Adopter notre convention de version",
+  "71": "Automatiser la version sans bruit : conventional commits & release pilotée",
+  "72": "Le changelog : générer l’histoire des versions, sans la réécrire",
+  "73": "Anatomie de notre pipeline",
+  "74": "Le cache des dépendances : le gain le plus rapide",
+  "75": "Paralléliser notre pipeline",
+  "76": "Optimiser nos images Docker",
+  "77": "Le garde-fou anti-dérive : ancrer un seuil de durée",
+  "78": "Suivre et célébrer : la durée comme histoire d’équipe",
+  "79": "L’état de notre repo : le miroir avant l’action",
+  "80": "Activer la suppression automatique des branches après merge",
+  "81": "Le grand nettoyage des branches",
+  "82": "Les branches qui vieillissent : la règle des 30 jours",
+  "83": "Nommer pour s’y retrouver : les conventions de branches",
+  "84": "La sentinelle des branches : surveillance automatique",
+  "85": "Pourquoi les lock files : le même code, deux résultats",
+  "86": "Mettre en place nos lock files",
+  "87": "L’audit des écosystèmes : aucun trou dans la couverture",
+  "88": "Vérifier que nos lock files ne sont pas ignorés",
+  "89": "Mettre en place les mises à jour automatiques de dépendances",
+  "90": "Activer la protection de la branche principale",
+  "91": "Les risques du force push : réécrire l’histoire d’un repo partagé",
+  "92": "Une protection cohérente et non négociable",
+  "93": "Personne n’écrit sur main : les niveaux d’accès",
+  "94": "Notre repo a une identité : le README minimal",
+  "95": "Un .gitignore adapté à notre stack",
+  "96": "Enrichir le README : du minimal au complet",
+  "97": "Notre CHANGELOG : le fichier et le réflexe",
+  "98": "Automatiser le CHANGELOG : voir la capsule #72",
+  "99": "Le CONTRIBUTING : accueillir ceux qui arrivent",
+  "100": "Le grand tri des MR zombies",
+  "101": "Pourquoi nos MR s’accumulent ?",
+  "102": "Rappels automatiques sur les MR : voir l’axe Review",
+  "103": "Le rituel de tri des MR : empêcher la ré-accumulation",
+  "104": "Mesure du cycle time des MR : voir l’axe Review",
+  "105": "Déployer sans activer : comprendre les feature flags",
+  "106": "Notre premier feature flag",
+  "107": "Adopter un outil de feature flags",
+  "108": "Nos flags actuels : inventaire et migration",
+  "109": "Systématiser : toute nouvelle fonctionnalité visible passe par un flag",
+  "110": "Le targeting : activer par utilisateur, pourcentage, environnement",
+  "111": "Nos flags dans le miroir : inventaire et zombies",
+  "112": "Le grand nettoyage des flags zombies",
+  "113": "Le rituel trimestriel de revue des flags",
+  "114": "Une date d’expiration sur chaque flag",
+  "115": "Le job qui propose le nettoyage des flags expirés",
+  "116": "SNAPSHOT en prod : le risque invisible",
+  "117": "Fixation immédiate : des versions exactes partout",
+  "118": "Avant chaque release : aucun SNAPSHOT en prod",
+  "119": "Renovate/Dependabot : voir l’atelier H02-89",
+  "120": "Scan de vulnérabilités (CVE) : voir l’axe P04",
+  "121": "Qu’est-ce qu’un pipeline complet ?",
+  "122": "Notre premier test dans le pipeline",
+  "123": "Ajouter le linter au pipeline",
+  "124": "Le scan de sécurité : SAST et dépendances",
+  "125": "Complétion et quality gates : des seuils qui bloquent",
+  "126": "Notre pipeline existe-t-il vraiment ?",
+  "127": "Notre premier .gitlab-ci.yml",
+  "128": "Notre CI comme du code : la reviewer en MR",
+  "129": "Factoriser la CI : des templates partagés",
+  "130": "Tester la CI avant de merger dans main",
+  "131": "Diagnostic du cycle de vie d’une MR",
+  "132": "Nos MR dans le miroir : le temps de review réel",
+  "133": "Un SLA de review : 24h pour un retour, 48h pour merger",
+  "134": "Rappels automatiques : ne plus laisser une MR sans review",
+  "135": "Pourquoi nos MR traînent ?",
+  "136": "Analyser les exceptions au SLA",
+  "137": "Pourquoi deux approbateurs ? Le principe des quatre yeux",
+  "138": "Configurer les règles d’approbation",
+  "139": "Passer à deux approbateurs",
+  "140": "Empêcher l’approbation par les contributeurs de la MR",
+  "141": "Finaliser les règles : reset des approbations et verrouillage",
+  "142": "Qu’est-ce qu’une bonne review ? Notre charte",
+  "143": "Pratiquer la review en binôme",
+  "144": "Le feedback constructif : questionner plutôt qu’imposer",
+  "145": "Nos meilleures reviews : apprendre de l’existant",
+  "146": "Au moins un commentaire constructif par review",
+  "147": "Le mentorat par la review",
+  "148": "Pourquoi découper nos MR ?",
+  "149": "Le feature slicing : découper avant de coder",
+  "150": "Découper une User Story en cours",
+  "151": "Notre règle de taille : un seuil et des rappels",
+  "152": "Anticiper les patterns de grosses MR",
+  "153": "Activer la protection contre les merges sans approbation",
+  "154": "Nos merges sans review : mesurer le risque",
+  "155": "« Prevent editing approval rules » : voir Q02-141",
+  "156": "Audit des exceptions : qui merge sans approbation, et pourquoi ?",
+  "157": "Les code owners : protéger les fichiers critiques",
+  "158": "Qui sait quoi ? Diagnostic de la connaissance partagée",
+  "159": "Et si untel partait demain ?",
+  "160": "Pair programming ciblé : diffuser en faisant",
+  "161": "Rotation sur les US : diffuser par l’assignation",
+  "162": "Documenter ce que seul l’expert sait",
+  "163": "Le plan de continuité : qui remplace qui",
+  "190": "Comment on réagit quand ça casse ? Rejouer un incident",
+  "191": "Process d’urgence : 2h pour fix ou revert",
+  "192": "Logs lisibles : accélérer le diagnostic",
+  "193": "Le playbook des 5 causes d’échec les plus fréquentes",
+  "194": "Qui est responsable après 17h ?",
+  "195": "Le revert automatique : retour au vert sans intervention",
+  "196": "Activer « Pipelines must succeed »",
+  "197": "Nos séries d’échecs dans le miroir",
+  "198": "Check pre-merge : refuser le merge si la branche est rouge",
+  "199": "Analyser les séries : même cause ou causes différentes ?",
+  "200": "Alerte signal faible : intervenir dès une série de 2",
+  "201": "205)"
+ },
+ "items": [
+  {
+   "file": "00_Culture_DevOps_et_DORA.docx",
+   "num": 0,
+   "kind": "module",
+   "titre": "Culture DevOps & DORA",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Débutant",
+   "refs": []
+  },
+  {
+   "file": "01_Git_et_Workflows.docx",
+   "num": 1,
+   "kind": "module",
+   "titre": "Git et Workflows",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "atelier_temoin (1).docx",
+   "num": "1",
+   "kind": "atelier",
+   "titre": "Notre premier daily",
+   "axe": "Culture & Rituels",
+   "question": "C01",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_temoin.docx",
+   "num": "1",
+   "kind": "atelier",
+   "titre": "Notre premier daily",
+   "axe": "Culture & Rituels",
+   "question": "C01",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "02_GitLab_CICD.docx",
+   "num": 2,
+   "kind": "module",
+   "titre": "GitLab CICD",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Intermédiaire",
+   "refs": []
+  },
+  {
+   "file": "03_Qualite_et_Securite.docx",
+   "num": 3,
+   "kind": "module",
+   "titre": "Qualite et Securite",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "04_Artefacts_et_Conteneurs.docx",
+   "num": 4,
+   "kind": "module",
+   "titre": "Artefacts et Conteneurs",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Intermédiaire",
+   "refs": []
+  },
+  {
+   "file": "atelier_004.docx",
+   "num": "4",
+   "kind": "atelier",
+   "titre": "Élargir nos rituels à QA, Sécu et Produit",
+   "axe": "Culture & Rituels",
+   "question": "C01",
+   "niveau": "En",
+   "refs": []
+  },
+  {
+   "file": "05_Kubernetes_et_Kustomize.docx",
+   "num": 5,
+   "kind": "module",
+   "titre": "Kubernetes et Kustomize",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "atelier_005.docx",
+   "num": "5",
+   "kind": "atelier",
+   "titre": "Mesurer l'efficacité de nos rituels",
+   "axe": "Culture & Rituels",
+   "question": "C01",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "06_GitOps_ArgoCD_Flux_GCP.docx",
+   "num": 6,
+   "kind": "module",
+   "titre": "GitOps ArgoCD Flux GCP",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Avancé",
+   "refs": []
+  },
+  {
+   "file": "atelier_006.docx",
+   "num": "6",
+   "kind": "atelier",
+   "titre": "Notre inventaire outillage",
+   "axe": "Culture & Rituels",
+   "question": "C02",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "07_Feature_Flags_Progressive_Delivery (1).docx",
+   "num": 7,
+   "kind": "module",
+   "titre": "Feature Flags Progressive Delivery",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Avancé",
+   "refs": []
+  },
+  {
+   "file": "07_Feature_Flags_Progressive_Delivery.docx",
+   "num": 7,
+   "kind": "module",
+   "titre": "Feature Flags Progressive Delivery",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Avancé",
+   "refs": []
+  },
+  {
+   "file": "atelier_007.docx",
+   "num": "7",
+   "kind": "atelier",
+   "titre": "Un outil, un usage",
+   "axe": "Culture & Rituels",
+   "question": "C02",
+   "niveau": "Initial",
+   "refs": [
+    6
+   ]
+  },
+  {
+   "file": "08_Observabilite_et_SRE.docx",
+   "num": 8,
+   "kind": "module",
+   "titre": "Observabilite et SRE",
+   "axe": "Formation",
+   "question": "",
+   "niveau": "Expert",
+   "refs": []
+  },
+  {
+   "file": "atelier_008.docx",
+   "num": "8",
+   "kind": "atelier",
+   "titre": "Documenter nos conventions outillage",
+   "axe": "Culture & Rituels",
+   "question": "C02",
+   "niveau": "En",
+   "refs": []
+  },
+  {
+   "file": "atelier_009.docx",
+   "num": "9",
+   "kind": "atelier",
+   "titre": "Audit d'adoption de nos outils",
+   "axe": "Culture & Rituels",
+   "question": "C02",
+   "niveau": "En",
+   "refs": []
+  },
+  {
+   "file": "atelier_010.docx",
+   "num": "10",
+   "kind": "atelier",
+   "titre": "Automatiser nos outils collaboratifs",
+   "axe": "Culture & Rituels",
+   "question": "C02",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "capsule_011.docx",
+   "num": "11",
+   "kind": "capsule",
+   "titre": "Notre canal incidents",
+   "axe": "Culture & Rituels",
+   "question": "C03",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "capsule_012.docx",
+   "num": "12",
+   "kind": "capsule",
+   "titre": "Quand et comment communiquer en crise",
+   "axe": "Culture & Rituels",
+   "question": "C03",
+   "niveau": "Initial",
+   "refs": [
+    11
+   ]
+  },
+  {
+   "file": "capsule_013.docx",
+   "num": "13",
+   "kind": "capsule",
+   "titre": "Notre template d'incident standard",
+   "axe": "Culture & Rituels",
+   "question": "C03",
+   "niveau": "En",
+   "refs": [
+    11,
+    12
+   ]
+  },
+  {
+   "file": "atelier_014.docx",
+   "num": "14",
+   "kind": "atelier",
+   "titre": "Notre point proactivité hebdo",
+   "axe": "Culture & Rituels",
+   "question": "C03",
+   "niveau": "En",
+   "refs": []
+  },
+  {
+   "file": "atelier_015.docx",
+   "num": "15",
+   "kind": "atelier",
+   "titre": "Nos angles morts de diffusion",
+   "axe": "Culture & Rituels",
+   "question": "C03",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "atelier_016.docx",
+   "num": "16",
+   "kind": "atelier",
+   "titre": "Notre matrice RACI delivery",
+   "axe": "Culture & Rituels",
+   "question": "C04",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_017.docx",
+   "num": "17",
+   "kind": "atelier",
+   "titre": "Qui décide quoi ?",
+   "axe": "Culture & Rituels",
+   "question": "C04",
+   "niveau": "Initial",
+   "refs": [
+    16
+   ]
+  },
+  {
+   "file": "capsule_018.docx",
+   "num": "18",
+   "kind": "capsule",
+   "titre": "Afficher et diffuser la RACI",
+   "axe": "Culture & Rituels",
+   "question": "C04",
+   "niveau": "En",
+   "refs": [
+    16
+   ]
+  },
+  {
+   "file": "atelier_019.docx",
+   "num": "19",
+   "kind": "atelier",
+   "titre": "Nos zones grises de responsabilité",
+   "axe": "Culture & Rituels",
+   "question": "C04",
+   "niveau": "En",
+   "refs": [
+    16
+   ]
+  },
+  {
+   "file": "capsule_020.docx",
+   "num": "20",
+   "kind": "capsule",
+   "titre": "Revoir périodiquement la RACI",
+   "axe": "Culture & Rituels",
+   "question": "C04",
+   "niveau": "Formalisé",
+   "refs": [
+    16,
+    18,
+    19
+   ]
+  },
+  {
+   "file": "capsule_021.docx",
+   "num": "21",
+   "kind": "capsule",
+   "titre": "Écrire une US technique",
+   "axe": "Delivery & Backlog",
+   "question": "C05",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "capsule_022.docx",
+   "num": "22",
+   "kind": "capsule",
+   "titre": "Piloter le ratio dette / feature",
+   "axe": "Delivery & Backlog",
+   "question": "C05",
+   "niveau": "En",
+   "refs": [
+    21
+   ]
+  },
+  {
+   "file": "atelier_023.docx",
+   "num": "23",
+   "kind": "atelier",
+   "titre": "Visualiser l'impact de la dette",
+   "axe": "Delivery & Backlog",
+   "question": "C05",
+   "niveau": "En",
+   "refs": []
+  },
+  {
+   "file": "capsule_024 (1).docx",
+   "num": "24",
+   "kind": "capsule",
+   "titre": "Prévenir la dette par la Definition of Done",
+   "axe": "Delivery & Backlog",
+   "question": "C05",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "capsule_024.docx",
+   "num": "24",
+   "kind": "capsule",
+   "titre": "Prévenir la dette par la Definition of Done",
+   "axe": "Delivery & Backlog",
+   "question": "C05",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "atelier_025.docx",
+   "num": "25",
+   "kind": "atelier",
+   "titre": "Cartographie de nos dépendances",
+   "axe": "Delivery & Backlog",
+   "question": "C06",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_026.docx",
+   "num": "26",
+   "kind": "atelier",
+   "titre": "Cartographie de nos dépendances",
+   "axe": "Culture & Rituels",
+   "question": "C06",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_027.docx",
+   "num": "27",
+   "kind": "atelier",
+   "titre": "Notre point de synchro inter-squads",
+   "axe": "Culture & Rituels",
+   "question": "C06",
+   "niveau": "Initial",
+   "refs": [
+    26
+   ]
+  },
+  {
+   "file": "atelier_028.docx",
+   "num": "28",
+   "kind": "atelier",
+   "titre": "Les dépendances dans le sprint planning",
+   "axe": "Culture & Rituels",
+   "question": "C06",
+   "niveau": "En",
+   "refs": [
+    26,
+    27
+   ]
+  },
+  {
+   "file": "atelier_031.docx",
+   "num": "31",
+   "kind": "atelier",
+   "titre": "Co-construire notre première DevOps Review",
+   "axe": "Culture & Rituels",
+   "question": "C07",
+   "niveau": "Initial",
+   "refs": [
+    32
+   ]
+  },
+  {
+   "file": "atelier_032.docx",
+   "num": "32",
+   "kind": "atelier",
+   "titre": "Notre première DevOps Review",
+   "axe": "Culture & Rituels",
+   "question": "C07",
+   "niveau": "Initial",
+   "refs": [
+    31,
+    34
+   ]
+  },
+  {
+   "file": "capsule_033.docx",
+   "num": "33",
+   "kind": "capsule",
+   "titre": "Le template de notre DevOps Review",
+   "axe": "Culture & Rituels",
+   "question": "C07",
+   "niveau": "En",
+   "refs": [
+    31,
+    32
+   ]
+  },
+  {
+   "file": "atelier_035.docx",
+   "num": "35",
+   "kind": "atelier",
+   "titre": "Ouvrir notre DevOps Review au management",
+   "axe": "Culture & Rituels",
+   "question": "C07",
+   "niveau": "Formalisé",
+   "refs": [
+    31,
+    33
+   ]
+  },
+  {
+   "file": "atelier_036.docx",
+   "num": "36",
+   "kind": "atelier",
+   "titre": "Introduire le post-mortem sans blâme",
+   "axe": "Culture & Rituels",
+   "question": "C08",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_037.docx",
+   "num": "37",
+   "kind": "atelier",
+   "titre": "On parle du système, jamais des gens",
+   "axe": "Culture & Rituels",
+   "question": "C08",
+   "niveau": "Initial",
+   "refs": [
+    36
+   ]
+  },
+  {
+   "file": "atelier_038.docx",
+   "num": "38",
+   "kind": "atelier",
+   "titre": "Valoriser celui qui remonte un problème",
+   "axe": "Culture & Rituels",
+   "question": "C08",
+   "niveau": "En",
+   "refs": [
+    36,
+    37
+   ]
+  },
+  {
+   "file": "atelier_039.docx",
+   "num": "39",
+   "kind": "atelier",
+   "titre": "La rétrospective anonyme",
+   "axe": "Culture & Rituels",
+   "question": "C08",
+   "niveau": "En",
+   "refs": [
+    36,
+    38
+   ]
+  },
+  {
+   "file": "atelier_040.docx",
+   "num": "40",
+   "kind": "atelier",
+   "titre": "Étendre la sécurité psychologique au-delà de la squad",
+   "axe": "Culture & Rituels",
+   "question": "C08",
+   "niveau": "Formalisé",
+   "refs": [
+    35,
+    36,
+    39
+   ]
+  },
+  {
+   "file": "atelier_042.docx",
+   "num": "42",
+   "kind": "atelier",
+   "titre": "Qu'est-ce qu'on sait faire ?",
+   "axe": "Culture & Rituels",
+   "question": "C09",
+   "niveau": "Initial",
+   "refs": [
+    41,
+    43
+   ]
+  },
+  {
+   "file": "atelier_043.docx",
+   "num": "43",
+   "kind": "atelier",
+   "titre": "Notre REX trimestriel",
+   "axe": "Culture & Rituels",
+   "question": "C09",
+   "niveau": "En",
+   "refs": [
+    41,
+    42
+   ]
+  },
+  {
+   "file": "capsule_044.docx",
+   "num": "44",
+   "kind": "capsule",
+   "titre": "Documenter nos REX sur Confluence",
+   "axe": "Culture & Rituels",
+   "question": "C09",
+   "niveau": "En",
+   "refs": [
+    43
+   ]
+  },
+  {
+   "file": "atelier_045.docx",
+   "num": "45",
+   "kind": "atelier",
+   "titre": "Un format d'échange bidirectionnel inter-tribus",
+   "axe": "Culture & Rituels",
+   "question": "C09",
+   "niveau": "Formalisé",
+   "refs": [
+    41,
+    44
+   ]
+  },
+  {
+   "file": "atelier_046.docx",
+   "num": "46",
+   "kind": "atelier",
+   "titre": "Nos contraintes dans le miroir",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "Initial",
+   "refs": []
+  },
+  {
+   "file": "atelier_047.docx",
+   "num": "47",
+   "kind": "atelier",
+   "titre": "Négocier des SLA et des fast-tracks",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "Initial",
+   "refs": [
+    46
+   ]
+  },
+  {
+   "file": "atelier_048 (1).docx",
+   "num": "48",
+   "kind": "atelier",
+   "titre": "Automatiser nos validations manuelles",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "En",
+   "refs": [
+    46,
+    47
+   ]
+  },
+  {
+   "file": "atelier_048.docx",
+   "num": "48",
+   "kind": "atelier",
+   "titre": "Automatiser nos validations manuelles",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "En",
+   "refs": [
+    46,
+    47
+   ]
+  },
+  {
+   "file": "capsule_049.docx",
+   "num": "49",
+   "kind": "capsule",
+   "titre": "Documenter nos contournements",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "En",
+   "refs": [
+    46
+   ]
+  },
+  {
+   "file": "atelier_050.docx",
+   "num": "50",
+   "kind": "atelier",
+   "titre": "Traiter nos goulots résiduels",
+   "axe": "Culture & Rituels",
+   "question": "C10",
+   "niveau": "Formalisé",
+   "refs": [
+    46,
+    49
+   ]
+  },
+  {
+   "file": "atelier_051bis.docx",
+   "num": "51bis",
+   "kind": "atelier",
+   "titre": "Notre premier pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "Initial",
+   "refs": [
+    53
+   ]
+  },
+  {
+   "file": "capsule_051_socle.docx",
+   "num": "51",
+   "kind": "capsule",
+   "titre": "Comprendre et écrire un pipeline GitLab CI/CD",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "atelier_054.docx",
+   "num": "54",
+   "kind": "atelier",
+   "titre": "Notre premier feature flag",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "En",
+   "refs": [
+    53
+   ]
+  },
+  {
+   "file": "atelier_055.docx",
+   "num": "55",
+   "kind": "atelier",
+   "titre": "Slicer une vraie US de notre backlog",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "Formalisé",
+   "refs": []
+  },
+  {
+   "file": "capsule_055_slicing.docx",
+   "num": "55",
+   "kind": "capsule",
+   "titre": "Le découpage incrémental (slicing) des fonctionnalités",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "",
+   "refs": [
+    54
+   ]
+  },
+  {
+   "file": "atelier_056.docx",
+   "num": "56",
+   "kind": "atelier",
+   "titre": "Pourquoi livrer souvent ?",
+   "axe": "Toolchain CI/CD",
+   "question": "D01",
+   "niveau": "Formalisé",
+   "refs": [
+    53,
+    54,
+    55
+   ]
+  },
+  {
+   "file": "atelier_057 (1).docx",
+   "num": "57",
+   "kind": "atelier",
+   "titre": "Autopsie de nos échecs de pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "Initial",
+   "refs": [
+    58,
+    60
+   ]
+  },
+  {
+   "file": "atelier_057.docx",
+   "num": "57",
+   "kind": "atelier",
+   "titre": "Autopsie de nos échecs de pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "Initial",
+   "refs": [
+    58,
+    60
+   ]
+  },
+  {
+   "file": "atelier_058 (1).docx",
+   "num": "58",
+   "kind": "atelier",
+   "titre": "Stabilisation prioritaire",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "Initial",
+   "refs": [
+    57,
+    59
+   ]
+  },
+  {
+   "file": "atelier_058.docx",
+   "num": "58",
+   "kind": "atelier",
+   "titre": "Stabilisation prioritaire",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "Initial",
+   "refs": [
+    57,
+    59
+   ]
+  },
+  {
+   "file": "atelier_059.docx",
+   "num": "59",
+   "kind": "atelier",
+   "titre": "Retry et résilience de notre pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "En",
+   "refs": [
+    57,
+    58
+   ]
+  },
+  {
+   "file": "atelier_060.docx",
+   "num": "60",
+   "kind": "atelier",
+   "titre": "Nos tests dans le miroir : vrais échecs ou faux positifs ?",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "En",
+   "refs": [
+    57,
+    58,
+    59
+   ]
+  },
+  {
+   "file": "atelier_062.docx",
+   "num": "62",
+   "kind": "atelier",
+   "titre": "Éliminer nos derniers échecs intermittents",
+   "axe": "Toolchain CI/CD",
+   "question": "D02",
+   "niveau": "Formalisé",
+   "refs": [
+    57,
+    61
+   ]
+  },
+  {
+   "file": "atelier_063.docx",
+   "num": "63",
+   "kind": "atelier",
+   "titre": "Pourquoi déployer depuis main ?",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "Initial",
+   "refs": [
+    53,
+    55,
+    65
+   ]
+  },
+  {
+   "file": "atelier_064.docx",
+   "num": "64",
+   "kind": "atelier",
+   "titre": "La gouvernance de nos branches",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "Initial",
+   "refs": [
+    63
+   ]
+  },
+  {
+   "file": "capsule_064A_gitflow.docx",
+   "num": "64",
+   "kind": "capsule",
+   "titre": "A — Le modèle GitFlow (et pourquoi les équipes galèrent avec)",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "capsule_064C_trunk_based.docx",
+   "num": "64",
+   "kind": "capsule",
+   "titre": "C — Le Trunk-Based Development (démonté pour les sceptiques)",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "",
+   "refs": [
+    51,
+    54,
+    55,
+    57,
+    63
+   ]
+  },
+  {
+   "file": "capsule_064D_comparatif.docx",
+   "num": "64",
+   "kind": "capsule",
+   "titre": "D — Quel modèle de branches choisir ?",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "capsule_065_exceptions.docx",
+   "num": "65",
+   "kind": "capsule",
+   "titre": "Formaliser les exceptions : hotfix et release",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "En",
+   "refs": [
+    63,
+    64
+   ]
+  },
+  {
+   "file": "atelier_066.docx",
+   "num": "66",
+   "kind": "atelier",
+   "titre": "Nos déploiements hors main",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "En",
+   "refs": [
+    63,
+    65
+   ]
+  },
+  {
+   "file": "atelier_067 (1).docx",
+   "num": "67",
+   "kind": "atelier",
+   "titre": "Le pipeline qui refuse de déployer hors main",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "Formalisé",
+   "refs": [
+    63,
+    65,
+    66
+   ]
+  },
+  {
+   "file": "atelier_067.docx",
+   "num": "67",
+   "kind": "atelier",
+   "titre": "Le pipeline qui refuse de déployer hors main",
+   "axe": "Toolchain CI/CD",
+   "question": "D03",
+   "niveau": "Formalisé",
+   "refs": [
+    63,
+    65,
+    66
+   ]
+  },
+  {
+   "file": "atelier_068.docx",
+   "num": "68",
+   "kind": "atelier",
+   "titre": "Notre première release",
+   "axe": "Toolchain CI/CD",
+   "question": "D04",
+   "niveau": "Initial",
+   "refs": [
+    1,
+    2,
+    63
+   ]
+  },
+  {
+   "file": "atelier_069.docx",
+   "num": "69",
+   "kind": "atelier",
+   "titre": "Pourquoi versionner ? Le point de vue de ceux qui dépendent de nous",
+   "axe": "Toolchain CI/CD",
+   "question": "D04",
+   "niveau": "Initial",
+   "refs": [
+    68
+   ]
+  },
+  {
+   "file": "atelier_070.docx",
+   "num": "70",
+   "kind": "atelier",
+   "titre": "Adopter notre convention de version",
+   "axe": "Toolchain CI/CD",
+   "question": "D04",
+   "niveau": "En",
+   "refs": [
+    68,
+    69,
+    71
+   ]
+  },
+  {
+   "file": "atelier_071.docx",
+   "num": "71",
+   "kind": "atelier",
+   "titre": "Automatiser la version sans bruit : conventional commits & release pilotée",
+   "axe": "Toolchain CI/CD",
+   "question": "D04",
+   "niveau": "En",
+   "refs": [
+    1,
+    2,
+    63,
+    68,
+    69,
+    70,
+    72
+   ]
+  },
+  {
+   "file": "capsule_072_changelog.docx",
+   "num": "72",
+   "kind": "capsule",
+   "titre": "Le changelog : générer l’histoire des versions, sans la réécrire",
+   "axe": "Toolchain CI/CD",
+   "question": "D04",
+   "niveau": "Formalisé",
+   "refs": [
+    69,
+    70,
+    71
+   ]
+  },
+  {
+   "file": "atelier_073.docx",
+   "num": "73",
+   "kind": "atelier",
+   "titre": "Anatomie de notre pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "Initial",
+   "refs": [
+    74
+   ]
+  },
+  {
+   "file": "atelier_074.docx",
+   "num": "74",
+   "kind": "atelier",
+   "titre": "Le cache des dépendances : le gain le plus rapide",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "Initial",
+   "refs": [
+    73
+   ]
+  },
+  {
+   "file": "atelier_075.docx",
+   "num": "75",
+   "kind": "atelier",
+   "titre": "Paralléliser notre pipeline",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "En",
+   "refs": [
+    74
+   ]
+  },
+  {
+   "file": "capsule_075_parallelisation.docx",
+   "num": "75",
+   "kind": "capsule",
+   "titre": "Comprendre la parallélisation : voir son pipeline comme un graphe",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "En",
+   "refs": [
+    73,
+    74
+   ]
+  },
+  {
+   "file": "atelier_076.docx",
+   "num": "76",
+   "kind": "atelier",
+   "titre": "Optimiser nos images Docker",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "En",
+   "refs": [
+    73,
+    74,
+    75
+   ]
+  },
+  {
+   "file": "capsule_076_docker.docx",
+   "num": "76",
+   "kind": "capsule",
+   "titre": "Comprendre les images Docker : penser en couches",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "En",
+   "refs": [
+    74,
+    75
+   ]
+  },
+  {
+   "file": "atelier_077.docx",
+   "num": "77",
+   "kind": "atelier",
+   "titre": "Le garde-fou anti-dérive : ancrer un seuil de durée",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "Formalisé",
+   "refs": [
+    67,
+    74,
+    75,
+    76,
+    78
+   ]
+  },
+  {
+   "file": "atelier_078.docx",
+   "num": "78",
+   "kind": "atelier",
+   "titre": "Suivre et célébrer : la durée comme histoire d’équipe",
+   "axe": "Toolchain CI/CD",
+   "question": "D05",
+   "niveau": "Formalisé",
+   "refs": [
+    12,
+    20,
+    28,
+    73,
+    74,
+    75,
+    76,
+    77
+   ]
+  },
+  {
+   "file": "diagnostic_079.docx",
+   "num": "79",
+   "kind": "guide",
+   "titre": "L’état de notre repo : le miroir avant l’action",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "quickwin_080.docx",
+   "num": "80",
+   "kind": "quickwin",
+   "titre": "Activer la suppression automatique des branches après merge",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "Initial",
+   "refs": [
+    79,
+    81,
+    82,
+    83,
+    84,
+    90
+   ]
+  },
+  {
+   "file": "atelier_081.docx",
+   "num": "81",
+   "kind": "atelier",
+   "titre": "Le grand nettoyage des branches",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "Initial",
+   "refs": [
+    80,
+    82,
+    83,
+    84
+   ]
+  },
+  {
+   "file": "atelier_082 (1).docx",
+   "num": "82",
+   "kind": "atelier",
+   "titre": "Les branches qui vieillissent : la règle des 30 jours",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "En",
+   "refs": [
+    80,
+    81,
+    83,
+    84
+   ]
+  },
+  {
+   "file": "atelier_082.docx",
+   "num": "82",
+   "kind": "atelier",
+   "titre": "Les branches qui vieillissent : la règle des 30 jours",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "En",
+   "refs": [
+    80,
+    81,
+    83,
+    84
+   ]
+  },
+  {
+   "file": "atelier_083.docx",
+   "num": "83",
+   "kind": "atelier",
+   "titre": "Nommer pour s’y retrouver : les conventions de branches",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "En",
+   "refs": [
+    80,
+    81,
+    82,
+    84
+   ]
+  },
+  {
+   "file": "atelier_084.docx",
+   "num": "84",
+   "kind": "atelier",
+   "titre": "La sentinelle des branches : surveillance automatique",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H01",
+   "niveau": "Formalisé",
+   "refs": [
+    71,
+    77,
+    80,
+    81,
+    82,
+    83
+   ]
+  },
+  {
+   "file": "capsule_085_lockfiles.docx",
+   "num": "85",
+   "kind": "capsule",
+   "titre": "Pourquoi les lock files : le même code, deux résultats",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "Initial",
+   "refs": [
+    86
+   ]
+  },
+  {
+   "file": "atelier_086.docx",
+   "num": "86",
+   "kind": "atelier",
+   "titre": "Mettre en place nos lock files",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "Initial",
+   "refs": [
+    85,
+    87,
+    88,
+    89
+   ]
+  },
+  {
+   "file": "atelier_087.docx",
+   "num": "87",
+   "kind": "atelier",
+   "titre": "L’audit des écosystèmes : aucun trou dans la couverture",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "En",
+   "refs": [
+    85,
+    86,
+    88,
+    89
+   ]
+  },
+  {
+   "file": "quickwin_088.docx",
+   "num": "88",
+   "kind": "quickwin",
+   "titre": "Vérifier que nos lock files ne sont pas ignorés",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "En",
+   "refs": [
+    86,
+    87,
+    89
+   ]
+  },
+  {
+   "file": "atelier_089.docx",
+   "num": "89",
+   "kind": "atelier",
+   "titre": "Mettre en place les mises à jour automatiques de dépendances",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "Formalisé",
+   "refs": [
+    85,
+    86,
+    87,
+    88
+   ]
+  },
+  {
+   "file": "capsule_089_renovate.docx",
+   "num": "89",
+   "kind": "capsule",
+   "titre": "Les mises à jour automatiques de dépendances : le bot qui propose",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H02",
+   "niveau": "Formalisé",
+   "refs": [
+    85,
+    86
+   ]
+  },
+  {
+   "file": "quickwin_090.docx",
+   "num": "90",
+   "kind": "quickwin",
+   "titre": "Activer la protection de la branche principale",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H03",
+   "niveau": "Initial",
+   "refs": [
+    91,
+    92,
+    93
+   ]
+  },
+  {
+   "file": "capsule_091_forcepush.docx",
+   "num": "91",
+   "kind": "capsule",
+   "titre": "Les risques du force push : réécrire l’histoire d’un repo partagé",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H03",
+   "niveau": "Initial",
+   "refs": [
+    67,
+    77,
+    90
+   ]
+  },
+  {
+   "file": "atelier_092.docx",
+   "num": "92",
+   "kind": "atelier",
+   "titre": "Une protection cohérente et non négociable",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H03",
+   "niveau": "En",
+   "refs": [
+    90,
+    91,
+    93
+   ]
+  },
+  {
+   "file": "atelier_093.docx",
+   "num": "93",
+   "kind": "atelier",
+   "titre": "Personne n’écrit sur main : les niveaux d’accès",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H03",
+   "niveau": "Formalisé",
+   "refs": [
+    90,
+    91,
+    92
+   ]
+  },
+  {
+   "file": "atelier_094.docx",
+   "num": "94",
+   "kind": "atelier",
+   "titre": "Notre repo a une identité : le README minimal",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "Initial",
+   "refs": [
+    71,
+    72,
+    83,
+    95,
+    96,
+    97,
+    98
+   ]
+  },
+  {
+   "file": "quickwin_095.docx",
+   "num": "95",
+   "kind": "quickwin",
+   "titre": "Un .gitignore adapté à notre stack",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "Initial",
+   "refs": [
+    72,
+    85,
+    88,
+    94,
+    96,
+    97,
+    98
+   ]
+  },
+  {
+   "file": "atelier_096.docx",
+   "num": "96",
+   "kind": "atelier",
+   "titre": "Enrichir le README : du minimal au complet",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "En",
+   "refs": [
+    72,
+    85,
+    94,
+    95,
+    97,
+    98
+   ]
+  },
+  {
+   "file": "atelier_097.docx",
+   "num": "97",
+   "kind": "atelier",
+   "titre": "Notre CHANGELOG : le fichier et le réflexe",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "En",
+   "refs": [
+    72,
+    94,
+    95,
+    96,
+    98
+   ]
+  },
+  {
+   "file": "renvoi_098.docx",
+   "num": "98",
+   "kind": "renvoi",
+   "titre": "Automatiser le CHANGELOG : voir la capsule #72",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "Formalisé",
+   "refs": [
+    71,
+    72,
+    97
+   ]
+  },
+  {
+   "file": "atelier_099.docx",
+   "num": "99",
+   "kind": "atelier",
+   "titre": "Le CONTRIBUTING : accueillir ceux qui arrivent",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H04",
+   "niveau": "Formalisé",
+   "refs": [
+    71,
+    72,
+    83,
+    94,
+    95,
+    96,
+    97,
+    98
+   ]
+  },
+  {
+   "file": "atelier_100.docx",
+   "num": "100",
+   "kind": "atelier",
+   "titre": "Le grand tri des MR zombies",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H05",
+   "niveau": "Initial",
+   "refs": [
+    81,
+    101,
+    102,
+    103,
+    104
+   ]
+  },
+  {
+   "file": "atelier_101.docx",
+   "num": "101",
+   "kind": "atelier",
+   "titre": "Pourquoi nos MR s’accumulent ?",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H05",
+   "niveau": "Initial",
+   "refs": [
+    100,
+    102,
+    103,
+    104
+   ]
+  },
+  {
+   "file": "renvoi_102.docx",
+   "num": "102",
+   "kind": "renvoi",
+   "titre": "Rappels automatiques sur les MR : voir l’axe Review",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H05",
+   "niveau": "En",
+   "refs": [
+    100,
+    101,
+    103
+   ]
+  },
+  {
+   "file": "atelier_103.docx",
+   "num": "103",
+   "kind": "atelier",
+   "titre": "Le rituel de tri des MR : empêcher la ré-accumulation",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H05",
+   "niveau": "En",
+   "refs": [
+    100,
+    101,
+    102,
+    104
+   ]
+  },
+  {
+   "file": "renvoi_104.docx",
+   "num": "104",
+   "kind": "renvoi",
+   "titre": "Mesure du cycle time des MR : voir l’axe Review",
+   "axe": "Hygiène & Gouvernance",
+   "question": "H05",
+   "niveau": "Formalisé",
+   "refs": [
+    100,
+    101,
+    103
+   ]
+  },
+  {
+   "file": "capsule_105_featureflags.docx",
+   "num": "105",
+   "kind": "capsule",
+   "titre": "Déployer sans activer : comprendre les feature flags",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "Initial",
+   "refs": [
+    106,
+    107,
+    108,
+    109,
+    110
+   ]
+  },
+  {
+   "file": "atelier_106.docx",
+   "num": "106",
+   "kind": "atelier",
+   "titre": "Notre premier feature flag",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "Initial",
+   "refs": [
+    105,
+    107,
+    108,
+    109,
+    110
+   ]
+  },
+  {
+   "file": "atelier_107.docx",
+   "num": "107",
+   "kind": "atelier",
+   "titre": "Adopter un outil de feature flags",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "En",
+   "refs": [
+    105,
+    106,
+    108,
+    109,
+    110
+   ]
+  },
+  {
+   "file": "atelier_108.docx",
+   "num": "108",
+   "kind": "atelier",
+   "titre": "Nos flags actuels : inventaire et migration",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "En",
+   "refs": [
+    87,
+    107,
+    109,
+    110
+   ]
+  },
+  {
+   "file": "atelier_109.docx",
+   "num": "109",
+   "kind": "atelier",
+   "titre": "Systématiser : toute nouvelle fonctionnalité visible passe par un flag",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "Formalisé",
+   "refs": [
+    105,
+    106,
+    107,
+    108,
+    110
+   ]
+  },
+  {
+   "file": "atelier_110.docx",
+   "num": "110",
+   "kind": "atelier",
+   "titre": "Le targeting : activer par utilisateur, pourcentage, environnement",
+   "axe": "Pratiques DevOps",
+   "question": "P01",
+   "niveau": "Formalisé",
+   "refs": [
+    105,
+    106,
+    107,
+    108,
+    109
+   ]
+  },
+  {
+   "file": "atelier_111.docx",
+   "num": "111",
+   "kind": "atelier",
+   "titre": "Nos flags dans le miroir : inventaire et zombies",
+   "axe": "Pratiques DevOps",
+   "question": "P02",
+   "niveau": "Initial",
+   "refs": [
+    79,
+    81,
+    82,
+    105,
+    107,
+    108,
+    112,
+    113,
+    114,
+    115
+   ]
+  },
+  {
+   "file": "atelier_112.docx",
+   "num": "112",
+   "kind": "atelier",
+   "titre": "Le grand nettoyage des flags zombies",
+   "axe": "Pratiques DevOps",
+   "question": "P02",
+   "niveau": "Initial",
+   "refs": [
+    81,
+    84,
+    105,
+    111,
+    113,
+    114,
+    115
+   ]
+  },
+  {
+   "file": "atelier_113.docx",
+   "num": "113",
+   "kind": "atelier",
+   "titre": "Le rituel trimestriel de revue des flags",
+   "axe": "Pratiques DevOps",
+   "question": "P02",
+   "niveau": "En",
+   "refs": [
+    84,
+    103,
+    112,
+    114,
+    115
+   ]
+  },
+  {
+   "file": "atelier_114.docx",
+   "num": "114",
+   "kind": "atelier",
+   "titre": "Une date d’expiration sur chaque flag",
+   "axe": "Pratiques DevOps",
+   "question": "P02",
+   "niveau": "En",
+   "refs": [
+    82,
+    84,
+    105,
+    107,
+    109,
+    113,
+    115
+   ]
+  },
+  {
+   "file": "atelier_115.docx",
+   "num": "115",
+   "kind": "atelier",
+   "titre": "Le job qui propose le nettoyage des flags expirés",
+   "axe": "Pratiques DevOps",
+   "question": "P02",
+   "niveau": "Formalisé",
+   "refs": [
+    84,
+    105,
+    111,
+    112,
+    113,
+    114
+   ]
+  },
+  {
+   "file": "atelier_116.docx",
+   "num": "116",
+   "kind": "atelier",
+   "titre": "SNAPSHOT en prod : le risque invisible",
+   "axe": "Pratiques DevOps",
+   "question": "P03",
+   "niveau": "Initial",
+   "refs": [
+    85,
+    117,
+    118,
+    119,
+    120
+   ]
+  },
+  {
+   "file": "atelier_117.docx",
+   "num": "117",
+   "kind": "atelier",
+   "titre": "Fixation immédiate : des versions exactes partout",
+   "axe": "Pratiques DevOps",
+   "question": "P03",
+   "niveau": "Initial",
+   "refs": [
+    85,
+    87,
+    116,
+    118,
+    119,
+    120
+   ]
+  },
+  {
+   "file": "atelier_118.docx",
+   "num": "118",
+   "kind": "atelier",
+   "titre": "Avant chaque release : aucun SNAPSHOT en prod",
+   "axe": "Pratiques DevOps",
+   "question": "P03",
+   "niveau": "En",
+   "refs": [
+    77,
+    90,
+    116,
+    117,
+    119,
+    120
+   ]
+  },
+  {
+   "file": "renvoi_119.docx",
+   "num": "119",
+   "kind": "renvoi",
+   "titre": "Renovate/Dependabot : voir l’atelier H02-89",
+   "axe": "Pratiques DevOps",
+   "question": "P03",
+   "niveau": "En",
+   "refs": [
+    89,
+    117,
+    118
+   ]
+  },
+  {
+   "file": "renvoi_120.docx",
+   "num": "120",
+   "kind": "renvoi",
+   "titre": "Scan de vulnérabilités (CVE) : voir l’axe P04",
+   "axe": "Pratiques DevOps",
+   "question": "P03",
+   "niveau": "Formalisé",
+   "refs": [
+    116,
+    117,
+    118,
+    124
+   ]
+  },
+  {
+   "file": "atelier_121.docx",
+   "num": "121",
+   "kind": "atelier",
+   "titre": "Qu’est-ce qu’un pipeline complet ?",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "Initial",
+   "refs": [
+    122,
+    123,
+    124,
+    125
+   ]
+  },
+  {
+   "file": "atelier_122 (1).docx",
+   "num": "122",
+   "kind": "atelier",
+   "titre": "Notre premier test dans le pipeline",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "Initial",
+   "refs": [
+    121,
+    123,
+    124,
+    125
+   ]
+  },
+  {
+   "file": "atelier_122.docx",
+   "num": "122",
+   "kind": "atelier",
+   "titre": "Notre premier test dans le pipeline",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "Initial",
+   "refs": [
+    121,
+    123,
+    124,
+    125
+   ]
+  },
+  {
+   "file": "atelier_123.docx",
+   "num": "123",
+   "kind": "atelier",
+   "titre": "Ajouter le linter au pipeline",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "En",
+   "refs": [
+    100,
+    122,
+    124,
+    125
+   ]
+  },
+  {
+   "file": "atelier_124.docx",
+   "num": "124",
+   "kind": "atelier",
+   "titre": "Le scan de sécurité : SAST et dépendances",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "En",
+   "refs": [
+    122,
+    123,
+    125
+   ]
+  },
+  {
+   "file": "capsule_124_securite.docx",
+   "num": "124",
+   "kind": "capsule",
+   "titre": "La sécurité applicative : nos failles et celles des autres",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "En",
+   "refs": [
+    85,
+    89,
+    125
+   ]
+  },
+  {
+   "file": "atelier_125.docx",
+   "num": "125",
+   "kind": "atelier",
+   "titre": "Complétion et quality gates : des seuils qui bloquent",
+   "axe": "Pratiques DevOps",
+   "question": "P04",
+   "niveau": "Formalisé",
+   "refs": [
+    82,
+    114,
+    121,
+    122,
+    123,
+    124
+   ]
+  },
+  {
+   "file": "atelier_126.docx",
+   "num": "126",
+   "kind": "atelier",
+   "titre": "Notre pipeline existe-t-il vraiment ?",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "Initial",
+   "refs": [
+    127,
+    128,
+    129,
+    130
+   ]
+  },
+  {
+   "file": "atelier_127.docx",
+   "num": "127",
+   "kind": "atelier",
+   "titre": "Notre premier .gitlab-ci.yml",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "Initial",
+   "refs": [
+    122,
+    123,
+    124,
+    126,
+    128,
+    129,
+    130
+   ]
+  },
+  {
+   "file": "atelier_128.docx",
+   "num": "128",
+   "kind": "atelier",
+   "titre": "Notre CI comme du code : la reviewer en MR",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "En",
+   "refs": [
+    93,
+    127,
+    129,
+    130
+   ]
+  },
+  {
+   "file": "atelier_129 (1).docx",
+   "num": "129",
+   "kind": "atelier",
+   "titre": "Factoriser la CI : des templates partagés",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "En",
+   "refs": [
+    128,
+    130
+   ]
+  },
+  {
+   "file": "atelier_129.docx",
+   "num": "129",
+   "kind": "atelier",
+   "titre": "Factoriser la CI : des templates partagés",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "En",
+   "refs": [
+    128,
+    130
+   ]
+  },
+  {
+   "file": "atelier_130.docx",
+   "num": "130",
+   "kind": "atelier",
+   "titre": "Tester la CI avant de merger dans main",
+   "axe": "Pratiques DevOps",
+   "question": "P05",
+   "niveau": "Formalisé",
+   "refs": [
+    90,
+    93,
+    118,
+    126,
+    127,
+    128,
+    129
+   ]
+  },
+  {
+   "file": "atelier_131.docx",
+   "num": "131",
+   "kind": "atelier",
+   "titre": "Diagnostic du cycle de vie d’une MR",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "Préalable",
+   "refs": [
+    100,
+    132,
+    133,
+    134,
+    135,
+    136
+   ]
+  },
+  {
+   "file": "atelier_132.docx",
+   "num": "132",
+   "kind": "atelier",
+   "titre": "Nos MR dans le miroir : le temps de review réel",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "Initial",
+   "refs": [
+    131,
+    133,
+    134,
+    135,
+    136
+   ]
+  },
+  {
+   "file": "atelier_133.docx",
+   "num": "133",
+   "kind": "atelier",
+   "titre": "Un SLA de review : 24h pour un retour, 48h pour merger",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "Initial",
+   "refs": [
+    102,
+    103,
+    132,
+    134,
+    135,
+    136
+   ]
+  },
+  {
+   "file": "atelier_134.docx",
+   "num": "134",
+   "kind": "atelier",
+   "titre": "Rappels automatiques : ne plus laisser une MR sans review",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "En",
+   "refs": [
+    102,
+    133,
+    135,
+    136
+   ]
+  },
+  {
+   "file": "atelier_135.docx",
+   "num": "135",
+   "kind": "atelier",
+   "titre": "Pourquoi nos MR traînent ?",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "En",
+   "refs": [
+    133,
+    134,
+    136
+   ]
+  },
+  {
+   "file": "atelier_136.docx",
+   "num": "136",
+   "kind": "atelier",
+   "titre": "Analyser les exceptions au SLA",
+   "axe": "Qualité",
+   "question": "Q01",
+   "niveau": "Formalisé",
+   "refs": [
+    102,
+    104,
+    131,
+    132,
+    133,
+    134,
+    135
+   ]
+  },
+  {
+   "file": "atelier_137.docx",
+   "num": "137",
+   "kind": "atelier",
+   "titre": "Pourquoi deux approbateurs ? Le principe des quatre yeux",
+   "axe": "Qualité",
+   "question": "Q02",
+   "niveau": "Initial",
+   "refs": [
+    138,
+    139,
+    140,
+    141
+   ]
+  },
+  {
+   "file": "atelier_138.docx",
+   "num": "138",
+   "kind": "atelier",
+   "titre": "Configurer les règles d’approbation",
+   "axe": "Qualité",
+   "question": "Q02",
+   "niveau": "Initial",
+   "refs": [
+    90,
+    93,
+    137,
+    139,
+    140,
+    141
+   ]
+  },
+  {
+   "file": "atelier_139.docx",
+   "num": "139",
+   "kind": "atelier",
+   "titre": "Passer à deux approbateurs",
+   "axe": "Qualité",
+   "question": "Q02",
+   "niveau": "En",
+   "refs": [
+    133,
+    134,
+    135,
+    137,
+    138,
+    140,
+    141
+   ]
+  },
+  {
+   "file": "atelier_140.docx",
+   "num": "140",
+   "kind": "atelier",
+   "titre": "Empêcher l’approbation par les contributeurs de la MR",
+   "axe": "Qualité",
+   "question": "Q02",
+   "niveau": "En",
+   "refs": [
+    137,
+    138,
+    139,
+    141
+   ]
+  },
+  {
+   "file": "atelier_141.docx",
+   "num": "141",
+   "kind": "atelier",
+   "titre": "Finaliser les règles : reset des approbations et verrouillage",
+   "axe": "Qualité",
+   "question": "Q02",
+   "niveau": "Formalisé",
+   "refs": [
+    137,
+    138,
+    139,
+    140
+   ]
+  },
+  {
+   "file": "atelier_142.docx",
+   "num": "142",
+   "kind": "atelier",
+   "titre": "Qu’est-ce qu’une bonne review ? Notre charte",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "Initial",
+   "refs": [
+    123,
+    124,
+    143,
+    144,
+    145,
+    146,
+    147
+   ]
+  },
+  {
+   "file": "atelier_143.docx",
+   "num": "143",
+   "kind": "atelier",
+   "titre": "Pratiquer la review en binôme",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "Initial",
+   "refs": [
+    142,
+    144,
+    145,
+    146,
+    147
+   ]
+  },
+  {
+   "file": "atelier_144.docx",
+   "num": "144",
+   "kind": "atelier",
+   "titre": "Le feedback constructif : questionner plutôt qu’imposer",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "En",
+   "refs": [
+    142,
+    143,
+    145,
+    146,
+    147
+   ]
+  },
+  {
+   "file": "atelier_145.docx",
+   "num": "145",
+   "kind": "atelier",
+   "titre": "Nos meilleures reviews : apprendre de l’existant",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "En",
+   "refs": [
+    142,
+    144,
+    146,
+    147
+   ]
+  },
+  {
+   "file": "atelier_146.docx",
+   "num": "146",
+   "kind": "atelier",
+   "titre": "Au moins un commentaire constructif par review",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "Formalisé",
+   "refs": [
+    142,
+    144,
+    145,
+    147
+   ]
+  },
+  {
+   "file": "atelier_147.docx",
+   "num": "147",
+   "kind": "atelier",
+   "titre": "Le mentorat par la review",
+   "axe": "Qualité",
+   "question": "Q03",
+   "niveau": "Formalisé",
+   "refs": [
+    142,
+    143,
+    144,
+    145,
+    146
+   ]
+  },
+  {
+   "file": "atelier_148.docx",
+   "num": "148",
+   "kind": "atelier",
+   "titre": "Pourquoi découper nos MR ?",
+   "axe": "Qualité",
+   "question": "Q04",
+   "niveau": "Initial",
+   "refs": [
+    135,
+    142,
+    149,
+    150
+   ]
+  },
+  {
+   "file": "atelier_149.docx",
+   "num": "149",
+   "kind": "atelier",
+   "titre": "Le feature slicing : découper avant de coder",
+   "axe": "Qualité",
+   "question": "Q04",
+   "niveau": "Initial",
+   "refs": [
+    105,
+    148,
+    150
+   ]
+  },
+  {
+   "file": "atelier_150.docx",
+   "num": "150",
+   "kind": "atelier",
+   "titre": "Découper une User Story en cours",
+   "axe": "Qualité",
+   "question": "Q04",
+   "niveau": "En",
+   "refs": [
+    148,
+    149
+   ]
+  },
+  {
+   "file": "atelier_151.docx",
+   "num": "151",
+   "kind": "atelier",
+   "titre": "Notre règle de taille : un seuil et des rappels",
+   "axe": "Qualité",
+   "question": "Q04",
+   "niveau": "En",
+   "refs": [
+    82,
+    133,
+    134,
+    149,
+    150,
+    152
+   ]
+  },
+  {
+   "file": "atelier_152.docx",
+   "num": "152",
+   "kind": "atelier",
+   "titre": "Anticiper les patterns de grosses MR",
+   "axe": "Qualité",
+   "question": "Q04",
+   "niveau": "Formalisé",
+   "refs": [
+    148,
+    149,
+    150,
+    151
+   ]
+  },
+  {
+   "file": "quickwin_153.docx",
+   "num": "153",
+   "kind": "quickwin",
+   "titre": "Activer la protection contre les merges sans approbation",
+   "axe": "Qualité",
+   "question": "Q05",
+   "niveau": "Initial",
+   "refs": [
+    138
+   ]
+  },
+  {
+   "file": "atelier_154.docx",
+   "num": "154",
+   "kind": "atelier",
+   "titre": "Nos merges sans review : mesurer le risque",
+   "axe": "Qualité",
+   "question": "Q05",
+   "niveau": "Initial",
+   "refs": [
+    153,
+    156,
+    157
+   ]
+  },
+  {
+   "file": "renvoi_155.docx",
+   "num": "155",
+   "kind": "renvoi",
+   "titre": "« Prevent editing approval rules » : voir Q02-141",
+   "axe": "Qualité",
+   "question": "Q05",
+   "niveau": "En",
+   "refs": [
+    141,
+    154
+   ]
+  },
+  {
+   "file": "atelier_156.docx",
+   "num": "156",
+   "kind": "atelier",
+   "titre": "Audit des exceptions : qui merge sans approbation, et pourquoi ?",
+   "axe": "Qualité",
+   "question": "Q05",
+   "niveau": "En",
+   "refs": [
+    153,
+    154,
+    157
+   ]
+  },
+  {
+   "file": "atelier_157.docx",
+   "num": "157",
+   "kind": "atelier",
+   "titre": "Les code owners : protéger les fichiers critiques",
+   "axe": "Qualité",
+   "question": "Q05",
+   "niveau": "Formalisé",
+   "refs": [
+    153,
+    154,
+    156
+   ]
+  },
+  {
+   "file": "atelier_158.docx",
+   "num": "158",
+   "kind": "atelier",
+   "titre": "Qui sait quoi ? Diagnostic de la connaissance partagée",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "Préalable",
+   "refs": [
+    159,
+    160,
+    161,
+    162,
+    163
+   ]
+  },
+  {
+   "file": "atelier_159.docx",
+   "num": "159",
+   "kind": "atelier",
+   "titre": "Et si untel partait demain ?",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "Initial",
+   "refs": [
+    158,
+    160,
+    161,
+    162,
+    163
+   ]
+  },
+  {
+   "file": "atelier_160.docx",
+   "num": "160",
+   "kind": "atelier",
+   "titre": "Pair programming ciblé : diffuser en faisant",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "Initial",
+   "refs": [
+    158,
+    159,
+    161,
+    162,
+    163
+   ]
+  },
+  {
+   "file": "atelier_161.docx",
+   "num": "161",
+   "kind": "atelier",
+   "titre": "Rotation sur les US : diffuser par l’assignation",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "En",
+   "refs": [
+    158,
+    160,
+    162,
+    163
+   ]
+  },
+  {
+   "file": "atelier_162.docx",
+   "num": "162",
+   "kind": "atelier",
+   "titre": "Documenter ce que seul l’expert sait",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "En",
+   "refs": [
+    158,
+    160,
+    161,
+    163
+   ]
+  },
+  {
+   "file": "atelier_163.docx",
+   "num": "163",
+   "kind": "atelier",
+   "titre": "Le plan de continuité : qui remplace qui",
+   "axe": "Résilience",
+   "question": "R01",
+   "niveau": "Formalisé",
+   "refs": [
+    158,
+    159,
+    160,
+    161,
+    162
+   ]
+  },
+  {
+   "file": "atelier_190 (1).docx",
+   "num": "190",
+   "kind": "atelier",
+   "titre": "Comment on réagit quand ça casse ? Rejouer un incident",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    179,
+    181,
+    182,
+    184,
+    191,
+    192,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_190.docx",
+   "num": "190",
+   "kind": "atelier",
+   "titre": "Comment on réagit quand ça casse ? Rejouer un incident",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    179,
+    181,
+    182,
+    184,
+    191,
+    192,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_191 (1).docx",
+   "num": "191",
+   "kind": "atelier",
+   "titre": "Process d’urgence : 2h pour fix ou revert",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    182,
+    190,
+    192,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_191.docx",
+   "num": "191",
+   "kind": "atelier",
+   "titre": "Process d’urgence : 2h pour fix ou revert",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    182,
+    190,
+    192,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_192 (1).docx",
+   "num": "192",
+   "kind": "atelier",
+   "titre": "Logs lisibles : accélérer le diagnostic",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    190,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_192.docx",
+   "num": "192",
+   "kind": "atelier",
+   "titre": "Logs lisibles : accélérer le diagnostic",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Initial",
+   "refs": [
+    190,
+    193,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_193 (1).docx",
+   "num": "193",
+   "kind": "atelier",
+   "titre": "Le playbook des 5 causes d’échec les plus fréquentes",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "En",
+   "refs": [
+    192,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_193.docx",
+   "num": "193",
+   "kind": "atelier",
+   "titre": "Le playbook des 5 causes d’échec les plus fréquentes",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "En",
+   "refs": [
+    192,
+    194,
+    195
+   ]
+  },
+  {
+   "file": "atelier_194 (1).docx",
+   "num": "194",
+   "kind": "atelier",
+   "titre": "Qui est responsable après 17h ?",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "En",
+   "refs": [
+    191,
+    195
+   ]
+  },
+  {
+   "file": "atelier_194.docx",
+   "num": "194",
+   "kind": "atelier",
+   "titre": "Qui est responsable après 17h ?",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "En",
+   "refs": [
+    191,
+    195
+   ]
+  },
+  {
+   "file": "atelier_195 (1).docx",
+   "num": "195",
+   "kind": "atelier",
+   "titre": "Le revert automatique : retour au vert sans intervention",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Formalisé",
+   "refs": [
+    190,
+    191,
+    192,
+    193,
+    194
+   ]
+  },
+  {
+   "file": "atelier_195.docx",
+   "num": "195",
+   "kind": "atelier",
+   "titre": "Le revert automatique : retour au vert sans intervention",
+   "axe": "Stabilité",
+   "question": "S03",
+   "niveau": "Formalisé",
+   "refs": [
+    190,
+    191,
+    192,
+    193,
+    194
+   ]
+  },
+  {
+   "file": "quickwin_196 (1).docx",
+   "num": "196",
+   "kind": "quickwin",
+   "titre": "Activer « Pipelines must succeed »",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Initial",
+   "refs": [
+    197,
+    198
+   ]
+  },
+  {
+   "file": "quickwin_196.docx",
+   "num": "196",
+   "kind": "quickwin",
+   "titre": "Activer « Pipelines must succeed »",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Initial",
+   "refs": [
+    197,
+    198
+   ]
+  },
+  {
+   "file": "atelier_197 (1).docx",
+   "num": "197",
+   "kind": "atelier",
+   "titre": "Nos séries d’échecs dans le miroir",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Initial",
+   "refs": [
+    196,
+    198,
+    199,
+    200
+   ]
+  },
+  {
+   "file": "atelier_197.docx",
+   "num": "197",
+   "kind": "atelier",
+   "titre": "Nos séries d’échecs dans le miroir",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Initial",
+   "refs": [
+    196,
+    198,
+    199,
+    200
+   ]
+  },
+  {
+   "file": "atelier_198 (1).docx",
+   "num": "198",
+   "kind": "atelier",
+   "titre": "Check pre-merge : refuser le merge si la branche est rouge",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "En",
+   "refs": [
+    196,
+    197,
+    199,
+    200
+   ]
+  },
+  {
+   "file": "atelier_198.docx",
+   "num": "198",
+   "kind": "atelier",
+   "titre": "Check pre-merge : refuser le merge si la branche est rouge",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "En",
+   "refs": [
+    196,
+    197,
+    199,
+    200
+   ]
+  },
+  {
+   "file": "atelier_199 (1).docx",
+   "num": "199",
+   "kind": "atelier",
+   "titre": "Analyser les séries : même cause ou causes différentes ?",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "En",
+   "refs": [
+    191,
+    192,
+    193,
+    196,
+    198,
+    200
+   ]
+  },
+  {
+   "file": "atelier_199.docx",
+   "num": "199",
+   "kind": "atelier",
+   "titre": "Analyser les séries : même cause ou causes différentes ?",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "En",
+   "refs": [
+    191,
+    192,
+    193,
+    196,
+    198,
+    200
+   ]
+  },
+  {
+   "file": "atelier_200 (1).docx",
+   "num": "200",
+   "kind": "atelier",
+   "titre": "Alerte signal faible : intervenir dès une série de 2",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Formalisé",
+   "refs": [
+    181,
+    193,
+    196,
+    197,
+    198,
+    199
+   ]
+  },
+  {
+   "file": "atelier_200.docx",
+   "num": "200",
+   "kind": "atelier",
+   "titre": "Alerte signal faible : intervenir dès une série de 2",
+   "axe": "Stabilité",
+   "question": "S04",
+   "niveau": "Formalisé",
+   "refs": [
+    181,
+    193,
+    196,
+    197,
+    198,
+    199
+   ]
+  },
+  {
+   "file": "checklist_conformite_X_201-205 (1).docx",
+   "num": "201",
+   "kind": "checklist",
+   "titre": "205)",
+   "axe": "Conformité",
+   "question": "",
+   "niveau": "",
+   "refs": [
+    90,
+    92,
+    93,
+    137,
+    138,
+    140,
+    141,
+    202,
+    203,
+    204,
+    205
+   ]
+  },
+  {
+   "file": "checklist_conformite_X_201-205.docx",
+   "num": "201",
+   "kind": "checklist",
+   "titre": "205)",
+   "axe": "Conformité",
+   "question": "",
+   "niveau": "",
+   "refs": [
+    90,
+    92,
+    93,
+    137,
+    138,
+    140,
+    141,
+    202,
+    203,
+    204,
+    205
+   ]
+  },
+  {
+   "file": "ADR-0001-fail-open-cooldown.docx",
+   "num": null,
+   "kind": "guide",
+   "titre": "ADR-0001-fail-open-cooldown",
+   "axe": "",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "dependency-cooldown-guide.docx",
+   "num": null,
+   "kind": "guide",
+   "titre": "dependency-cooldown-guide",
+   "axe": "",
+   "question": "",
+   "niveau": "",
+   "refs": [
+    3,
+    6991
+   ]
+  },
+  {
+   "file": "npm-vs-pnpm.docx",
+   "num": null,
+   "kind": "guide",
+   "titre": "npm-vs-pnpm",
+   "axe": "",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  },
+  {
+   "file": "secret-push-protection-activation.docx",
+   "num": null,
+   "kind": "guide",
+   "titre": "secret-push-protection-activation",
+   "axe": "",
+   "question": "",
+   "niveau": "",
+   "refs": []
+  }
+ ]
+}
