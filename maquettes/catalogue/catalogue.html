@@ -89,7 +89,24 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .act.run{background:linear-gradient(135deg,#2dd4bf,#34d399)}
 .act.copy{background:linear-gradient(135deg,var(--accent),#c4b5fd)}
 .varpill{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+.autopill{font-size:10px;color:var(--info);border:1px solid rgba(96,165,250,.4);background:rgba(96,165,250,.08);border-radius:20px;padding:2px 8px}
 .agentic{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+/* contexte injecté + conventions */
+.ctxbn{border:1px solid rgba(96,165,250,.35);background:rgba(96,165,250,.07);border-radius:12px;padding:11px 14px;margin-top:12px;font-size:12.5px;color:var(--ts);line-height:1.5}
+.ctxbn b{color:var(--tp)}
+.ctxbn .srcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.src{font-size:10.5px;color:var(--info);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:2px 7px;font-family:var(--fm)}
+.varrow.filled input,.varrow.filled textarea{border-color:rgba(96,165,250,.45);background:rgba(96,165,250,.05)}
+.vtag{font-size:10px;color:var(--info);margin-left:7px;font-weight:600}
+.conv{display:flex;gap:6px;flex-wrap:wrap}
+.conv span{font-size:11px;color:var(--deliver);background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.28);border-radius:7px;padding:3px 9px}
+.cmp{margin-top:11px;border-top:1px solid var(--line);padding-top:10px}
+.cmp summary{cursor:pointer;font-size:12px;color:var(--ts);font-weight:700;list-style:none}
+.cmp summary::-webkit-details-marker{display:none}
+.cmp summary::before{content:'▸ ';color:var(--tm)}
+.cmp[open] summary::before{content:'▾ '}
+.rawbox{font-family:var(--fm);font-size:12px;color:var(--tm);background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.22);border-radius:10px;padding:11px 13px;line-height:1.6;white-space:pre-wrap;margin-top:9px}
+.delta{font-size:11.5px;color:var(--warn);margin-top:8px;line-height:1.5}
 
 /* Modal */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(6,4,14,.74);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
@@ -148,7 +165,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- HERO -->
   <div class="hero">
     <h2>Que veux-tu faire ?</h2>
-    <p>Décris ton besoin. On te propose la bonne entrée. Même geste dans les deux cas : tu remplis les variables et tu <b>Lances</b>. Une <span class="rk">🍳 recette</span> lance un <b>workflow</b> (outils, écritures, garde-fous) qui agit sur ton dépôt ; un <span class="pk">📚 prompt</span> lance une <b>génération</b> (tests, explication, commit…) et te rend une réponse — que tu peux copier ou relancer.</p>
+    <p>Décris ton besoin, tu <b>Lances</b>. Une <span class="rk">🍳 recette</span> lance un <b>workflow</b> (outils, écritures, garde-fous) qui agit sur ton dépôt ; un <span class="pk">📚 prompt</span> lance une <b>génération</b> déjà <b>pré-remplie depuis ton contexte</b> (fichier ouvert, pipeline cassé, MR) et à <b>tes conventions maison</b> — donc plus rapide et plus juste qu'un chat nu, pas plus lent.</p>
     <div class="ask">
       <input id="ask" placeholder="ex : générer des tests · préparer la livraison · expliquer ce code…" autocomplete="off">
       <button id="askGo">Trouver →</button>
@@ -195,10 +212,10 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   // ── Données unifiées (kind: recipe | prompt) ──
   var R=[
     // ——— RECETTES (s'exécutent) ———
-    {kind:'recipe', id:'tests-junit', ic:'🧪', title:'Générer des tests unitaires', lvl:'off', owner:'Plateforme', tags:['java','tests'], stack:['java'],
+    {kind:'recipe', id:'tests-junit', ic:'🧪', title:'Générer des tests unitaires', lvl:'off', owner:'Plateforme', tags:['java','tests'], stack:['java'], engine:'gentests',
       usage:340, success:88, humanFix:12, timeSaved:'~25 min', ctx:'Java · JUnit 5 · code non testé', version:'v3', verified:'12 mai 2026',
-      tools:[['Lire le dépôt','read'],['Exécuter la suite de tests','read']], security:['Lecture seule. Aucun secret transmis au modèle.'],
-      expected:'Une classe de tests JUnit couvrant cas nominaux et limites.', criteria:['Les tests compilent','Les tests passent','Couverture > 70 %'], agentic:false},
+      tools:[['Lire le dépôt','read'],['Générer le fichier de test (dry-run)','write'],['Exécuter la suite de tests','read']], security:['Écriture du seul fichier de test, sur ta branche. Dry-run avant création.'],
+      expected:'Une classe de tests JUnit couvrant cas nominaux et limites.', criteria:['Les tests compilent','Les tests passent','Couverture > 70 %'], agentic:true},
     {kind:'recipe', id:'migrate-java21', ic:'🚚', title:'Préparer une migration Spring → Java 21', lvl:'off', owner:'Archi', tags:['java','spring','migration'], stack:['java','spring'],
       usage:56, success:74, humanFix:30, timeSaved:'~2 h', ctx:'Spring Boot · JDK cible 21', version:'v2', verified:'28 avr. 2026',
       tools:[['Lire le dépôt','read'],['Créer une branche + patch (dry-run)','write']], security:['Écriture sur branche dédiée, jamais sur main.','Dry-run + revue humaine avant merge.'],
@@ -219,6 +236,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     // ——— PROMPTS (se copient) ———
     {kind:'prompt', id:'commit', ic:'✍️', title:'Message de commit conventionnel', lvl:'official', owner:'Plateforme', tags:['git'], stack:[], uses:812, timeSaved:'~5 min', fav:false, verified:'20 mai 2026',
       body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
+    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:false, verified:'30 mai 2026', engine:'analyze',
+      body:'Analyse ce code selon les règles de la plateforme (NPE, null retournés, nombres magiques, debug oublié, imbrication, couverture) et remonte les problèmes avec leur ligne.\n\nCode :\n{{code}}'},
     {kind:'prompt', id:'explain', ic:'📖', title:'Explique-moi ce code', lvl:'mine', owner:'marie.d', tags:['debug','apprentissage'], stack:[], uses:57, timeSaved:'~15 min', fav:true, verified:'28 mai 2026',
       body:'Explique ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Pièges / effets de bord non évidents.\n\nCode :\n{{code}}'},
     {kind:'prompt', id:'review', ic:'👀', title:'Revue de code façon senior', lvl:'team', owner:'Tribu Paiements', tags:['revue','git'], stack:[], uses:298, timeSaved:'~20 min', fav:false, verified:'18 mai 2026',
@@ -233,6 +252,30 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       body:'Apprends-moi « {{concept}} » à un niveau {{niveau}}.\n\n1. L\'intuition en une analogie.\n2. Le minimum théorique utile.\n3. Un exemple de code commenté.\n4. Une erreur classique à éviter.\n5. Un mini-exercice.'}
   ];
   var TAGS=['tests','java','git','revue','debug','securite','migration','livraison','sql','produit','apprentissage','react'];
+
+  // ── Ce que la plateforme injecte et que l'utilisateur ne peut PAS taper ──
+  // 1) Contexte courant du poste (fichier ouvert, pipeline cassé, MR courante)
+  var AUTOFILL={
+    code:{val:'public BigDecimal price(Order o) {\n    // TODO: gérer la devise\n    BigDecimal rate = o.getCustomer().getContract().getRate();\n    if (o.getItems().size() > 0) {\n        return rate.multiply(new BigDecimal(42));\n    }\n    return null;\n}', src:'fichier ouvert · PaymentService.java:88'},
+    diff:{val:'+ if (iban == null || !IbanValidator.valid(iban))\n+   throw new BadRequestException("IBAN invalide");', src:'MR !312 · diff courant'},
+    erreur:{val:'java.lang.NullPointerException\n  at InvoiceService.getZip(InvoiceService.java:127)', src:'pipeline #4821 en échec'},
+    stack:{val:'Java 21 · Spring Boot 3.2', src:'stack déclarée du dépôt'},
+    contexte:{val:'au démarrage de l\'app en préproduction', src:'run préprod #4821'}
+  };
+  // 2) Conventions maison embarquées dans le prompt (jamais retapées)
+  var CONV={
+    commit:['Conventional Commits','footer « Refs: PAY-xxx »','impératif · < 72 car.'],
+    review:['Grille interne 🔴/🟡/🟢','ignorer le style (Spotless)','1 test exigé par bug corrigé'],
+    sql:['Index nommés idx_&lt;table&gt;_&lt;cols&gt;','jamais de fonction sur colonne filtrée','EXPLAIN attendu'],
+    debug:['2 pistes : simple → robuste','pointer fichier:ligne'],
+    story:['Tâches ≤ 1 j','critère d\'acceptation vérifiable par tâche']
+  };
+  // 3) Ce qu'un chat nu (sans contexte ni conventions) aurait répondu — pour le contraste
+  var ANSRAW={
+    commit:'Update PaymentService\n\nFixed a bug related to IBAN handling.',
+    review:'Le code a l\'air correct dans l\'ensemble. Tu pourrais ajouter quelques commentaires et vérifier le nommage des variables.',
+    sql:'Tu peux essayer d\'ajouter un index sur created_at pour accélérer la requête, et voir si ça change quelque chose.'
+  };
 
   // réponses IA simulées (maquette) — ce que « Lancer » renverrait pour chaque prompt
   var ANS={
@@ -268,7 +311,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<button class="act run" data-act="'+r.id+'">Lancer →</button></div>';
     } else {
       var vs=vars(r.body);
-      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+'</div>'+
+      var auto=vs.filter(function(v){return AUTOFILL[v];}).length;
+      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+(auto?'<span class="autopill">⚡ '+auto+' pré-rempli'+(auto>1?'s':'')+'</span>':'')+'</div>'+
         '<div class="snippet">'+hl(r.body.replace(/\n+/g,' ').slice(0,140))+'</div>'+
         '<div class="foot">'+LVL_ICON[r.lvl]+' '+esc(r.owner)+' · <b style="color:var(--ts)">'+r.uses+'</b>&nbsp;usages'+
           '<button class="act copy" data-act="'+r.id+'">▶ Lancer</button></div>';
@@ -326,6 +370,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   function runRecipe(r){
     if(r.isDelivery) return runDelivery(r);
+    if(r.engine==='gentests') return runGenTests(r);
     var writes=r.tools.some(function(t){return t[1]==='write';});
     modal(
       '<div class="mh"><span class="ic">'+r.ic+'</span><h3>'+esc(r.title)+'</h3><button class="x" data-close>✕</button></div>'+
@@ -336,6 +381,31 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       '<div class="mbtns"><button class="mbtn run" data-close>'+(writes?'✔ Confirmer':'Terminer')+'</button><button class="mbtn ghost" data-close>Fermer</button>'+
         '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'
     );
+    wireFb();
+  }
+
+  function runGenTests(r){
+    modal(
+      '<div class="mh"><span class="ic">'+r.ic+'</span><div style="flex:1"><h3>Générer des tests unitaires</h3>'+
+        '<div style="font-size:12px;color:var(--deliver);margin-top:2px">⚙️ recette · produit un fichier de test à partir de ton code</div></div><button class="x" data-close>✕</button></div>'+
+      '<div class="ctxbn">⚡ <b>Code injecté depuis ton poste</b> — tu peux l\'ajuster.<div class="srcs"><span class="src">'+esc(AUTOFILL.code.src)+'</span></div></div>'+
+      '<div class="field"><div class="fl">Code source</div><textarea class="promptbox" id="gtCode" style="width:100%;min-height:120px;border:1px solid var(--line2)">'+esc(AUTOFILL.code.val)+'</textarea></div>'+
+      '<div id="gtOut"></div>'+
+      '<div class="mbtns"><button class="mbtn run" id="gtRun">▶ Générer les tests (dry-run)</button><button class="mbtn ghost" data-close>Fermer</button></div>'+
+      '<div class="note">Différence avec un prompt : la recette ne se contente pas de répondre — elle <b>produit un fichier</b> et propose de le <b>créer sur ta branche</b> (après ta confirmation). Rien n\'est écrit sans « ✔ Créer ».</div>'
+    );
+    $('gtRun').addEventListener('click',function(){
+      var code=$('gtCode').value; var g=genTests(code); var out=$('gtOut');
+      if(g.name==='—'){ out.innerHTML='<div class="field" style="border-color:rgba(251,191,36,.35)"><div class="fv" style="color:var(--warn)">Aucune fonction détectée — colle du code avec au moins une méthode.</div></div>'; return; }
+      out.innerHTML='<div class="field" style="border-color:rgba(251,191,36,.35)"><div class="fl" style="color:var(--warn)">Dry-run — fichier proposé, pas encore créé</div>'+
+          '<div class="fv"><b style="font-family:var(--fm)">'+esc(g.name)+'</b> · '+g.count+' méthode'+(g.count>1?'s':'')+' détectée'+(g.count>1?'s':'')+' → 2 tests chacune (nominal + cas limite)</div>'+
+          '<div class="promptbox" style="color:var(--tp);margin-top:9px;max-height:260px;overflow:auto">'+esc(g.text)+'</div>'+
+          '<div class="mbtns" style="margin-top:12px"><button class="mbtn run mini" id="gtConfirm">✔ Créer '+esc(g.name)+' sur ma branche</button><button class="mbtn ghost mini" id="gtCopy">📋 Copier</button></div></div>';
+      $('gtConfirm').addEventListener('click',function(){ toast('✅ '+g.name+' créé sur ta branche (simulation) — la recette a écrit, pas juste répondu'); });
+      $('gtCopy').addEventListener('click',function(){ copy(g.text); toast('📋 Fichier de test copié'); });
+      $('gtOut').scrollIntoView({behavior:'smooth',block:'nearest'});
+      toast('🧪 Tests générés à partir de ton code');
+    });
     wireFb();
   }
 
@@ -356,26 +426,41 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   function promptDetail(r){
     var vs=vars(r.body);
+    var autoVars=vs.filter(function(v){return AUTOFILL[v];});
+    // bandeau « contexte injecté » : sources réellement utilisées par ce prompt
+    var srcs=[]; autoVars.forEach(function(v){ if(srcs.indexOf(AUTOFILL[v].src)===-1) srcs.push(AUTOFILL[v].src); });
+    var ctxBanner=autoVars.length?
+      '<div class="ctxbn">⚡ <b>Contexte injecté depuis ton poste</b> — '+autoVars.length+' variable'+(autoVars.length>1?'s':'')+' déjà remplie'+(autoVars.length>1?'s':'')+', tu n\'as rien à retaper. <span style="color:var(--tm)">(ce qu\'un chat nu ne peut pas savoir)</span>'+
+        '<div class="srcs">'+srcs.map(function(s){return '<span class="src">'+esc(s)+'</span>';}).join('')+'</div></div>':'';
     var varForm=vs.length?
-      '<div class="field"><div class="fl">✏️ Remplir les variables</div><div class="varform" id="vf">'+
-        vs.map(function(v){var big=/code|diff|texte|requete|story|erreur|contexte/i.test(v);return '<div class="varrow"><label>{{'+esc(v)+'}}</label>'+(big?'<textarea rows="3" data-v="'+esc(v)+'"></textarea>':'<input data-v="'+esc(v)+'">')+'</div>';}).join('')+
-      '</div></div>':'';
+      '<div class="field"><div class="fl">✏️ Variables '+(autoVars.length?'<span style="color:var(--info);font-weight:600;text-transform:none;letter-spacing:0">— '+autoVars.length+' pré-remplie'+(autoVars.length>1?'s':'')+' par la plateforme</span>':'')+'</div><div class="varform" id="vf">'+
+        vs.map(function(v){var big=/code|diff|texte|requete|story|erreur|contexte/i.test(v);var af=AUTOFILL[v];var val=af?esc(af.val):'';
+          return '<div class="varrow'+(af?' filled':'')+'"><label>{{'+esc(v)+'}}'+(af?'<span class="vtag">⚡ '+esc(af.src)+'</span>':'')+'</label>'+
+            (big?'<textarea rows="'+(af?'3':'3')+'" data-v="'+esc(v)+'">'+val+'</textarea>':'<input data-v="'+esc(v)+'" value="'+val+'">')+'</div>';}).join('')+
+      '</div><div class="note">Champs bleutés = injectés du contexte. Tu peux les ajuster ; les autres sont à toi (niveau, cible…).</div></div>':'';
+    var convBlock=CONV[r.id]?
+      '<div class="field"><div class="fl">🏷 Conventions maison <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— injectées dans le prompt, jamais retapées</span></div>'+
+        '<div class="conv">'+CONV[r.id].map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>'+
+        '<div class="note">C\'est ça qui rend la sortie « à ta norme » plutôt que générique. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>':'';
     modal(
       '<div class="mh"><span class="ic">'+r.ic+'</span><div style="flex:1"><h3>'+esc(r.title)+'</h3>'+
         '<div style="font-size:12px;color:var(--tm);margin-top:2px"><span class="kindbadge prompt">💬 Prompt</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span> · '+esc(r.owner)+' · maj '+r.verified+' · lance une <b style="color:var(--accent)">génération</b></div></div>'+
         '<button class="x" data-close>✕</button></div>'+
+      ctxBanner+
       varForm+
-      '<div class="field"><div class="fl">📄 Le prompt <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— ce qui sera envoyé à l\'IA</span></div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
+      convBlock+
+      '<div class="field"><div class="fl">📄 Le prompt <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— variables + conventions, prêt à partir</span></div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
       '<div id="promptOut"></div>'+
-      '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+r.uses+'</b> usages'+(r.timeSaved!=='—'?' · temps gagné <b>'+r.timeSaved+'</b>':'')+' · '+vs.length+' variable'+(vs.length>1?'s':'')+'</div></div>'+
       '<div class="mbtns"><button class="mbtn go" id="cf">▶ Lancer le prompt</button><button class="mbtn ghost mini" id="cp">📋 Copier le prompt</button><button class="mbtn ghost mini" data-close>Fermer</button>'+
         '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'+
-      '<div class="note">« Lancer » envoie le prompt rempli à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton propre outil. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>recette</b>.</div>'
+      '<div class="note">« Lancer » envoie le prompt (contexte + conventions) à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton outil — mais tu perds le contexte injecté. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>recette</b>.</div>'
     );
-    function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals)); return vals; }
+    function convSuffix(){ return CONV[r.id]?('\n\n— Conventions maison appliquées : '+CONV[r.id].join(' · ').replace(/&lt;/g,'<').replace(/&gt;/g,'>')):''; }
+    function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals))+(CONV[r.id]?'<span style="color:var(--deliver);opacity:.8">'+esc(convSuffix())+'</span>':''); return vals; }
     $('modal').querySelectorAll('[data-v]').forEach(function(i){ i.addEventListener('input',refresh); });
+    refresh();
     $('cf').addEventListener('click',function(){ runPrompt(r); });
-    $('cp').addEventListener('click',function(){ var vals=vs.length?refresh():{}; copy(fill(r.body,vals)); toast('📋 Prompt copié — colle-le dans ton outil'); });
+    $('cp').addEventListener('click',function(){ var vals=refresh(); copy(fill(r.body,vals)+convSuffix()); toast('📋 Prompt copié (avec conventions)'); });
     wireFb();
   }
 
@@ -384,29 +469,117 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var missing=vars(r.body).filter(function(v){return !vals[v];});
     if(missing.length){ toast('Renseigne : '+missing.map(function(m){return '{{'+m+'}}';}).join(', ')); return; }
     var out=$('promptOut'); r.uses++;
-    out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">▶ Génération en cours…</div><div class="fv" style="color:var(--tm)">L\'IA de la plateforme traite le prompt rempli…</div></div>';
+    var live=r.engine==='analyze';
+    out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">▶ '+(live?'Analyse en cours…':'Génération en cours…')+'</div><div class="fv" style="color:var(--tm)">'+(live?'Application des règles de la plateforme au code…':'L\'IA de la plateforme traite le prompt rempli…')+'</div></div>';
     setTimeout(function(){
-      var ans=ANS[r.id]||'(réponse simulée — maquette)\n\nL\'IA a traité le prompt rempli et te renvoie ici sa réponse, prête à être utilisée ou copiée.';
-      out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">✅ Réponse de l\'IA <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— générée sur la plateforme (simulée)</span></div>'+
-        '<div class="promptbox" style="color:var(--tp)">'+esc(ans)+'</div>'+
+      var bodyHtml, text;
+      if(live){ var a=analyzeCode(vals.code||''); bodyHtml='<div class="promptbox" style="color:var(--tp)">'+a.html+'</div>'; text=a.text; }
+      else {
+        text=ANS[r.id]||'(réponse simulée — maquette)\n\nL\'IA a traité le prompt rempli et te renvoie ici sa réponse.';
+        bodyHtml='<div class="promptbox" style="color:var(--tp)">'+esc(text)+'</div>';
+      }
+      var raw=ANSRAW[r.id];
+      var cmp=raw?'<details class="cmp"><summary>Comparer : ce qu\'un chat nu aurait répondu</summary>'+
+        '<div class="rawbox">'+esc(raw)+'</div>'+
+        '<div class="delta">⚠ Sans le contexte de ton dépôt ni tes conventions : réponse générique, à retravailler. Le catalogue part du bon code et de tes standards → utilisable tel quel.</div></details>':'';
+      out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">✅ '+(live?'Analyse du code':'Réponse de l\'IA')+' <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— '+(live?'calculée en direct sur ton code':'contexte + conventions appliqués (simulée)')+'</span></div>'+
+        bodyHtml+cmp+
         '<div class="mbtns" style="margin-top:12px"><button class="mbtn go mini" id="copyRes">📋 Copier le résultat</button><button class="mbtn ghost mini" id="relaunch">↻ Relancer</button>'+
           '<div class="thumbs"><button class="thumb" data-fb2="up">👍</button><button class="thumb" data-fb2="down">👎</button></div></div></div>';
-      $('copyRes').addEventListener('click',function(){ copy(ans); toast('📋 Résultat copié'); });
+      $('copyRes').addEventListener('click',function(){ copy(text); toast('📋 Résultat copié'); });
       $('relaunch').addEventListener('click',function(){ runPrompt(r); });
       out.querySelectorAll('[data-fb2]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb2==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});});
       out.scrollIntoView({behavior:'smooth',block:'nearest'});
     },520);
-    toast('▶ Prompt lancé');
+    toast(live?'🔍 Analyse lancée':'▶ Prompt lancé');
   }
 
   function wireFb(){ $('modal').querySelectorAll('[data-fb]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});}); }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  MOTEURS RÉELS (maquette qui marche pour de vrai, pas de canned)
+  //  → calculés côté client à partir du code que tu colles.
+  // ═══════════════════════════════════════════════════════════════
+  function detectLang(c){
+    if(/import java|System\.out|@Override|@Test/.test(c)) return 'java';
+    if(/\b(public|private|protected)\b/.test(c) && /;\s*$/m.test(c)) return 'java';
+    if(/\bdef\s+\w+\s*\(|^\s*print\s*\(/m.test(c)) return 'python';
+    if(/\bfunction\b|=>|\b(const|let)\b|console\.log|\bexport\b/.test(c)) return 'js';
+    if(/;\s*$/m.test(c) && /\)\s*\{/.test(c)) return 'java';
+    return 'js';
+  }
+  function extractFns(c,lang){
+    var out=[],m,re;
+    if(lang==='java'){ re=/(?:public|private|protected|static|final|\s)+[\w<>\[\],\s]+?\s+(\w+)\s*\(([^)]*)\)\s*\{/g; }
+    else if(lang==='python'){ re=/def\s+(\w+)\s*\(([^)]*)\)/g; }
+    else { re=/(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(\w+)\s*\(([^)]*)\)\s*\{)/g; }
+    var seen={};
+    while((m=re.exec(c))){ var n=m[1]||m[2]||m[3]; if(n && !seen[n] && !/^(if|for|while|switch|catch|return|function)$/.test(n)){ seen[n]=1; out.push({name:n,args:(m[2]||m[4]||'').trim()}); } }
+    return out;
+  }
+  function analyzeCode(code){
+    code=code||'';
+    var lines=code.split('\n'), lang=detectLang(code);
+    var loc=lines.filter(function(l){return l.trim() && !/^\s*(\/\/|#|\*)/.test(l);}).length;
+    var fns=extractFns(code,lang);
+    var F=[]; // findings {sev,line,msg}
+    lines.forEach(function(l,i){
+      var n=i+1, t=l.trim();
+      if(/\b(TODO|FIXME|XXX)\b/.test(l)) F.push({sev:'y',line:n,msg:'Marqueur '+(l.match(/TODO|FIXME|XXX/)[0])+' laissé dans le code'});
+      if(/console\.log|System\.out\.print|\bprint\s*\(/.test(l)) F.push({sev:'y',line:n,msg:'Trace de debug à retirer'});
+      if(/\.\w+\(\)\.\w+\(\)\.\w+\(/.test(l)) F.push({sev:'r',line:n,msg:'Chaîne d\'appels — risque de NullPointerException (loi de Déméter)'});
+      if(/\breturn\s+null\s*;?\s*$/.test(l)) F.push({sev:'y',line:n,msg:'Retourne null — préférer Optional/exception'});
+      if(/catch\s*\([^)]*\)\s*\{\s*$/.test(l) && (lines[i+1]||'').trim()==='}' ) F.push({sev:'r',line:n,msg:'Bloc catch vide — erreur avalée'});
+      if(/[^=!<>]==[^=]/.test(l) && lang==='js') F.push({sev:'y',line:n,msg:'Égalité faible == — préférer ==='});
+      if(/\bnew\s+\w*\(?\s*\d{2,}\b|\*\s*\d{2,}\b|\bmultiply\(new \w+\(\d+/.test(l)) F.push({sev:'y',line:n,msg:'Nombre magique — extraire une constante nommée'});
+      if(l.length>120) F.push({sev:'g',line:n,msg:'Ligne longue ('+l.length+' car.)'});
+    });
+    var depth=0,maxd=0; for(var i=0;i<code.length;i++){ if(code[i]==='{'){depth++;maxd=Math.max(maxd,depth);} else if(code[i]==='}')depth--; }
+    if(maxd>=4) F.push({sev:'y',line:0,msg:'Imbrication profonde ('+maxd+' niveaux) — extraire des méthodes'});
+    if(fns.length && !/@Test|\btest\w*\(|it\(|describe\(|def test_/.test(code)) F.push({sev:'g',line:0,msg:'Aucun test détecté pour '+fns.length+' fonction'+(fns.length>1?'s':'')});
+    var r=F.filter(function(x){return x.sev==='r';}).length, y=F.filter(function(x){return x.sev==='y';}).length, g=F.filter(function(x){return x.sev==='g';}).length;
+    var score=Math.max(0,100-r*20-y*8-g*3);
+    var SEV={r:['🔴','var(--err)'],y:['🟡','var(--warn)'],g:['🟢','var(--ok)']};
+    var html='<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap">'+
+      '<div style="font-family:var(--fd);font-size:26px;font-weight:800;color:'+(score>=80?'var(--ok)':score>=55?'var(--warn)':'var(--err)')+'">'+score+'<span style="font-size:14px;color:var(--tm)">/100</span></div>'+
+      '<div style="font-size:12px;color:var(--ts)">'+lang.toUpperCase()+' · '+loc+' LOC · '+fns.length+' fonction'+(fns.length>1?'s':'')+' · <span style="color:var(--err)">'+r+' 🔴</span> <span style="color:var(--warn)">'+y+' 🟡</span> <span style="color:var(--ok)">'+g+' 🟢</span></div></div>';
+    if(!code.trim()) html='<div style="color:var(--tm)">Colle du code dans {{code}} pour lancer l\'analyse.</div>';
+    else if(!F.length) html+='<div style="color:var(--ok)">✅ Aucun problème détecté par les règles de la plateforme.</div>';
+    else html+=F.sort(function(a,b){return ('ryg'.indexOf(a.sev))-('ryg'.indexOf(b.sev));}).map(function(f){
+      return '<div style="display:flex;gap:9px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px"><span>'+SEV[f.sev][0]+'</span>'+
+        (f.line?'<span style="font-family:var(--fm);color:var(--tm);min-width:34px">L'+f.line+'</span>':'<span style="min-width:34px"></span>')+
+        '<span style="color:var(--ts)">'+esc(f.msg)+'</span></div>';
+    }).join('');
+    var text='Analyse ('+lang+') — score '+score+'/100 · '+loc+' LOC · '+fns.length+' fonctions\n'+
+      F.map(function(f){return (f.sev==='r'?'[BLOQUANT]':f.sev==='y'?'[ATTENTION]':'[INFO]')+(f.line?' L'+f.line:'')+' — '+f.msg;}).join('\n');
+    return {html:html, text:text};
+  }
+  function genTests(code){
+    code=code||''; var lang=detectLang(code), fns=extractFns(code,lang);
+    if(!fns.length) return {text:'// Aucune fonction détectée dans le code fourni.', name:'—', lang:lang};
+    var cls=(code.match(/class\s+(\w+)/)||[])[1] || 'Unit';
+    var out,name;
+    if(lang==='java'){
+      name=cls+'Test.java';
+      out='import org.junit.jupiter.api.Test;\nimport static org.assertj.core.api.Assertions.*;\n\nclass '+cls+'Test {\n\n'+
+        fns.map(function(f){return '    @Test\n    void '+f.name+'_nominal() {\n        // given\n        // when\n        var result = '+/*  */ 'subject.'+f.name+'(/* '+f.args+' */);\n        // then\n        assertThat(result).isNotNull();\n    }\n\n    @Test\n    void '+f.name+'_casLimite() {\n        // TODO: entrée invalide / limite\n        assertThatThrownBy(() -> subject.'+f.name+'(/* … */)).isInstanceOf(IllegalArgumentException.class);\n    }';}).join('\n\n')+'\n}';
+    } else if(lang==='python'){
+      name='test_'+(cls.toLowerCase())+'.py';
+      out='import pytest\n\n'+fns.map(function(f){return 'def test_'+f.name+'_nominal():\n    # given / when\n    result = '+f.name+'(  )  # '+f.args+'\n    # then\n    assert result is not None\n\n\ndef test_'+f.name+'_cas_limite():\n    with pytest.raises(ValueError):\n        '+f.name+'(  )';}).join('\n\n\n');
+    } else {
+      name=cls.toLowerCase()+'.test.js';
+      out='import { describe, it, expect } from \'vitest\';\n\ndescribe(\''+cls+'\', () => {\n'+
+        fns.map(function(f){return '  it(\''+f.name+' — cas nominal\', () => {\n    const result = '+f.name+'(/* '+f.args+' */);\n    expect(result).toBeDefined();\n  });\n\n  it(\''+f.name+' — cas limite\', () => {\n    expect(() => '+f.name+'(/* … */)).toThrow();\n  });';}).join('\n\n')+'\n});';
+    }
+    return {text:out, name:name, lang:lang, count:fns.length};
+  }
+
   // ── Que veux-tu faire (intent → recette OU prompt) ──
-  var EXAMPLES=['générer des tests','préparer la livraison','analyser une vulnérabilité','expliquer ce code','message de commit','optimiser une requête SQL'];
+  var EXAMPLES=['analyser du code','générer des tests','préparer la livraison','expliquer ce code','message de commit','optimiser une requête SQL'];
   function renderChips(){ $('chips').innerHTML=EXAMPLES.map(function(e){return '<span class="chip" data-ex="'+e+'">'+e+'</span>';}).join(''); $('chips').querySelectorAll('[data-ex]').forEach(function(el){el.addEventListener('click',function(){$('ask').value=el.dataset.ex; doAsk();});}); }
   function match(q){
     q=q.toLowerCase();
-    var kw=[['migr','migrate-java21'],['java 21','migrate-java21'],['livrai','prep-delivery'],['préprod','prep-delivery'],['deploy','prep-delivery'],['vulnér','analyze-vuln'],['vuln','analyze-vuln'],['secur','analyze-vuln'],['test react','react-tests'],['react','react-tests'],['test','tests-junit'],['commit','commit'],['message','commit'],['revue','review'],['review','review'],['stack','debug'],['trace','debug'],['erreur','debug'],['explique','explain'],['comprendre ce code','explain'],['story','story'],['découpe','story'],['sql','sql'],['requête','sql'],['apprendre','learn'],['concept','learn']];
+    var kw=[['migr','migrate-java21'],['java 21','migrate-java21'],['livrai','prep-delivery'],['préprod','prep-delivery'],['deploy','prep-delivery'],['vulnér','analyze-vuln'],['vuln','analyze-vuln'],['secur','analyze-vuln'],['test react','react-tests'],['react','react-tests'],['test','tests-junit'],['analyse du code','analyze-code'],['analyser du code','analyze-code'],['analyse de code','analyze-code'],['analyser le code','analyze-code'],['revue','analyze-code'],['review','review'],['commit','commit'],['message','commit'],['stack','debug'],['trace','debug'],['erreur','debug'],['explique','explain'],['comprendre ce code','explain'],['story','story'],['découpe','story'],['sql','sql'],['requête','sql'],['apprendre','learn'],['concept','learn']];
     for(var i=0;i<kw.length;i++){ if(q.indexOf(kw[i][0])!==-1){ return R.find(function(r){return r.id===kw[i][1];}); } }
     return null;
   }
