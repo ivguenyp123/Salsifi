@@ -129,8 +129,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
   </header>
 
   <div class="nav">
-    <a href="../recipes/recipes.html">🍳 Recettes</a>
-    <a href="../prompts/prompts.html">📚 Bibliothèque</a>
+    <a href="../catalogue/catalogue.html">🧰 Catalogue</a>
     <a href="#" class="on">🛠️ Studio</a>
     <a href="../metrics/metrics.html">📊 Métriques</a>
   </div>
@@ -198,6 +197,13 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
       criteria:['Comportement inchangé (tests verts)','Complexité réduite'],
       metrics:{uses:130,success:70,humanFix:35,saved:'~45 min'},
       versions:[[1,'30 avr. 2026','brouillon initial']]},
+    {id:'regex-sql', kind:'prompt', ic:'🔤', title:'Générer une regex / une requête SQL', status:'review', version:1, owner:'—', updated:'25 mai 2026',
+      spec:'À partir d\'une description en langage naturel, produis une expression régulière ({{saveur}}) OU une requête SQL ({{sgbd}}).\n\nDonne la sortie, une explication token par token, et un cas limite à tester avant usage.\n\nBesoin :\n{{besoin}}',
+      tools:[['Aucun (génération de texte)','read']],
+      security:['Expérimental — sortie à vérifier avant tout usage en production.'],
+      criteria:['Testée sur au moins un exemple par l\'utilisateur','Explication fournie'],
+      metrics:{uses:45,success:60,humanFix:40,saved:'~10 min'},
+      versions:[[1,'25 mai 2026','brouillon expérimental — réussite faible, à retravailler']]},
     {id:'oncall-summary', kind:'prompt', ic:'🌙', title:'Résumer un incident d\'astreinte', status:'draft', version:1, owner:'marie.d', updated:'aujourd\'hui',
       spec:'À partir des logs et de la timeline, rédige un post-mortem court : impact, cause racine probable, actions correctives. Ton factuel, pas de blâme.\n\nÉléments :\n{{timeline}}',
       tools:[['Aucun (génération de texte)','read']],
@@ -337,6 +343,11 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
   $('statusSeg').querySelectorAll('[data-st]').forEach(function(b){ b.addEventListener('click',function(){ fStatus=b.dataset.st; $('statusSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderList(); }); });
   $('newBtn').addEventListener('click',newAsset);
   renderList();
+
+  // deep-link : #<id> ouvre directement l'éditeur (ex. depuis Métriques → « Ouvrir dans le Studio »)
+  function openFromHash(){ var h=(location.hash||'').replace('#',''); if(h && A.find(function(x){return x.id===h;})) openEditor(h); }
+  window.addEventListener('hashchange',openFromHash);
+  openFromHash();
 })();
 </script>
 </body>
