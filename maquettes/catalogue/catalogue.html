@@ -148,7 +148,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- HERO -->
   <div class="hero">
     <h2>Que veux-tu faire ?</h2>
-    <p>Décris ton besoin. On te propose la bonne entrée — une <span class="rk">🍳 recette</span> qui <b>s'exécute</b> (avec outils &amp; garde-fous) ou un <span class="pk">📚 prompt</span> que tu <b>copies</b> dans ton outil. Même geste : tu remplis les variables ; ensuite c'est <b>Lancer</b> ou <b>Copier</b> selon la nature.</p>
+    <p>Décris ton besoin. On te propose la bonne entrée. Même geste dans les deux cas : tu remplis les variables et tu <b>Lances</b>. Une <span class="rk">🍳 recette</span> lance un <b>workflow</b> (outils, écritures, garde-fous) qui agit sur ton dépôt ; un <span class="pk">📚 prompt</span> lance une <b>génération</b> (tests, explication, commit…) et te rend une réponse — que tu peux copier ou relancer.</p>
     <div class="ask">
       <input id="ask" placeholder="ex : générer des tests · préparer la livraison · expliquer ce code…" autocomplete="off">
       <button id="askGo">Trouver →</button>
@@ -161,8 +161,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="toolbar">
     <div class="kindseg" id="kindSeg">
       <button data-k="" class="on">Tout</button>
-      <button data-k="recipe">🍳 Recettes · exécuter</button>
-      <button data-k="prompt">📚 Prompts · copier</button>
+      <button data-k="recipe">🍳 Recettes · agir</button>
+      <button data-k="prompt">📚 Prompts · générer</button>
     </div>
     <div class="tagbar" id="tagbar"></div>
     <div class="filts">
@@ -234,6 +234,17 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   ];
   var TAGS=['tests','java','git','revue','debug','securite','migration','livraison','sql','produit','apprentissage','react'];
 
+  // réponses IA simulées (maquette) — ce que « Lancer » renverrait pour chaque prompt
+  var ANS={
+    commit:'feat(payments): valider l\'IBAN avant l\'appel au PSP\n\nLes IBAN mal formés provoquaient un 500 côté PSP. On valide désormais le\nformat (mod 97) en amont et on renvoie un 422 explicite.\n\n- ajout IbanValidator + tests\n- message d\'erreur i18n\n\nBREAKING CHANGE: le endpoint /pay refuse maintenant un IBAN invalide (422).',
+    explain:'1. En une phrase : la fonction additionne deux entiers et renvoie le résultat.\n2. Étapes : elle reçoit a et b, calcule a+b, retourne la valeur — aucun état modifié.\n3. Piège : pas de gestion du dépassement (int overflow) si a+b dépasse la borne max.',
+    review:'🔴 PaymentService:42 — l\'appel réseau n\'a pas de timeout : un PSP lent bloque le thread. Ajoute un timeout + retry borné.\n🟡 RefundMapper:88 — logique dupliquée avec OrderMapper ; à extraire.\n🟢 Nommage `tmp2` peu parlant, renommer en `pspResponse`.',
+    debug:'Cause probable : NullPointerException car `customer.getAddress()` est null pour les comptes créés avant la v2.\nLigne suspecte : InvoiceService.java:127 — `address.getZip()`.\nCorrections : (1) garde `if (address != null)` ; (2) plus robuste : rendre l\'adresse obligatoire à la création + migration des comptes existants.',
+    story:'1. [S] Endpoint POST /refunds (validation montant ≤ paiement).\n2. [M] Intégration PSP refund + gestion des erreurs asynchrones.\n3. [S] Écran « Demander un remboursement » + états.\n4. [M] Webhook de confirmation + idempotence.\nDépendance : 4 dépend de 2. Incertitude : politique de remboursement partiel à confirmer avec le produit.',
+    sql:'Le coût vient d\'un full scan sur `orders(customer_id, created_at)`.\n\n-- index composite couvrant le filtre + le tri\nCREATE INDEX idx_orders_cust_date ON orders (customer_id, created_at DESC);\n\nRéécris ensuite sans fonction sur la colonne indexée (évite WHERE date(created_at)=…). Résultat identique, ~40× plus rapide sur 2M lignes.',
+    learn:'Intuition : un index, c\'est la table des matières d\'un livre — tu vas direct à la page au lieu de tout feuilleter.\nMinimum utile : structure B-tree, tri, sélectivité.\nExemple : CREATE INDEX … puis EXPLAIN pour voir le scan disparaître.\nErreur classique : indexer une colonne à faible sélectivité (ex. booléen) — inutile.\nExercice : sur quelle colonne indexerais-tu une table users(email, is_active) pour un login ?'
+  };
+
   var fKind='', fTag='', ctxOnly=true, favOnly=false;
 
   function compatible(r){ if(r.kind==='prompt') return true; return r.stack.some(function(s){return CTX.stack.indexOf(s)!==-1;}); }
@@ -260,7 +271,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+'</div>'+
         '<div class="snippet">'+hl(r.body.replace(/\n+/g,' ').slice(0,140))+'</div>'+
         '<div class="foot">'+LVL_ICON[r.lvl]+' '+esc(r.owner)+' · <b style="color:var(--ts)">'+r.uses+'</b>&nbsp;usages'+
-          '<button class="act copy" data-act="'+r.id+'">📋 Copier</button></div>';
+          '<button class="act copy" data-act="'+r.id+'">▶ Lancer</button></div>';
     }
     return '<div class="card '+r.kind+'" data-id="'+r.id+'">'+
       '<div class="top"><span class="ic">'+r.ic+'</span><div class="ti">'+esc(r.title)+'</div>'+badge+lvlb+'</div>'+body+'</div>';
@@ -283,9 +294,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     $('tagbar').querySelectorAll('[data-tag]').forEach(function(el){ el.addEventListener('click',function(){ fTag=fTag===el.dataset.tag?'':el.dataset.tag; renderTags(); renderGrid(); }); });
   }
 
-  // action primaire : Lancer (recette) ou Copier (prompt)
-  function primary(id){ var r=R.find(function(x){return x.id===id;}); if(!r) return; if(r.kind==='recipe') runRecipe(r); else quickCopy(r); }
-  function quickCopy(r){ var vs=vars(r.body); if(vs.length){ openDetail(r.id); toast('Remplis les variables puis copie ⤵'); return; } copy(r.body); r.uses++; renderGrid(); toast('📋 Prompt copié'); }
+  // action primaire : tout se lance. Recette -> workflow ; prompt -> génération.
+  function primary(id){ var r=R.find(function(x){return x.id===id;}); if(!r) return; if(r.kind==='recipe') runRecipe(r); else quickLaunch(r); }
+  function quickLaunch(r){ var vs=vars(r.body); if(vs.length){ openDetail(r.id); toast('Remplis les variables puis lance ⤵'); return; } promptDetail(r, true); }
 
   // ── Fiche (kind-aware) ──
   function openDetail(id){
@@ -348,22 +359,44 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var varForm=vs.length?
       '<div class="field"><div class="fl">✏️ Remplir les variables</div><div class="varform" id="vf">'+
         vs.map(function(v){var big=/code|diff|texte|requete|story|erreur|contexte/i.test(v);return '<div class="varrow"><label>{{'+esc(v)+'}}</label>'+(big?'<textarea rows="3" data-v="'+esc(v)+'"></textarea>':'<input data-v="'+esc(v)+'">')+'</div>';}).join('')+
-      '</div><div class="note">Les variables vides restent en <span style="color:var(--deliver);font-family:var(--fm)">{{…}}</span> dans le texte copié.</div></div>':'';
+      '</div></div>':'';
     modal(
       '<div class="mh"><span class="ic">'+r.ic+'</span><div style="flex:1"><h3>'+esc(r.title)+'</h3>'+
-        '<div style="font-size:12px;color:var(--tm);margin-top:2px"><span class="kindbadge prompt">💬 Prompt</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span> · '+esc(r.owner)+' · maj '+r.verified+'</div></div>'+
+        '<div style="font-size:12px;color:var(--tm);margin-top:2px"><span class="kindbadge prompt">💬 Prompt</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span> · '+esc(r.owner)+' · maj '+r.verified+' · lance une <b style="color:var(--accent)">génération</b></div></div>'+
         '<button class="x" data-close>✕</button></div>'+
-      '<div class="field"><div class="fl">📄 Le prompt</div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
       varForm+
+      '<div class="field"><div class="fl">📄 Le prompt <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— ce qui sera envoyé à l\'IA</span></div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
+      '<div id="promptOut"></div>'+
       '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+r.uses+'</b> usages'+(r.timeSaved!=='—'?' · temps gagné <b>'+r.timeSaved+'</b>':'')+' · '+vs.length+' variable'+(vs.length>1?'s':'')+'</div></div>'+
-      '<div class="mbtns"><button class="mbtn go" id="cf">📋 '+(vs.length?'Copier le prompt rempli':'Copier le prompt')+'</button><button class="mbtn ghost" data-close>Fermer</button>'+
+      '<div class="mbtns"><button class="mbtn go" id="cf">▶ Lancer le prompt</button><button class="mbtn ghost mini" id="cp">📋 Copier le prompt</button><button class="mbtn ghost mini" data-close>Fermer</button>'+
         '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'+
-      '<div class="note">Un prompt se copie dans ton outil (Claude, Copilot…) — il ne s\'exécute pas ici. Pour une action qui touche le dépôt, c\'est une <b>recette</b>.</div>'
+      '<div class="note">« Lancer » envoie le prompt rempli à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton propre outil. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>recette</b>.</div>'
     );
     function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals)); return vals; }
     $('modal').querySelectorAll('[data-v]').forEach(function(i){ i.addEventListener('input',refresh); });
-    $('cf').addEventListener('click',function(){ var vals=vs.length?refresh():{}; copy(fill(r.body,vals)); r.uses++; toast('📋 Copié — colle-le dans ton outil'); });
+    $('cf').addEventListener('click',function(){ runPrompt(r); });
+    $('cp').addEventListener('click',function(){ var vals=vs.length?refresh():{}; copy(fill(r.body,vals)); toast('📋 Prompt copié — colle-le dans ton outil'); });
     wireFb();
+  }
+
+  function runPrompt(r){
+    var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;});
+    var missing=vars(r.body).filter(function(v){return !vals[v];});
+    if(missing.length){ toast('Renseigne : '+missing.map(function(m){return '{{'+m+'}}';}).join(', ')); return; }
+    var out=$('promptOut'); r.uses++;
+    out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">▶ Génération en cours…</div><div class="fv" style="color:var(--tm)">L\'IA de la plateforme traite le prompt rempli…</div></div>';
+    setTimeout(function(){
+      var ans=ANS[r.id]||'(réponse simulée — maquette)\n\nL\'IA a traité le prompt rempli et te renvoie ici sa réponse, prête à être utilisée ou copiée.';
+      out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">✅ Réponse de l\'IA <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— générée sur la plateforme (simulée)</span></div>'+
+        '<div class="promptbox" style="color:var(--tp)">'+esc(ans)+'</div>'+
+        '<div class="mbtns" style="margin-top:12px"><button class="mbtn go mini" id="copyRes">📋 Copier le résultat</button><button class="mbtn ghost mini" id="relaunch">↻ Relancer</button>'+
+          '<div class="thumbs"><button class="thumb" data-fb2="up">👍</button><button class="thumb" data-fb2="down">👎</button></div></div></div>';
+      $('copyRes').addEventListener('click',function(){ copy(ans); toast('📋 Résultat copié'); });
+      $('relaunch').addEventListener('click',function(){ runPrompt(r); });
+      out.querySelectorAll('[data-fb2]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb2==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});});
+      out.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },520);
+    toast('▶ Prompt lancé');
   }
 
   function wireFb(){ $('modal').querySelectorAll('[data-fb]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});}); }
@@ -383,12 +416,12 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     if(!r){ $('intentResult').innerHTML='<div class="field" style="border-style:dashed"><div class="fv">Aucune entrée <b>validée</b> pour « '+esc(q)+' ».<br><span style="color:var(--tm)">Tu peux en brouillonner une dans le Studio.</span></div></div>'; return; }
     var isRec=r.kind==='recipe';
     $('intentResult').innerHTML=
-      '<div class="field" style="border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'"><div class="fl" style="color:'+(isRec?'var(--deliver)':'var(--accent)')+'">'+(isRec?'🍳 Recette trouvée — elle s\'exécute':'📚 Prompt trouvé — tu le copies')+'</div>'+
+      '<div class="field" style="border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'"><div class="fl" style="color:'+(isRec?'var(--deliver)':'var(--accent)')+'">'+(isRec?'🍳 Recette trouvée — lance un workflow':'📚 Prompt trouvé — lance une génération')+'</div>'+
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
         '<span style="font-size:22px">'+r.ic+'</span>'+
         '<div style="flex:1;min-width:180px"><div style="font-family:var(--fd);font-weight:800;font-size:15px">'+esc(r.title)+'</div>'+
           '<div style="font-size:12px;color:var(--ts);margin-top:2px"><span class="kindbadge '+r.kind+'">'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span></div></div>'+
-        '<button class="act '+(isRec?'run':'copy')+'" data-act="'+r.id+'" style="padding:9px 15px">'+(isRec?'Lancer →':'📋 Copier')+'</button>'+
+        '<button class="act '+(isRec?'run':'copy')+'" data-act="'+r.id+'" style="padding:9px 15px">'+(isRec?'Lancer →':'▶ Lancer')+'</button>'+
         '<button class="mbtn ghost mini" data-open="'+r.id+'">Voir la fiche</button>'+
       '</div></div>';
     $('intentResult').querySelectorAll('[data-act]').forEach(function(b){b.addEventListener('click',function(){primary(b.dataset.act);});});
