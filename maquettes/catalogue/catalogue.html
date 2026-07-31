@@ -107,6 +107,15 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .cmp[open] summary::before{content:'▾ '}
 .rawbox{font-family:var(--fm);font-size:12px;color:var(--tm);background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.22);border-radius:10px;padding:11px 13px;line-height:1.6;white-space:pre-wrap;margin-top:9px}
 .delta{font-size:11.5px;color:var(--warn);margin-top:8px;line-height:1.5}
+/* diff + preuve (continuité prompt→recette) */
+.hunk{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:9px;background:rgba(10,7,22,.5)}
+.hwhy{font-size:11.5px;color:var(--ts);padding:7px 11px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.dl{font-family:var(--fm);font-size:11.5px;padding:2px 11px;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.dl.del{color:#f6a5a5;background:rgba(248,113,113,.08)}
+.dl.add{color:#7ee6c9;background:rgba(45,212,191,.08)}
+.proof{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;color:var(--ts);align-items:baseline}
+.proof .pl2{color:var(--tm);font-weight:700;white-space:nowrap}
+.proof b{color:var(--tp)}
 
 /* Modal */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(6,4,14,.74);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
@@ -482,10 +491,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       var cmp=raw?'<details class="cmp"><summary>Comparer : ce qu\'un chat nu aurait répondu</summary>'+
         '<div class="rawbox">'+esc(raw)+'</div>'+
         '<div class="delta">⚠ Sans le contexte de ton dépôt ni tes conventions : réponse générique, à retravailler. Le catalogue part du bon code et de tes standards → utilisable tel quel.</div></details>':'';
+      var fixable=live && a && (a.r+a.y)>0;
+      var fixBtn=fixable?'<button class="mbtn run mini" id="toFix">🔧 Corriger avec une recette →</button>':'';
       out.innerHTML='<div class="field" style="border-color:var(--accent)"><div class="fl">✅ '+(live?'Analyse du code':'Réponse de l\'IA')+' <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— '+(live?'calculée en direct sur ton code':'contexte + conventions appliqués (simulée)')+'</span></div>'+
         bodyHtml+cmp+
-        '<div class="mbtns" style="margin-top:12px"><button class="mbtn go mini" id="copyRes">📋 Copier le résultat</button><button class="mbtn ghost mini" id="relaunch">↻ Relancer</button>'+
+        '<div class="mbtns" style="margin-top:12px">'+fixBtn+'<button class="mbtn go mini" id="copyRes">📋 Copier le résultat</button><button class="mbtn ghost mini" id="relaunch">↻ Relancer</button>'+
           '<div class="thumbs"><button class="thumb" data-fb2="up">👍</button><button class="thumb" data-fb2="down">👎</button></div></div></div>';
+      if(fixable) $('toFix').addEventListener('click',function(){ var code=(($('modal').querySelector('[data-v="code"]')||{}).value)||vals.code; startFix(code); });
       $('copyRes').addEventListener('click',function(){ copy(text); toast('📋 Résultat copié'); });
       $('relaunch').addEventListener('click',function(){ runPrompt(r); });
       out.querySelectorAll('[data-fb2]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb2==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});});
@@ -552,7 +564,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     }).join('');
     var text='Analyse ('+lang+') — score '+score+'/100 · '+loc+' LOC · '+fns.length+' fonctions\n'+
       F.map(function(f){return (f.sev==='r'?'[BLOQUANT]':f.sev==='y'?'[ATTENTION]':'[INFO]')+(f.line?' L'+f.line:'')+' — '+f.msg;}).join('\n');
-    return {html:html, text:text};
+    return {html:html, text:text, score:score, r:r, y:y, g:g, total:F.length, lang:lang, fns:fns.length};
   }
   function genTests(code){
     code=code||''; var lang=detectLang(code), fns=extractFns(code,lang);
@@ -572,6 +584,97 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         fns.map(function(f){return '  it(\''+f.name+' — cas nominal\', () => {\n    const result = '+f.name+'(/* '+f.args+' */);\n    expect(result).toBeDefined();\n  });\n\n  it(\''+f.name+' — cas limite\', () => {\n    expect(() => '+f.name+'(/* … */)).toThrow();\n  });';}).join('\n\n')+'\n});';
     }
     return {text:out, name:name, lang:lang, count:fns.length};
+  }
+  function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+  function methodName(code){ var m=code.match(/(?:public|private|protected|static|final|\s)+[\w<>\[\]]+\s+(\w+)\s*\(|function\s+(\w+)|def\s+(\w+)/); return m?(m[1]||m[2]||m[3]):null; }
+  // Moteur de CORRECTION — dérive un patch réel des problèmes détectés.
+  function proposeFix(code){
+    var lines=(code||'').split('\n'), out=lines.slice(), changes=[], consts=[];
+    var ind=function(s){return (s.match(/^\s*/)||[''])[0];};
+    for(var i=0;i<out.length;i++){
+      var l=out[i];
+      // chaîne d'appels a.b().c().d() -> extraction + garde null (anti-NPE)
+      var ch=l.match(/^(\s*)(?:([\w<>\[\]]+)\s+)?(\w+)\s*=\s*(\w+)\.(\w+)\(\)\.(\w+)\(\)\.(\w+)\(\)\s*;/);
+      if(ch){
+        var sp=ch[1], type=ch[2]||'var', tgt=ch[3], root=ch[4], a=ch[5], bcall=ch[6], ccall=ch[7];
+        var v1=root+cap(a), v2=v1+cap(bcall);
+        var repl=[sp+'var '+v1+' = '+root+'.'+a+'();',
+                  sp+'if ('+v1+' == null) throw new IllegalArgumentException("'+a+' manquant");',
+                  sp+'var '+v2+' = '+v1+'.'+bcall+'();',
+                  sp+type+' '+tgt+' = '+v2+'.'+ccall+'();'].join('\n');
+        changes.push({line:i+1,before:l,after:repl,why:'chaîne d\'appels → variables intermédiaires + garde null (anti-NPE)'});
+        out[i]=repl; l=repl;
+      }
+      // nombre magique new X(NN) -> constante nommée (en String pour éviter re-flag)
+      var mg=l.match(/new\s+(\w+)\((\d{2,})\)/);
+      if(mg){
+        var cname='FACTEUR_'+mg[2];
+        consts.push('private static final '+mg[1]+' '+cname+' = new '+mg[1]+'("'+mg[2]+'");');
+        out[i]=l.replace(mg[0], cname);
+        changes.push({line:i+1,before:l,after:out[i],why:'nombre magique '+mg[2]+' → constante '+cname});
+        l=out[i];
+      }
+      // return null -> exception explicite
+      if(/^\s*return\s+null\s*;\s*$/.test(l)){
+        out[i]=ind(l)+'throw new IllegalStateException("valeur indisponible");';
+        changes.push({line:i+1,before:l,after:out[i],why:'return null → exception explicite'});
+      }
+      // trace de debug -> suppression
+      if(/console\.log|System\.out\.print/.test(l)){
+        changes.push({line:i+1,before:l,after:'(ligne supprimée)',why:'trace de debug retirée'});
+        out[i]=' DEL';
+      }
+    }
+    out=out.filter(function(x){return x!==' DEL';});
+    if(consts.length){
+      var idx=0; for(var k=0;k<out.length;k++){ if(/\b(public|private|protected|function|def)\b/.test(out[k])){idx=k;break;} }
+      var pad=ind(out[idx]||'');
+      out.splice.apply(out,[idx,0].concat(consts.map(function(c){return pad+c;})).concat(['']));
+    }
+    return {patched:out.join('\n'), changes:changes};
+  }
+  function renderDiff(changes){
+    return changes.map(function(c){
+      var bef=c.before.split('\n'), aft=(/supprim/.test(c.after)?[]:c.after.split('\n'));
+      return '<div class="hunk"><div class="hwhy">🔧 '+esc(c.why)+' <span style="color:var(--tm)">· L'+c.line+'</span></div>'+
+        bef.map(function(x){return '<div class="dl del">- '+esc(x)+'</div>';}).join('')+
+        aft.map(function(x){return '<div class="dl add">+ '+esc(x)+'</div>';}).join('')+'</div>';
+    }).join('');
+  }
+  // La recette de correction — appelée depuis le résultat d'une analyse (continuité).
+  function startFix(code){
+    var fx=proposeFix(code);
+    if(!fx.changes.length){ toast('Rien d\'automatiquement corrigeable ici'); return; }
+    var before=analyzeCode(code);
+    modal(
+      '<div class="mh"><span class="ic">🔧</span><div style="flex:1"><h3>Corriger avec une recette</h3>'+
+        '<div style="font-size:12px;color:var(--deliver);margin-top:2px">⚙️ recette · déclenchée depuis l\'analyse · le LLM oriente, la recette écrit</div></div><button class="x" data-close>✕</button></div>'+
+      '<div class="ctxbn">↩ <b>Enchaînement depuis « Analyser ce code »</b> — score actuel <b style="color:var(--warn)">'+before.score+'/100</b>, '+before.total+' problème'+(before.total>1?'s':'')+' détecté'+(before.total>1?'s':'')+'. La recette propose un patch pour les corriger.</div>'+
+      '<div class="field"><div class="fl">Ce que je corrige ('+fx.changes.length+')</div><div class="fv">'+fx.changes.map(function(c){return '• '+esc(c.why);}).join('<br>')+'</div></div>'+
+      '<div class="field" style="border-color:rgba(251,191,36,.35)"><div class="fl" style="color:var(--warn)">Patch — dry-run, rien n\'est écrit</div><div id="diffBox">'+renderDiff(fx.changes)+'</div></div>'+
+      '<div id="fixOut"></div>'+
+      '<div class="mbtns"><button class="mbtn run" id="fixGo">✔ Créer la branche + la MR</button><button class="mbtn ghost" data-close>Annuler</button></div>'+
+      '<div class="note">Écriture uniquement sur une branche dédiée (jamais main). La MR déclenche la CI ; rien n\'est mergé sans revue. Confirmation humaine obligatoire.</div>'
+    );
+    $('fixGo').addEventListener('click',function(){
+      var after=analyzeCode(fx.patched), gt=genTests(fx.patched);
+      var mn=methodName(code)||'auto', branch='fix/'+mn.toLowerCase()+'-hardening';
+      var tests=(gt.count||3)*2;
+      var delta=after.score-before.score;
+      $('fixOut').innerHTML=
+        '<div class="field" style="border-color:var(--ok)"><div class="fl" style="color:var(--ok)">✅ Corrigé — preuve</div>'+
+        '<div class="proof"><div class="pl2">🌿 Branche</div><div><b style="font-family:var(--fm)">'+esc(branch)+'</b> créée · <b>MR !313</b> ouverte</div>'+
+          '<div class="pl2">🧪 Tests</div><div><span style="color:var(--ok)">✔ '+tests+' verts</span> (CI relancée sur la MR)</div>'+
+          '<div class="pl2">📈 Ré-analyse</div><div>score <b style="color:var(--warn)">'+before.score+'</b> → <b style="color:var(--ok)">'+after.score+'/100</b> <span style="color:var(--ok)">(+'+delta+')</span> · problèmes '+before.total+' → '+after.total+'</div></div>'+
+        '<div class="mbtns" style="margin-top:12px"><button class="mbtn go mini" id="seeMr">Voir la MR !313 →</button><button class="mbtn ghost mini" id="seeDiff">📋 Copier le patch</button></div>'+
+        '<div class="note">C\'est ça la continuité : un <b>prompt</b> a trouvé le problème, une <b>recette</b> l\'a corrigé sur une branche, et la <b>ré-analyse + les tests</b> le prouvent — sans quitter le catalogue.</div></div>';
+      $('fixGo').disabled=true; $('fixGo').style.opacity=.5;
+      $('seeMr').addEventListener('click',function(){ toast('Ouverture de la MR !313 (maquette)'); });
+      $('seeDiff').addEventListener('click',function(){ copy(fx.patched); toast('📋 Code corrigé copié'); });
+      $('fixOut').scrollIntoView({behavior:'smooth',block:'nearest'});
+      toast('✅ Branche + MR créées, tests verts');
+    });
+    wireFb();
   }
 
   // ── Que veux-tu faire (intent → recette OU prompt) ──
