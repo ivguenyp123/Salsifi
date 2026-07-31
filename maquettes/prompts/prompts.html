@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bibliothèque de prompts — tes prompts du quotidien (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.ctx-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--ts)}
+.ctx-pill b{color:var(--tp)}
+
+/* bandeau distinction Recettes vs Bibliothèque */
+.distinct{display:flex;align-items:center;gap:10px;margin:16px 0 4px;padding:11px 15px;border:1px dashed var(--line2);border-radius:13px;background:rgba(255,255,255,.02);font-size:12.5px;color:var(--ts);flex-wrap:wrap}
+.distinct b{color:var(--tp)}
+.distinct .sep{color:var(--tm)}
+.distinct a{color:var(--accent);text-decoration:none;font-weight:700;margin-left:auto;white-space:nowrap}
+
+/* HERO */
+.hero{margin:14px 0 8px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,rgba(124,92,252,.09),rgba(45,212,191,.03));padding:22px 26px}
+.hero h2{font-family:var(--fd);font-size:20px;font-weight:800;margin-bottom:4px}
+.hero p{font-size:13px;color:var(--ts);margin-bottom:15px;max-width:760px}
+.ask{display:flex;gap:10px;flex-wrap:wrap}
+.ask input{flex:1;min-width:260px;font-family:var(--fb);font-size:15px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:13px;padding:13px 16px;outline:none}
+.ask input:focus{border-color:var(--accent)}
+.ask button{font-family:var(--fb);font-weight:800;font-size:14px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:13px;padding:13px 20px;cursor:pointer}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.seg{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{font-family:var(--fb);font-size:12.5px;font-weight:700;color:var(--ts);background:transparent;border:none;border-radius:9px;padding:7px 13px;cursor:pointer}
+.seg button.on{background:rgba(124,92,252,.2);color:var(--tp)}
+.tagbar{display:flex;gap:7px;flex-wrap:wrap}
+.tag{font-size:11.5px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;cursor:pointer}
+.tag.on{border-color:var(--accent);color:var(--accent);background:rgba(124,92,252,.12)}
+.favtoggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ts);cursor:pointer}
+.favtoggle input{width:16px;height:16px;accent-color:var(--accent)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.card{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:16px 18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:10px}
+.card:hover{border-color:var(--line2);background:var(--bg-card-h);transform:translateY(-2px)}
+.card .top{display:flex;align-items:flex-start;gap:10px}
+.card .ic{font-size:22px}
+.card .ti{font-family:var(--fd);font-weight:800;font-size:15px;line-height:1.25;flex:1}
+.star{all:unset;cursor:pointer;font-size:15px;line-height:1;opacity:.4;transition:.15s}
+.star.on{opacity:1}
+.scope{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.scope.official{color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35)}
+.scope.team{color:var(--info);background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.35)}
+.scope.mine{color:var(--accent);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.35)}
+.card .desc{font-size:12.5px;color:var(--ts);line-height:1.5}
+.card .tags{display:flex;gap:5px;flex-wrap:wrap}
+.card .tags span{font-size:10.5px;color:var(--tm);background:rgba(255,255,255,.04);border-radius:6px;padding:2px 7px}
+.snippet{font-family:var(--fm);font-size:11px;color:var(--tm);background:rgba(10,7,22,.5);border:1px solid var(--line);border-radius:9px;padding:8px 10px;line-height:1.5;max-height:52px;overflow:hidden;position:relative}
+.snippet .v{color:var(--deliver)}
+.foot{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tm);border-top:1px solid var(--line);padding-top:9px}
+.copybtn{margin-left:auto;font-family:var(--fb);font-weight:800;font-size:12px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:9px;padding:7px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.varpill{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+
+/* Modal */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(6,4,14,.74);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.ov.show{display:flex}
+.modal{width:100%;max-width:680px;background:#160f2b;border:1px solid var(--line2);border-radius:20px;padding:22px 24px}
+.modal .mh{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.modal .mh .ic{font-size:26px}
+.modal h3{font-family:var(--fd);font-size:19px;font-weight:800;flex:1}
+.x{all:unset;cursor:pointer;font-size:20px;color:var(--tm)}
+.field{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:12px 14px;margin-top:12px}
+.field .fl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.field .fv{font-size:13px;color:var(--ts);line-height:1.55}
+.field .fv b{color:var(--tp)}
+.promptbox{font-family:var(--fm);font-size:12.5px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line);border-radius:10px;padding:13px 15px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.promptbox .v{color:var(--deliver);background:rgba(45,212,191,.1);border-radius:4px;padding:0 3px}
+.varform{display:grid;gap:9px;margin-top:4px}
+.varrow{display:flex;flex-direction:column;gap:4px}
+.varrow label{font-size:11px;color:var(--ts);font-weight:700}
+.varrow input,.varrow textarea{font-family:var(--fb);font-size:13px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none;resize:vertical}
+.varrow input:focus,.varrow textarea:focus{border-color:var(--accent)}
+.mbtns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.mbtn{font-family:var(--fb);font-weight:800;font-size:13px;border-radius:11px;padding:11px 18px;cursor:pointer;border:none}
+.mbtn.go{color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver))}
+.mbtn.ghost{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2)}
+.mbtn.mini{padding:8px 12px;font-size:12px}
+.note{font-size:11px;color:var(--tm);margin-top:12px;line-height:1.5}
+.metabar{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ts);margin-top:2px}
+.metabar b{color:var(--tp)}
+.selectrow{display:flex;gap:10px;flex-wrap:wrap}
+.selectrow select,.selectrow input{font-family:var(--fb);font-size:13px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none;flex:1;min-width:140px}
+.visibpick{display:flex;gap:8px}
+.visibpick button{font-family:var(--fb);font-size:12px;font-weight:700;color:var(--ts);background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:9px;padding:8px 13px;cursor:pointer}
+.visibpick button.on{border-color:var(--accent);color:var(--tp);background:rgba(124,92,252,.14)}
+.detected{font-size:11.5px;color:var(--ts);margin-top:8px}
+.detected .v{color:var(--deliver);font-family:var(--fm)}
+.empty{color:var(--tm);font-size:13px;text-align:center;padding:30px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">📚</div>
+    <div>
+      <h1>Bibliothèque de prompts</h1>
+      <div class="sub">Tes prompts du quotidien, réutilisables — tu remplis les variables, tu copies dans ton outil</div>
+    </div>
+    <div class="ctx-pill">👤 <b>marie.d</b> · Tribu Paiements</div>
+  </header>
+
+  <div class="distinct">
+    <span>🍳 <b>Recettes</b> = workflows gouvernés qui <b>s'exécutent</b> (outils, sécurité, validation).</span>
+    <span class="sep">·</span>
+    <span>📚 <b>Bibliothèque</b> = modèles de prompt que tu <b>copies-colles</b> dans ton outil (Claude, Copilot…).</span>
+    <a href="../recipes/recipes.html">← Voir les Recettes</a>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h2>Trouve un prompt, remplis-le, copie-le.</h2>
+    <p>Des modèles écrits une fois, réutilisés par toute l'équipe. Les <b>variables</b> <code style="font-family:var(--fm);color:var(--deliver)">{{comme&nbsp;ça}}</code> se remplissent avant la copie — pas besoin de réécrire à chaque fois. Tu peux garder les tiens en privé, ou les partager à ta tribu.</p>
+    <div class="ask">
+      <input id="ask" placeholder="rechercher : « tests », « commit », « expliquer ce code »…" autocomplete="off">
+      <button id="newBtn">＋ Nouveau prompt</button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="seg" id="scopeSeg">
+      <button data-sc="" class="on">Tous</button>
+      <button data-sc="mine">👤 Perso</button>
+      <button data-sc="team">👥 Équipe</button>
+      <button data-sc="official">🟢 Officiels</button>
+    </div>
+    <div class="tagbar" id="tagbar"></div>
+    <label class="favtoggle"><input type="checkbox" id="favOnly"> ⭐ Favoris seulement</label>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2200); }
+  function copy(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(function(){fallback(text);}); }
+    else fallback(text);
+  }
+  function fallback(text){ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+  function vars(body){ var m,re=/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,seen=[],out=[]; while((m=re.exec(body))){ var n=m[1].trim(); if(seen.indexOf(n)===-1){seen.push(n);out.push(n);} } return out; }
+  function highlight(body){ return esc(body).replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,'<span class="v">{{$1}}</span>'); }
+  function fill(body,values){ return body.replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,function(m,n){ var v=values[n.trim()]; return (v!==undefined && v!=='')? v : m; }); }
+
+  // ── Données prompts ──
+  var P=[
+    {id:'commit', ic:'✍️', title:'Message de commit conventionnel', scope:'official', author:'Plateforme', cat:'git', tags:['git'], uses:812, saved:'~5 min', fav:false, updated:'20 mai 2026',
+      body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\nContraintes :\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI, pas COMMENT\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
+    {id:'tests', ic:'🧪', title:'Générer des tests unitaires', scope:'official', author:'Archi', cat:'tests', tags:['tests','java'], uses:640, saved:'~25 min', fav:true, updated:'12 mai 2026',
+      body:'Écris des tests unitaires en {{langage}} (framework {{framework}}) pour le code ci-dessous.\n\nCouvre :\n- le cas nominal\n- les cas limites et les entrées invalides\n- un test par comportement (nommage explicite)\n\nNe teste que le comportement public. Pas de test tautologique.\n\nCode :\n{{code}}'},
+    {id:'explain', ic:'📖', title:'Explique-moi ce code', scope:'mine', author:'marie.d', cat:'apprentissage', tags:['debug','apprentissage'], uses:57, saved:'~15 min', fav:true, updated:'28 mai 2026',
+      body:'Explique ce que fait ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Les pièges ou effets de bord non évidents.\n\nCode :\n{{code}}'},
+    {id:'review', ic:'👀', title:'Revue de code façon senior', scope:'team', author:'Tribu Paiements', cat:'revue', tags:['revue','git'], uses:298, saved:'~20 min', fav:false, updated:'18 mai 2026',
+      body:'Relis ce diff comme un reviewer senior bienveillant.\n\nClasse tes remarques : 🔴 bloquant · 🟡 à discuter · 🟢 suggestion.\nPour chaque point : le fichier, la ligne, le pourquoi, une proposition concrète.\nNe relève pas le style déjà géré par le linter.\n\nDiff :\n{{diff}}'},
+    {id:'debug', ic:'🐞', title:'Comprendre une stack trace', scope:'official', author:'Plateforme', cat:'debug', tags:['debug'], uses:415, saved:'~15 min', fav:false, updated:'15 mai 2026',
+      body:'Voici une erreur rencontrée dans un projet {{stack}}.\n\nDonne-moi :\n1. La cause probable, en clair.\n2. La ligne / l\'appel le plus suspect.\n3. Deux pistes de correction, de la plus simple à la plus robuste.\n\nErreur :\n{{erreur}}\n\nContexte (ce que je faisais) :\n{{contexte}}'},
+    {id:'refacto', ic:'🧹', title:'Proposer un refacto (sans casser)', scope:'team', author:'Tribu Core', cat:'refacto', tags:['refacto','java'], uses:134, saved:'~30 min', fav:false, updated:'30 avr. 2026',
+      body:'Propose un refactoring de ce code à comportement strictement identique.\n\n- extrais les responsabilités, réduis la complexité cyclomatique\n- garde la même signature publique\n- liste les risques et ce qu\'il faut retester\n\nNe réécris pas tout : propose un diff ciblé.\n\nCode :\n{{code}}'},
+    {id:'javadoc', ic:'📝', title:'Documenter une fonction', scope:'team', author:'Front Guild', cat:'doc', tags:['doc'], uses:221, saved:'~8 min', fav:false, updated:'10 mai 2026',
+      body:'Rédige la documentation ({{format}}) de cette fonction : rôle, paramètres, valeur de retour, exceptions, et un exemple d\'appel court.\n\nReste factuel, pas de blabla.\n\nFonction :\n{{code}}'},
+    {id:'story', ic:'🏗', title:'Découper une user story', scope:'team', author:'Tribu Paiements', cat:'produit', tags:['produit'], uses:96, saved:'~20 min', fav:false, updated:'22 mai 2026',
+      body:'Découpe cette user story en tâches techniques livrables indépendamment.\n\nPour chaque tâche : un titre, un critère d\'acceptation vérifiable, une estimation grossière (S/M/L).\nSignale les dépendances et les zones d\'incertitude à lever avant de commencer.\n\nStory :\n{{story}}'},
+    {id:'sql', ic:'⚡', title:'Optimiser une requête SQL', scope:'official', author:'Tribu Data', cat:'data', tags:['sql','data'], uses:150, saved:'~25 min', fav:false, updated:'02 mai 2026',
+      body:'Analyse cette requête {{sgbd}} et propose une version plus rapide.\n\n- explique le coût actuel (jointures, scans)\n- propose index et réécriture\n- garde un résultat identique\n\nRequête :\n{{requete}}'},
+    {id:'regex', ic:'🔤', title:'Regex à partir d\'exemples', scope:'mine', author:'marie.d', cat:'divers', tags:['regex'], uses:34, saved:'~10 min', fav:false, updated:'25 mai 2026',
+      body:'Construis une expression régulière ({{saveur}}) qui matche les exemples POSITIFS et rejette les NÉGATIFS.\n\nDonne la regex, une explication token par token, et un cas limite à tester.\n\nDoit matcher :\n{{positifs}}\n\nNe doit PAS matcher :\n{{negatifs}}'},
+    {id:'vulgar', ic:'🗣', title:'Traduire du jargon en clair', scope:'team', author:'Tribu Core', cat:'communication', tags:['communication'], uses:78, saved:'~12 min', fav:false, updated:'16 mai 2026',
+      body:'Reformule ce texte technique pour une audience {{audience}}, sans perdre l\'exactitude.\n\nÉvite le jargon ou explique-le. Garde-le court.\n\nTexte :\n{{texte}}'},
+    {id:'learn', ic:'🎓', title:'M\'apprendre un concept', scope:'mine', author:'marie.d', cat:'apprentissage', tags:['apprentissage'], uses:41, saved:'—', fav:true, updated:'29 mai 2026',
+      body:'Apprends-moi « {{concept}} » à un niveau {{niveau}}.\n\n1. L\'intuition en une analogie.\n2. Le minimum théorique utile.\n3. Un exemple de code commenté.\n4. Une erreur classique à éviter.\n5. Un mini-exercice pour vérifier que j\'ai compris.'}
+  ];
+  var TAGS=['tests','git','revue','debug','refacto','doc','java','sql','apprentissage','produit','communication'];
+  var SCOPE_LABEL={official:'Officiel',team:'Équipe',mine:'Perso'};
+  var SCOPE_ICON={official:'🟢',team:'👥',mine:'👤'};
+  var CATS=['revue','tests','refacto','doc','debug','git','data','produit','apprentissage','communication','divers'];
+
+  var fScope='', fTag='', favOnly=false, query='';
+
+  function snippet(body){ return highlight(body.replace(/\n+/g,' ').slice(0,150)); }
+
+  function card(p){
+    var vs=vars(p.body);
+    return '<div class="card" data-id="'+p.id+'">'+
+      '<div class="top"><span class="ic">'+p.ic+'</span><div class="ti">'+esc(p.title)+'</div>'+
+        '<button class="star'+(p.fav?' on':'')+'" data-fav="'+p.id+'" title="Favori">'+(p.fav?'⭐':'☆')+'</button>'+
+        '<span class="scope '+p.scope+'">'+SCOPE_ICON[p.scope]+' '+SCOPE_LABEL[p.scope]+'</span></div>'+
+      '<div class="tags">'+p.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+'</div>'+
+      '<div class="snippet">'+snippet(p.body)+'</div>'+
+      '<div class="foot">'+SCOPE_ICON[p.scope]+' '+esc(p.author)+' · <b>'+p.uses+'</b>&nbsp;usages'+(p.saved!=='—'?' · '+p.saved:'')+
+        '<button class="copybtn" data-copy="'+p.id+'">📋 Copier</button></div>'+
+      '</div>';
+  }
+
+  function renderGrid(){
+    var q=query.toLowerCase();
+    var list=P.filter(function(p){
+      if(fScope && p.scope!==fScope) return false;
+      if(fTag && p.tags.indexOf(fTag)===-1) return false;
+      if(favOnly && !p.fav) return false;
+      if(q && (p.title+' '+p.body+' '+p.tags.join(' ')+' '+p.cat).toLowerCase().indexOf(q)===-1) return false;
+      return true;
+    });
+    $('grid').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Aucun prompt pour ces filtres. <br>Tu peux en créer un avec « ＋ Nouveau prompt ».</div>';
+    $('grid').querySelectorAll('.card').forEach(function(el){
+      el.addEventListener('click', function(e){ if(e.target.closest('[data-copy]')||e.target.closest('[data-fav]')) return; openDetail(el.dataset.id); });
+    });
+    $('grid').querySelectorAll('[data-copy]').forEach(function(b){ b.addEventListener('click', function(){ quickCopy(b.dataset.copy); }); });
+    $('grid').querySelectorAll('[data-fav]').forEach(function(b){ b.addEventListener('click', function(){ toggleFav(b.dataset.fav); }); });
+  }
+
+  function renderTags(){
+    $('tagbar').innerHTML=TAGS.map(function(t){return '<span class="tag'+(fTag===t?' on':'')+'" data-tag="'+t+'">'+t+'</span>';}).join('');
+    $('tagbar').querySelectorAll('[data-tag]').forEach(function(el){ el.addEventListener('click', function(){ fTag = fTag===el.dataset.tag?'':el.dataset.tag; renderTags(); renderGrid(); }); });
+  }
+
+  function toggleFav(id){ var p=P.find(function(x){return x.id===id;}); if(!p) return; p.fav=!p.fav; renderGrid(); toast(p.fav?'⭐ Ajouté aux favoris':'Retiré des favoris'); }
+
+  function quickCopy(id){
+    var p=P.find(function(x){return x.id===id;}); if(!p) return;
+    var vs=vars(p.body);
+    if(vs.length){ openDetail(id); toast('Remplis les variables puis copie ⤵'); return; }
+    copy(p.body); p.uses++; renderGrid(); toast('📋 Prompt copié');
+  }
+
+  // ── Fiche prompt (remplir & copier) ──
+  function openDetail(id){
+    var p=P.find(function(x){return x.id===id;}); if(!p) return;
+    var vs=vars(p.body);
+    var varForm = vs.length ?
+      '<div class="field"><div class="fl">✏️ Remplir les variables</div><div class="varform" id="vf">'+
+        vs.map(function(v){ var big=/code|diff|texte|requete|story|erreur|positifs|negatifs|contexte/i.test(v);
+          return '<div class="varrow"><label>{{'+esc(v)+'}}</label>'+(big?'<textarea rows="3" data-v="'+esc(v)+'" placeholder="…"></textarea>':'<input data-v="'+esc(v)+'" placeholder="…">')+'</div>';
+        }).join('')+
+      '</div><div class="note">Les variables non remplies restent en <span style="color:var(--deliver);font-family:var(--fm)">{{…}}</span> dans le texte copié.</div></div>' : '';
+    modal(
+      '<div class="mh"><span class="ic">'+p.ic+'</span><div style="flex:1"><h3>'+esc(p.title)+'</h3>'+
+        '<div class="metabar"><span class="scope '+p.scope+'">'+SCOPE_ICON[p.scope]+' '+SCOPE_LABEL[p.scope]+'</span> · '+esc(p.author)+' · '+esc(p.cat)+' · maj '+p.updated+'</div></div>'+
+        '<button class="star'+(p.fav?' on':'')+'" data-favd="'+p.id+'" style="font-size:20px">'+(p.fav?'⭐':'☆')+'</button>'+
+        '<button class="x" data-close>✕</button></div>'+
+      '<div class="field"><div class="fl">📄 Le prompt</div><div class="promptbox" id="pv">'+highlight(p.body)+'</div></div>'+
+      varForm+
+      '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+p.uses+'</b> usages'+(p.saved!=='—'?' · temps gagné estimé <b>'+p.saved+'</b>':'')+' · '+vs.length+' variable'+(vs.length>1?'s':'')+'</div></div>'+
+      '<div class="mbtns"><button class="mbtn go" id="copyFilled">📋 '+(vs.length?'Copier le prompt rempli':'Copier le prompt')+'</button>'+
+        '<button class="mbtn ghost mini" id="dupBtn">⑂ Dupliquer &amp; adapter</button>'+
+        (p.scope==='mine'?'<button class="mbtn ghost mini" id="shareBtn">👥 Partager à l\'équipe</button>':'')+
+        '<button class="mbtn ghost mini" data-close>Fermer</button></div>'+
+      '<div class="note">On ne t\'affiche pas un prompt « magique » figé : tu vois le texte, tu l\'adaptes, tu le copies dans ton outil. Les prompts <b>Officiels</b> sont relus ; les <b>Perso</b> n\'engagent que toi.</div>'
+    );
+    // live preview
+    function refresh(){
+      var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){ vals[i.dataset.v]=i.value; });
+      $('pv').innerHTML=highlight(fill(p.body,vals));
+      return vals;
+    }
+    $('modal').querySelectorAll('[data-v]').forEach(function(i){ i.addEventListener('input',refresh); });
+    $('copyFilled').addEventListener('click',function(){ var vals=vs.length?refresh():{}; copy(fill(p.body,vals)); p.uses++; toast('📋 Copié — colle-le dans ton outil'); });
+    var d=$('dupBtn'); if(d) d.addEventListener('click',function(){ closeM(); openCreate(p); });
+    var s=$('shareBtn'); if(s) s.addEventListener('click',function(){ p.scope='team'; p.author='Tribu Paiements'; closeM(); renderGrid(); toast('👥 Partagé à ta tribu — visible par l\'équipe'); });
+    var fv=$('modal').querySelector('[data-favd]'); if(fv) fv.addEventListener('click',function(){ toggleFav(p.id); fv.textContent=P.find(function(x){return x.id===p.id;}).fav?'⭐':'☆'; fv.classList.toggle('on'); });
+  }
+
+  // ── Créer / adapter un prompt ──
+  function openCreate(base){
+    var b=base||{title:'',ic:'✨',cat:'divers',tags:[],body:'',scope:'mine'};
+    var isDup=!!base;
+    modal(
+      '<div class="mh"><span class="ic">'+(b.ic||'✨')+'</span><h3>'+(isDup?'Adapter un prompt':'Nouveau prompt')+'</h3><button class="x" data-close>✕</button></div>'+
+      (isDup?'<div class="note" style="margin:0 0 4px">Copie de « '+esc(b.title)+' » → elle atterrit dans <b>tes prompts (Perso)</b>. L\'original n\'est pas modifié.</div>':'')+
+      '<div class="field"><div class="fl">Titre</div><input id="c_title" class="promptbox" style="width:100%;font-family:var(--fb)" placeholder="ex : Générer des tests unitaires" value="'+esc(isDup?('Ma version — '+b.title):'')+'"></div>'+
+      '<div class="field"><div class="fl">Catégorie &amp; tags</div><div class="selectrow">'+
+        '<select id="c_cat">'+CATS.map(function(c){return '<option'+(c===b.cat?' selected':'')+'>'+c+'</option>';}).join('')+'</select>'+
+        '<input id="c_tags" placeholder="tags séparés par des virgules" value="'+esc(b.tags.join(', '))+'"></div></div>'+
+      '<div class="field"><div class="fl">📄 Le prompt <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— écris une variable avec <span style="color:var(--deliver);font-family:var(--fm)">{{nom}}</span></span></div>'+
+        '<textarea id="c_body" class="promptbox" style="width:100%;min-height:150px" placeholder="ex : Écris des tests en {{langage}} pour :\n{{code}}">'+esc(b.body)+'</textarea>'+
+        '<div class="detected" id="c_detected"></div></div>'+
+      '<div class="field"><div class="fl">Visibilité</div><div class="visibpick" id="c_vis">'+
+        '<button data-vis="mine" class="on">👤 Perso</button><button data-vis="team">👥 Partager à l\'équipe</button></div>'+
+        '<div class="note">Les prompts <b>Officiels</b> sont créés via une revue par un <b>ai-maintainer</b> dans le Studio — pas ici.</div></div>'+
+      '<div class="mbtns"><button class="mbtn go" id="c_save">💾 '+(isDup?'Enregistrer ma version':'Créer le prompt')+'</button><button class="mbtn ghost" data-close>Annuler</button></div>'
+    );
+    var vis='mine';
+    $('c_vis').querySelectorAll('[data-vis]').forEach(function(x){ x.addEventListener('click',function(){ vis=x.dataset.vis; $('c_vis').querySelectorAll('button').forEach(function(y){y.classList.remove('on');}); x.classList.add('on'); }); });
+    function detect(){ var vs=vars($('c_body').value); $('c_detected').innerHTML = vs.length? 'Variables détectées : '+vs.map(function(v){return '<span class="v">{{'+esc(v)+'}}</span>';}).join(', ') : '<span style="color:var(--tm)">Aucune variable — le prompt sera copié tel quel.</span>'; }
+    $('c_body').addEventListener('input',detect); detect();
+    $('c_save').addEventListener('click',function(){
+      var title=$('c_title').value.trim(), body=$('c_body').value.trim();
+      if(!title||!body){ toast('⚠ Titre et prompt requis'); return; }
+      var tags=$('c_tags').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+      P.unshift({ id:'u'+(P.length+1)+'-'+Date.now(), ic:b.ic||'✨', title:title, scope:vis, author:vis==='team'?'Tribu Paiements':'marie.d', cat:$('c_cat').value, tags:tags.length?tags:['divers'], uses:0, saved:'—', fav:false, updated:'aujourd\'hui', body:body });
+      closeM(); fScope=''; $('scopeSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); $('scopeSeg').querySelector('[data-sc=""]').classList.add('on'); renderGrid();
+      toast(vis==='team'?'👥 Prompt créé et partagé à l\'équipe':'✅ Prompt ajouté à tes prompts');
+    });
+  }
+
+  // ── modale util ──
+  function modal(html){ $('modal').innerHTML=html; $('ov').classList.add('show'); $('modal').querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeM);}); }
+  function closeM(){ $('ov').classList.remove('show'); }
+  $('ov').addEventListener('click',function(e){ if(e.target===$('ov')) closeM(); });
+
+  // ── wiring ──
+  $('newBtn').addEventListener('click',function(){ openCreate(null); });
+  $('ask').addEventListener('input',function(){ query=this.value; renderGrid(); });
+  $('scopeSeg').querySelectorAll('[data-sc]').forEach(function(b){ b.addEventListener('click',function(){ fScope=b.dataset.sc; $('scopeSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
+  $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
+  renderTags(); renderGrid();
+})();
+</script>
+</body>
+</html>
