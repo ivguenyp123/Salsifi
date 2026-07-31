@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalogue IA — recettes &amp; prompts (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.ctx-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--ts)}
+.ctx-pill b{color:var(--tp)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+/* HERO */
+.hero{margin:16px 0 8px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,rgba(124,92,252,.09),rgba(45,212,191,.03));padding:22px 26px}
+.hero h2{font-family:var(--fd);font-size:20px;font-weight:800;margin-bottom:4px}
+.hero p{font-size:13px;color:var(--ts);margin-bottom:15px;max-width:780px}
+.hero p .rk{color:var(--deliver);font-weight:700} .hero p .pk{color:var(--accent);font-weight:700}
+.ask{display:flex;gap:10px;flex-wrap:wrap}
+.ask input{flex:1;min-width:260px;font-family:var(--fb);font-size:15px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:13px;padding:13px 16px;outline:none}
+.ask input:focus{border-color:var(--accent)}
+.ask button{font-family:var(--fb);font-weight:800;font-size:14px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:13px;padding:13px 20px;cursor:pointer}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:12px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;cursor:pointer;transition:.15s}
+.chip:hover{border-color:var(--accent);color:var(--tp)}
+#intentResult{margin-top:16px}
+
+/* Toolbar — le toggle est la clé */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.kindseg{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line2);border-radius:13px;padding:5px}
+.kindseg button{font-family:var(--fb);font-size:13px;font-weight:800;color:var(--ts);background:transparent;border:none;border-radius:10px;padding:9px 15px;cursor:pointer;transition:.15s}
+.kindseg button[data-k="recipe"].on{background:rgba(45,212,191,.18);color:var(--deliver)}
+.kindseg button[data-k="prompt"].on{background:rgba(124,92,252,.2);color:var(--accent)}
+.kindseg button[data-k=""].on{background:rgba(255,255,255,.08);color:var(--tp)}
+.tagbar{display:flex;gap:7px;flex-wrap:wrap}
+.tag{font-size:11.5px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;cursor:pointer}
+.tag.on{border-color:var(--accent);color:var(--accent);background:rgba(124,92,252,.12)}
+.filts{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.ck{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ts);cursor:pointer}
+.ck input{width:16px;height:16px;accent-color:var(--accent)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.card{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:16px 18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:10px;position:relative}
+.card:hover{border-color:var(--line2);background:var(--bg-card-h);transform:translateY(-2px)}
+.card.recipe{border-left:3px solid rgba(45,212,191,.5)}
+.card.prompt{border-left:3px solid rgba(124,92,252,.5)}
+.card .top{display:flex;align-items:flex-start;gap:10px}
+.card .ic{font-size:22px}
+.card .ti{font-family:var(--fd);font-weight:800;font-size:15px;line-height:1.25;flex:1}
+.kindbadge{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.kindbadge.recipe{color:var(--deliver);background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.3)}
+.kindbadge.prompt{color:var(--accent);background:rgba(124,92,252,.12);border:1px solid rgba(124,92,252,.3)}
+.lvl{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.lvl.off,.lvl.official{color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35)}
+.lvl.team{color:var(--info);background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.35)}
+.lvl.exp{color:var(--warn);background:rgba(251,191,36,.12);border:1px dashed rgba(251,191,36,.5)}
+.lvl.mine{color:var(--accent);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.35)}
+.card .desc{font-size:12.5px;color:var(--ts);line-height:1.5}
+.card .tags{display:flex;gap:5px;flex-wrap:wrap}
+.card .tags span{font-size:10.5px;color:var(--tm);background:rgba(255,255,255,.04);border-radius:6px;padding:2px 7px}
+.snippet{font-family:var(--fm);font-size:11px;color:var(--tm);background:rgba(10,7,22,.5);border:1px solid var(--line);border-radius:9px;padding:8px 10px;line-height:1.5;max-height:52px;overflow:hidden}
+.snippet .v{color:var(--deliver)}
+.metrics{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ts);border-top:1px solid var(--line);padding-top:10px}
+.metrics b{color:var(--tp);font-size:13px;font-weight:800}
+.metrics .m{display:flex;flex-direction:column}
+.foot{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tm);border-top:1px solid var(--line);padding-top:9px}
+.star{all:unset;cursor:pointer;font-size:15px;line-height:1;opacity:.4;transition:.15s}.star.on{opacity:1}
+.act{margin-left:auto;font-family:var(--fb);font-weight:800;font-size:12px;color:#0f0a1f;border:none;border-radius:9px;padding:7px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.act.run{background:linear-gradient(135deg,#2dd4bf,#34d399)}
+.act.copy{background:linear-gradient(135deg,var(--accent),#c4b5fd)}
+.varpill{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+.agentic{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+
+/* Modal */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(6,4,14,.74);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.ov.show{display:flex}
+.modal{width:100%;max-width:680px;background:#160f2b;border:1px solid var(--line2);border-radius:20px;padding:22px 24px}
+.modal .mh{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.modal .mh .ic{font-size:26px}
+.modal h3{font-family:var(--fd);font-size:19px;font-weight:800;flex:1}
+.x{all:unset;cursor:pointer;font-size:20px;color:var(--tm)}
+.field{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:12px 14px;margin-top:12px}
+.field .fl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.field .fv{font-size:13px;color:var(--ts);line-height:1.55}
+.field .fv b{color:var(--tp)}
+.promptbox{font-family:var(--fm);font-size:12.5px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line);border-radius:10px;padding:13px 15px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.promptbox .v{color:var(--deliver);background:rgba(45,212,191,.1);border-radius:4px;padding:0 3px}
+.varform{display:grid;gap:9px;margin-top:4px}
+.varrow{display:flex;flex-direction:column;gap:4px}
+.varrow label{font-size:11px;color:var(--ts);font-weight:700}
+.varrow input,.varrow textarea{font-family:var(--fb);font-size:13px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none;resize:vertical}
+.varrow input:focus,.varrow textarea:focus{border-color:var(--accent)}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:8px;padding:4px 9px;margin:3px 4px 0 0}
+.tool.read{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.tool.write{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)}
+.chk{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.mbtns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.mbtn{font-family:var(--fb);font-weight:800;font-size:13px;border-radius:11px;padding:11px 18px;cursor:pointer;border:none}
+.mbtn.go{color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver))}
+.mbtn.run{color:#0f0a1f;background:linear-gradient(135deg,#2dd4bf,#34d399)}
+.mbtn.ghost{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2)}
+.mbtn.mini{padding:8px 12px;font-size:12px}
+.note{font-size:11px;color:var(--tm);margin-top:12px;line-height:1.5}
+.thumbs{display:flex;gap:8px;margin-left:auto}
+.thumb{all:unset;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:8px;border:1px solid var(--line)}
+.empty{color:var(--tm);font-size:13px;text-align:center;padding:30px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🧰</div>
+    <div>
+      <h1>Catalogue IA</h1>
+      <div class="sub">Recettes &amp; prompts au même endroit · le LLM oriente, les outils déterministes exécutent</div>
+    </div>
+    <div class="ctx-pill">📦 <b>platformengineering</b> · Java 21 · Spring · Kubernetes · GitLab CI</div>
+  </header>
+
+  <div class="nav">
+    <a href="#" class="on">🧰 Catalogue</a>
+    <a href="../studio/studio.html">🛠️ Studio</a>
+    <a href="../metrics/metrics.html">📊 Métriques</a>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h2>Que veux-tu faire ?</h2>
+    <p>Décris ton besoin. On te propose la bonne entrée — une <span class="rk">🍳 recette</span> qui <b>s'exécute</b> (avec outils &amp; garde-fous) ou un <span class="pk">📚 prompt</span> que tu <b>copies</b> dans ton outil. Même geste : tu remplis les variables ; ensuite c'est <b>Lancer</b> ou <b>Copier</b> selon la nature.</p>
+    <div class="ask">
+      <input id="ask" placeholder="ex : générer des tests · préparer la livraison · expliquer ce code…" autocomplete="off">
+      <button id="askGo">Trouver →</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div id="intentResult"></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="kindseg" id="kindSeg">
+      <button data-k="" class="on">Tout</button>
+      <button data-k="recipe">🍳 Recettes · exécuter</button>
+      <button data-k="prompt">📚 Prompts · copier</button>
+    </div>
+    <div class="tagbar" id="tagbar"></div>
+    <div class="filts">
+      <label class="ck"><input type="checkbox" id="ctxOnly" checked> Compatibles avec mon dépôt</label>
+      <label class="ck"><input type="checkbox" id="favOnly"> ⭐ Favoris</label>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2200); }
+  function copy(text){ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(function(){fb(text);});}else fb(text); }
+  function fb(text){ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+  function vars(b){ var m,re=/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,s=[]; while((m=re.exec(b))){var n=m[1].trim(); if(s.indexOf(n)===-1)s.push(n);} return s; }
+  function hl(b){ return esc(b).replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,'<span class="v">{{$1}}</span>'); }
+  function fill(b,v){ return b.replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,function(m,n){var x=v[n.trim()];return (x!==undefined&&x!=='')?x:m;}); }
+
+  var CTX={ repo:'platformengineering', stack:['java','spring','kubernetes','java21'] };
+  var LVL_LABEL={off:'Officiel',team:'Équipe',exp:'Expérimental',official:'Officiel',mine:'Perso'};
+  var LVL_ICON={off:'🛡',team:'👥',exp:'🧪',official:'🟢',mine:'👤'};
+
+  // ── Données unifiées (kind: recipe | prompt) ──
+  var R=[
+    // ——— RECETTES (s'exécutent) ———
+    {kind:'recipe', id:'tests-junit', ic:'🧪', title:'Générer des tests unitaires', lvl:'off', owner:'Plateforme', tags:['java','tests'], stack:['java'],
+      usage:340, success:88, humanFix:12, timeSaved:'~25 min', ctx:'Java · JUnit 5 · code non testé', version:'v3', verified:'12 mai 2026',
+      tools:[['Lire le dépôt','read'],['Exécuter la suite de tests','read']], security:['Lecture seule. Aucun secret transmis au modèle.'],
+      expected:'Une classe de tests JUnit couvrant cas nominaux et limites.', criteria:['Les tests compilent','Les tests passent','Couverture > 70 %'], agentic:false},
+    {kind:'recipe', id:'migrate-java21', ic:'🚚', title:'Préparer une migration Spring → Java 21', lvl:'off', owner:'Archi', tags:['java','spring','migration'], stack:['java','spring'],
+      usage:56, success:74, humanFix:30, timeSaved:'~2 h', ctx:'Spring Boot · JDK cible 21', version:'v2', verified:'28 avr. 2026',
+      tools:[['Lire le dépôt','read'],['Créer une branche + patch (dry-run)','write']], security:['Écriture sur branche dédiée, jamais sur main.','Dry-run + revue humaine avant merge.'],
+      expected:'Un plan de migration + une branche avec les changements mécaniques.', criteria:['Compile en JDK 21','Aucune API supprimée résiduelle','Tests verts'], agentic:true},
+    {kind:'recipe', id:'analyze-vuln', ic:'🔒', title:'Analyser une vulnérabilité', lvl:'off', owner:'Sécurité', tags:['securite'], stack:['java','spring','kubernetes'],
+      usage:210, success:91, humanFix:9, timeSaved:'~40 min', ctx:'Finding OSV/CVE · composant identifié', version:'v4', verified:'02 mai 2026',
+      tools:[['Secrets Scanner (lecture)','read'],['Repo Analyzer (lecture)','read']], security:['⚠ La valeur d\'un secret n\'est JAMAIS envoyée au modèle — seulement type et emplacement.'],
+      expected:'Impact (exploitable ici ?), blast radius, remédiation.', criteria:['Composant et version confirmés','Remédiation applicable','Faux positif écarté'], agentic:false},
+    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'],
+      usage:480, success:95, humanFix:5, timeSaved:'~30 min', ctx:'App conteneurisée · overlays Kustomize · GitLab CI', version:'v5', verified:'20 mai 2026',
+      tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
+      security:['Le LLM oriente ; le module Livraison déterministe exécute.','Dry-run obligatoire : rien sans ta confirmation.'],
+      expected:'Une MR de livraison prête (version bumpée, overlays synchro).', criteria:['Branche mergeable','Kustomize cohérent','Aucune vuln critique','Tests verts'], agentic:true, isDelivery:true},
+    {kind:'recipe', id:'react-tests', ic:'⚛️', title:'Générer des tests React', lvl:'off', owner:'Front Guild', tags:['react','tests'], stack:['react'],
+      usage:190, success:86, humanFix:14, timeSaved:'~20 min', ctx:'Composant React · Testing Library', version:'v2', verified:'10 mai 2026',
+      tools:[['Lire le dépôt','read'],['Exécuter les tests','read']], security:['Lecture seule.'],
+      expected:'Des tests de rendu et d\'interaction.', criteria:['Tests passent','Interactions couvertes'], agentic:false},
+    // ——— PROMPTS (se copient) ———
+    {kind:'prompt', id:'commit', ic:'✍️', title:'Message de commit conventionnel', lvl:'official', owner:'Plateforme', tags:['git'], stack:[], uses:812, timeSaved:'~5 min', fav:false, verified:'20 mai 2026',
+      body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
+    {kind:'prompt', id:'explain', ic:'📖', title:'Explique-moi ce code', lvl:'mine', owner:'marie.d', tags:['debug','apprentissage'], stack:[], uses:57, timeSaved:'~15 min', fav:true, verified:'28 mai 2026',
+      body:'Explique ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Pièges / effets de bord non évidents.\n\nCode :\n{{code}}'},
+    {kind:'prompt', id:'review', ic:'👀', title:'Revue de code façon senior', lvl:'team', owner:'Tribu Paiements', tags:['revue','git'], stack:[], uses:298, timeSaved:'~20 min', fav:false, verified:'18 mai 2026',
+      body:'Relis ce diff comme un reviewer senior bienveillant.\n\nClasse : 🔴 bloquant · 🟡 à discuter · 🟢 suggestion.\nPour chaque point : fichier, ligne, pourquoi, proposition concrète.\nNe relève pas le style géré par le linter.\n\nDiff :\n{{diff}}'},
+    {kind:'prompt', id:'debug', ic:'🐞', title:'Comprendre une stack trace', lvl:'official', owner:'Plateforme', tags:['debug'], stack:[], uses:415, timeSaved:'~15 min', fav:false, verified:'15 mai 2026',
+      body:'Voici une erreur dans un projet {{stack}}.\n\n1. Cause probable, en clair.\n2. La ligne / l\'appel le plus suspect.\n3. Deux pistes de correction (simple → robuste).\n\nErreur :\n{{erreur}}\n\nContexte :\n{{contexte}}'},
+    {kind:'prompt', id:'story', ic:'🏗', title:'Découper une user story', lvl:'team', owner:'Tribu Paiements', tags:['produit'], stack:[], uses:96, timeSaved:'~20 min', fav:false, verified:'22 mai 2026',
+      body:'Découpe cette user story en tâches livrables indépendamment.\n\nPour chaque tâche : titre, critère d\'acceptation vérifiable, estimation (S/M/L).\nSignale dépendances et incertitudes à lever.\n\nStory :\n{{story}}'},
+    {kind:'prompt', id:'sql', ic:'⚡', title:'Optimiser une requête SQL', lvl:'official', owner:'Tribu Data', tags:['sql','data'], stack:[], uses:150, timeSaved:'~25 min', fav:false, verified:'02 mai 2026',
+      body:'Analyse cette requête {{sgbd}} et propose une version plus rapide.\n\n- explique le coût actuel (jointures, scans)\n- propose index et réécriture\n- garde un résultat identique\n\nRequête :\n{{requete}}'},
+    {kind:'prompt', id:'learn', ic:'🎓', title:'M\'apprendre un concept', lvl:'mine', owner:'marie.d', tags:['apprentissage'], stack:[], uses:41, timeSaved:'—', fav:true, verified:'29 mai 2026',
+      body:'Apprends-moi « {{concept}} » à un niveau {{niveau}}.\n\n1. L\'intuition en une analogie.\n2. Le minimum théorique utile.\n3. Un exemple de code commenté.\n4. Une erreur classique à éviter.\n5. Un mini-exercice.'}
+  ];
+  var TAGS=['tests','java','git','revue','debug','securite','migration','livraison','sql','produit','apprentissage','react'];
+
+  var fKind='', fTag='', ctxOnly=true, favOnly=false;
+
+  function compatible(r){ if(r.kind==='prompt') return true; return r.stack.some(function(s){return CTX.stack.indexOf(s)!==-1;}); }
+  function succCol(v){ return v>=85?'var(--ok)':v>=70?'var(--warn)':'var(--err)'; }
+
+  function card(r){
+    var isRec=r.kind==='recipe';
+    var incompat=!compatible(r);
+    var badge='<span class="kindbadge '+r.kind+'">'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span>';
+    var lvlb='<span class="lvl '+r.lvl+'">'+LVL_ICON[r.lvl]+' '+LVL_LABEL[r.lvl]+'</span>';
+    var body;
+    if(isRec){
+      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(r.agentic?'<span class="agentic">⚙️ agentique</span>':'')+'</div>'+
+        '<div class="metrics">'+
+          '<div class="m"><b>'+r.usage+'</b>usages</div>'+
+          '<div class="m"><b style="color:'+succCol(r.success)+'">'+r.success+'%</b>réussite</div>'+
+          '<div class="m"><b>'+r.humanFix+'%</b>corrigés</div>'+
+          '<div class="m"><b>'+r.timeSaved+'</b>gagné</div>'+
+        '</div>'+
+        '<div class="foot">'+r.version+' · '+esc(r.owner)+(incompat?' <span style="color:var(--warn)">· hors stack</span>':'')+
+          '<button class="act run" data-act="'+r.id+'">Lancer →</button></div>';
+    } else {
+      var vs=vars(r.body);
+      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+'</div>'+
+        '<div class="snippet">'+hl(r.body.replace(/\n+/g,' ').slice(0,140))+'</div>'+
+        '<div class="foot">'+LVL_ICON[r.lvl]+' '+esc(r.owner)+' · <b style="color:var(--ts)">'+r.uses+'</b>&nbsp;usages'+
+          '<button class="act copy" data-act="'+r.id+'">📋 Copier</button></div>';
+    }
+    return '<div class="card '+r.kind+'" data-id="'+r.id+'">'+
+      '<div class="top"><span class="ic">'+r.ic+'</span><div class="ti">'+esc(r.title)+'</div>'+badge+lvlb+'</div>'+body+'</div>';
+  }
+
+  function renderGrid(){
+    var list=R.filter(function(r){
+      if(fKind && r.kind!==fKind) return false;
+      if(fTag && r.tags.indexOf(fTag)===-1) return false;
+      if(ctxOnly && !compatible(r)) return false;
+      if(favOnly && !r.fav) return false;
+      return true;
+    });
+    $('grid').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Aucune entrée pour ces filtres.</div>';
+    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')) return; openDetail(el.dataset.id); }); });
+    $('grid').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ primary(b.dataset.act); }); });
+  }
+  function renderTags(){
+    $('tagbar').innerHTML=TAGS.map(function(t){return '<span class="tag'+(fTag===t?' on':'')+'" data-tag="'+t+'">'+t+'</span>';}).join('');
+    $('tagbar').querySelectorAll('[data-tag]').forEach(function(el){ el.addEventListener('click',function(){ fTag=fTag===el.dataset.tag?'':el.dataset.tag; renderTags(); renderGrid(); }); });
+  }
+
+  // action primaire : Lancer (recette) ou Copier (prompt)
+  function primary(id){ var r=R.find(function(x){return x.id===id;}); if(!r) return; if(r.kind==='recipe') runRecipe(r); else quickCopy(r); }
+  function quickCopy(r){ var vs=vars(r.body); if(vs.length){ openDetail(r.id); toast('Remplis les variables puis copie ⤵'); return; } copy(r.body); r.uses++; renderGrid(); toast('📋 Prompt copié'); }
+
+  // ── Fiche (kind-aware) ──
+  function openDetail(id){
+    var r=R.find(function(x){return x.id===id;}); if(!r) return;
+    if(r.kind==='recipe') return recipeDetail(r);
+    return promptDetail(r);
+  }
+
+  function recipeDetail(r){
+    var tools=r.tools.map(function(t){var cls=t[1]==='write'?'write':'read';var ic=t[1]==='write'?'✏️':'👁';return '<span class="tool '+cls+'">'+ic+' '+esc(t[0])+'</span>';}).join('');
+    modal(
+      '<div class="mh"><span class="ic">'+r.ic+'</span><div style="flex:1"><h3>'+esc(r.title)+'</h3>'+
+        '<div style="font-size:12px;color:var(--tm);margin-top:2px"><span class="kindbadge recipe">⚙️ Recette</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span> · '+r.version+' · '+esc(r.owner)+' · vérifiée '+r.verified+'</div></div>'+
+        '<button class="x" data-close>✕</button></div>'+
+      '<div class="field"><div class="fl">🧩 Contexte attendu</div><div class="fv">'+esc(r.ctx)+'</div></div>'+
+      '<div class="field"><div class="fl">🛠 Outils autorisés</div><div class="fv">'+tools+'<div class="note">Lecture 👁 · écriture ✏️ (confirmation humaine). L\'allowlist est appliquée à l\'exécution.</div></div></div>'+
+      '<div class="field"><div class="fl">🔒 Sécurité</div><div class="fv">'+r.security.map(function(s){return '• '+esc(s);}).join('<br>')+'</div></div>'+
+      '<div class="field"><div class="fl">✅ Résultat &amp; critères</div><div class="fv"><b>'+esc(r.expected)+'</b><br>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
+      '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+r.usage+'</b> usages · réussite <b style="color:'+succCol(r.success)+'">'+r.success+'%</b> · <b>'+r.humanFix+'%</b> corrigés · gagné <b>'+r.timeSaved+'</b></div></div>'+
+      '<div class="field" style="border-style:dashed"><div class="fl">📝 Prompt</div><div class="fv" style="color:var(--tm)">Masqué — on n\'expose pas le prompt d\'une recette. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>'+
+      '<div class="mbtns"><button class="mbtn run" data-run="'+r.id+'">🚀 Lancer la recette</button><button class="mbtn ghost" data-close>Fermer</button>'+
+        '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'
+    );
+    $('modal').querySelectorAll('[data-run]').forEach(function(b){b.addEventListener('click',function(){runRecipe(r);});});
+    wireFb();
+  }
+
+  function runRecipe(r){
+    if(r.isDelivery) return runDelivery(r);
+    var writes=r.tools.some(function(t){return t[1]==='write';});
+    modal(
+      '<div class="mh"><span class="ic">'+r.ic+'</span><h3>'+esc(r.title)+'</h3><button class="x" data-close>✕</button></div>'+
+      '<div style="font-size:12.5px;color:var(--ts);margin-bottom:8px">Contexte du dépôt injecté : <b style="color:var(--tp)">'+CTX.repo+'</b> · Java 21 · Spring.</div>'+
+      (writes?'<div class="field" style="border-color:rgba(251,191,36,.35)"><div class="fl" style="color:var(--warn)">Dry-run — rien n\'est écrit</div><div class="fv">Cette recette peut écrire ; elle te montre d\'abord ce qu\'elle ferait, puis attend ta confirmation.</div></div>':'')+
+      '<div class="field"><div class="fl">Résultat</div><div class="fv"><b>'+esc(r.expected)+'</b><br><span style="color:var(--tm)">(sortie IA simulée — maquette)</span></div></div>'+
+      '<div class="field"><div class="fl">Vérification automatique</div><div class="fv">'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
+      '<div class="mbtns"><button class="mbtn run" data-close>'+(writes?'✔ Confirmer':'Terminer')+'</button><button class="mbtn ghost" data-close>Fermer</button>'+
+        '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'
+    );
+    wireFb();
+  }
+
+  function runDelivery(r){
+    var checks=['Branche à jour et mergeable','IMAGE_TAG 1.4.2 → 1.5.0','Overlays Kustomize synchronisés (2 fichiers)','Scan vulnérabilités : aucune critique','Tests : 214 verts'];
+    modal(
+      '<div class="mh"><span class="ic">🚀</span><div style="flex:1"><h3>Préparer la livraison en préprod</h3>'+
+        '<div style="font-size:12px;color:var(--deliver);margin-top:2px">⚙️ agentique · le module Livraison déterministe exécute</div></div><button class="x" data-close>✕</button></div>'+
+      '<div class="field" style="border-color:rgba(251,191,36,.35)"><div class="fl" style="color:var(--warn)">Dry-run — aucune écriture</div><div class="fv"><b>Rien n\'est commité tant que tu ne confirmes pas.</b></div></div>'+
+      '<div class="field"><div class="fl">Contrôles</div><div class="fv" style="padding:0">'+checks.map(function(c){return '<div class="chk"><span style="color:var(--ok)">✓</span><span>'+esc(c)+'</span></div>';}).join('')+'</div></div>'+
+      '<div class="mbtns"><button class="mbtn run" id="dlv">✔ Créer la MR de livraison</button><button class="mbtn ghost" data-close>Annuler</button>'+
+        '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'+
+      '<div class="note">L\'action irréversible (créer la MR) passe par cette confirmation humaine — jamais déclenchée par le modèle.</div>'
+    );
+    var c=$('dlv'); if(c) c.addEventListener('click',function(){ toast('🚀 MR de livraison créée'); closeM(); });
+    wireFb();
+  }
+
+  function promptDetail(r){
+    var vs=vars(r.body);
+    var varForm=vs.length?
+      '<div class="field"><div class="fl">✏️ Remplir les variables</div><div class="varform" id="vf">'+
+        vs.map(function(v){var big=/code|diff|texte|requete|story|erreur|contexte/i.test(v);return '<div class="varrow"><label>{{'+esc(v)+'}}</label>'+(big?'<textarea rows="3" data-v="'+esc(v)+'"></textarea>':'<input data-v="'+esc(v)+'">')+'</div>';}).join('')+
+      '</div><div class="note">Les variables vides restent en <span style="color:var(--deliver);font-family:var(--fm)">{{…}}</span> dans le texte copié.</div></div>':'';
+    modal(
+      '<div class="mh"><span class="ic">'+r.ic+'</span><div style="flex:1"><h3>'+esc(r.title)+'</h3>'+
+        '<div style="font-size:12px;color:var(--tm);margin-top:2px"><span class="kindbadge prompt">💬 Prompt</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span> · '+esc(r.owner)+' · maj '+r.verified+'</div></div>'+
+        '<button class="x" data-close>✕</button></div>'+
+      '<div class="field"><div class="fl">📄 Le prompt</div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
+      varForm+
+      '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+r.uses+'</b> usages'+(r.timeSaved!=='—'?' · temps gagné <b>'+r.timeSaved+'</b>':'')+' · '+vs.length+' variable'+(vs.length>1?'s':'')+'</div></div>'+
+      '<div class="mbtns"><button class="mbtn go" id="cf">📋 '+(vs.length?'Copier le prompt rempli':'Copier le prompt')+'</button><button class="mbtn ghost" data-close>Fermer</button>'+
+        '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'+
+      '<div class="note">Un prompt se copie dans ton outil (Claude, Copilot…) — il ne s\'exécute pas ici. Pour une action qui touche le dépôt, c\'est une <b>recette</b>.</div>'
+    );
+    function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals)); return vals; }
+    $('modal').querySelectorAll('[data-v]').forEach(function(i){ i.addEventListener('input',refresh); });
+    $('cf').addEventListener('click',function(){ var vals=vs.length?refresh():{}; copy(fill(r.body,vals)); r.uses++; toast('📋 Copié — colle-le dans ton outil'); });
+    wireFb();
+  }
+
+  function wireFb(){ $('modal').querySelectorAll('[data-fb]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});}); }
+
+  // ── Que veux-tu faire (intent → recette OU prompt) ──
+  var EXAMPLES=['générer des tests','préparer la livraison','analyser une vulnérabilité','expliquer ce code','message de commit','optimiser une requête SQL'];
+  function renderChips(){ $('chips').innerHTML=EXAMPLES.map(function(e){return '<span class="chip" data-ex="'+e+'">'+e+'</span>';}).join(''); $('chips').querySelectorAll('[data-ex]').forEach(function(el){el.addEventListener('click',function(){$('ask').value=el.dataset.ex; doAsk();});}); }
+  function match(q){
+    q=q.toLowerCase();
+    var kw=[['migr','migrate-java21'],['java 21','migrate-java21'],['livrai','prep-delivery'],['préprod','prep-delivery'],['deploy','prep-delivery'],['vulnér','analyze-vuln'],['vuln','analyze-vuln'],['secur','analyze-vuln'],['test react','react-tests'],['react','react-tests'],['test','tests-junit'],['commit','commit'],['message','commit'],['revue','review'],['review','review'],['stack','debug'],['trace','debug'],['erreur','debug'],['explique','explain'],['comprendre ce code','explain'],['story','story'],['découpe','story'],['sql','sql'],['requête','sql'],['apprendre','learn'],['concept','learn']];
+    for(var i=0;i<kw.length;i++){ if(q.indexOf(kw[i][0])!==-1){ return R.find(function(r){return r.id===kw[i][1];}); } }
+    return null;
+  }
+  function doAsk(){
+    var q=$('ask').value.trim(); if(!q){ $('intentResult').innerHTML=''; return; }
+    var r=match(q);
+    if(!r){ $('intentResult').innerHTML='<div class="field" style="border-style:dashed"><div class="fv">Aucune entrée <b>validée</b> pour « '+esc(q)+' ».<br><span style="color:var(--tm)">Tu peux en brouillonner une dans le Studio.</span></div></div>'; return; }
+    var isRec=r.kind==='recipe';
+    $('intentResult').innerHTML=
+      '<div class="field" style="border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'"><div class="fl" style="color:'+(isRec?'var(--deliver)':'var(--accent)')+'">'+(isRec?'🍳 Recette trouvée — elle s\'exécute':'📚 Prompt trouvé — tu le copies')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+        '<span style="font-size:22px">'+r.ic+'</span>'+
+        '<div style="flex:1;min-width:180px"><div style="font-family:var(--fd);font-weight:800;font-size:15px">'+esc(r.title)+'</div>'+
+          '<div style="font-size:12px;color:var(--ts);margin-top:2px"><span class="kindbadge '+r.kind+'">'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span> <span class="lvl '+r.lvl+'">'+LVL_LABEL[r.lvl]+'</span></div></div>'+
+        '<button class="act '+(isRec?'run':'copy')+'" data-act="'+r.id+'" style="padding:9px 15px">'+(isRec?'Lancer →':'📋 Copier')+'</button>'+
+        '<button class="mbtn ghost mini" data-open="'+r.id+'">Voir la fiche</button>'+
+      '</div></div>';
+    $('intentResult').querySelectorAll('[data-act]').forEach(function(b){b.addEventListener('click',function(){primary(b.dataset.act);});});
+    $('intentResult').querySelectorAll('[data-open]').forEach(function(b){b.addEventListener('click',function(){openDetail(b.dataset.open);});});
+  }
+
+  // ── modale util ──
+  function modal(html){ $('modal').innerHTML=html; $('ov').classList.add('show'); $('modal').querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeM);}); }
+  function closeM(){ $('ov').classList.remove('show'); }
+  $('ov').addEventListener('click',function(e){ if(e.target===$('ov')) closeM(); });
+
+  // ── wiring ──
+  $('askGo').addEventListener('click',doAsk);
+  $('ask').addEventListener('keydown',function(e){ if(e.key==='Enter') doAsk(); });
+  $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
+  $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
+  $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
+  renderChips(); renderTags(); renderGrid();
+})();
+</script>
+</body>
+</html>
