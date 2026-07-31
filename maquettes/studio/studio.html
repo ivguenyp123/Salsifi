@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio ai-maintainer — écrire &amp; gouverner les recettes (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.role-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--ok);font-weight:700}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+.intro{font-size:13px;color:var(--ts);line-height:1.55;margin:14px 0 4px;max-width:780px}
+.intro b{color:var(--tp)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
+.seg{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{font-family:var(--fb);font-size:12.5px;font-weight:700;color:var(--ts);background:transparent;border:none;border-radius:9px;padding:7px 13px;cursor:pointer}
+.seg button.on{background:rgba(124,92,252,.2);color:var(--tp)}
+.newbtn{margin-left:auto;font-family:var(--fb);font-weight:800;font-size:13px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:11px;padding:10px 16px;cursor:pointer}
+
+/* List */
+.list{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:14px 16px;cursor:pointer;transition:.15s}
+.row:hover{border-color:var(--line2);background:var(--bg-card-h)}
+.row .ic{font-size:22px}
+.row .main{flex:1;min-width:0}
+.row .ti{font-family:var(--fd);font-weight:800;font-size:15px}
+.row .meta{font-size:11.5px;color:var(--tm);margin-top:2px}
+.kind{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.kind.recipe{color:var(--deliver);background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3)}
+.kind.prompt{color:var(--accent);background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.3)}
+.status{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.status.published{color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35)}
+.status.review{color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35)}
+.status.draft{color:var(--tm);background:rgba(255,255,255,.04);border:1px solid var(--line2)}
+.status.deprecated{color:var(--err);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3)}
+.row .health{font-size:11px;color:var(--ts);text-align:right;white-space:nowrap}
+.row .health b{color:var(--tp)}
+.flag{color:var(--warn)}
+
+/* Editor */
+.editor{display:none}
+.editor.show{display:block}
+.back{all:unset;cursor:pointer;color:var(--ts);font-size:13px;font-weight:700;margin:6px 0 4px;display:inline-flex;gap:6px;align-items:center}
+.ehead{display:flex;align-items:flex-start;gap:13px;margin:8px 0 4px;flex-wrap:wrap}
+.ehead .ic{font-size:30px}
+.ehead h2{font-family:var(--fd);font-size:21px;font-weight:800}
+.ehead .sub{font-size:12px;color:var(--tm);margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;margin-top:14px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:16px 18px}
+.panel + .panel{margin-top:14px}
+.pl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.pl .hint{color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0;font-size:11px}
+input.tin,textarea.tin,select.tin{font-family:var(--fb);font-size:13.5px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:10px;padding:11px 13px;outline:none;width:100%}
+textarea.tin{font-family:var(--fm);font-size:12.5px;line-height:1.65;resize:vertical;min-height:150px}
+input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
+.detected{font-size:11.5px;color:var(--ts);margin-top:8px}
+.detected .v{color:var(--deliver);font-family:var(--fm)}
+.toolrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.toolrow:first-of-type{border-top:none}
+.toolrow .tn{flex:1;font-size:13px;color:var(--ts)}
+.toolrow select{width:auto;font-size:12px;padding:6px 9px}
+.perm-read{color:var(--ts)} .perm-write{color:var(--warn)} .perm-danger{color:var(--err)}
+.crit{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ts)}
+.crit:first-of-type{border-top:none}
+.crit .del{all:unset;cursor:pointer;color:var(--tm);font-size:14px;margin-left:auto}
+.addline{display:flex;gap:8px;margin-top:9px}
+.addline input{flex:1}
+.addline button{font-family:var(--fb);font-weight:700;font-size:12px;color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:9px;padding:0 13px;cursor:pointer}
+.mini{font-size:11px;color:var(--tm);margin-top:9px;line-height:1.5}
+
+/* right rail */
+.gov .step{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--tm);padding:5px 0}
+.gov .step.done{color:var(--ok)} .gov .step.cur{color:var(--tp);font-weight:700}
+.gov .dot{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.gov .step.done .dot{background:var(--ok)} .gov .step.cur .dot{background:var(--warn)}
+.govbtns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.gb{font-family:var(--fb);font-weight:800;font-size:13px;border-radius:10px;padding:11px 14px;cursor:pointer;border:none;text-align:center}
+.gb.go{color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver))}
+.gb.warn{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35)}
+.gb.ghost{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2)}
+.metric{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:6px 0;border-top:1px solid var(--line)}
+.metric:first-of-type{border-top:none}
+.metric b{color:var(--tp)}
+.ver{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ts);padding:7px 0;border-top:1px solid var(--line)}
+.ver:first-of-type{border-top:none}
+.ver .vn{font-family:var(--fm);color:var(--tp);font-weight:700}
+.ver .vd{color:var(--tm)}
+.ver .rb{all:unset;cursor:pointer;color:var(--accent);font-size:11px;margin-left:auto}
+.testout{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:rgba(10,7,22,.5);padding:12px 14px;font-size:12.5px;color:var(--ts);line-height:1.6;display:none}
+.testout.show{display:block}
+.testout .ck{color:var(--ok)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+.empty{color:var(--tm);font-size:13px;text-align:center;padding:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🛠️</div>
+    <div>
+      <h1>Studio <span style="color:var(--accent)">ai-maintainer</span></h1>
+      <div class="sub">Écrire, tester, gouverner et versionner les recettes &amp; prompts officiels</div>
+    </div>
+    <div class="role-pill">🔒 ai-maintainer · accès restreint</div>
+  </header>
+
+  <div class="nav">
+    <a href="../recipes/recipes.html">🍳 Recettes</a>
+    <a href="../prompts/prompts.html">📚 Bibliothèque</a>
+    <a href="#" class="on">🛠️ Studio</a>
+    <a href="../metrics/metrics.html">📊 Métriques</a>
+  </div>
+
+  <p class="intro">Le prompt brut n'est <b>jamais</b> exposé aux utilisateurs — il vit ici. Le Studio est le seul endroit où l'on <b>écrit la spécification</b>, où l'on <b>déclare les outils autorisés</b> et les <b>critères de validation</b>, où l'on <b>teste</b> avant publication, et où chaque <b>version</b> est tracée. Réservé au rôle <b>ai-maintainer</b> (Staff AI Enablement).</p>
+
+  <!-- LISTE -->
+  <div id="listView">
+    <div class="toolbar">
+      <div class="seg" id="statusSeg">
+        <button data-st="" class="on">Tout</button>
+        <button data-st="published">🟢 Publiés</button>
+        <button data-st="review">🟡 En revue</button>
+        <button data-st="draft">Brouillons</button>
+      </div>
+      <button class="newbtn" id="newBtn">＋ Nouvelle recette / prompt</button>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- EDITEUR -->
+  <div class="editor" id="editView"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
+  function vars(b){ var m,re=/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,seen=[]; while((m=re.exec(b))){var n=m[1].trim(); if(seen.indexOf(n)===-1)seen.push(n);} return seen; }
+  function hl(b){ return esc(b).replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,'<span class="v">{{$1}}</span>'); }
+
+  var STATUS_LABEL={published:'Publié',review:'En revue',draft:'Brouillon',deprecated:'Déprécié'};
+  var PERM={read:'👁 Lecture',write:'✏️ Écriture',danger:'⛔ Sensible'};
+
+  // ── Données (recettes + prompts gouvernés) ──
+  var A=[
+    {id:'prep-delivery', kind:'recipe', ic:'🚀', title:'Préparer la livraison en préprod', status:'published', version:5, owner:'Plateforme', updated:'20 mai 2026',
+      spec:'Tu orientes une livraison en préproduction. Tu N\'EXÉCUTES PAS les écritures : le module Livraison déterministe le fait après confirmation humaine.\n\nÀ partir du dépôt {{repo}} (stack {{stack}}) :\n1. vérifie que la branche est à jour et mergeable\n2. propose le bump IMAGE_TAG et la synchro des overlays Kustomize\n3. déclenche le scan de vulnérabilités et la vérif des tests\n4. rédige l\'explication des changements pour la MR\n\nRends un plan clair ; rien n\'est écrit sans « ✔ Confirmer ».',
+      tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
+      security:['Le LLM oriente ; l\'écriture passe par le module Livraison.','Dry-run obligatoire, confirmation humaine avant toute écriture.'],
+      criteria:['Branche à jour et mergeable','Kustomize cohérent avec IMAGE_TAG','Aucune vuln critique','Tests verts'],
+      metrics:{uses:480,success:95,humanFix:5,saved:'~30 min'},
+      versions:[[5,'20 mai 2026','durcissement du dry-run'],[4,'2 mai 2026','ajout scan vuln'],[3,'12 avr. 2026','overlays Kustomize']]},
+    {id:'migrate-java21', kind:'recipe', ic:'🚚', title:'Préparer une migration Spring → Java 21', status:'review', version:2, owner:'Archi', updated:'28 avr. 2026',
+      spec:'Prépare une migration vers le JDK {{jdk_cible}} pour un projet Spring Boot.\n\nProduis un plan + une branche avec les changements mécaniques (API dépréciées, records, pattern matching). Écriture UNIQUEMENT sur une branche dédiée, jamais sur main.\n\nCode / contexte :\n{{contexte}}',
+      tools:[['Lire le dépôt','read'],['Créer une branche + patch (dry-run)','write']],
+      security:['Écriture sur branche dédiée seulement.','Revue humaine obligatoire avant merge.'],
+      criteria:['Le projet compile en JDK 21','Aucune API supprimée résiduelle','Tests existants toujours verts'],
+      metrics:{uses:56,success:74,humanFix:30,saved:'~2 h'},
+      versions:[[2,'28 avr. 2026','pattern matching'],[1,'2 avr. 2026','version initiale']]},
+    {id:'tests-junit', kind:'prompt', ic:'🧪', title:'Générer des tests unitaires', status:'published', version:3, owner:'Archi', updated:'12 mai 2026',
+      spec:'Écris des tests unitaires en {{langage}} (framework {{framework}}) pour le code ci-dessous.\n\nCouvre le cas nominal, les cas limites, les entrées invalides. Un test par comportement, nommage explicite. Pas de test tautologique.\n\nCode :\n{{code}}',
+      tools:[['Lire le dépôt','read'],['Exécuter la suite de tests','read']],
+      security:['Lecture seule. Aucun secret transmis au modèle.'],
+      criteria:['Les tests compilent','Les tests passent','Couverture de la classe cible > 70 %'],
+      metrics:{uses:640,success:88,humanFix:12,saved:'~25 min'},
+      versions:[[3,'12 mai 2026','cas limites renforcés'],[2,'20 avr. 2026','nommage'],[1,'1 avr. 2026','initial']]},
+    {id:'refacto-legacy', kind:'prompt', ic:'🧹', title:'Refactorer une classe legacy', status:'review', version:1, owner:'Tribu Core', updated:'30 avr. 2026',
+      spec:'Propose un refactoring à comportement identique de ce code : extrais les responsabilités, réduis la complexité, garde la signature publique. Propose un diff ciblé, pas une réécriture. Liste les risques.\n\nCode :\n{{code}}',
+      tools:[['Lire le dépôt','read'],['Proposer un patch (l\'humain applique)','read']],
+      security:['Propose un diff ; n\'écrit rien.'],
+      criteria:['Comportement inchangé (tests verts)','Complexité réduite'],
+      metrics:{uses:130,success:70,humanFix:35,saved:'~45 min'},
+      versions:[[1,'30 avr. 2026','brouillon initial']]},
+    {id:'oncall-summary', kind:'prompt', ic:'🌙', title:'Résumer un incident d\'astreinte', status:'draft', version:1, owner:'marie.d', updated:'aujourd\'hui',
+      spec:'À partir des logs et de la timeline, rédige un post-mortem court : impact, cause racine probable, actions correctives. Ton factuel, pas de blâme.\n\nÉléments :\n{{timeline}}',
+      tools:[['Aucun (génération de texte)','read']],
+      security:['Rappel : caviarder les données sensibles avant de coller.'],
+      criteria:['Impact chiffré','Cause plausible','Actions actionnables'],
+      metrics:{uses:0,success:0,humanFix:0,saved:'—'},
+      versions:[[1,'aujourd\'hui','brouillon']]}
+  ];
+
+  var fStatus='';
+
+  function healthFlag(a){ return (a.metrics.uses>20 && (a.metrics.success<75 || a.metrics.humanFix>30)); }
+
+  function renderList(){
+    var list=A.filter(function(a){ return !fStatus || a.status===fStatus; });
+    $('list').innerHTML = list.length ? list.map(function(a){
+      var flag=healthFlag(a);
+      return '<div class="row" data-id="'+a.id+'">'+
+        '<span class="ic">'+a.ic+'</span>'+
+        '<div class="main"><div class="ti">'+esc(a.title)+'</div>'+
+          '<div class="meta">'+esc(a.owner)+' · v'+a.version+' · maj '+a.updated+' · '+vars(a.spec).length+' variables'+(a.kind==='recipe'?' · '+a.tools.length+' outils':'')+'</div></div>'+
+        '<span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span>'+
+        '<span class="status '+a.status+'">'+STATUS_LABEL[a.status]+'</span>'+
+        '<div class="health">'+(a.metrics.uses?('<b>'+a.metrics.success+'%</b> réussite'+(flag?'<br><span class="flag">⚠ à améliorer</span>':'')):'<span style="color:var(--tm)">jamais utilisé</span>')+'</div>'+
+      '</div>';
+    }).join('') : '<div class="empty">Rien dans ce statut.</div>';
+    $('list').querySelectorAll('.row').forEach(function(el){ el.addEventListener('click',function(){ openEditor(el.dataset.id); }); });
+  }
+
+  // ── Éditeur ──
+  var cur=null;
+  function openEditor(id){
+    cur=A.find(function(x){return x.id===id;}); if(!cur) return;
+    $('listView').style.display='none'; $('editView').classList.add('show');
+    var a=cur;
+    var steps=['draft','review','published'];
+    var si=steps.indexOf(a.status==='deprecated'?'published':a.status);
+    var govSteps=[['Brouillon',0],['En revue',1],['Publié (officiel)',2]].map(function(s){
+      var cls=s[1]<si?'done':s[1]===si?'cur':''; return '<div class="step '+cls+'"><span class="dot"></span>'+s[0]+'</div>';
+    }).join('');
+    var govBtns = a.status==='draft'
+        ? '<button class="gb go" data-act="review">Soumettre à revue →</button>'
+      : a.status==='review'
+        ? '<button class="gb go" data-act="publish">🟢 Publier (officiel)</button><button class="gb ghost" data-act="draft">← Renvoyer en brouillon</button>'
+      : '<button class="gb go" data-act="version">＋ Publier une nouvelle version</button><button class="gb warn" data-act="deprecate">Déprécier</button>';
+
+    $('editView').innerHTML =
+      '<button class="back" id="backBtn">← Retour à la liste</button>'+
+      '<div class="ehead"><span class="ic">'+a.ic+'</span><div style="flex:1"><h2>'+esc(a.title)+'</h2>'+
+        '<div class="sub"><span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span><span class="status '+a.status+'">'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
+      '<div class="grid2"><div>'+
+        '<div class="panel"><div class="pl">🎯 Intention <span class="hint">— ce que voit l\'utilisateur</span></div><input class="tin" id="e_title" value="'+esc(a.title)+'"></div>'+
+        '<div class="panel"><div class="pl">📄 Prompt / spécification <span class="hint">— masqué aux utilisateurs, éditable ici</span></div>'+
+          '<textarea class="tin" id="e_spec">'+esc(a.spec)+'</textarea>'+
+          '<div class="detected" id="e_detected"></div></div>'+
+        (a.kind==='recipe'?
+        '<div class="panel"><div class="pl">🛠 Outils autorisés (allowlist) <span class="hint">— appliquée à l\'exécution</span></div><div id="e_tools">'+
+          a.tools.map(function(t,i){ return '<div class="toolrow"><span class="tn">'+esc(t[0])+'</span>'+
+            '<select class="tin" data-tool="'+i+'">'+Object.keys(PERM).map(function(k){return '<option value="'+k+'"'+(t[1]===k?' selected':'')+'>'+PERM[k]+'</option>';}).join('')+'</select></div>'; }).join('')+
+          '</div><div class="mini">Une recette ne peut jamais faire plus que son allowlist. Toute action <span class="perm-write">✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
+        '<div class="panel"><div class="pl">🔒 Règles de sécurité</div><div id="e_sec">'+
+          a.security.map(function(s,i){return '<div class="crit"><span>🔒</span><span>'+esc(s)+'</span><button class="del" data-delsec="'+i+'">✕</button></div>';}).join('')+'</div>'+
+          '<div class="addline"><input class="tin" id="e_secnew" placeholder="ajouter une règle…"><button id="e_secadd">Ajouter</button></div></div>'+
+        '<div class="panel"><div class="pl">✅ Critères de validation <span class="hint">— vérifiés après exécution</span></div><div id="e_crit">'+
+          a.criteria.map(function(c,i){return '<div class="crit"><span>☑</span><span>'+esc(c)+'</span><button class="del" data-delcrit="'+i+'">✕</button></div>';}).join('')+'</div>'+
+          '<div class="addline"><input class="tin" id="e_critnew" placeholder="ajouter un critère vérifiable…"><button id="e_critadd">Ajouter</button></div></div>'+
+        '<div class="panel"><div class="pl">🧪 Banc d\'essai <span class="hint">— tester avant de publier</span></div>'+
+          '<textarea class="tin" id="e_sample" style="min-height:80px" placeholder="colle un exemple d\'entrée (code, diff, story…)"></textarea>'+
+          '<div class="addline"><button id="e_run" style="background:rgba(124,92,252,.15);border-color:var(--accent);color:var(--tp)">▶ Tester (simulation)</button></div>'+
+          '<div class="testout" id="e_testout"></div></div>'+
+      '</div><div>'+
+        '<div class="panel gov"><div class="pl">🚦 Gouvernance</div>'+govSteps+'<div class="govbtns">'+govBtns+'</div>'+
+          '<div class="mini">Seul un <b>ai-maintainer</b> peut publier. La publication rend la recette visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
+        '<div class="panel"><div class="pl">📊 Métriques (lecture seule)</div>'+
+          '<div class="metric"><span>Usages</span><b>'+a.metrics.uses+'</b></div>'+
+          '<div class="metric"><span>Réussite</span><b style="color:'+(a.metrics.success>=85?'var(--ok)':a.metrics.success>=70?'var(--warn)':'var(--err)')+'">'+a.metrics.success+'%</b></div>'+
+          '<div class="metric"><span>Corrigés à la main</span><b>'+a.metrics.humanFix+'%</b></div>'+
+          '<div class="metric"><span>Temps gagné (est.)</span><b>'+a.metrics.saved+'</b></div>'+
+          (healthFlag(a)?'<div class="mini" style="color:var(--warn)">⚠ Réussite basse / corrections fréquentes → candidate à une nouvelle version.</div>':'')+'</div>'+
+        '<div class="panel"><div class="pl">🕘 Versions</div><div id="e_vers">'+
+          a.versions.map(function(v,i){return '<div class="ver"><span class="vn">v'+v[0]+'</span><span class="vd">'+esc(v[1])+' — '+esc(v[2])+'</span>'+(i>0?'<button class="rb" data-roll="'+v[0]+'">rollback</button>':'')+'</div>';}).join('')+'</div></div>'+
+      '</div></div>';
+
+    // wiring
+    $('backBtn').addEventListener('click',backToList);
+    function detect(){ var vs=vars($('e_spec').value); $('e_detected').innerHTML=vs.length?'Variables : '+vs.map(function(v){return '<span class="v">{{'+esc(v)+'}}</span>';}).join(', '):'<span style="color:var(--tm)">Aucune variable.</span>'; }
+    $('e_spec').addEventListener('input',detect); detect();
+    // tools
+    $('editView').querySelectorAll('[data-tool]').forEach(function(s){ s.addEventListener('change',function(){ a.tools[+s.dataset.tool][1]=s.value; toast('Permission mise à jour (brouillon local)'); }); });
+    // security add/del
+    $('e_secadd')&&$('e_secadd').addEventListener('click',function(){ var v=$('e_secnew').value.trim(); if(!v)return; a.security.push(v); openEditor(a.id); });
+    $('editView').querySelectorAll('[data-delsec]').forEach(function(b){ b.addEventListener('click',function(){ a.security.splice(+b.dataset.delsec,1); openEditor(a.id); }); });
+    // criteria add/del
+    $('e_critadd').addEventListener('click',function(){ var v=$('e_critnew').value.trim(); if(!v)return; a.criteria.push(v); openEditor(a.id); });
+    $('editView').querySelectorAll('[data-delcrit]').forEach(function(b){ b.addEventListener('click',function(){ a.criteria.splice(+b.dataset.delcrit,1); openEditor(a.id); }); });
+    // title/spec persist on the fly
+    $('e_title').addEventListener('input',function(){ a.title=$('e_title').value; });
+    $('e_spec').addEventListener('input',function(){ a.spec=$('e_spec').value; });
+    // test bench
+    $('e_run').addEventListener('click',function(){
+      var s=$('e_sample').value.trim();
+      var out=$('e_testout'); out.classList.add('show');
+      out.innerHTML='<div style="color:var(--tp);font-weight:700;margin-bottom:6px">Sortie simulée (maquette)</div>'+
+        (s?'Le prompt a été appliqué à ton exemple avec le contexte injecté.':'<span style="color:var(--warn)">Astuce : colle un exemple pour un test plus réaliste.</span>')+
+        '<div style="margin-top:9px;border-top:1px solid var(--line);padding-top:8px">Vérification automatique des critères :</div>'+
+        a.criteria.map(function(c){return '<div style="margin-top:4px"><span class="ck">✓</span> '+esc(c)+'</div>';}).join('')+
+        '<div class="mini">En vrai : la recette tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
+      toast('🧪 Test simulé — critères passés');
+    });
+    // rollback
+    $('editView').querySelectorAll('[data-roll]').forEach(function(b){ b.addEventListener('click',function(){ toast('↩ Rollback vers v'+b.dataset.roll+' (simulation)'); }); });
+    // governance
+    $('editView').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ gov(a,b.dataset.act); }); });
+  }
+
+  function gov(a,act){
+    if(act==='review'){ a.status='review'; toast('🟡 Soumis à revue'); }
+    else if(act==='draft'){ a.status='draft'; toast('Renvoyé en brouillon'); }
+    else if(act==='publish'){ a.status='published'; a.updated='aujourd\'hui'; toast('🟢 Publié en Officiel — visible dans le catalogue'); }
+    else if(act==='deprecate'){ a.status='deprecated'; toast('Recette dépréciée'); }
+    else if(act==='version'){ a.version++; a.versions.unshift([a.version,'aujourd\'hui','nouvelle version']); toast('＋ Version v'+a.version+' publiée'); }
+    openEditor(a.id);
+  }
+
+  function backToList(){ $('editView').classList.remove('show'); $('editView').innerHTML=''; $('listView').style.display=''; renderList(); cur=null; }
+
+  function newAsset(){
+    var id='new-'+Date.now();
+    A.unshift({id:id,kind:'prompt',ic:'✨',title:'Nouveau prompt',status:'draft',version:1,owner:'marie.d',updated:'aujourd\'hui',
+      spec:'Décris l\'intention, puis insère des variables {{comme_ça}}.\n\n{{entrée}}',
+      tools:[['Aucun (génération de texte)','read']],security:['Rappel : ne pas coller de secret.'],criteria:['Résultat conforme à l\'attendu'],
+      metrics:{uses:0,success:0,humanFix:0,saved:'—'},versions:[[1,'aujourd\'hui','brouillon']]});
+    openEditor(id);
+  }
+
+  // wiring global
+  $('statusSeg').querySelectorAll('[data-st]').forEach(function(b){ b.addEventListener('click',function(){ fStatus=b.dataset.st; $('statusSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderList(); }); });
+  $('newBtn').addEventListener('click',newAsset);
+  renderList();
+})();
+</script>
+</body>
+</html>

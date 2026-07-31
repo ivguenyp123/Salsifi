@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adoption IA — tableau de bord (maquette)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.period{margin-left:auto;display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.period button{font-family:var(--fb);font-size:12px;font-weight:700;color:var(--ts);background:transparent;border:none;border-radius:9px;padding:7px 12px;cursor:pointer}
+.period button.on{background:rgba(124,92,252,.2);color:var(--tp)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin:18px 0}
+.kpi{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:16px 18px}
+.kpi .k{font-size:11.5px;color:var(--ts);display:flex;align-items:center;gap:6px}
+.kpi .val{font-family:var(--fd);font-size:28px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+.kpi .tr{font-size:11.5px;margin-top:4px;color:var(--tm)}
+.kpi .tr.up{color:var(--ok)} .kpi .tr.down{color:var(--err)}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:17px 19px;margin-bottom:16px}
+.panel h3{font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:3px}
+.panel .cap{font-size:11.5px;color:var(--tm);margin-bottom:14px}
+
+/* bar list */
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:11px;font-size:12.5px}
+.bar .lbl{color:var(--ts);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:9px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--deliver))}
+.bar .num{text-align:right;color:var(--tp);font-weight:700;font-size:12px}
+
+/* success bars colored */
+.sbar .fill.ok{background:linear-gradient(90deg,#2dd4bf,#34d399)}
+.sbar .fill.warn{background:linear-gradient(90deg,#fbbf24,#f0a92c)}
+.sbar .fill.err{background:linear-gradient(90deg,#f87171,#ef5350)}
+
+/* trend svg */
+.trend{width:100%;height:150px}
+.trend .grid-l{stroke:var(--line);stroke-width:1}
+.trend .area{fill:url(#g);opacity:.5}
+.trend .ln{fill:none;stroke:var(--deliver);stroke-width:2.5}
+.trend .dot{fill:var(--deliver)}
+.xlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:4px}
+
+/* donut */
+.donutwrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.leg{display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.leg .li{display:flex;align-items:center;gap:8px;color:var(--ts)}
+.leg .sw{width:11px;height:11px;border-radius:3px}
+.leg b{color:var(--tp)}
+
+/* improve table */
+.imp{display:flex;flex-direction:column;gap:9px}
+.imp .it{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:11px 13px}
+.imp .ic{font-size:19px}
+.imp .mn{flex:1;min-width:0}
+.imp .mt{font-family:var(--fd);font-weight:700;font-size:13.5px}
+.imp .ms{font-size:11.5px;color:var(--warn);margin-top:2px}
+.imp .lnk{all:unset;cursor:pointer;font-size:11.5px;font-weight:800;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border-radius:9px;padding:7px 11px;white-space:nowrap}
+.imp .why{font-size:11px;color:var(--tm);text-align:right;white-space:nowrap}
+
+/* feedback loop callout */
+.loop{border:1px dashed var(--line2);border-radius:14px;background:rgba(45,212,191,.04);padding:15px 17px;font-size:12.5px;color:var(--ts);line-height:1.6}
+.loop b{color:var(--tp)}
+.loop .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--tp);font-weight:700}
+.loop .flow span{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:20px;padding:5px 11px}
+.loop .flow .ar{background:none;border:none;color:var(--tm);padding:0}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">📊</div>
+    <div>
+      <h1>Adoption IA</h1>
+      <div class="sub">Ce qui marche, ce qui aide, ce qu'il faut améliorer — recettes &amp; prompts</div>
+    </div>
+    <div class="period" id="period">
+      <button data-p="7">7 j</button>
+      <button data-p="30" class="on">30 j</button>
+      <button data-p="90">90 j</button>
+    </div>
+  </header>
+
+  <div class="nav">
+    <a href="../recipes/recipes.html">🍳 Recettes</a>
+    <a href="../prompts/prompts.html">📚 Bibliothèque</a>
+    <a href="../studio/studio.html">🛠️ Studio</a>
+    <a href="#" class="on">📊 Métriques</a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis" id="kpis"></div>
+
+  <!-- Trend + level split -->
+  <div class="cols">
+    <div class="panel">
+      <h3>Adoption dans le temps</h3>
+      <div class="cap">Exécutions de recettes + copies de prompts, par semaine.</div>
+      <svg class="trend" id="trend" viewBox="0 0 520 150" preserveAspectRatio="none">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".5"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>
+      </svg>
+      <div class="xlab" id="xlab"></div>
+    </div>
+    <div class="panel">
+      <h3>Répartition par niveau</h3>
+      <div class="cap">Part des usages selon la gouvernance de la recette/prompt.</div>
+      <div class="donutwrap">
+        <svg width="140" height="140" viewBox="0 0 42 42" id="donut"></svg>
+        <div class="leg" id="donutLeg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top usage + success -->
+  <div class="cols">
+    <div class="panel">
+      <h3>Les plus utilisées</h3>
+      <div class="cap">Top recettes &amp; prompts par nombre d'usages.</div>
+      <div class="bars" id="topUse"></div>
+    </div>
+    <div class="panel">
+      <h3>Taux de réussite</h3>
+      <div class="cap">Part des exécutions validées sans correction humaine.</div>
+      <div class="bars sbar" id="successBars"></div>
+    </div>
+  </div>
+
+  <!-- À améliorer -->
+  <div class="panel">
+    <h3>⚠ À améliorer <span style="font-weight:600;color:var(--tm);font-size:12px">— faible réussite ou corrections fréquentes</span></h3>
+    <div class="cap">La boucle d'apprentissage remonte ici les recettes candidates à une nouvelle version. Un clic ouvre le Studio.</div>
+    <div class="imp" id="improve"></div>
+  </div>
+
+  <!-- Learning loop -->
+  <div class="panel">
+    <h3>🔁 Boucle d'apprentissage</h3>
+    <div class="loop">
+      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les recettes à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
+      <div class="flow"><span>Usage</span><span class="ar">→</span><span>Signal 👍/👎</span><span class="ar">→</span><span>Score</span><span class="ar">→</span><span>À améliorer</span><span class="ar">→</span><span>Studio : nouvelle version</span><span class="ar">↺</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
+
+  // ── Données (agrégées depuis recettes + prompts) ──
+  var ITEMS=[
+    {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30},
+    {ic:'✍️',name:'Message de commit',kind:'prompt',lvl:'off',uses:812,success:88,humanFix:12,saved:5},
+    {ic:'🧪',name:'Tests unitaires',kind:'prompt',lvl:'off',uses:640,success:88,humanFix:12,saved:25},
+    {ic:'🔒',name:'Analyse de vuln',kind:'recipe',lvl:'off',uses:210,success:91,humanFix:9,saved:40},
+    {ic:'👀',name:'Revue de code',kind:'prompt',lvl:'team',uses:298,success:82,humanFix:22,saved:20},
+    {ic:'🐞',name:'Stack trace',kind:'prompt',lvl:'team',uses:300,success:85,humanFix:18,saved:15},
+    {ic:'🧹',name:'Refacto legacy',kind:'prompt',lvl:'team',uses:130,success:70,humanFix:35,saved:45,studio:'refacto-legacy'},
+    {ic:'🚚',name:'Migration Java 21',kind:'recipe',lvl:'off',uses:56,success:74,humanFix:30,saved:120,studio:'migrate-java21'},
+    {ic:'🔤',name:'Regex / SQL',kind:'prompt',lvl:'exp',uses:45,success:60,humanFix:40,saved:10,studio:'regex-sql'},
+    {ic:'⚛️',name:'Tests React',kind:'prompt',lvl:'off',uses:190,success:86,humanFix:14,saved:20}
+  ];
+  var LVL={off:['Officiel','#34d399'],team:['Équipe','#60a5fa'],exp:['Expérimental','#fbbf24']};
+  var SCALE={7:.25,30:1,90:2.8};
+
+  function fmt(n){ return n>=1000?(n/1000).toFixed(1).replace('.0','')+'k':(''+Math.round(n)); }
+
+  function render(days){
+    var s=SCALE[days];
+    var items=ITEMS.map(function(it){ var c=Object.assign({},it); c.u=Math.round(it.uses*s); return c; });
+    var totalUses=items.reduce(function(a,b){return a+b.u;},0);
+    var timeSaved=items.reduce(function(a,b){return a+b.u*b.saved;},0)/60; // heures
+    var wAvg=Math.round(items.reduce(function(a,b){return a+b.success*b.u;},0)/totalUses);
+    var wFix=Math.round(items.reduce(function(a,b){return a+b.humanFix*b.u;},0)/totalUses);
+    var active=items.filter(function(i){return i.u>0;}).length;
+
+    // KPIs
+    $('kpis').innerHTML=[
+      ['⚡','Usages',fmt(totalUses),'up','+'+(days===30?'18':days===7?'6':'34')+'% vs période préc.'],
+      ['⏱','Temps gagné (est.)','~'+fmt(timeSaved)+' h','up','soit ~'+Math.round(timeSaved/7)+' j·homme'],
+      ['✅','Réussite moyenne',wAvg+'%',wAvg>=85?'up':'down',(wAvg>=85?'au-dessus':'sous')+' la cible 85%'],
+      ['🖐','Corrigés à la main',wFix+'%','down','part relue/ajustée'],
+      ['🧩','Recettes actives',''+active,'','sur '+ITEMS.length+' publiées'],
+      ['👥','Contributeurs','23','up','+3 ce mois']
+    ].map(function(k){ return '<div class="kpi"><div class="k">'+k[0]+' '+k[1]+'</div><div class="val">'+k[2]+'</div><div class="tr '+k[3]+'">'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
+
+    // Trend (8 semaines, croissance + bruit déterministe)
+    var pts=[]; var base=totalUses/9;
+    for(var i=0;i<8;i++){ var v=base*(0.55+i*0.075)+ (i%3-1)*base*0.06; pts.push(Math.max(base*.4,v)); }
+    var max=Math.max.apply(null,pts)*1.15, W=520,H=150,pad=6;
+    var xs=function(i){return pad+i*(W-2*pad)/7;}, ys=function(v){return H-pad-(v/max)*(H-2*pad);};
+    var d='',area='M'+xs(0)+' '+H;
+    pts.forEach(function(v,i){ d+=(i?'L':'M')+xs(i).toFixed(1)+' '+ys(v).toFixed(1)+' '; area+='L'+xs(i).toFixed(1)+' '+ys(v).toFixed(1)+' '; });
+    area+='L'+xs(7)+' '+H+' Z';
+    var dots=pts.map(function(v,i){return '<circle class="dot" cx="'+xs(i).toFixed(1)+'" cy="'+ys(v).toFixed(1)+'" r="3"/>';}).join('');
+    var glines=[0,.5,1].map(function(f){var y=pad+f*(H-2*pad);return '<line class="grid-l" x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'"/>';}).join('');
+    $('trend').innerHTML='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".45"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>'+glines+'<path class="area" d="'+area+'"/><path class="ln" d="'+d+'"/>'+dots;
+    $('xlab').innerHTML=['S-7','S-6','S-5','S-4','S-3','S-2','S-1','Cette sem.'].map(function(l){return '<span>'+l+'</span>';}).join('');
+
+    // Donut par niveau
+    var byLvl={off:0,team:0,exp:0}; items.forEach(function(i){ byLvl[i.lvl]+=i.u; });
+    var tot=byLvl.off+byLvl.team+byLvl.exp, off=0, seg='';
+    ['off','team','exp'].forEach(function(k){ var pct=byLvl[k]/tot*100; seg+='<circle r="15.915" cx="21" cy="21" fill="transparent" stroke="'+LVL[k][1]+'" stroke-width="6" stroke-dasharray="'+pct.toFixed(1)+' '+(100-pct).toFixed(1)+'" stroke-dashoffset="'+(25-off).toFixed(1)+'"/>'; off+=pct; });
+    $('donut').innerHTML='<circle r="15.915" cx="21" cy="21" fill="transparent" stroke="rgba(255,255,255,.05)" stroke-width="6"/>'+seg+'<text x="21" y="20.5" text-anchor="middle" font-size="6.5" fill="#f5f1ff" font-weight="800" font-family="Bricolage Grotesque">'+fmt(tot)+'</text><text x="21" y="26" text-anchor="middle" font-size="3.2" fill="#7a6fa3" font-family="Manrope">usages</text>';
+    $('donutLeg').innerHTML=['off','team','exp'].map(function(k){ return '<div class="li"><span class="sw" style="background:'+LVL[k][1]+'"></span>'+LVL[k][0]+' · <b>'+Math.round(byLvl[k]/tot*100)+'%</b></div>'; }).join('');
+
+    // Top usage
+    var top=items.slice().sort(function(a,b){return b.u-a.u;}).slice(0,7);
+    var mx=top[0].u;
+    $('topUse').innerHTML=top.map(function(i){ return '<div class="bar"><span class="lbl">'+i.ic+' '+esc(i.name)+'</span><div class="track"><div class="fill" style="width:'+(i.u/mx*100).toFixed(0)+'%"></div></div><span class="num">'+fmt(i.u)+'</span></div>'; }).join('');
+
+    // Success bars (sorted asc to surface weak ones)
+    var bysucc=items.slice().sort(function(a,b){return a.success-b.success;}).slice(0,7);
+    $('successBars').innerHTML=bysucc.map(function(i){ var cls=i.success>=85?'ok':i.success>=70?'warn':'err'; return '<div class="bar"><span class="lbl">'+i.ic+' '+esc(i.name)+'</span><div class="track"><div class="fill '+cls+'" style="width:'+i.success+'%"></div></div><span class="num">'+i.success+'%</span></div>'; }).join('');
+
+    // À améliorer
+    var flagged=items.filter(function(i){return i.u>10 && (i.success<75||i.humanFix>30);}).sort(function(a,b){return a.success-b.success;});
+    $('improve').innerHTML=flagged.length?flagged.map(function(i){
+      var why=i.success<75?('réussite '+i.success+'%'):('corrigés '+i.humanFix+'%');
+      return '<div class="it"><span class="ic">'+i.ic+'</span><div class="mn"><div class="mt">'+esc(i.name)+'</div><div class="ms">⚠ '+why+' — candidate à une nouvelle version</div></div>'+
+        '<span class="why">'+i.success+'% · '+i.humanFix+'% corr.</span>'+
+        '<button class="lnk" data-studio="'+esc(i.studio||'')+'">Ouvrir dans le Studio →</button></div>';
+    }).join(''):'<div style="color:var(--tm);font-size:13px;padding:10px">Rien à signaler sur cette période 🎉</div>';
+    $('improve').querySelectorAll('[data-studio]').forEach(function(b){ b.addEventListener('click',function(){ var s=b.dataset.studio; if(s){ location.href='../studio/studio.html'; } else toast('Ouverture du Studio (maquette)'); }); });
+  }
+
+  var days=30;
+  $('period').querySelectorAll('[data-p]').forEach(function(b){ b.addEventListener('click',function(){ days=+b.dataset.p; $('period').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); render(days); }); });
+  render(days);
+})();
+</script>
+</body>
+</html>
