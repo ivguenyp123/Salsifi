@@ -622,10 +622,10 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       // trace de debug -> suppression
       if(/console\.log|System\.out\.print/.test(l)){
         changes.push({line:i+1,before:l,after:'(ligne supprimée)',why:'trace de debug retirée'});
-        out[i]=' DEL';
+        out[i]='__DEL__';
       }
     }
-    out=out.filter(function(x){return x!==' DEL';});
+    out=out.filter(function(x){return x!=='__DEL__';});
     if(consts.length){
       var idx=0; for(var k=0;k<out.length;k++){ if(/\b(public|private|protected|function|def)\b/.test(out[k])){idx=k;break;} }
       var pad=ind(out[idx]||'');
