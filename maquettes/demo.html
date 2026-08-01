@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salsifi — Démo Catalogue IA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧂</text></svg>">
+<style>
+ html,body{margin:0;height:100%;background:#0f0a1f;font-family:'Manrope',system-ui,sans-serif}
+ .tabs{position:fixed;top:0;left:0;right:0;height:50px;display:flex;gap:6px;align-items:center;padding:0 16px;background:#160f2b;border-bottom:1px solid rgba(255,255,255,.1);z-index:10;box-sizing:border-box}
+ .tabs .brand{color:#f5f1ff;font-weight:800;font-size:15px;margin-right:14px;letter-spacing:-.01em}
+ .tabs .brand small{color:#7a6fa3;font-weight:600;font-size:11px;margin-left:6px}
+ .tabs button{font:inherit;font-weight:700;font-size:13px;color:#b8aed8;background:transparent;border:1px solid transparent;border-radius:9px;padding:8px 14px;cursor:pointer;transition:.15s}
+ .tabs button:hover{color:#f5f1ff}
+ .tabs button.on{color:#fff;background:rgba(124,92,252,.22)}
+ .frames{position:fixed;top:50px;left:0;right:0;bottom:0}
+ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#0f0a1f}
+ iframe.on{display:block}
+</style></head><body>
+ <div class="tabs"><span class="brand">🧂 Salsifi<small>démo · un seul fichier</small></span>
+   <button data-t="catalogue" class="on">🧰 Catalogue</button>
+   <button data-t="studio">🛠️ Studio</button>
+   <button data-t="metrics">📊 Métriques</button>
+ </div>
+ <div class="frames">
+   <iframe id="f-catalogue" class="on" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
+<html lang=&quot;fr&quot; data-theme=&quot;dark&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Catalogue IA — recettes &amp;amp; prompts (maquette)</title>
+<link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>&quot;>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.ctx-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--ts)}
+.ctx-pill b{color:var(--tp)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+/* HERO */
+.hero{margin:16px 0 8px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,rgba(124,92,252,.09),rgba(45,212,191,.03));padding:22px 26px}
+.hero h2{font-family:var(--fd);font-size:20px;font-weight:800;margin-bottom:4px}
+.hero p{font-size:13px;color:var(--ts);margin-bottom:15px;max-width:780px}
+.hero p .rk{color:var(--deliver);font-weight:700} .hero p .pk{color:var(--accent);font-weight:700}
+.ask{display:flex;gap:10px;flex-wrap:wrap}
+.ask input{flex:1;min-width:260px;font-family:var(--fb);font-size:15px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:13px;padding:13px 16px;outline:none}
+.ask input:focus{border-color:var(--accent)}
+.ask button{font-family:var(--fb);font-weight:800;font-size:14px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:13px;padding:13px 20px;cursor:pointer}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:12px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 12px;cursor:pointer;transition:.15s}
+.chip:hover{border-color:var(--accent);color:var(--tp)}
+#intentResult{margin-top:16px}
+
+/* Toolbar — le toggle est la clé */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.kindseg{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line2);border-radius:13px;padding:5px}
+.kindseg button{font-family:var(--fb);font-size:13px;font-weight:800;color:var(--ts);background:transparent;border:none;border-radius:10px;padding:9px 15px;cursor:pointer;transition:.15s}
+.kindseg button[data-k=&quot;recipe&quot;].on{background:rgba(45,212,191,.18);color:var(--deliver)}
+.kindseg button[data-k=&quot;prompt&quot;].on{background:rgba(124,92,252,.2);color:var(--accent)}
+.kindseg button[data-k=&quot;&quot;].on{background:rgba(255,255,255,.08);color:var(--tp)}
+.tagbar{display:flex;gap:7px;flex-wrap:wrap}
+.tag{font-size:11.5px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:5px 11px;cursor:pointer}
+.tag.on{border-color:var(--accent);color:var(--accent);background:rgba(124,92,252,.12)}
+.filts{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.ck{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ts);cursor:pointer}
+.ck input{width:16px;height:16px;accent-color:var(--accent)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.card{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:16px 18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:10px;position:relative}
+.card:hover{border-color:var(--line2);background:var(--bg-card-h);transform:translateY(-2px)}
+.card.recipe{border-left:3px solid rgba(45,212,191,.5)}
+.card.prompt{border-left:3px solid rgba(124,92,252,.5)}
+.card .top{display:flex;align-items:flex-start;gap:10px}
+.card .ic{font-size:22px}
+.card .ti{font-family:var(--fd);font-weight:800;font-size:15px;line-height:1.25;flex:1}
+.kindbadge{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.kindbadge.recipe{color:var(--deliver);background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.3)}
+.kindbadge.prompt{color:var(--accent);background:rgba(124,92,252,.12);border:1px solid rgba(124,92,252,.3)}
+.lvl{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.lvl.off,.lvl.official{color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35)}
+.lvl.team{color:var(--info);background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.35)}
+.lvl.exp{color:var(--warn);background:rgba(251,191,36,.12);border:1px dashed rgba(251,191,36,.5)}
+.lvl.mine{color:var(--accent);background:rgba(124,92,252,.14);border:1px solid rgba(124,92,252,.35)}
+.card .desc{font-size:12.5px;color:var(--ts);line-height:1.5}
+.card .tags{display:flex;gap:5px;flex-wrap:wrap}
+.card .tags span{font-size:10.5px;color:var(--tm);background:rgba(255,255,255,.04);border-radius:6px;padding:2px 7px}
+.snippet{font-family:var(--fm);font-size:11px;color:var(--tm);background:rgba(10,7,22,.5);border:1px solid var(--line);border-radius:9px;padding:8px 10px;line-height:1.5;max-height:52px;overflow:hidden}
+.snippet .v{color:var(--deliver)}
+.metrics{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ts);border-top:1px solid var(--line);padding-top:10px}
+.metrics b{color:var(--tp);font-size:13px;font-weight:800}
+.metrics .m{display:flex;flex-direction:column}
+.foot{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tm);border-top:1px solid var(--line);padding-top:9px}
+.star{all:unset;cursor:pointer;font-size:15px;line-height:1;opacity:.4;transition:.15s}.star.on{opacity:1}
+.act{margin-left:auto;font-family:var(--fb);font-weight:800;font-size:12px;color:#0f0a1f;border:none;border-radius:9px;padding:7px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.act.run{background:linear-gradient(135deg,#2dd4bf,#34d399)}
+.act.copy{background:linear-gradient(135deg,var(--accent),#c4b5fd)}
+.varpill{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+.autopill{font-size:10px;color:var(--info);border:1px solid rgba(96,165,250,.4);background:rgba(96,165,250,.08);border-radius:20px;padding:2px 8px}
+.agentic{font-size:10px;color:var(--deliver);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:2px 8px}
+/* contexte injecté + conventions */
+.ctxbn{border:1px solid rgba(96,165,250,.35);background:rgba(96,165,250,.07);border-radius:12px;padding:11px 14px;margin-top:12px;font-size:12.5px;color:var(--ts);line-height:1.5}
+.ctxbn b{color:var(--tp)}
+.ctxbn .srcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.src{font-size:10.5px;color:var(--info);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:2px 7px;font-family:var(--fm)}
+.varrow.filled input,.varrow.filled textarea{border-color:rgba(96,165,250,.45);background:rgba(96,165,250,.05)}
+.vtag{font-size:10px;color:var(--info);margin-left:7px;font-weight:600}
+.conv{display:flex;gap:6px;flex-wrap:wrap}
+.conv span{font-size:11px;color:var(--deliver);background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.28);border-radius:7px;padding:3px 9px}
+.cmp{margin-top:11px;border-top:1px solid var(--line);padding-top:10px}
+.cmp summary{cursor:pointer;font-size:12px;color:var(--ts);font-weight:700;list-style:none}
+.cmp summary::-webkit-details-marker{display:none}
+.cmp summary::before{content:'▸ ';color:var(--tm)}
+.cmp[open] summary::before{content:'▾ '}
+.rawbox{font-family:var(--fm);font-size:12px;color:var(--tm);background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.22);border-radius:10px;padding:11px 13px;line-height:1.6;white-space:pre-wrap;margin-top:9px}
+.delta{font-size:11.5px;color:var(--warn);margin-top:8px;line-height:1.5}
+/* diff + preuve (continuité prompt→recette) */
+.hunk{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:9px;background:rgba(10,7,22,.5)}
+.hwhy{font-size:11.5px;color:var(--ts);padding:7px 11px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.dl{font-family:var(--fm);font-size:11.5px;padding:2px 11px;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.dl.del{color:#f6a5a5;background:rgba(248,113,113,.08)}
+.dl.add{color:#7ee6c9;background:rgba(45,212,191,.08)}
+.proof{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;color:var(--ts);align-items:baseline}
+.proof .pl2{color:var(--tm);font-weight:700;white-space:nowrap}
+.proof b{color:var(--tp)}
+
+/* Modal */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(6,4,14,.74);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.ov.show{display:flex}
+.modal{width:100%;max-width:680px;background:#160f2b;border:1px solid var(--line2);border-radius:20px;padding:22px 24px}
+.modal .mh{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px}
+.modal .mh .ic{font-size:26px}
+.modal h3{font-family:var(--fd);font-size:19px;font-weight:800;flex:1}
+.x{all:unset;cursor:pointer;font-size:20px;color:var(--tm)}
+.field{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:12px 14px;margin-top:12px}
+.field .fl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.field .fv{font-size:13px;color:var(--ts);line-height:1.55}
+.field .fv b{color:var(--tp)}
+.promptbox{font-family:var(--fm);font-size:12.5px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line);border-radius:10px;padding:13px 15px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.promptbox .v{color:var(--deliver);background:rgba(45,212,191,.1);border-radius:4px;padding:0 3px}
+.varform{display:grid;gap:9px;margin-top:4px}
+.varrow{display:flex;flex-direction:column;gap:4px}
+.varrow label{font-size:11px;color:var(--ts);font-weight:700}
+.varrow input,.varrow textarea{font-family:var(--fb);font-size:13px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:9px 11px;outline:none;resize:vertical}
+.varrow input:focus,.varrow textarea:focus{border-color:var(--accent)}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:8px;padding:4px 9px;margin:3px 4px 0 0}
+.tool.read{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.tool.write{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)}
+.chk{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.mbtns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.mbtn{font-family:var(--fb);font-weight:800;font-size:13px;border-radius:11px;padding:11px 18px;cursor:pointer;border:none}
+.mbtn.go{color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver))}
+.mbtn.run{color:#0f0a1f;background:linear-gradient(135deg,#2dd4bf,#34d399)}
+.mbtn.ghost{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2)}
+.mbtn.mini{padding:8px 12px;font-size:12px}
+.note{font-size:11px;color:var(--tm);margin-top:12px;line-height:1.5}
+.thumbs{display:flex;gap:8px;margin-left:auto}
+.thumb{all:unset;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:8px;border:1px solid var(--line)}
+.empty{color:var(--tm);font-size:13px;text-align:center;padding:30px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class=&quot;wrap&quot;>
+  <header>
+    <div class=&quot;logo&quot;>🧰</div>
+    <div>
+      <h1>Catalogue IA</h1>
+      <div class=&quot;sub&quot;>Recettes &amp;amp; prompts au même endroit · le LLM oriente, les outils déterministes exécutent</div>
+    </div>
+    <div class=&quot;ctx-pill&quot;>📦 <b>platformengineering</b> · Java 21 · Spring · Kubernetes · GitLab CI</div>
+  </header>
+
+  <div class=&quot;nav&quot;>
+    <a href=&quot;#&quot; class=&quot;on&quot;>🧰 Catalogue</a>
+    <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
+    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Métriques</a>
+  </div>
+
+  <!-- HERO -->
+  <div class=&quot;hero&quot;>
+    <h2>Que veux-tu faire ?</h2>
+    <p>Décris ton besoin, tu <b>Lances</b>. Une <span class=&quot;rk&quot;>🍳 recette</span> lance un <b>workflow</b> (outils, écritures, garde-fous) qui agit sur ton dépôt ; un <span class=&quot;pk&quot;>📚 prompt</span> lance une <b>génération</b> déjà <b>pré-remplie depuis ton contexte</b> (fichier ouvert, pipeline cassé, MR) et à <b>tes conventions maison</b> — donc plus rapide et plus juste qu'un chat nu, pas plus lent.</p>
+    <div class=&quot;ask&quot;>
+      <input id=&quot;ask&quot; placeholder=&quot;ex : générer des tests · préparer la livraison · expliquer ce code…&quot; autocomplete=&quot;off&quot;>
+      <button id=&quot;askGo&quot;>Trouver →</button>
+    </div>
+    <div class=&quot;chips&quot; id=&quot;chips&quot;></div>
+    <div id=&quot;intentResult&quot;></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class=&quot;toolbar&quot;>
+    <div class=&quot;kindseg&quot; id=&quot;kindSeg&quot;>
+      <button data-k=&quot;&quot; class=&quot;on&quot;>Tout</button>
+      <button data-k=&quot;recipe&quot;>🍳 Recettes · agir</button>
+      <button data-k=&quot;prompt&quot;>📚 Prompts · générer</button>
+    </div>
+    <div class=&quot;tagbar&quot; id=&quot;tagbar&quot;></div>
+    <div class=&quot;filts&quot;>
+      <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;ctxOnly&quot; checked> Compatibles avec mon dépôt</label>
+      <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;favOnly&quot;> ⭐ Favoris</label>
+    </div>
+  </div>
+
+  <div class=&quot;grid&quot; id=&quot;grid&quot;></div>
+</div>
+
+<div class=&quot;ov&quot; id=&quot;ov&quot;><div class=&quot;modal&quot; id=&quot;modal&quot;></div></div>
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2200); }
+  function copy(text){ if(navigator.clipboard&amp;&amp;navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(function(){fb(text);});}else fb(text); }
+  function fb(text){ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+  function vars(b){ var m,re=/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,s=[]; while((m=re.exec(b))){var n=m[1].trim(); if(s.indexOf(n)===-1)s.push(n);} return s; }
+  function hl(b){ return esc(b).replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,'<span class=&quot;v&quot;>{{$1}}</span>'); }
+  function fill(b,v){ return b.replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,function(m,n){var x=v[n.trim()];return (x!==undefined&amp;&amp;x!=='')?x:m;}); }
+
+  var CTX={ repo:'platformengineering', stack:['java','spring','kubernetes','java21'] };
+  var LVL_LABEL={off:'Officiel',team:'Équipe',exp:'Expérimental',official:'Officiel',mine:'Perso'};
+  var LVL_ICON={off:'🛡',team:'👥',exp:'🧪',official:'🟢',mine:'👤'};
+
+  // ── Modèle &amp; coût (simulation) — pour que l'utilisateur sache ce qu'il consomme ──
+  var MODELS={nano:{n:'Nano',c:0.002},small:{n:'Small',c:0.008},mid:{n:'Mid',c:0.03},large:{n:'Large',c:0.10}};
+  // par entrée : [modèle utilisé, modèle recommandé pour la tâche]
+  var ITEM_MODEL={
+    'tests-junit':['large','mid'], 'migrate-java21':['large','large'], 'analyze-vuln':['large','large'],
+    'prep-delivery':['mid','mid'], 'react-tests':['mid','small'],
+    'commit':['mid','nano'], 'analyze-code':['mid','small'], 'explain':['mid','small'],
+    'review':['large','mid'], 'debug':['mid','small'], 'story':['mid','small'], 'sql':['mid','small'], 'learn':['small','small']
+  };
+  function eur(x){ var s=(x<1?x.toFixed(3):x<100?x.toFixed(2):(''+Math.round(x))); return '€'+s.replace('.',','); }
+  function modelInfo(r){ var mm=ITEM_MODEL[r.id]||['mid','mid']; var cur=MODELS[mm[0]], opt=MODELS[mm[1]]; return {curK:mm[0],optK:mm[1],cur:cur,opt:opt,save:cur.c-opt.c}; }
+  function costPill(r){ var mi=modelInfo(r); return '<span class=&quot;autopill&quot; style=&quot;color:var(--ts);border-color:var(--line2);background:rgba(255,255,255,.03)&quot;>🧠 '+mi.cur.n+' · '+eur(mi.cur.c)+'</span>'; }
+  function modelField(r){
+    var mi=modelInfo(r);
+    var hint = mi.save>0.0005 ? '<div class=&quot;note&quot; style=&quot;margin-top:8px;color:var(--ok)&quot;>💡 <b>'+mi.opt.n+'</b> suffirait pour cette tâche → '+eur(mi.opt.c)+'/exéc (−'+eur(mi.save)+' par appel). Réglable par un <b>ai-maintainer</b> dans le Studio.</div>'
+                             : '<div class=&quot;note&quot; style=&quot;margin-top:8px&quot;>Modèle bien dimensionné pour la difficulté de la tâche.</div>';
+    return '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🧠 Modèle &amp;amp; coût <span style=&quot;color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0&quot;>— ce que tu consommes</span></div>'+
+      '<div class=&quot;fv&quot;>Modèle utilisé : <b>'+mi.cur.n+'</b> · <b>'+eur(mi.cur.c)+'</b> / exécution <span style=&quot;color:var(--tm)&quot;>(simulation)</span></div>'+hint+'</div>';
+  }
+
+  // ── Données unifiées (kind: recipe | prompt) ──
+  var R=[
+    // ——— RECETTES (s'exécutent) ———
+    {kind:'recipe', id:'tests-junit', ic:'🧪', title:'Générer des tests unitaires', lvl:'off', owner:'Plateforme', tags:['java','tests'], stack:['java'], engine:'gentests',
+      usage:340, success:88, humanFix:12, timeSaved:'~25 min', ctx:'Java · JUnit 5 · code non testé', version:'v3', verified:'12 mai 2026',
+      tools:[['Lire le dépôt','read'],['Générer le fichier de test (dry-run)','write'],['Exécuter la suite de tests','read']], security:['Écriture du seul fichier de test, sur ta branche. Dry-run avant création.'],
+      expected:'Une classe de tests JUnit couvrant cas nominaux et limites.', criteria:['Les tests compilent','Les tests passent','Couverture > 70 %'], agentic:true},
+    {kind:'recipe', id:'migrate-java21', ic:'🚚', title:'Préparer une migration Spring → Java 21', lvl:'off', owner:'Archi', tags:['java','spring','migration'], stack:['java','spring'],
+      usage:56, success:74, humanFix:30, timeSaved:'~2 h', ctx:'Spring Boot · JDK cible 21', version:'v2', verified:'28 avr. 2026',
+      tools:[['Lire le dépôt','read'],['Créer une branche + patch (dry-run)','write']], security:['Écriture sur branche dédiée, jamais sur main.','Dry-run + revue humaine avant merge.'],
+      expected:'Un plan de migration + une branche avec les changements mécaniques.', criteria:['Compile en JDK 21','Aucune API supprimée résiduelle','Tests verts'], agentic:true},
+    {kind:'recipe', id:'analyze-vuln', ic:'🔒', title:'Analyser une vulnérabilité', lvl:'off', owner:'Sécurité', tags:['securite'], stack:['java','spring','kubernetes'],
+      usage:210, success:91, humanFix:9, timeSaved:'~40 min', ctx:'Finding OSV/CVE · composant identifié', version:'v4', verified:'02 mai 2026',
+      tools:[['Secrets Scanner (lecture)','read'],['Repo Analyzer (lecture)','read']], security:['⚠ La valeur d\'un secret n\'est JAMAIS envoyée au modèle — seulement type et emplacement.'],
+      expected:'Impact (exploitable ici ?), blast radius, remédiation.', criteria:['Composant et version confirmés','Remédiation applicable','Faux positif écarté'], agentic:false},
+    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'],
+      usage:480, success:95, humanFix:5, timeSaved:'~30 min', ctx:'App conteneurisée · overlays Kustomize · GitLab CI', version:'v5', verified:'20 mai 2026',
+      tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
+      security:['Le LLM oriente ; le module Livraison déterministe exécute.','Dry-run obligatoire : rien sans ta confirmation.'],
+      expected:'Une MR de livraison prête (version bumpée, overlays synchro).', criteria:['Branche mergeable','Kustomize cohérent','Aucune vuln critique','Tests verts'], agentic:true, isDelivery:true},
+    {kind:'recipe', id:'react-tests', ic:'⚛️', title:'Générer des tests React', lvl:'off', owner:'Front Guild', tags:['react','tests'], stack:['react'],
+      usage:190, success:86, humanFix:14, timeSaved:'~20 min', ctx:'Composant React · Testing Library', version:'v2', verified:'10 mai 2026',
+      tools:[['Lire le dépôt','read'],['Exécuter les tests','read']], security:['Lecture seule.'],
+      expected:'Des tests de rendu et d\'interaction.', criteria:['Tests passent','Interactions couvertes'], agentic:false},
+    // ——— PROMPTS (se copient) ———
+    {kind:'prompt', id:'commit', ic:'✍️', title:'Message de commit conventionnel', lvl:'official', owner:'Plateforme', tags:['git'], stack:[], uses:812, timeSaved:'~5 min', fav:false, verified:'20 mai 2026',
+      body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
+    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:false, verified:'30 mai 2026', engine:'analyze',
+      body:'Analyse ce code selon les règles de la plateforme (NPE, null retournés, nombres magiques, debug oublié, imbrication, couverture) et remonte les problèmes avec leur ligne.\n\nCode :\n{{code}}'},
+    {kind:'prompt', id:'explain', ic:'📖', title:'Explique-moi ce code', lvl:'mine', owner:'marie.d', tags:['debug','apprentissage'], stack:[], uses:57, timeSaved:'~15 min', fav:true, verified:'28 mai 2026',
+      body:'Explique ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Pièges / effets de bord non évidents.\n\nCode :\n{{code}}'},
+    {kind:'prompt', id:'review', ic:'👀', title:'Revue de code façon senior', lvl:'team', owner:'Tribu Paiements', tags:['revue','git'], stack:[], uses:298, timeSaved:'~20 min', fav:false, verified:'18 mai 2026',
+      body:'Relis ce diff comme un reviewer senior bienveillant.\n\nClasse : 🔴 bloquant · 🟡 à discuter · 🟢 suggestion.\nPour chaque point : fichier, ligne, pourquoi, proposition concrète.\nNe relève pas le style géré par le linter.\n\nDiff :\n{{diff}}'},
+    {kind:'prompt', id:'debug', ic:'🐞', title:'Comprendre une stack trace', lvl:'official', owner:'Plateforme', tags:['debug'], stack:[], uses:415, timeSaved:'~15 min', fav:false, verified:'15 mai 2026',
+      body:'Voici une erreur dans un projet {{stack}}.\n\n1. Cause probable, en clair.\n2. La ligne / l\'appel le plus suspect.\n3. Deux pistes de correction (simple → robuste).\n\nErreur :\n{{erreur}}\n\nContexte :\n{{contexte}}'},
+    {kind:'prompt', id:'story', ic:'🏗', title:'Découper une user story', lvl:'team', owner:'Tribu Paiements', tags:['produit'], stack:[], uses:96, timeSaved:'~20 min', fav:false, verified:'22 mai 2026',
+      body:'Découpe cette user story en tâches livrables indépendamment.\n\nPour chaque tâche : titre, critère d\'acceptation vérifiable, estimation (S/M/L).\nSignale dépendances et incertitudes à lever.\n\nStory :\n{{story}}'},
+    {kind:'prompt', id:'sql', ic:'⚡', title:'Optimiser une requête SQL', lvl:'official', owner:'Tribu Data', tags:['sql','data'], stack:[], uses:150, timeSaved:'~25 min', fav:false, verified:'02 mai 2026',
+      body:'Analyse cette requête {{sgbd}} et propose une version plus rapide.\n\n- explique le coût actuel (jointures, scans)\n- propose index et réécriture\n- garde un résultat identique\n\nRequête :\n{{requete}}'},
+    {kind:'prompt', id:'learn', ic:'🎓', title:'M\'apprendre un concept', lvl:'mine', owner:'marie.d', tags:['apprentissage'], stack:[], uses:41, timeSaved:'—', fav:true, verified:'29 mai 2026',
+      body:'Apprends-moi « {{concept}} » à un niveau {{niveau}}.\n\n1. L\'intuition en une analogie.\n2. Le minimum théorique utile.\n3. Un exemple de code commenté.\n4. Une erreur classique à éviter.\n5. Un mini-exercice.'}
+  ];
+  var TAGS=['tests','java','git','revue','debug','securite','migration','livraison','sql','produit','apprentissage','react'];
+
+  // ── Ce que la plateforme injecte et que l'utilisateur ne peut PAS taper ──
+  // 1) Contexte courant du poste (fichier ouvert, pipeline cassé, MR courante)
+  var AUTOFILL={
+    code:{val:'public BigDecimal price(Order o) {\n    // TODO: gérer la devise\n    BigDecimal rate = o.getCustomer().getContract().getRate();\n    if (o.getItems().size() > 0) {\n        return rate.multiply(new BigDecimal(42));\n    }\n    return null;\n}', src:'fichier ouvert · PaymentService.java:88'},
+    diff:{val:'+ if (iban == null || !IbanValidator.valid(iban))\n+   throw new BadRequestException(&quot;IBAN invalide&quot;);', src:'MR !312 · diff courant'},
+    erreur:{val:'java.lang.NullPointerException\n  at InvoiceService.getZip(InvoiceService.java:127)', src:'pipeline #4821 en échec'},
+    stack:{val:'Java 21 · Spring Boot 3.2', src:'stack déclarée du dépôt'},
+    contexte:{val:'au démarrage de l\'app en préproduction', src:'run préprod #4821'}
+  };
+  // 2) Conventions maison embarquées dans le prompt (jamais retapées)
+  var CONV={
+    commit:['Conventional Commits','footer « Refs: PAY-xxx »','impératif · < 72 car.'],
+    review:['Grille interne 🔴/🟡/🟢','ignorer le style (Spotless)','1 test exigé par bug corrigé'],
+    sql:['Index nommés idx_&amp;lt;table&amp;gt;_&amp;lt;cols&amp;gt;','jamais de fonction sur colonne filtrée','EXPLAIN attendu'],
+    debug:['2 pistes : simple → robuste','pointer fichier:ligne'],
+    story:['Tâches ≤ 1 j','critère d\'acceptation vérifiable par tâche']
+  };
+  // 3) Ce qu'un chat nu (sans contexte ni conventions) aurait répondu — pour le contraste
+  var ANSRAW={
+    commit:'Update PaymentService\n\nFixed a bug related to IBAN handling.',
+    review:'Le code a l\'air correct dans l\'ensemble. Tu pourrais ajouter quelques commentaires et vérifier le nommage des variables.',
+    sql:'Tu peux essayer d\'ajouter un index sur created_at pour accélérer la requête, et voir si ça change quelque chose.'
+  };
+
+  // réponses IA simulées (maquette) — ce que « Lancer » renverrait pour chaque prompt
+  var ANS={
+    commit:'feat(payments): valider l\'IBAN avant l\'appel au PSP\n\nLes IBAN mal formés provoquaient un 500 côté PSP. On valide désormais le\nformat (mod 97) en amont et on renvoie un 422 explicite.\n\n- ajout IbanValidator + tests\n- message d\'erreur i18n\n\nBREAKING CHANGE: le endpoint /pay refuse maintenant un IBAN invalide (422).',
+    explain:'1. En une phrase : la fonction additionne deux entiers et renvoie le résultat.\n2. Étapes : elle reçoit a et b, calcule a+b, retourne la valeur — aucun état modifié.\n3. Piège : pas de gestion du dépassement (int overflow) si a+b dépasse la borne max.',
+    review:'🔴 PaymentService:42 — l\'appel réseau n\'a pas de timeout : un PSP lent bloque le thread. Ajoute un timeout + retry borné.\n🟡 RefundMapper:88 — logique dupliquée avec OrderMapper ; à extraire.\n🟢 Nommage `tmp2` peu parlant, renommer en `pspResponse`.',
+    debug:'Cause probable : NullPointerException car `customer.getAddress()` est null pour les comptes créés avant la v2.\nLigne suspecte : InvoiceService.java:127 — `address.getZip()`.\nCorrections : (1) garde `if (address != null)` ; (2) plus robuste : rendre l\'adresse obligatoire à la création + migration des comptes existants.',
+    story:'1. [S] Endpoint POST /refunds (validation montant ≤ paiement).\n2. [M] Intégration PSP refund + gestion des erreurs asynchrones.\n3. [S] Écran « Demander un remboursement » + états.\n4. [M] Webhook de confirmation + idempotence.\nDépendance : 4 dépend de 2. Incertitude : politique de remboursement partiel à confirmer avec le produit.',
+    sql:'Le coût vient d\'un full scan sur `orders(customer_id, created_at)`.\n\n-- index composite couvrant le filtre + le tri\nCREATE INDEX idx_orders_cust_date ON orders (customer_id, created_at DESC);\n\nRéécris ensuite sans fonction sur la colonne indexée (évite WHERE date(created_at)=…). Résultat identique, ~40× plus rapide sur 2M lignes.',
+    learn:'Intuition : un index, c\'est la table des matières d\'un livre — tu vas direct à la page au lieu de tout feuilleter.\nMinimum utile : structure B-tree, tri, sélectivité.\nExemple : CREATE INDEX … puis EXPLAIN pour voir le scan disparaître.\nErreur classique : indexer une colonne à faible sélectivité (ex. booléen) — inutile.\nExercice : sur quelle colonne indexerais-tu une table users(email, is_active) pour un login ?'
+  };
+
+  var fKind='', fTag='', ctxOnly=true, favOnly=false;
+
+  function compatible(r){ if(r.kind==='prompt') return true; return r.stack.some(function(s){return CTX.stack.indexOf(s)!==-1;}); }
+  function succCol(v){ return v>=85?'var(--ok)':v>=70?'var(--warn)':'var(--err)'; }
+
+  function card(r){
+    var isRec=r.kind==='recipe';
+    var incompat=!compatible(r);
+    var badge='<span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span>';
+    var lvlb='<span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_ICON[r.lvl]+' '+LVL_LABEL[r.lvl]+'</span>';
+    var body;
+    if(isRec){
+      body='<div class=&quot;tags&quot;>'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(r.agentic?'<span class=&quot;agentic&quot;>⚙️ agentique</span>':'')+costPill(r)+'</div>'+
+        '<div class=&quot;metrics&quot;>'+
+          '<div class=&quot;m&quot;><b>'+r.usage+'</b>usages</div>'+
+          '<div class=&quot;m&quot;><b style=&quot;color:'+succCol(r.success)+'&quot;>'+r.success+'%</b>réussite</div>'+
+          '<div class=&quot;m&quot;><b>'+r.humanFix+'%</b>corrigés</div>'+
+          '<div class=&quot;m&quot;><b>'+r.timeSaved+'</b>gagné</div>'+
+        '</div>'+
+        '<div class=&quot;foot&quot;>'+r.version+' · '+esc(r.owner)+(incompat?' <span style=&quot;color:var(--warn)&quot;>· hors stack</span>':'')+
+          '<button class=&quot;act run&quot; data-act=&quot;'+r.id+'&quot;>Lancer →</button></div>';
+    } else {
+      var vs=vars(r.body);
+      var auto=vs.filter(function(v){return AUTOFILL[v];}).length;
+      body='<div class=&quot;tags&quot;>'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class=&quot;varpill&quot;>'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+(auto?'<span class=&quot;autopill&quot;>⚡ '+auto+' pré-rempli'+(auto>1?'s':'')+'</span>':'')+costPill(r)+'</div>'+
+        '<div class=&quot;snippet&quot;>'+hl(r.body.replace(/\n+/g,' ').slice(0,140))+'</div>'+
+        '<div class=&quot;foot&quot;>'+LVL_ICON[r.lvl]+' '+esc(r.owner)+' · <b style=&quot;color:var(--ts)&quot;>'+r.uses+'</b>&amp;nbsp;usages'+
+          '<button class=&quot;act copy&quot; data-act=&quot;'+r.id+'&quot;>▶ Lancer</button></div>';
+    }
+    return '<div class=&quot;card '+r.kind+'&quot; data-id=&quot;'+r.id+'&quot;>'+
+      '<div class=&quot;top&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div class=&quot;ti&quot;>'+esc(r.title)+'</div>'+badge+lvlb+'</div>'+body+'</div>';
+  }
+
+  function renderGrid(){
+    var list=R.filter(function(r){
+      if(fKind &amp;&amp; r.kind!==fKind) return false;
+      if(fTag &amp;&amp; r.tags.indexOf(fTag)===-1) return false;
+      if(ctxOnly &amp;&amp; !compatible(r)) return false;
+      if(favOnly &amp;&amp; !r.fav) return false;
+      return true;
+    });
+    $('grid').innerHTML = list.length ? list.map(card).join('') : '<div class=&quot;empty&quot;>Aucune entrée pour ces filtres.</div>';
+    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')) return; openDetail(el.dataset.id); }); });
+    $('grid').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ primary(b.dataset.act); }); });
+  }
+  function renderTags(){
+    $('tagbar').innerHTML=TAGS.map(function(t){return '<span class=&quot;tag'+(fTag===t?' on':'')+'&quot; data-tag=&quot;'+t+'&quot;>'+t+'</span>';}).join('');
+    $('tagbar').querySelectorAll('[data-tag]').forEach(function(el){ el.addEventListener('click',function(){ fTag=fTag===el.dataset.tag?'':el.dataset.tag; renderTags(); renderGrid(); }); });
+  }
+
+  // action primaire : tout se lance. Recette -> workflow ; prompt -> génération.
+  function primary(id){ var r=R.find(function(x){return x.id===id;}); if(!r) return; if(r.kind==='recipe') runRecipe(r); else quickLaunch(r); }
+  function quickLaunch(r){ var vs=vars(r.body); if(vs.length){ openDetail(r.id); toast('Remplis les variables puis lance ⤵'); return; } promptDetail(r, true); }
+
+  // ── Fiche (kind-aware) ──
+  function openDetail(id){
+    var r=R.find(function(x){return x.id===id;}); if(!r) return;
+    if(r.kind==='recipe') return recipeDetail(r);
+    return promptDetail(r);
+  }
+
+  function recipeDetail(r){
+    var tools=r.tools.map(function(t){var cls=t[1]==='write'?'write':'read';var ic=t[1]==='write'?'✏️':'👁';return '<span class=&quot;tool '+cls+'&quot;>'+ic+' '+esc(t[0])+'</span>';}).join('');
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div style=&quot;flex:1&quot;><h3>'+esc(r.title)+'</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--tm);margin-top:2px&quot;><span class=&quot;kindbadge recipe&quot;>⚙️ Recette</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span> · '+r.version+' · '+esc(r.owner)+' · vérifiée '+r.verified+'</div></div>'+
+        '<button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🧩 Contexte attendu</div><div class=&quot;fv&quot;>'+esc(r.ctx)+'</div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🛠 Outils autorisés</div><div class=&quot;fv&quot;>'+tools+'<div class=&quot;note&quot;>Lecture 👁 · écriture ✏️ (confirmation humaine). L\'allowlist est appliquée à l\'exécution.</div></div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🔒 Sécurité</div><div class=&quot;fv&quot;>'+r.security.map(function(s){return '• '+esc(s);}).join('<br>')+'</div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>✅ Résultat &amp;amp; critères</div><div class=&quot;fv&quot;><b>'+esc(r.expected)+'</b><br>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>📊 Métriques</div><div class=&quot;fv&quot;><b>'+r.usage+'</b> usages · réussite <b style=&quot;color:'+succCol(r.success)+'&quot;>'+r.success+'%</b> · <b>'+r.humanFix+'%</b> corrigés · gagné <b>'+r.timeSaved+'</b></div></div>'+
+      modelField(r)+
+      '<div class=&quot;field&quot; style=&quot;border-style:dashed&quot;><div class=&quot;fl&quot;>📝 Prompt</div><div class=&quot;fv&quot; style=&quot;color:var(--tm)&quot;>Masqué — on n\'expose pas le prompt d\'une recette. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; data-run=&quot;'+r.id+'&quot;>🚀 Lancer la recette</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button>'+
+        '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'
+    );
+    $('modal').querySelectorAll('[data-run]').forEach(function(b){b.addEventListener('click',function(){runRecipe(r);});});
+    wireFb();
+  }
+
+  function runRecipe(r){
+    if(r.isDelivery) return runDelivery(r);
+    if(r.engine==='gentests') return runGenTests(r);
+    var writes=r.tools.some(function(t){return t[1]==='write';});
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><h3>'+esc(r.title)+'</h3><button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div style=&quot;font-size:12.5px;color:var(--ts);margin-bottom:8px&quot;>Contexte du dépôt injecté : <b style=&quot;color:var(--tp)&quot;>'+CTX.repo+'</b> · Java 21 · Spring.</div>'+
+      (writes?'<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Dry-run — rien n\'est écrit</div><div class=&quot;fv&quot;>Cette recette peut écrire ; elle te montre d\'abord ce qu\'elle ferait, puis attend ta confirmation.</div></div>':'')+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Résultat</div><div class=&quot;fv&quot;><b>'+esc(r.expected)+'</b><br><span style=&quot;color:var(--tm)&quot;>(sortie IA simulée — maquette)</span></div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Vérification automatique</div><div class=&quot;fv&quot;>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; data-close>'+(writes?'✔ Confirmer':'Terminer')+'</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button>'+
+        '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'
+    );
+    wireFb();
+  }
+
+  function runGenTests(r){
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div style=&quot;flex:1&quot;><h3>Générer des tests unitaires</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ recette · produit un fichier de test à partir de ton code</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div class=&quot;ctxbn&quot;>⚡ <b>Code injecté depuis ton poste</b> — tu peux l\'ajuster.<div class=&quot;srcs&quot;><span class=&quot;src&quot;>'+esc(AUTOFILL.code.src)+'</span></div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Code source</div><textarea class=&quot;promptbox&quot; id=&quot;gtCode&quot; style=&quot;width:100%;min-height:120px;border:1px solid var(--line2)&quot;>'+esc(AUTOFILL.code.val)+'</textarea></div>'+
+      '<div id=&quot;gtOut&quot;></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; id=&quot;gtRun&quot;>▶ Générer les tests (dry-run)</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button></div>'+
+      '<div class=&quot;note&quot;>Différence avec un prompt : la recette ne se contente pas de répondre — elle <b>produit un fichier</b> et propose de le <b>créer sur ta branche</b> (après ta confirmation). Rien n\'est écrit sans « ✔ Créer ».</div>'
+    );
+    $('gtRun').addEventListener('click',function(){
+      var code=$('gtCode').value; var g=genTests(code); var out=$('gtOut');
+      if(g.name==='—'){ out.innerHTML='<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fv&quot; style=&quot;color:var(--warn)&quot;>Aucune fonction détectée — colle du code avec au moins une méthode.</div></div>'; return; }
+      out.innerHTML='<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Dry-run — fichier proposé, pas encore créé</div>'+
+          '<div class=&quot;fv&quot;><b style=&quot;font-family:var(--fm)&quot;>'+esc(g.name)+'</b> · '+g.count+' méthode'+(g.count>1?'s':'')+' détectée'+(g.count>1?'s':'')+' → 2 tests chacune (nominal + cas limite)</div>'+
+          '<div class=&quot;promptbox&quot; style=&quot;color:var(--tp);margin-top:9px;max-height:260px;overflow:auto&quot;>'+esc(g.text)+'</div>'+
+          '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;><button class=&quot;mbtn run mini&quot; id=&quot;gtConfirm&quot;>✔ Créer '+esc(g.name)+' sur ma branche</button><button class=&quot;mbtn ghost mini&quot; id=&quot;gtCopy&quot;>📋 Copier</button></div></div>';
+      $('gtConfirm').addEventListener('click',function(){ toast('✅ '+g.name+' créé sur ta branche (simulation) — la recette a écrit, pas juste répondu'); });
+      $('gtCopy').addEventListener('click',function(){ copy(g.text); toast('📋 Fichier de test copié'); });
+      $('gtOut').scrollIntoView({behavior:'smooth',block:'nearest'});
+      toast('🧪 Tests générés à partir de ton code');
+    });
+    wireFb();
+  }
+
+  function runDelivery(r){
+    var checks=['Branche à jour et mergeable','IMAGE_TAG 1.4.2 → 1.5.0','Overlays Kustomize synchronisés (2 fichiers)','Scan vulnérabilités : aucune critique','Tests : 214 verts'];
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>🚀</span><div style=&quot;flex:1&quot;><h3>Préparer la livraison en préprod</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ agentique · le module Livraison déterministe exécute</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Dry-run — aucune écriture</div><div class=&quot;fv&quot;><b>Rien n\'est commité tant que tu ne confirmes pas.</b></div></div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Contrôles</div><div class=&quot;fv&quot; style=&quot;padding:0&quot;>'+checks.map(function(c){return '<div class=&quot;chk&quot;><span style=&quot;color:var(--ok)&quot;>✓</span><span>'+esc(c)+'</span></div>';}).join('')+'</div></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; id=&quot;dlv&quot;>✔ Créer la MR de livraison</button><button class=&quot;mbtn ghost&quot; data-close>Annuler</button>'+
+        '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'+
+      '<div class=&quot;note&quot;>L\'action irréversible (créer la MR) passe par cette confirmation humaine — jamais déclenchée par le modèle.</div>'
+    );
+    var c=$('dlv'); if(c) c.addEventListener('click',function(){ toast('🚀 MR de livraison créée'); closeM(); });
+    wireFb();
+  }
+
+  function promptDetail(r){
+    var vs=vars(r.body);
+    var autoVars=vs.filter(function(v){return AUTOFILL[v];});
+    // bandeau « contexte injecté » : sources réellement utilisées par ce prompt
+    var srcs=[]; autoVars.forEach(function(v){ if(srcs.indexOf(AUTOFILL[v].src)===-1) srcs.push(AUTOFILL[v].src); });
+    var ctxBanner=autoVars.length?
+      '<div class=&quot;ctxbn&quot;>⚡ <b>Contexte injecté depuis ton poste</b> — '+autoVars.length+' variable'+(autoVars.length>1?'s':'')+' déjà remplie'+(autoVars.length>1?'s':'')+', tu n\'as rien à retaper. <span style=&quot;color:var(--tm)&quot;>(ce qu\'un chat nu ne peut pas savoir)</span>'+
+        '<div class=&quot;srcs&quot;>'+srcs.map(function(s){return '<span class=&quot;src&quot;>'+esc(s)+'</span>';}).join('')+'</div></div>':'';
+    var varForm=vs.length?
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>✏️ Variables '+(autoVars.length?'<span style=&quot;color:var(--info);font-weight:600;text-transform:none;letter-spacing:0&quot;>— '+autoVars.length+' pré-remplie'+(autoVars.length>1?'s':'')+' par la plateforme</span>':'')+'</div><div class=&quot;varform&quot; id=&quot;vf&quot;>'+
+        vs.map(function(v){var big=/code|diff|texte|requete|story|erreur|contexte/i.test(v);var af=AUTOFILL[v];var val=af?esc(af.val):'';
+          return '<div class=&quot;varrow'+(af?' filled':'')+'&quot;><label>{{'+esc(v)+'}}'+(af?'<span class=&quot;vtag&quot;>⚡ '+esc(af.src)+'</span>':'')+'</label>'+
+            (big?'<textarea rows=&quot;'+(af?'3':'3')+'&quot; data-v=&quot;'+esc(v)+'&quot;>'+val+'</textarea>':'<input data-v=&quot;'+esc(v)+'&quot; value=&quot;'+val+'&quot;>')+'</div>';}).join('')+
+      '</div><div class=&quot;note&quot;>Champs bleutés = injectés du contexte. Tu peux les ajuster ; les autres sont à toi (niveau, cible…).</div></div>':'';
+    var convBlock=CONV[r.id]?
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🏷 Conventions maison <span style=&quot;color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0&quot;>— injectées dans le prompt, jamais retapées</span></div>'+
+        '<div class=&quot;conv&quot;>'+CONV[r.id].map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>'+
+        '<div class=&quot;note&quot;>C\'est ça qui rend la sortie « à ta norme » plutôt que générique. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>':'';
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div style=&quot;flex:1&quot;><h3>'+esc(r.title)+'</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--tm);margin-top:2px&quot;><span class=&quot;kindbadge prompt&quot;>💬 Prompt</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span> · '+esc(r.owner)+' · maj '+r.verified+' · lance une <b style=&quot;color:var(--accent)&quot;>génération</b></div></div>'+
+        '<button class=&quot;x&quot; data-close>✕</button></div>'+
+      ctxBanner+
+      varForm+
+      convBlock+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>📄 Le prompt <span style=&quot;color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0&quot;>— variables + conventions, prêt à partir</span></div><div class=&quot;promptbox&quot; id=&quot;pv&quot;>'+hl(r.body)+'</div></div>'+
+      modelField(r)+
+      '<div id=&quot;promptOut&quot;></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn go&quot; id=&quot;cf&quot;>▶ Lancer le prompt</button><button class=&quot;mbtn ghost mini&quot; id=&quot;cp&quot;>📋 Copier le prompt</button><button class=&quot;mbtn ghost mini&quot; data-close>Fermer</button>'+
+        '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'+
+      '<div class=&quot;note&quot;>« Lancer » envoie le prompt (contexte + conventions) à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton outil — mais tu perds le contexte injecté. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>recette</b>.</div>'
+    );
+    function convSuffix(){ return CONV[r.id]?('\n\n— Conventions maison appliquées : '+CONV[r.id].join(' · ').replace(/&amp;lt;/g,'<').replace(/&amp;gt;/g,'>')):''; }
+    function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals))+(CONV[r.id]?'<span style=&quot;color:var(--deliver);opacity:.8&quot;>'+esc(convSuffix())+'</span>':''); return vals; }
+    $('modal').querySelectorAll('[data-v]').forEach(function(i){ i.addEventListener('input',refresh); });
+    refresh();
+    $('cf').addEventListener('click',function(){ runPrompt(r); });
+    $('cp').addEventListener('click',function(){ var vals=refresh(); copy(fill(r.body,vals)+convSuffix()); toast('📋 Prompt copié (avec conventions)'); });
+    wireFb();
+  }
+
+  function runPrompt(r){
+    var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;});
+    var missing=vars(r.body).filter(function(v){return !vals[v];});
+    if(missing.length){ toast('Renseigne : '+missing.map(function(m){return '{{'+m+'}}';}).join(', ')); return; }
+    var out=$('promptOut'); r.uses++;
+    var live=r.engine==='analyze';
+    out.innerHTML='<div class=&quot;field&quot; style=&quot;border-color:var(--accent)&quot;><div class=&quot;fl&quot;>▶ '+(live?'Analyse en cours…':'Génération en cours…')+'</div><div class=&quot;fv&quot; style=&quot;color:var(--tm)&quot;>'+(live?'Application des règles de la plateforme au code…':'L\'IA de la plateforme traite le prompt rempli…')+'</div></div>';
+    setTimeout(function(){
+      var bodyHtml, text;
+      if(live){ var a=analyzeCode(vals.code||''); bodyHtml='<div class=&quot;promptbox&quot; style=&quot;color:var(--tp)&quot;>'+a.html+'</div>'; text=a.text; }
+      else {
+        text=ANS[r.id]||'(réponse simulée — maquette)\n\nL\'IA a traité le prompt rempli et te renvoie ici sa réponse.';
+        bodyHtml='<div class=&quot;promptbox&quot; style=&quot;color:var(--tp)&quot;>'+esc(text)+'</div>';
+      }
+      var raw=ANSRAW[r.id];
+      var cmp=raw?'<details class=&quot;cmp&quot;><summary>Comparer : ce qu\'un chat nu aurait répondu</summary>'+
+        '<div class=&quot;rawbox&quot;>'+esc(raw)+'</div>'+
+        '<div class=&quot;delta&quot;>⚠ Sans le contexte de ton dépôt ni tes conventions : réponse générique, à retravailler. Le catalogue part du bon code et de tes standards → utilisable tel quel.</div></details>':'';
+      var fixable=live &amp;&amp; a &amp;&amp; (a.r+a.y)>0;
+      var fixBtn=fixable?'<button class=&quot;mbtn run mini&quot; id=&quot;toFix&quot;>🔧 Corriger avec une recette →</button>':'';
+      out.innerHTML='<div class=&quot;field&quot; style=&quot;border-color:var(--accent)&quot;><div class=&quot;fl&quot;>✅ '+(live?'Analyse du code':'Réponse de l\'IA')+' <span style=&quot;color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0&quot;>— '+(live?'calculée en direct sur ton code':'contexte + conventions appliqués (simulée)')+'</span></div>'+
+        bodyHtml+cmp+
+        '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;>'+fixBtn+'<button class=&quot;mbtn go mini&quot; id=&quot;copyRes&quot;>📋 Copier le résultat</button><button class=&quot;mbtn ghost mini&quot; id=&quot;relaunch&quot;>↻ Relancer</button>'+
+          '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb2=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb2=&quot;down&quot;>👎</button></div></div></div>';
+      if(fixable) $('toFix').addEventListener('click',function(){ var code=(($('modal').querySelector('[data-v=&quot;code&quot;]')||{}).value)||vals.code; startFix(code); });
+      $('copyRes').addEventListener('click',function(){ copy(text); toast('📋 Résultat copié'); });
+      $('relaunch').addEventListener('click',function(){ runPrompt(r); });
+      out.querySelectorAll('[data-fb2]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb2==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});});
+      out.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },520);
+    toast(live?'🔍 Analyse lancée':'▶ Prompt lancé');
+  }
+
+  function wireFb(){ $('modal').querySelectorAll('[data-fb]').forEach(function(b){b.addEventListener('click',function(){toast(b.dataset.fb==='up'?'👍 Merci — ça remonte le score':'👎 Noté — corrections = amélioration');});}); }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  MOTEURS RÉELS (maquette qui marche pour de vrai, pas de canned)
+  //  → calculés côté client à partir du code que tu colles.
+  // ═══════════════════════════════════════════════════════════════
+  function detectLang(c){
+    if(/import java|System\.out|@Override|@Test/.test(c)) return 'java';
+    if(/\b(public|private|protected)\b/.test(c) &amp;&amp; /;\s*$/m.test(c)) return 'java';
+    if(/\bdef\s+\w+\s*\(|^\s*print\s*\(/m.test(c)) return 'python';
+    if(/\bfunction\b|=>|\b(const|let)\b|console\.log|\bexport\b/.test(c)) return 'js';
+    if(/;\s*$/m.test(c) &amp;&amp; /\)\s*\{/.test(c)) return 'java';
+    return 'js';
+  }
+  function extractFns(c,lang){
+    var out=[],m,re;
+    if(lang==='java'){ re=/(?:public|private|protected|static|final|\s)+[\w<>\[\],\s]+?\s+(\w+)\s*\(([^)]*)\)\s*\{/g; }
+    else if(lang==='python'){ re=/def\s+(\w+)\s*\(([^)]*)\)/g; }
+    else { re=/(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(\w+)\s*\(([^)]*)\)\s*\{)/g; }
+    var seen={};
+    while((m=re.exec(c))){ var n=m[1]||m[2]||m[3]; if(n &amp;&amp; !seen[n] &amp;&amp; !/^(if|for|while|switch|catch|return|function)$/.test(n)){ seen[n]=1; out.push({name:n,args:(m[2]||m[4]||'').trim()}); } }
+    return out;
+  }
+  function analyzeCode(code){
+    code=code||'';
+    var lines=code.split('\n'), lang=detectLang(code);
+    var loc=lines.filter(function(l){return l.trim() &amp;&amp; !/^\s*(\/\/|#|\*)/.test(l);}).length;
+    var fns=extractFns(code,lang);
+    var F=[]; // findings {sev,line,msg}
+    lines.forEach(function(l,i){
+      var n=i+1, t=l.trim();
+      if(/\b(TODO|FIXME|XXX)\b/.test(l)) F.push({sev:'y',line:n,msg:'Marqueur '+(l.match(/TODO|FIXME|XXX/)[0])+' laissé dans le code'});
+      if(/console\.log|System\.out\.print|\bprint\s*\(/.test(l)) F.push({sev:'y',line:n,msg:'Trace de debug à retirer'});
+      if(/\.\w+\(\)\.\w+\(\)\.\w+\(/.test(l)) F.push({sev:'r',line:n,msg:'Chaîne d\'appels — risque de NullPointerException (loi de Déméter)'});
+      if(/\breturn\s+null\s*;?\s*$/.test(l)) F.push({sev:'y',line:n,msg:'Retourne null — préférer Optional/exception'});
+      if(/catch\s*\([^)]*\)\s*\{\s*$/.test(l) &amp;&amp; (lines[i+1]||'').trim()==='}' ) F.push({sev:'r',line:n,msg:'Bloc catch vide — erreur avalée'});
+      if(/[^=!<>]==[^=]/.test(l) &amp;&amp; lang==='js') F.push({sev:'y',line:n,msg:'Égalité faible == — préférer ==='});
+      if(/\bnew\s+\w*\(?\s*\d{2,}\b|\*\s*\d{2,}\b|\bmultiply\(new \w+\(\d+/.test(l)) F.push({sev:'y',line:n,msg:'Nombre magique — extraire une constante nommée'});
+      if(l.length>120) F.push({sev:'g',line:n,msg:'Ligne longue ('+l.length+' car.)'});
+    });
+    var depth=0,maxd=0; for(var i=0;i<code.length;i++){ if(code[i]==='{'){depth++;maxd=Math.max(maxd,depth);} else if(code[i]==='}')depth--; }
+    if(maxd>=4) F.push({sev:'y',line:0,msg:'Imbrication profonde ('+maxd+' niveaux) — extraire des méthodes'});
+    if(fns.length &amp;&amp; !/@Test|\btest\w*\(|it\(|describe\(|def test_/.test(code)) F.push({sev:'g',line:0,msg:'Aucun test détecté pour '+fns.length+' fonction'+(fns.length>1?'s':'')});
+    var r=F.filter(function(x){return x.sev==='r';}).length, y=F.filter(function(x){return x.sev==='y';}).length, g=F.filter(function(x){return x.sev==='g';}).length;
+    var score=Math.max(0,100-r*20-y*8-g*3);
+    var SEV={r:['🔴','var(--err)'],y:['🟡','var(--warn)'],g:['🟢','var(--ok)']};
+    var html='<div style=&quot;display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap&quot;>'+
+      '<div style=&quot;font-family:var(--fd);font-size:26px;font-weight:800;color:'+(score>=80?'var(--ok)':score>=55?'var(--warn)':'var(--err)')+'&quot;>'+score+'<span style=&quot;font-size:14px;color:var(--tm)&quot;>/100</span></div>'+
+      '<div style=&quot;font-size:12px;color:var(--ts)&quot;>'+lang.toUpperCase()+' · '+loc+' LOC · '+fns.length+' fonction'+(fns.length>1?'s':'')+' · <span style=&quot;color:var(--err)&quot;>'+r+' 🔴</span> <span style=&quot;color:var(--warn)&quot;>'+y+' 🟡</span> <span style=&quot;color:var(--ok)&quot;>'+g+' 🟢</span></div></div>';
+    if(!code.trim()) html='<div style=&quot;color:var(--tm)&quot;>Colle du code dans {{code}} pour lancer l\'analyse.</div>';
+    else if(!F.length) html+='<div style=&quot;color:var(--ok)&quot;>✅ Aucun problème détecté par les règles de la plateforme.</div>';
+    else html+=F.sort(function(a,b){return ('ryg'.indexOf(a.sev))-('ryg'.indexOf(b.sev));}).map(function(f){
+      return '<div style=&quot;display:flex;gap:9px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px&quot;><span>'+SEV[f.sev][0]+'</span>'+
+        (f.line?'<span style=&quot;font-family:var(--fm);color:var(--tm);min-width:34px&quot;>L'+f.line+'</span>':'<span style=&quot;min-width:34px&quot;></span>')+
+        '<span style=&quot;color:var(--ts)&quot;>'+esc(f.msg)+'</span></div>';
+    }).join('');
+    var text='Analyse ('+lang+') — score '+score+'/100 · '+loc+' LOC · '+fns.length+' fonctions\n'+
+      F.map(function(f){return (f.sev==='r'?'[BLOQUANT]':f.sev==='y'?'[ATTENTION]':'[INFO]')+(f.line?' L'+f.line:'')+' — '+f.msg;}).join('\n');
+    return {html:html, text:text, score:score, r:r, y:y, g:g, total:F.length, lang:lang, fns:fns.length};
+  }
+  function genTests(code){
+    code=code||''; var lang=detectLang(code), fns=extractFns(code,lang);
+    if(!fns.length) return {text:'// Aucune fonction détectée dans le code fourni.', name:'—', lang:lang};
+    var cls=(code.match(/class\s+(\w+)/)||[])[1] || 'Unit';
+    var out,name;
+    if(lang==='java'){
+      name=cls+'Test.java';
+      out='import org.junit.jupiter.api.Test;\nimport static org.assertj.core.api.Assertions.*;\n\nclass '+cls+'Test {\n\n'+
+        fns.map(function(f){return '    @Test\n    void '+f.name+'_nominal() {\n        // given\n        // when\n        var result = '+/*  */ 'subject.'+f.name+'(/* '+f.args+' */);\n        // then\n        assertThat(result).isNotNull();\n    }\n\n    @Test\n    void '+f.name+'_casLimite() {\n        // TODO: entrée invalide / limite\n        assertThatThrownBy(() -> subject.'+f.name+'(/* … */)).isInstanceOf(IllegalArgumentException.class);\n    }';}).join('\n\n')+'\n}';
+    } else if(lang==='python'){
+      name='test_'+(cls.toLowerCase())+'.py';
+      out='import pytest\n\n'+fns.map(function(f){return 'def test_'+f.name+'_nominal():\n    # given / when\n    result = '+f.name+'(  )  # '+f.args+'\n    # then\n    assert result is not None\n\n\ndef test_'+f.name+'_cas_limite():\n    with pytest.raises(ValueError):\n        '+f.name+'(  )';}).join('\n\n\n');
+    } else {
+      name=cls.toLowerCase()+'.test.js';
+      out='import { describe, it, expect } from \'vitest\';\n\ndescribe(\''+cls+'\', () => {\n'+
+        fns.map(function(f){return '  it(\''+f.name+' — cas nominal\', () => {\n    const result = '+f.name+'(/* '+f.args+' */);\n    expect(result).toBeDefined();\n  });\n\n  it(\''+f.name+' — cas limite\', () => {\n    expect(() => '+f.name+'(/* … */)).toThrow();\n  });';}).join('\n\n')+'\n});';
+    }
+    return {text:out, name:name, lang:lang, count:fns.length};
+  }
+  function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+  function methodName(code){ var m=code.match(/(?:public|private|protected|static|final|\s)+[\w<>\[\]]+\s+(\w+)\s*\(|function\s+(\w+)|def\s+(\w+)/); return m?(m[1]||m[2]||m[3]):null; }
+  // Moteur de CORRECTION — dérive un patch réel des problèmes détectés.
+  function proposeFix(code){
+    var lines=(code||'').split('\n'), out=lines.slice(), changes=[], consts=[];
+    var ind=function(s){return (s.match(/^\s*/)||[''])[0];};
+    for(var i=0;i<out.length;i++){
+      var l=out[i];
+      // chaîne d'appels a.b().c().d() -> extraction + garde null (anti-NPE)
+      var ch=l.match(/^(\s*)(?:([\w<>\[\]]+)\s+)?(\w+)\s*=\s*(\w+)\.(\w+)\(\)\.(\w+)\(\)\.(\w+)\(\)\s*;/);
+      if(ch){
+        var sp=ch[1], type=ch[2]||'var', tgt=ch[3], root=ch[4], a=ch[5], bcall=ch[6], ccall=ch[7];
+        var v1=root+cap(a), v2=v1+cap(bcall);
+        var repl=[sp+'var '+v1+' = '+root+'.'+a+'();',
+                  sp+'if ('+v1+' == null) throw new IllegalArgumentException(&quot;'+a+' manquant&quot;);',
+                  sp+'var '+v2+' = '+v1+'.'+bcall+'();',
+                  sp+type+' '+tgt+' = '+v2+'.'+ccall+'();'].join('\n');
+        changes.push({line:i+1,before:l,after:repl,why:'chaîne d\'appels → variables intermédiaires + garde null (anti-NPE)'});
+        out[i]=repl; l=repl;
+      }
+      // nombre magique new X(NN) -> constante nommée (en String pour éviter re-flag)
+      var mg=l.match(/new\s+(\w+)\((\d{2,})\)/);
+      if(mg){
+        var cname='FACTEUR_'+mg[2];
+        consts.push('private static final '+mg[1]+' '+cname+' = new '+mg[1]+'(&quot;'+mg[2]+'&quot;);');
+        out[i]=l.replace(mg[0], cname);
+        changes.push({line:i+1,before:l,after:out[i],why:'nombre magique '+mg[2]+' → constante '+cname});
+        l=out[i];
+      }
+      // return null -> exception explicite
+      if(/^\s*return\s+null\s*;\s*$/.test(l)){
+        out[i]=ind(l)+'throw new IllegalStateException(&quot;valeur indisponible&quot;);';
+        changes.push({line:i+1,before:l,after:out[i],why:'return null → exception explicite'});
+      }
+      // trace de debug -> suppression
+      if(/console\.log|System\.out\.print/.test(l)){
+        changes.push({line:i+1,before:l,after:'(ligne supprimée)',why:'trace de debug retirée'});
+        out[i]='__DEL__';
+      }
+    }
+    out=out.filter(function(x){return x!=='__DEL__';});
+    if(consts.length){
+      var idx=0; for(var k=0;k<out.length;k++){ if(/\b(public|private|protected|function|def)\b/.test(out[k])){idx=k;break;} }
+      var pad=ind(out[idx]||'');
+      out.splice.apply(out,[idx,0].concat(consts.map(function(c){return pad+c;})).concat(['']));
+    }
+    return {patched:out.join('\n'), changes:changes};
+  }
+  function renderDiff(changes){
+    return changes.map(function(c){
+      var bef=c.before.split('\n'), aft=(/supprim/.test(c.after)?[]:c.after.split('\n'));
+      return '<div class=&quot;hunk&quot;><div class=&quot;hwhy&quot;>🔧 '+esc(c.why)+' <span style=&quot;color:var(--tm)&quot;>· L'+c.line+'</span></div>'+
+        bef.map(function(x){return '<div class=&quot;dl del&quot;>- '+esc(x)+'</div>';}).join('')+
+        aft.map(function(x){return '<div class=&quot;dl add&quot;>+ '+esc(x)+'</div>';}).join('')+'</div>';
+    }).join('');
+  }
+  // La recette de correction — appelée depuis le résultat d'une analyse (continuité).
+  function startFix(code){
+    var fx=proposeFix(code);
+    if(!fx.changes.length){ toast('Rien d\'automatiquement corrigeable ici'); return; }
+    var before=analyzeCode(code);
+    modal(
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>🔧</span><div style=&quot;flex:1&quot;><h3>Corriger avec une recette</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ recette · déclenchée depuis l\'analyse · le LLM oriente, la recette écrit</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div class=&quot;ctxbn&quot;>↩ <b>Enchaînement depuis « Analyser ce code »</b> — score actuel <b style=&quot;color:var(--warn)&quot;>'+before.score+'/100</b>, '+before.total+' problème'+(before.total>1?'s':'')+' détecté'+(before.total>1?'s':'')+'. La recette propose un patch pour les corriger.</div>'+
+      '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Ce que je corrige ('+fx.changes.length+')</div><div class=&quot;fv&quot;>'+fx.changes.map(function(c){return '• '+esc(c.why);}).join('<br>')+'</div></div>'+
+      '<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Patch — dry-run, rien n\'est écrit</div><div id=&quot;diffBox&quot;>'+renderDiff(fx.changes)+'</div></div>'+
+      '<div id=&quot;fixOut&quot;></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; id=&quot;fixGo&quot;>✔ Créer la branche + la MR</button><button class=&quot;mbtn ghost&quot; data-close>Annuler</button></div>'+
+      '<div class=&quot;note&quot;>Écriture uniquement sur une branche dédiée (jamais main). La MR déclenche la CI ; rien n\'est mergé sans revue. Confirmation humaine obligatoire.</div>'
+    );
+    $('fixGo').addEventListener('click',function(){
+      var after=analyzeCode(fx.patched), gt=genTests(fx.patched);
+      var mn=methodName(code)||'auto', branch='fix/'+mn.toLowerCase()+'-hardening';
+      var tests=(gt.count||3)*2;
+      var delta=after.score-before.score;
+      $('fixOut').innerHTML=
+        '<div class=&quot;field&quot; style=&quot;border-color:var(--ok)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--ok)&quot;>✅ Corrigé — preuve</div>'+
+        '<div class=&quot;proof&quot;><div class=&quot;pl2&quot;>🌿 Branche</div><div><b style=&quot;font-family:var(--fm)&quot;>'+esc(branch)+'</b> créée · <b>MR !313</b> ouverte</div>'+
+          '<div class=&quot;pl2&quot;>🧪 Tests</div><div><span style=&quot;color:var(--ok)&quot;>✔ '+tests+' verts</span> (CI relancée sur la MR)</div>'+
+          '<div class=&quot;pl2&quot;>📈 Ré-analyse</div><div>score <b style=&quot;color:var(--warn)&quot;>'+before.score+'</b> → <b style=&quot;color:var(--ok)&quot;>'+after.score+'/100</b> <span style=&quot;color:var(--ok)&quot;>(+'+delta+')</span> · problèmes '+before.total+' → '+after.total+'</div></div>'+
+        '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;><button class=&quot;mbtn go mini&quot; id=&quot;seeMr&quot;>Voir la MR !313 →</button><button class=&quot;mbtn ghost mini&quot; id=&quot;seeDiff&quot;>📋 Copier le patch</button></div>'+
+        '<div class=&quot;note&quot;>C\'est ça la continuité : un <b>prompt</b> a trouvé le problème, une <b>recette</b> l\'a corrigé sur une branche, et la <b>ré-analyse + les tests</b> le prouvent — sans quitter le catalogue.</div></div>';
+      $('fixGo').disabled=true; $('fixGo').style.opacity=.5;
+      $('seeMr').addEventListener('click',function(){ toast('Ouverture de la MR !313 (maquette)'); });
+      $('seeDiff').addEventListener('click',function(){ copy(fx.patched); toast('📋 Code corrigé copié'); });
+      $('fixOut').scrollIntoView({behavior:'smooth',block:'nearest'});
+      toast('✅ Branche + MR créées, tests verts');
+    });
+    wireFb();
+  }
+
+  // ── Que veux-tu faire (intent → recette OU prompt) ──
+  var EXAMPLES=['analyser du code','générer des tests','préparer la livraison','expliquer ce code','message de commit','optimiser une requête SQL'];
+  function renderChips(){ $('chips').innerHTML=EXAMPLES.map(function(e){return '<span class=&quot;chip&quot; data-ex=&quot;'+e+'&quot;>'+e+'</span>';}).join(''); $('chips').querySelectorAll('[data-ex]').forEach(function(el){el.addEventListener('click',function(){$('ask').value=el.dataset.ex; doAsk();});}); }
+  function match(q){
+    q=q.toLowerCase();
+    var kw=[['migr','migrate-java21'],['java 21','migrate-java21'],['livrai','prep-delivery'],['préprod','prep-delivery'],['deploy','prep-delivery'],['vulnér','analyze-vuln'],['vuln','analyze-vuln'],['secur','analyze-vuln'],['test react','react-tests'],['react','react-tests'],['test','tests-junit'],['analyse du code','analyze-code'],['analyser du code','analyze-code'],['analyse de code','analyze-code'],['analyser le code','analyze-code'],['revue','analyze-code'],['review','review'],['commit','commit'],['message','commit'],['stack','debug'],['trace','debug'],['erreur','debug'],['explique','explain'],['comprendre ce code','explain'],['story','story'],['découpe','story'],['sql','sql'],['requête','sql'],['apprendre','learn'],['concept','learn']];
+    for(var i=0;i<kw.length;i++){ if(q.indexOf(kw[i][0])!==-1){ return R.find(function(r){return r.id===kw[i][1];}); } }
+    return null;
+  }
+  function doAsk(){
+    var q=$('ask').value.trim(); if(!q){ $('intentResult').innerHTML=''; return; }
+    var r=match(q);
+    if(!r){ $('intentResult').innerHTML='<div class=&quot;field&quot; style=&quot;border-style:dashed&quot;><div class=&quot;fv&quot;>Aucune entrée <b>validée</b> pour « '+esc(q)+' ».<br><span style=&quot;color:var(--tm)&quot;>Tu peux en brouillonner une dans le Studio.</span></div></div>'; return; }
+    var isRec=r.kind==='recipe';
+    $('intentResult').innerHTML=
+      '<div class=&quot;field&quot; style=&quot;border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;><div class=&quot;fl&quot; style=&quot;color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;>'+(isRec?'🍳 Recette trouvée — lance un workflow':'📚 Prompt trouvé — lance une génération')+'</div>'+
+      '<div style=&quot;display:flex;align-items:center;gap:12px;flex-wrap:wrap&quot;>'+
+        '<span style=&quot;font-size:22px&quot;>'+r.ic+'</span>'+
+        '<div style=&quot;flex:1;min-width:180px&quot;><div style=&quot;font-family:var(--fd);font-weight:800;font-size:15px&quot;>'+esc(r.title)+'</div>'+
+          '<div style=&quot;font-size:12px;color:var(--ts);margin-top:2px&quot;><span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span></div></div>'+
+        '<button class=&quot;act '+(isRec?'run':'copy')+'&quot; data-act=&quot;'+r.id+'&quot; style=&quot;padding:9px 15px&quot;>'+(isRec?'Lancer →':'▶ Lancer')+'</button>'+
+        '<button class=&quot;mbtn ghost mini&quot; data-open=&quot;'+r.id+'&quot;>Voir la fiche</button>'+
+      '</div></div>';
+    $('intentResult').querySelectorAll('[data-act]').forEach(function(b){b.addEventListener('click',function(){primary(b.dataset.act);});});
+    $('intentResult').querySelectorAll('[data-open]').forEach(function(b){b.addEventListener('click',function(){openDetail(b.dataset.open);});});
+  }
+
+  // ── modale util ──
+  function modal(html){ $('modal').innerHTML=html; $('ov').classList.add('show'); $('modal').querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeM);}); }
+  function closeM(){ $('ov').classList.remove('show'); }
+  $('ov').addEventListener('click',function(e){ if(e.target===$('ov')) closeM(); });
+
+  // ── wiring ──
+  $('askGo').addEventListener('click',doAsk);
+  $('ask').addEventListener('keydown',function(e){ if(e.key==='Enter') doAsk(); });
+  $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
+  $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
+  $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
+  renderChips(); renderTags(); renderGrid();
+})();
+</script>
+<script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go},'*');}});})();</script></body>
+</html>
+"></iframe>
+   <iframe id="f-studio" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
+<html lang=&quot;fr&quot; data-theme=&quot;dark&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Studio ai-maintainer — écrire &amp;amp; gouverner les recettes (maquette)</title>
+<link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>&quot;>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.role-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--ok);font-weight:700}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+.intro{font-size:13px;color:var(--ts);line-height:1.55;margin:14px 0 4px;max-width:780px}
+.intro b{color:var(--tp)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
+.seg{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{font-family:var(--fb);font-size:12.5px;font-weight:700;color:var(--ts);background:transparent;border:none;border-radius:9px;padding:7px 13px;cursor:pointer}
+.seg button.on{background:rgba(124,92,252,.2);color:var(--tp)}
+.newbtn{margin-left:auto;font-family:var(--fb);font-weight:800;font-size:13px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:11px;padding:10px 16px;cursor:pointer}
+
+/* List */
+.list{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:14px 16px;cursor:pointer;transition:.15s}
+.row:hover{border-color:var(--line2);background:var(--bg-card-h)}
+.row .ic{font-size:22px}
+.row .main{flex:1;min-width:0}
+.row .ti{font-family:var(--fd);font-weight:800;font-size:15px}
+.row .meta{font-size:11.5px;color:var(--tm);margin-top:2px}
+.kind{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.kind.recipe{color:var(--deliver);background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3)}
+.kind.prompt{color:var(--accent);background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.3)}
+.status{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.status.published{color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35)}
+.status.review{color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35)}
+.status.draft{color:var(--tm);background:rgba(255,255,255,.04);border:1px solid var(--line2)}
+.status.deprecated{color:var(--err);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3)}
+.row .health{font-size:11px;color:var(--ts);text-align:right;white-space:nowrap}
+.row .health b{color:var(--tp)}
+.flag{color:var(--warn)}
+
+/* Editor */
+.editor{display:none}
+.editor.show{display:block}
+.back{all:unset;cursor:pointer;color:var(--ts);font-size:13px;font-weight:700;margin:6px 0 4px;display:inline-flex;gap:6px;align-items:center}
+.ehead{display:flex;align-items:flex-start;gap:13px;margin:8px 0 4px;flex-wrap:wrap}
+.ehead .ic{font-size:30px}
+.ehead h2{font-family:var(--fd);font-size:21px;font-weight:800}
+.ehead .sub{font-size:12px;color:var(--tm);margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;margin-top:14px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:16px 18px}
+.panel + .panel{margin-top:14px}
+.pl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.pl .hint{color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0;font-size:11px}
+input.tin,textarea.tin,select.tin{font-family:var(--fb);font-size:13.5px;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:10px;padding:11px 13px;outline:none;width:100%}
+textarea.tin{font-family:var(--fm);font-size:12.5px;line-height:1.65;resize:vertical;min-height:150px}
+input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
+.detected{font-size:11.5px;color:var(--ts);margin-top:8px}
+.detected .v{color:var(--deliver);font-family:var(--fm)}
+.toolrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.toolrow:first-of-type{border-top:none}
+.toolrow .tn{flex:1;font-size:13px;color:var(--ts)}
+.toolrow select{width:auto;font-size:12px;padding:6px 9px}
+.perm-read{color:var(--ts)} .perm-write{color:var(--warn)} .perm-danger{color:var(--err)}
+.crit{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ts)}
+.crit:first-of-type{border-top:none}
+.crit .del{all:unset;cursor:pointer;color:var(--tm);font-size:14px;margin-left:auto}
+.addline{display:flex;gap:8px;margin-top:9px}
+.addline input{flex:1}
+.addline button{font-family:var(--fb);font-weight:700;font-size:12px;color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:9px;padding:0 13px;cursor:pointer}
+.mini{font-size:11px;color:var(--tm);margin-top:9px;line-height:1.5}
+
+/* right rail */
+.gov .step{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--tm);padding:5px 0}
+.gov .step.done{color:var(--ok)} .gov .step.cur{color:var(--tp);font-weight:700}
+.gov .dot{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.gov .step.done .dot{background:var(--ok)} .gov .step.cur .dot{background:var(--warn)}
+.govbtns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.gb{font-family:var(--fb);font-weight:800;font-size:13px;border-radius:10px;padding:11px 14px;cursor:pointer;border:none;text-align:center}
+.gb.go{color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver))}
+.gb.warn{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35)}
+.gb.ghost{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line2)}
+.metric{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:6px 0;border-top:1px solid var(--line)}
+.metric:first-of-type{border-top:none}
+.metric b{color:var(--tp)}
+.ver{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ts);padding:7px 0;border-top:1px solid var(--line)}
+.ver:first-of-type{border-top:none}
+.ver .vn{font-family:var(--fm);color:var(--tp);font-weight:700}
+.ver .vd{color:var(--tm)}
+.ver .rb{all:unset;cursor:pointer;color:var(--accent);font-size:11px;margin-left:auto}
+.testout{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:rgba(10,7,22,.5);padding:12px 14px;font-size:12.5px;color:var(--ts);line-height:1.6;display:none}
+.testout.show{display:block}
+.testout .ck{color:var(--ok)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+.empty{color:var(--tm);font-size:13px;text-align:center;padding:30px}
+</style>
+</head>
+<body>
+<div class=&quot;wrap&quot;>
+  <header>
+    <div class=&quot;logo&quot;>🛠️</div>
+    <div>
+      <h1>Studio <span style=&quot;color:var(--accent)&quot;>ai-maintainer</span></h1>
+      <div class=&quot;sub&quot;>Écrire, tester, gouverner et versionner les recettes &amp;amp; prompts officiels</div>
+    </div>
+    <div class=&quot;role-pill&quot;>🔒 ai-maintainer · accès restreint</div>
+  </header>
+
+  <div class=&quot;nav&quot;>
+    <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
+    <a href=&quot;#&quot; class=&quot;on&quot;>🛠️ Studio</a>
+    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Métriques</a>
+  </div>
+
+  <p class=&quot;intro&quot;>Le prompt brut n'est <b>jamais</b> exposé aux utilisateurs — il vit ici. Le Studio est le seul endroit où l'on <b>écrit la spécification</b>, où l'on <b>déclare les outils autorisés</b> et les <b>critères de validation</b>, où l'on <b>teste</b> avant publication, et où chaque <b>version</b> est tracée. Réservé au rôle <b>ai-maintainer</b> (Staff AI Enablement).</p>
+
+  <!-- LISTE -->
+  <div id=&quot;listView&quot;>
+    <div class=&quot;toolbar&quot;>
+      <div class=&quot;seg&quot; id=&quot;statusSeg&quot;>
+        <button data-st=&quot;&quot; class=&quot;on&quot;>Tout</button>
+        <button data-st=&quot;published&quot;>🟢 Publiés</button>
+        <button data-st=&quot;review&quot;>🟡 En revue</button>
+        <button data-st=&quot;draft&quot;>Brouillons</button>
+      </div>
+      <button class=&quot;newbtn&quot; id=&quot;newBtn&quot;>＋ Nouvelle recette / prompt</button>
+    </div>
+    <div class=&quot;list&quot; id=&quot;list&quot;></div>
+  </div>
+
+  <!-- EDITEUR -->
+  <div class=&quot;editor&quot; id=&quot;editView&quot;></div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
+  function vars(b){ var m,re=/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,seen=[]; while((m=re.exec(b))){var n=m[1].trim(); if(seen.indexOf(n)===-1)seen.push(n);} return seen; }
+  function hl(b){ return esc(b).replace(/\{\{\s*([\wÀ-ÿ][\wÀ-ÿ .-]*?)\s*\}\}/g,'<span class=&quot;v&quot;>{{$1}}</span>'); }
+
+  var STATUS_LABEL={published:'Publié',review:'En revue',draft:'Brouillon',deprecated:'Déprécié'};
+  var PERM={read:'👁 Lecture',write:'✏️ Écriture',danger:'⛔ Sensible'};
+
+  // ── Données (recettes + prompts gouvernés) ──
+  var A=[
+    {id:'prep-delivery', kind:'recipe', ic:'🚀', title:'Préparer la livraison en préprod', status:'published', version:5, owner:'Plateforme', updated:'20 mai 2026',
+      spec:'Tu orientes une livraison en préproduction. Tu N\'EXÉCUTES PAS les écritures : le module Livraison déterministe le fait après confirmation humaine.\n\nÀ partir du dépôt {{repo}} (stack {{stack}}) :\n1. vérifie que la branche est à jour et mergeable\n2. propose le bump IMAGE_TAG et la synchro des overlays Kustomize\n3. déclenche le scan de vulnérabilités et la vérif des tests\n4. rédige l\'explication des changements pour la MR\n\nRends un plan clair ; rien n\'est écrit sans « ✔ Confirmer ».',
+      tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
+      security:['Le LLM oriente ; l\'écriture passe par le module Livraison.','Dry-run obligatoire, confirmation humaine avant toute écriture.'],
+      criteria:['Branche à jour et mergeable','Kustomize cohérent avec IMAGE_TAG','Aucune vuln critique','Tests verts'],
+      metrics:{uses:480,success:95,humanFix:5,saved:'~30 min'},
+      versions:[[5,'20 mai 2026','durcissement du dry-run'],[4,'2 mai 2026','ajout scan vuln'],[3,'12 avr. 2026','overlays Kustomize']]},
+    {id:'migrate-java21', kind:'recipe', ic:'🚚', title:'Préparer une migration Spring → Java 21', status:'review', version:2, owner:'Archi', updated:'28 avr. 2026',
+      spec:'Prépare une migration vers le JDK {{jdk_cible}} pour un projet Spring Boot.\n\nProduis un plan + une branche avec les changements mécaniques (API dépréciées, records, pattern matching). Écriture UNIQUEMENT sur une branche dédiée, jamais sur main.\n\nCode / contexte :\n{{contexte}}',
+      tools:[['Lire le dépôt','read'],['Créer une branche + patch (dry-run)','write']],
+      security:['Écriture sur branche dédiée seulement.','Revue humaine obligatoire avant merge.'],
+      criteria:['Le projet compile en JDK 21','Aucune API supprimée résiduelle','Tests existants toujours verts'],
+      metrics:{uses:56,success:74,humanFix:30,saved:'~2 h'},
+      versions:[[2,'28 avr. 2026','pattern matching'],[1,'2 avr. 2026','version initiale']]},
+    {id:'tests-junit', kind:'prompt', ic:'🧪', title:'Générer des tests unitaires', status:'published', version:3, owner:'Archi', updated:'12 mai 2026',
+      spec:'Écris des tests unitaires en {{langage}} (framework {{framework}}) pour le code ci-dessous.\n\nCouvre le cas nominal, les cas limites, les entrées invalides. Un test par comportement, nommage explicite. Pas de test tautologique.\n\nCode :\n{{code}}',
+      tools:[['Lire le dépôt','read'],['Exécuter la suite de tests','read']],
+      security:['Lecture seule. Aucun secret transmis au modèle.'],
+      criteria:['Les tests compilent','Les tests passent','Couverture de la classe cible > 70 %'],
+      metrics:{uses:640,success:88,humanFix:12,saved:'~25 min'},
+      versions:[[3,'12 mai 2026','cas limites renforcés'],[2,'20 avr. 2026','nommage'],[1,'1 avr. 2026','initial']]},
+    {id:'refacto-legacy', kind:'prompt', ic:'🧹', title:'Refactorer une classe legacy', status:'review', version:1, owner:'Tribu Core', updated:'30 avr. 2026',
+      spec:'Propose un refactoring à comportement identique de ce code : extrais les responsabilités, réduis la complexité, garde la signature publique. Propose un diff ciblé, pas une réécriture. Liste les risques.\n\nCode :\n{{code}}',
+      tools:[['Lire le dépôt','read'],['Proposer un patch (l\'humain applique)','read']],
+      security:['Propose un diff ; n\'écrit rien.'],
+      criteria:['Comportement inchangé (tests verts)','Complexité réduite'],
+      metrics:{uses:130,success:70,humanFix:35,saved:'~45 min'},
+      versions:[[1,'30 avr. 2026','brouillon initial']]},
+    {id:'regex-sql', kind:'prompt', ic:'🔤', title:'Générer une regex / une requête SQL', status:'review', version:1, owner:'—', updated:'25 mai 2026',
+      spec:'À partir d\'une description en langage naturel, produis une expression régulière ({{saveur}}) OU une requête SQL ({{sgbd}}).\n\nDonne la sortie, une explication token par token, et un cas limite à tester avant usage.\n\nBesoin :\n{{besoin}}',
+      tools:[['Aucun (génération de texte)','read']],
+      security:['Expérimental — sortie à vérifier avant tout usage en production.'],
+      criteria:['Testée sur au moins un exemple par l\'utilisateur','Explication fournie'],
+      metrics:{uses:45,success:60,humanFix:40,saved:'~10 min'},
+      versions:[[1,'25 mai 2026','brouillon expérimental — réussite faible, à retravailler']]},
+    {id:'oncall-summary', kind:'prompt', ic:'🌙', title:'Résumer un incident d\'astreinte', status:'draft', version:1, owner:'marie.d', updated:'aujourd\'hui',
+      spec:'À partir des logs et de la timeline, rédige un post-mortem court : impact, cause racine probable, actions correctives. Ton factuel, pas de blâme.\n\nÉléments :\n{{timeline}}',
+      tools:[['Aucun (génération de texte)','read']],
+      security:['Rappel : caviarder les données sensibles avant de coller.'],
+      criteria:['Impact chiffré','Cause plausible','Actions actionnables'],
+      metrics:{uses:0,success:0,humanFix:0,saved:'—'},
+      versions:[[1,'aujourd\'hui','brouillon']]}
+  ];
+
+  var fStatus='';
+
+  function healthFlag(a){ return (a.metrics.uses>20 &amp;&amp; (a.metrics.success<75 || a.metrics.humanFix>30)); }
+
+  function renderList(){
+    var list=A.filter(function(a){ return !fStatus || a.status===fStatus; });
+    $('list').innerHTML = list.length ? list.map(function(a){
+      var flag=healthFlag(a);
+      return '<div class=&quot;row&quot; data-id=&quot;'+a.id+'&quot;>'+
+        '<span class=&quot;ic&quot;>'+a.ic+'</span>'+
+        '<div class=&quot;main&quot;><div class=&quot;ti&quot;>'+esc(a.title)+'</div>'+
+          '<div class=&quot;meta&quot;>'+esc(a.owner)+' · v'+a.version+' · maj '+a.updated+' · '+vars(a.spec).length+' variables'+(a.kind==='recipe'?' · '+a.tools.length+' outils':'')+'</div></div>'+
+        '<span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span>'+
+        '<span class=&quot;status '+a.status+'&quot;>'+STATUS_LABEL[a.status]+'</span>'+
+        '<div class=&quot;health&quot;>'+(a.metrics.uses?('<b>'+a.metrics.success+'%</b> réussite'+(flag?'<br><span class=&quot;flag&quot;>⚠ à améliorer</span>':'')):'<span style=&quot;color:var(--tm)&quot;>jamais utilisé</span>')+'</div>'+
+      '</div>';
+    }).join('') : '<div class=&quot;empty&quot;>Rien dans ce statut.</div>';
+    $('list').querySelectorAll('.row').forEach(function(el){ el.addEventListener('click',function(){ openEditor(el.dataset.id); }); });
+  }
+
+  // ── Éditeur ──
+  var cur=null;
+  function openEditor(id){
+    cur=A.find(function(x){return x.id===id;}); if(!cur) return;
+    $('listView').style.display='none'; $('editView').classList.add('show');
+    var a=cur;
+    var steps=['draft','review','published'];
+    var si=steps.indexOf(a.status==='deprecated'?'published':a.status);
+    var govSteps=[['Brouillon',0],['En revue',1],['Publié (officiel)',2]].map(function(s){
+      var cls=s[1]<si?'done':s[1]===si?'cur':''; return '<div class=&quot;step '+cls+'&quot;><span class=&quot;dot&quot;></span>'+s[0]+'</div>';
+    }).join('');
+    var govBtns = a.status==='draft'
+        ? '<button class=&quot;gb go&quot; data-act=&quot;review&quot;>Soumettre à revue →</button>'
+      : a.status==='review'
+        ? '<button class=&quot;gb go&quot; data-act=&quot;publish&quot;>🟢 Publier (officiel)</button><button class=&quot;gb ghost&quot; data-act=&quot;draft&quot;>← Renvoyer en brouillon</button>'
+      : '<button class=&quot;gb go&quot; data-act=&quot;version&quot;>＋ Publier une nouvelle version</button><button class=&quot;gb warn&quot; data-act=&quot;deprecate&quot;>Déprécier</button>';
+
+    $('editView').innerHTML =
+      '<button class=&quot;back&quot; id=&quot;backBtn&quot;>← Retour à la liste</button>'+
+      '<div class=&quot;ehead&quot;><span class=&quot;ic&quot;>'+a.ic+'</span><div style=&quot;flex:1&quot;><h2>'+esc(a.title)+'</h2>'+
+        '<div class=&quot;sub&quot;><span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span><span class=&quot;status '+a.status+'&quot;>'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
+      '<div class=&quot;grid2&quot;><div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🎯 Intention <span class=&quot;hint&quot;>— ce que voit l\'utilisateur</span></div><input class=&quot;tin&quot; id=&quot;e_title&quot; value=&quot;'+esc(a.title)+'&quot;></div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>📄 Prompt / spécification <span class=&quot;hint&quot;>— masqué aux utilisateurs, éditable ici</span></div>'+
+          '<textarea class=&quot;tin&quot; id=&quot;e_spec&quot;>'+esc(a.spec)+'</textarea>'+
+          '<div class=&quot;detected&quot; id=&quot;e_detected&quot;></div></div>'+
+        (a.kind==='recipe'?
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🛠 Outils autorisés (allowlist) <span class=&quot;hint&quot;>— appliquée à l\'exécution</span></div><div id=&quot;e_tools&quot;>'+
+          a.tools.map(function(t,i){ return '<div class=&quot;toolrow&quot;><span class=&quot;tn&quot;>'+esc(t[0])+'</span>'+
+            '<select class=&quot;tin&quot; data-tool=&quot;'+i+'&quot;>'+Object.keys(PERM).map(function(k){return '<option value=&quot;'+k+'&quot;'+(t[1]===k?' selected':'')+'>'+PERM[k]+'</option>';}).join('')+'</select></div>'; }).join('')+
+          '</div><div class=&quot;mini&quot;>Une recette ne peut jamais faire plus que son allowlist. Toute action <span class=&quot;perm-write&quot;>✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🔒 Règles de sécurité</div><div id=&quot;e_sec&quot;>'+
+          a.security.map(function(s,i){return '<div class=&quot;crit&quot;><span>🔒</span><span>'+esc(s)+'</span><button class=&quot;del&quot; data-delsec=&quot;'+i+'&quot;>✕</button></div>';}).join('')+'</div>'+
+          '<div class=&quot;addline&quot;><input class=&quot;tin&quot; id=&quot;e_secnew&quot; placeholder=&quot;ajouter une règle…&quot;><button id=&quot;e_secadd&quot;>Ajouter</button></div></div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>✅ Critères de validation <span class=&quot;hint&quot;>— vérifiés après exécution</span></div><div id=&quot;e_crit&quot;>'+
+          a.criteria.map(function(c,i){return '<div class=&quot;crit&quot;><span>☑</span><span>'+esc(c)+'</span><button class=&quot;del&quot; data-delcrit=&quot;'+i+'&quot;>✕</button></div>';}).join('')+'</div>'+
+          '<div class=&quot;addline&quot;><input class=&quot;tin&quot; id=&quot;e_critnew&quot; placeholder=&quot;ajouter un critère vérifiable…&quot;><button id=&quot;e_critadd&quot;>Ajouter</button></div></div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🧪 Banc d\'essai <span class=&quot;hint&quot;>— tester avant de publier</span></div>'+
+          '<textarea class=&quot;tin&quot; id=&quot;e_sample&quot; style=&quot;min-height:80px&quot; placeholder=&quot;colle un exemple d\'entrée (code, diff, story…)&quot;></textarea>'+
+          '<div class=&quot;addline&quot;><button id=&quot;e_run&quot; style=&quot;background:rgba(124,92,252,.15);border-color:var(--accent);color:var(--tp)&quot;>▶ Tester (simulation)</button></div>'+
+          '<div class=&quot;testout&quot; id=&quot;e_testout&quot;></div></div>'+
+      '</div><div>'+
+        '<div class=&quot;panel gov&quot;><div class=&quot;pl&quot;>🚦 Gouvernance</div>'+govSteps+'<div class=&quot;govbtns&quot;>'+govBtns+'</div>'+
+          '<div class=&quot;mini&quot;>Seul un <b>ai-maintainer</b> peut publier. La publication rend la recette visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>📊 Métriques (lecture seule)</div>'+
+          '<div class=&quot;metric&quot;><span>Usages</span><b>'+a.metrics.uses+'</b></div>'+
+          '<div class=&quot;metric&quot;><span>Réussite</span><b style=&quot;color:'+(a.metrics.success>=85?'var(--ok)':a.metrics.success>=70?'var(--warn)':'var(--err)')+'&quot;>'+a.metrics.success+'%</b></div>'+
+          '<div class=&quot;metric&quot;><span>Corrigés à la main</span><b>'+a.metrics.humanFix+'%</b></div>'+
+          '<div class=&quot;metric&quot;><span>Temps gagné (est.)</span><b>'+a.metrics.saved+'</b></div>'+
+          (healthFlag(a)?'<div class=&quot;mini&quot; style=&quot;color:var(--warn)&quot;>⚠ Réussite basse / corrections fréquentes → candidate à une nouvelle version.</div>':'')+'</div>'+
+        '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🕘 Versions</div><div id=&quot;e_vers&quot;>'+
+          a.versions.map(function(v,i){return '<div class=&quot;ver&quot;><span class=&quot;vn&quot;>v'+v[0]+'</span><span class=&quot;vd&quot;>'+esc(v[1])+' — '+esc(v[2])+'</span>'+(i>0?'<button class=&quot;rb&quot; data-roll=&quot;'+v[0]+'&quot;>rollback</button>':'')+'</div>';}).join('')+'</div></div>'+
+      '</div></div>';
+
+    // wiring
+    $('backBtn').addEventListener('click',backToList);
+    function detect(){ var vs=vars($('e_spec').value); $('e_detected').innerHTML=vs.length?'Variables : '+vs.map(function(v){return '<span class=&quot;v&quot;>{{'+esc(v)+'}}</span>';}).join(', '):'<span style=&quot;color:var(--tm)&quot;>Aucune variable.</span>'; }
+    $('e_spec').addEventListener('input',detect); detect();
+    // tools
+    $('editView').querySelectorAll('[data-tool]').forEach(function(s){ s.addEventListener('change',function(){ a.tools[+s.dataset.tool][1]=s.value; toast('Permission mise à jour (brouillon local)'); }); });
+    // security add/del
+    $('e_secadd')&amp;&amp;$('e_secadd').addEventListener('click',function(){ var v=$('e_secnew').value.trim(); if(!v)return; a.security.push(v); openEditor(a.id); });
+    $('editView').querySelectorAll('[data-delsec]').forEach(function(b){ b.addEventListener('click',function(){ a.security.splice(+b.dataset.delsec,1); openEditor(a.id); }); });
+    // criteria add/del
+    $('e_critadd').addEventListener('click',function(){ var v=$('e_critnew').value.trim(); if(!v)return; a.criteria.push(v); openEditor(a.id); });
+    $('editView').querySelectorAll('[data-delcrit]').forEach(function(b){ b.addEventListener('click',function(){ a.criteria.splice(+b.dataset.delcrit,1); openEditor(a.id); }); });
+    // title/spec persist on the fly
+    $('e_title').addEventListener('input',function(){ a.title=$('e_title').value; });
+    $('e_spec').addEventListener('input',function(){ a.spec=$('e_spec').value; });
+    // test bench
+    $('e_run').addEventListener('click',function(){
+      var s=$('e_sample').value.trim();
+      var out=$('e_testout'); out.classList.add('show');
+      out.innerHTML='<div style=&quot;color:var(--tp);font-weight:700;margin-bottom:6px&quot;>Sortie simulée (maquette)</div>'+
+        (s?'Le prompt a été appliqué à ton exemple avec le contexte injecté.':'<span style=&quot;color:var(--warn)&quot;>Astuce : colle un exemple pour un test plus réaliste.</span>')+
+        '<div style=&quot;margin-top:9px;border-top:1px solid var(--line);padding-top:8px&quot;>Vérification automatique des critères :</div>'+
+        a.criteria.map(function(c){return '<div style=&quot;margin-top:4px&quot;><span class=&quot;ck&quot;>✓</span> '+esc(c)+'</div>';}).join('')+
+        '<div class=&quot;mini&quot;>En vrai : la recette tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
+      toast('🧪 Test simulé — critères passés');
+    });
+    // rollback
+    $('editView').querySelectorAll('[data-roll]').forEach(function(b){ b.addEventListener('click',function(){ toast('↩ Rollback vers v'+b.dataset.roll+' (simulation)'); }); });
+    // governance
+    $('editView').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ gov(a,b.dataset.act); }); });
+  }
+
+  function gov(a,act){
+    if(act==='review'){ a.status='review'; toast('🟡 Soumis à revue'); }
+    else if(act==='draft'){ a.status='draft'; toast('Renvoyé en brouillon'); }
+    else if(act==='publish'){ a.status='published'; a.updated='aujourd\'hui'; toast('🟢 Publié en Officiel — visible dans le catalogue'); }
+    else if(act==='deprecate'){ a.status='deprecated'; toast('Recette dépréciée'); }
+    else if(act==='version'){ a.version++; a.versions.unshift([a.version,'aujourd\'hui','nouvelle version']); toast('＋ Version v'+a.version+' publiée'); }
+    openEditor(a.id);
+  }
+
+  function backToList(){ $('editView').classList.remove('show'); $('editView').innerHTML=''; $('listView').style.display=''; renderList(); cur=null; }
+
+  function newAsset(){
+    var id='new-'+Date.now();
+    A.unshift({id:id,kind:'prompt',ic:'✨',title:'Nouveau prompt',status:'draft',version:1,owner:'marie.d',updated:'aujourd\'hui',
+      spec:'Décris l\'intention, puis insère des variables {{comme_ça}}.\n\n{{entrée}}',
+      tools:[['Aucun (génération de texte)','read']],security:['Rappel : ne pas coller de secret.'],criteria:['Résultat conforme à l\'attendu'],
+      metrics:{uses:0,success:0,humanFix:0,saved:'—'},versions:[[1,'aujourd\'hui','brouillon']]});
+    openEditor(id);
+  }
+
+  // wiring global
+  $('statusSeg').querySelectorAll('[data-st]').forEach(function(b){ b.addEventListener('click',function(){ fStatus=b.dataset.st; $('statusSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderList(); }); });
+  $('newBtn').addEventListener('click',newAsset);
+  renderList();
+
+  // deep-link : #<id> ouvre directement l'éditeur (ex. depuis Métriques → « Ouvrir dans le Studio »)
+  function openFromHash(){ var h=(location.hash||'').replace('#',''); if(h &amp;&amp; A.find(function(x){return x.id===h;})) openEditor(h); }
+  window.addEventListener('hashchange',openFromHash);
+  openFromHash();
+})();
+</script>
+<script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go},'*');}});})();</script></body>
+</html>
+"></iframe>
+   <iframe id="f-metrics" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
+<html lang=&quot;fr&quot; data-theme=&quot;dark&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Adoption IA — tableau de bord (maquette)</title>
+<link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>&quot;>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+<style>
+:root{
+  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
+  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
+  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
+header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
+header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
+.period{margin-left:auto;display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.period button{font-family:var(--fb);font-size:12px;font-weight:700;color:var(--ts);background:transparent;border:none;border-radius:9px;padding:7px 12px;cursor:pointer}
+.period button.on{background:rgba(124,92,252,.2);color:var(--tp)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
+.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin:18px 0}
+.kpi{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:16px 18px}
+.kpi .k{font-size:11.5px;color:var(--ts);display:flex;align-items:center;gap:6px}
+.kpi .val{font-family:var(--fd);font-size:28px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+.kpi .tr{font-size:11.5px;margin-top:4px;color:var(--tm)}
+.kpi .tr.up{color:var(--ok)} .kpi .tr.down{color:var(--err)}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:17px 19px;margin-bottom:16px}
+.panel h3{font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:3px}
+.panel .cap{font-size:11.5px;color:var(--tm);margin-bottom:14px}
+
+/* bar list */
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:11px;font-size:12.5px}
+.bar .lbl{color:var(--ts);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:9px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--deliver))}
+.bar .num{text-align:right;color:var(--tp);font-weight:700;font-size:12px}
+
+/* success bars colored */
+.sbar .fill.ok{background:linear-gradient(90deg,#2dd4bf,#34d399)}
+.sbar .fill.warn{background:linear-gradient(90deg,#fbbf24,#f0a92c)}
+.sbar .fill.err{background:linear-gradient(90deg,#f87171,#ef5350)}
+
+/* trend svg */
+.trend{width:100%;height:150px}
+.trend .grid-l{stroke:var(--line);stroke-width:1}
+.trend .area{fill:url(#g);opacity:.5}
+.trend .ln{fill:none;stroke:var(--deliver);stroke-width:2.5}
+.trend .dot{fill:var(--deliver)}
+.xlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:4px}
+
+/* donut */
+.donutwrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.leg{display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.leg .li{display:flex;align-items:center;gap:8px;color:var(--ts)}
+.leg .sw{width:11px;height:11px;border-radius:3px}
+.leg b{color:var(--tp)}
+
+/* improve table */
+.imp{display:flex;flex-direction:column;gap:9px}
+.imp .it{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:11px 13px}
+.imp .ic{font-size:19px}
+.imp .mn{flex:1;min-width:0}
+.imp .mt{font-family:var(--fd);font-weight:700;font-size:13.5px}
+.imp .ms{font-size:11.5px;color:var(--warn);margin-top:2px}
+.imp .lnk{all:unset;cursor:pointer;font-size:11.5px;font-weight:800;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border-radius:9px;padding:7px 11px;white-space:nowrap}
+.imp .why{font-size:11px;color:var(--tm);text-align:right;white-space:nowrap}
+
+/* feedback loop callout */
+.loop{border:1px dashed var(--line2);border-radius:14px;background:rgba(45,212,191,.04);padding:15px 17px;font-size:12.5px;color:var(--ts);line-height:1.6}
+.loop b{color:var(--tp)}
+.loop .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--tp);font-weight:700}
+.loop .flow span{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:20px;padding:5px 11px}
+.loop .flow .ar{background:none;border:none;color:var(--tm);padding:0}
+/* FinOps */
+.mtable{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mrow{display:grid;grid-template-columns:1.4fr 1fr 34px 1fr;gap:8px;align-items:center;padding:9px 11px;background:var(--bg-card);font-size:12px}
+.mrow.head{background:rgba(255,255,255,.03);color:var(--tm);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.mrow .tk{color:var(--ts);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;display:inline-block}
+.m-nano{color:#9ca3af;background:rgba(156,163,175,.12)} .m-small{color:var(--ok);background:rgba(52,211,153,.12)}
+.m-mid{color:var(--info);background:rgba(96,165,250,.12)} .m-large{color:var(--warn);background:rgba(251,191,36,.12)}
+.mrow .arr{color:var(--tm);text-align:center}
+.mrow .save{font-weight:800;font-size:11.5px}
+.save.pos{color:var(--ok)} .save.zero{color:var(--tm)}
+.savecallout{border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.06);border-radius:11px;padding:11px 14px;font-size:12.5px;color:var(--ts);margin-bottom:11px;line-height:1.5}
+.savecallout b{color:var(--ok)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class=&quot;wrap&quot;>
+  <header>
+    <div class=&quot;logo&quot;>📊</div>
+    <div>
+      <h1>Adoption IA</h1>
+      <div class=&quot;sub&quot;>Ce qui marche, ce qui aide, ce qu'il faut améliorer — recettes &amp;amp; prompts</div>
+    </div>
+    <div class=&quot;period&quot; id=&quot;period&quot;>
+      <button data-p=&quot;7&quot;>7 j</button>
+      <button data-p=&quot;30&quot; class=&quot;on&quot;>30 j</button>
+      <button data-p=&quot;90&quot;>90 j</button>
+    </div>
+  </header>
+
+  <div class=&quot;nav&quot;>
+    <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
+    <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
+    <a href=&quot;#&quot; class=&quot;on&quot;>📊 Métriques</a>
+  </div>
+
+  <!-- KPIs -->
+  <div class=&quot;kpis&quot; id=&quot;kpis&quot;></div>
+
+  <!-- Trend + level split -->
+  <div class=&quot;cols&quot;>
+    <div class=&quot;panel&quot;>
+      <h3>Adoption dans le temps</h3>
+      <div class=&quot;cap&quot;>Exécutions de recettes + copies de prompts, par semaine.</div>
+      <svg class=&quot;trend&quot; id=&quot;trend&quot; viewBox=&quot;0 0 520 150&quot; preserveAspectRatio=&quot;none&quot;>
+        <defs><linearGradient id=&quot;g&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;1&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;.5&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;0&quot;/></linearGradient></defs>
+      </svg>
+      <div class=&quot;xlab&quot; id=&quot;xlab&quot;></div>
+    </div>
+    <div class=&quot;panel&quot;>
+      <h3>Répartition par niveau</h3>
+      <div class=&quot;cap&quot;>Part des usages selon la gouvernance de la recette/prompt.</div>
+      <div class=&quot;donutwrap&quot;>
+        <svg width=&quot;140&quot; height=&quot;140&quot; viewBox=&quot;0 0 42 42&quot; id=&quot;donut&quot;></svg>
+        <div class=&quot;leg&quot; id=&quot;donutLeg&quot;></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top usage + success -->
+  <div class=&quot;cols&quot;>
+    <div class=&quot;panel&quot;>
+      <h3>Les plus utilisées</h3>
+      <div class=&quot;cap&quot;>Top recettes &amp;amp; prompts par nombre d'usages.</div>
+      <div class=&quot;bars&quot; id=&quot;topUse&quot;></div>
+    </div>
+    <div class=&quot;panel&quot;>
+      <h3>Taux de réussite</h3>
+      <div class=&quot;cap&quot;>Part des exécutions validées sans correction humaine.</div>
+      <div class=&quot;bars sbar&quot; id=&quot;successBars&quot;></div>
+    </div>
+  </div>
+
+  <!-- À améliorer -->
+  <div class=&quot;panel&quot;>
+    <h3>⚠ À améliorer <span style=&quot;font-weight:600;color:var(--tm);font-size:12px&quot;>— faible réussite ou corrections fréquentes</span></h3>
+    <div class=&quot;cap&quot;>La boucle d'apprentissage remonte ici les recettes candidates à une nouvelle version. Un clic ouvre le Studio.</div>
+    <div class=&quot;imp&quot; id=&quot;improve&quot;></div>
+  </div>
+
+  <!-- FinOps : coûts &amp; efficience -->
+  <div class=&quot;panel&quot;>
+    <h3>💰 Coûts &amp;amp; efficience <span style=&quot;font-weight:600;color:var(--tm);font-size:12px&quot;>— FinOps IA (simulation)</span></h3>
+    <div class=&quot;cap&quot;>Ce que l'IA coûte, et où l'argent est bien (ou mal) dépensé.</div>
+    <div class=&quot;kpis&quot; id=&quot;costKpis&quot; style=&quot;margin:0 0 18px&quot;></div>
+    <div class=&quot;cols&quot;>
+      <div>
+        <h3 style=&quot;font-size:14px&quot;>Coût par équipe</h3>
+        <div class=&quot;cap&quot;>Dépense IA sur la période, par tribu.</div>
+        <div class=&quot;bars&quot; id=&quot;teamCost&quot;></div>
+        <h3 style=&quot;font-size:14px;margin-top:18px&quot;>Reprise humaine par équipe</h3>
+        <div class=&quot;cap&quot;>Part des résultats retravaillés à la main (plus c'est bas, mieux c'est).</div>
+        <div class=&quot;bars sbar&quot; id=&quot;teamRework&quot;></div>
+      </div>
+      <div>
+        <h3 style=&quot;font-size:14px&quot;>Modèle optimal par tâche</h3>
+        <div class=&quot;cap&quot;>Le bon modèle pour la difficulté : trop gros = gaspillage, trop petit = reprises.</div>
+        <div id=&quot;modelSaving&quot;></div>
+        <div class=&quot;mtable&quot; id=&quot;modelTable&quot;></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning loop -->
+  <div class=&quot;panel&quot;>
+    <h3>🔁 Boucle d'apprentissage</h3>
+    <div class=&quot;loop&quot;>
+      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les recettes à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
+      <div class=&quot;flow&quot;><span>Usage</span><span class=&quot;ar&quot;>→</span><span>Signal 👍/👎</span><span class=&quot;ar&quot;>→</span><span>Score</span><span class=&quot;ar&quot;>→</span><span>À améliorer</span><span class=&quot;ar&quot;>→</span><span>Studio : nouvelle version</span><span class=&quot;ar&quot;>↺</span></div>
+    </div>
+  </div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
+  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
+
+  // ── Données (agrégées depuis recettes + prompts) ──
+  // model = modèle actuel · optimal = recommandé pour la difficulté · team = équipe
+  var ITEMS=[
+    {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30,team:'Plateforme',model:'mid',optimal:'mid'},
+    {ic:'✍️',name:'Message de commit',kind:'prompt',lvl:'off',uses:812,success:88,humanFix:12,saved:5,team:'Paiements',model:'mid',optimal:'nano'},
+    {ic:'🧪',name:'Tests unitaires',kind:'prompt',lvl:'off',uses:640,success:88,humanFix:12,saved:25,team:'Plateforme',model:'large',optimal:'mid'},
+    {ic:'🔒',name:'Analyse de vuln',kind:'recipe',lvl:'off',uses:210,success:91,humanFix:9,saved:40,team:'Sécurité',model:'large',optimal:'large'},
+    {ic:'👀',name:'Revue de code',kind:'prompt',lvl:'team',uses:298,success:82,humanFix:22,saved:20,team:'Paiements',model:'large',optimal:'mid'},
+    {ic:'🐞',name:'Stack trace',kind:'prompt',lvl:'team',uses:300,success:85,humanFix:18,saved:15,team:'Data',model:'mid',optimal:'small'},
+    {ic:'🧹',name:'Refacto legacy',kind:'prompt',lvl:'team',uses:130,success:70,humanFix:35,saved:45,studio:'refacto-legacy',team:'Core',model:'large',optimal:'mid'},
+    {ic:'🚚',name:'Migration Java 21',kind:'recipe',lvl:'off',uses:56,success:74,humanFix:30,saved:120,studio:'migrate-java21',team:'Core',model:'large',optimal:'large'},
+    {ic:'🔤',name:'Regex / SQL',kind:'prompt',lvl:'exp',uses:45,success:60,humanFix:40,saved:10,studio:'regex-sql',team:'Data',model:'small',optimal:'nano'},
+    {ic:'⚛️',name:'Tests React',kind:'prompt',lvl:'off',uses:190,success:86,humanFix:14,saved:20,team:'Front',model:'mid',optimal:'small'}
+  ];
+  var LVL={off:['Officiel','#34d399'],team:['Équipe','#60a5fa'],exp:['Expérimental','#fbbf24']};
+  var MODELS={nano:{n:'Nano',c:0.002},small:{n:'Small',c:0.008},mid:{n:'Mid',c:0.03},large:{n:'Large',c:0.10}};
+  function eur(x){ var s=(x<1?x.toFixed(3):x<1000?x.toFixed(2):(''+Math.round(x))); return '€'+s.replace('.',','); }
+  var SCALE={7:.25,30:1,90:2.8};
+
+  function fmt(n){ return n>=1000?(n/1000).toFixed(1).replace('.0','')+'k':(''+Math.round(n)); }
+
+  function render(days){
+    var s=SCALE[days];
+    var items=ITEMS.map(function(it){ var c=Object.assign({},it); c.u=Math.round(it.uses*s); return c; });
+    var totalUses=items.reduce(function(a,b){return a+b.u;},0);
+    var timeSaved=items.reduce(function(a,b){return a+b.u*b.saved;},0)/60; // heures
+    var wAvg=Math.round(items.reduce(function(a,b){return a+b.success*b.u;},0)/totalUses);
+    var wFix=Math.round(items.reduce(function(a,b){return a+b.humanFix*b.u;},0)/totalUses);
+    var active=items.filter(function(i){return i.u>0;}).length;
+
+    // KPIs
+    $('kpis').innerHTML=[
+      ['⚡','Usages',fmt(totalUses),'up','+'+(days===30?'18':days===7?'6':'34')+'% vs période préc.'],
+      ['⏱','Temps gagné (est.)','~'+fmt(timeSaved)+' h','up','soit ~'+Math.round(timeSaved/7)+' j·homme'],
+      ['✅','Réussite moyenne',wAvg+'%',wAvg>=85?'up':'down',(wAvg>=85?'au-dessus':'sous')+' la cible 85%'],
+      ['🖐','Corrigés à la main',wFix+'%','down','part relue/ajustée'],
+      ['🧩','Recettes actives',''+active,'','sur '+ITEMS.length+' publiées'],
+      ['👥','Contributeurs','23','up','+3 ce mois']
+    ].map(function(k){ return '<div class=&quot;kpi&quot;><div class=&quot;k&quot;>'+k[0]+' '+k[1]+'</div><div class=&quot;val&quot;>'+k[2]+'</div><div class=&quot;tr '+k[3]+'&quot;>'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
+
+    // Trend (8 semaines, croissance + bruit déterministe)
+    var pts=[]; var base=totalUses/9;
+    for(var i=0;i<8;i++){ var v=base*(0.55+i*0.075)+ (i%3-1)*base*0.06; pts.push(Math.max(base*.4,v)); }
+    var max=Math.max.apply(null,pts)*1.15, W=520,H=150,pad=6;
+    var xs=function(i){return pad+i*(W-2*pad)/7;}, ys=function(v){return H-pad-(v/max)*(H-2*pad);};
+    var d='',area='M'+xs(0)+' '+H;
+    pts.forEach(function(v,i){ d+=(i?'L':'M')+xs(i).toFixed(1)+' '+ys(v).toFixed(1)+' '; area+='L'+xs(i).toFixed(1)+' '+ys(v).toFixed(1)+' '; });
+    area+='L'+xs(7)+' '+H+' Z';
+    var dots=pts.map(function(v,i){return '<circle class=&quot;dot&quot; cx=&quot;'+xs(i).toFixed(1)+'&quot; cy=&quot;'+ys(v).toFixed(1)+'&quot; r=&quot;3&quot;/>';}).join('');
+    var glines=[0,.5,1].map(function(f){var y=pad+f*(H-2*pad);return '<line class=&quot;grid-l&quot; x1=&quot;0&quot; y1=&quot;'+y+'&quot; x2=&quot;'+W+'&quot; y2=&quot;'+y+'&quot;/>';}).join('');
+    $('trend').innerHTML='<defs><linearGradient id=&quot;g&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;1&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;.45&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;0&quot;/></linearGradient></defs>'+glines+'<path class=&quot;area&quot; d=&quot;'+area+'&quot;/><path class=&quot;ln&quot; d=&quot;'+d+'&quot;/>'+dots;
+    $('xlab').innerHTML=['S-7','S-6','S-5','S-4','S-3','S-2','S-1','Cette sem.'].map(function(l){return '<span>'+l+'</span>';}).join('');
+
+    // Donut par niveau
+    var byLvl={off:0,team:0,exp:0}; items.forEach(function(i){ byLvl[i.lvl]+=i.u; });
+    var tot=byLvl.off+byLvl.team+byLvl.exp, off=0, seg='';
+    ['off','team','exp'].forEach(function(k){ var pct=byLvl[k]/tot*100; seg+='<circle r=&quot;15.915&quot; cx=&quot;21&quot; cy=&quot;21&quot; fill=&quot;transparent&quot; stroke=&quot;'+LVL[k][1]+'&quot; stroke-width=&quot;6&quot; stroke-dasharray=&quot;'+pct.toFixed(1)+' '+(100-pct).toFixed(1)+'&quot; stroke-dashoffset=&quot;'+(25-off).toFixed(1)+'&quot;/>'; off+=pct; });
+    $('donut').innerHTML='<circle r=&quot;15.915&quot; cx=&quot;21&quot; cy=&quot;21&quot; fill=&quot;transparent&quot; stroke=&quot;rgba(255,255,255,.05)&quot; stroke-width=&quot;6&quot;/>'+seg+'<text x=&quot;21&quot; y=&quot;20.5&quot; text-anchor=&quot;middle&quot; font-size=&quot;6.5&quot; fill=&quot;#f5f1ff&quot; font-weight=&quot;800&quot; font-family=&quot;Bricolage Grotesque&quot;>'+fmt(tot)+'</text><text x=&quot;21&quot; y=&quot;26&quot; text-anchor=&quot;middle&quot; font-size=&quot;3.2&quot; fill=&quot;#7a6fa3&quot; font-family=&quot;Manrope&quot;>usages</text>';
+    $('donutLeg').innerHTML=['off','team','exp'].map(function(k){ return '<div class=&quot;li&quot;><span class=&quot;sw&quot; style=&quot;background:'+LVL[k][1]+'&quot;></span>'+LVL[k][0]+' · <b>'+Math.round(byLvl[k]/tot*100)+'%</b></div>'; }).join('');
+
+    // Top usage
+    var top=items.slice().sort(function(a,b){return b.u-a.u;}).slice(0,7);
+    var mx=top[0].u;
+    $('topUse').innerHTML=top.map(function(i){ return '<div class=&quot;bar&quot;><span class=&quot;lbl&quot;>'+i.ic+' '+esc(i.name)+'</span><div class=&quot;track&quot;><div class=&quot;fill&quot; style=&quot;width:'+(i.u/mx*100).toFixed(0)+'%&quot;></div></div><span class=&quot;num&quot;>'+fmt(i.u)+'</span></div>'; }).join('');
+
+    // Success bars (sorted asc to surface weak ones)
+    var bysucc=items.slice().sort(function(a,b){return a.success-b.success;}).slice(0,7);
+    $('successBars').innerHTML=bysucc.map(function(i){ var cls=i.success>=85?'ok':i.success>=70?'warn':'err'; return '<div class=&quot;bar&quot;><span class=&quot;lbl&quot;>'+i.ic+' '+esc(i.name)+'</span><div class=&quot;track&quot;><div class=&quot;fill '+cls+'&quot; style=&quot;width:'+i.success+'%&quot;></div></div><span class=&quot;num&quot;>'+i.success+'%</span></div>'; }).join('');
+
+    // À améliorer
+    var flagged=items.filter(function(i){return i.u>10 &amp;&amp; (i.success<75||i.humanFix>30);}).sort(function(a,b){return a.success-b.success;});
+    $('improve').innerHTML=flagged.length?flagged.map(function(i){
+      var why=i.success<75?('réussite '+i.success+'%'):('corrigés '+i.humanFix+'%');
+      return '<div class=&quot;it&quot;><span class=&quot;ic&quot;>'+i.ic+'</span><div class=&quot;mn&quot;><div class=&quot;mt&quot;>'+esc(i.name)+'</div><div class=&quot;ms&quot;>⚠ '+why+' — candidate à une nouvelle version</div></div>'+
+        '<span class=&quot;why&quot;>'+i.success+'% · '+i.humanFix+'% corr.</span>'+
+        '<button class=&quot;lnk&quot; data-studio=&quot;'+esc(i.studio||'')+'&quot;>Ouvrir dans le Studio →</button></div>';
+    }).join(''):'<div style=&quot;color:var(--tm);font-size:13px;padding:10px&quot;>Rien à signaler sur cette période 🎉</div>';
+    $('improve').querySelectorAll('[data-studio]').forEach(function(b){ b.addEventListener('click',function(){ var s=b.dataset.studio; parent.postMessage({go:'studio',hash:(s||'')},'*'); }); });
+
+    renderCosts(items);
+  }
+
+  function renderCosts(items){
+    var totalUses=0, totalCost=0, totalOptimal=0, totalSuccess=0, wasted=0, wastedCost=0, reworkNum=0;
+    items.forEach(function(i){
+      var c=MODELS[i.model].c, oc=MODELS[i.optimal].c;
+      i._cost=i.u*c; i._opt=i.u*oc;
+      totalUses+=i.u; totalCost+=i._cost; totalOptimal+=i._opt;
+      totalSuccess+=i.u*i.success/100;
+      reworkNum+=i.u*i.humanFix/100;
+      var w=i.u*(1-i.success/100); wasted+=w; wastedCost+=w*c;
+    });
+    var costPerExec=totalCost/totalUses, costPerSuccess=totalCost/totalSuccess;
+    var reworkPct=Math.round(reworkNum/totalUses*100);
+    var potential=totalCost-totalOptimal;
+    // KPIs coût
+    $('costKpis').innerHTML=[
+      ['💶','Coût total (période)',eur(totalCost),'','budget IA consommé'],
+      ['⚙️','Coût / exécution',eur(costPerExec),'','moyenne tous modèles'],
+      ['🎯','Coût / résultat réussi',eur(costPerSuccess),'up','on paie aussi les échecs'],
+      ['🖐','Reprise humaine',reworkPct+'%','down','résultats retravaillés'],
+      ['🗑','Appels inutiles',fmt(wasted),'down',eur(wastedCost)+' gaspillés (échecs)']
+    ].map(function(k){ return '<div class=&quot;kpi&quot;><div class=&quot;k&quot;>'+k[0]+' '+k[1]+'</div><div class=&quot;val&quot;>'+k[2]+'</div><div class=&quot;tr '+k[3]+'&quot;>'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
+    // Coût par équipe
+    var teams={}; items.forEach(function(i){ if(!teams[i.team])teams[i.team]={cost:0,uses:0,rew:0}; teams[i.team].cost+=i._cost; teams[i.team].uses+=i.u; teams[i.team].rew+=i.u*i.humanFix/100; });
+    var tarr=Object.keys(teams).map(function(t){return {t:t,cost:teams[t].cost,rew:Math.round(teams[t].rew/teams[t].uses*100)};});
+    var tmax=Math.max.apply(null,tarr.map(function(x){return x.cost;}));
+    $('teamCost').innerHTML=tarr.sort(function(a,b){return b.cost-a.cost;}).map(function(x){ return '<div class=&quot;bar&quot;><span class=&quot;lbl&quot;>'+esc(x.t)+'</span><div class=&quot;track&quot;><div class=&quot;fill&quot; style=&quot;width:'+(x.cost/tmax*100).toFixed(0)+'%&quot;></div></div><span class=&quot;num&quot;>'+eur(x.cost)+'</span></div>'; }).join('');
+    $('teamRework').innerHTML=tarr.slice().sort(function(a,b){return b.rew-a.rew;}).map(function(x){ var cls=x.rew<=15?'ok':x.rew<=25?'warn':'err'; return '<div class=&quot;bar&quot;><span class=&quot;lbl&quot;>'+esc(x.t)+'</span><div class=&quot;track&quot;><div class=&quot;fill '+cls+'&quot; style=&quot;width:'+x.rew+'%&quot;></div></div><span class=&quot;num&quot;>'+x.rew+'%</span></div>'; }).join('');
+    // Modèle optimal par tâche
+    if(potential>0.5) $('modelSaving').innerHTML='<div class=&quot;savecallout&quot;>💡 Aligner chaque tâche sur son modèle optimal : <b>−'+eur(potential)+'</b> sur la période (<b>−'+Math.round(potential/totalCost*100)+'%</b>) sans perte de qualité. Un clic ajuste le modèle dans le Studio.</div>';
+    else $('modelSaving').innerHTML='';
+    var rows=items.slice().sort(function(a,b){return (b._cost-b._opt)-(a._cost-a._opt);});
+    $('modelTable').innerHTML='<div class=&quot;mrow head&quot;><span>Tâche</span><span>Actuel</span><span></span><span>Recommandé</span></div>'+
+      rows.map(function(i){ var save=i._cost-i._opt; var same=i.model===i.optimal;
+        return '<div class=&quot;mrow&quot;><span class=&quot;tk&quot;>'+i.ic+' '+esc(i.name)+'</span>'+
+          '<span><span class=&quot;mtag m-'+i.model+'&quot;>'+MODELS[i.model].n+'</span></span>'+
+          '<span class=&quot;arr&quot;>'+(same?'=':'→')+'</span>'+
+          '<span><span class=&quot;mtag m-'+i.optimal+'&quot;>'+MODELS[i.optimal].n+'</span> <span class=&quot;save '+(save>0.5?'pos':'zero')+'&quot;>'+(save>0.5?'−'+eur(save):'ok')+'</span></span></div>';
+      }).join('');
+  }
+
+  var days=30;
+  $('period').querySelectorAll('[data-p]').forEach(function(b){ b.addEventListener('click',function(){ days=+b.dataset.p; $('period').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); render(days); }); });
+  render(days);
+})();
+</script>
+<script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go},'*');}});})();</script></body>
+</html>
+"></iframe>
+ </div>
+ <script>
+   function go(name,hash){
+     document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===name);});
+     document.querySelectorAll('.frames iframe').forEach(function(f){f.classList.toggle('on',f.id==='f-'+name);});
+     if(hash){ var f=document.getElementById('f-'+name); try{ f.contentWindow.location.hash=hash; }catch(e){} }
+   }
+   document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
+   window.addEventListener('message',function(e){ if(e.data&&e.data.go) go(e.data.go, e.data.hash?('#'+e.data.hash):''); });
+ </script>
+</body></html>
