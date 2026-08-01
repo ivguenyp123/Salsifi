@@ -89,6 +89,19 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .loop .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--tp);font-weight:700}
 .loop .flow span{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:20px;padding:5px 11px}
 .loop .flow .ar{background:none;border:none;color:var(--tm);padding:0}
+/* FinOps */
+.mtable{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mrow{display:grid;grid-template-columns:1.4fr 1fr 34px 1fr;gap:8px;align-items:center;padding:9px 11px;background:var(--bg-card);font-size:12px}
+.mrow.head{background:rgba(255,255,255,.03);color:var(--tm);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.mrow .tk{color:var(--ts);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;display:inline-block}
+.m-nano{color:#9ca3af;background:rgba(156,163,175,.12)} .m-small{color:var(--ok);background:rgba(52,211,153,.12)}
+.m-mid{color:var(--info);background:rgba(96,165,250,.12)} .m-large{color:var(--warn);background:rgba(251,191,36,.12)}
+.mrow .arr{color:var(--tm);text-align:center}
+.mrow .save{font-weight:800;font-size:11.5px}
+.save.pos{color:var(--ok)} .save.zero{color:var(--tm)}
+.savecallout{border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.06);border-radius:11px;padding:11px 14px;font-size:12.5px;color:var(--ts);margin-bottom:11px;line-height:1.5}
+.savecallout b{color:var(--ok)}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
 .toast.show{opacity:1}
 </style>
@@ -158,6 +171,29 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class="imp" id="improve"></div>
   </div>
 
+  <!-- FinOps : coûts & efficience -->
+  <div class="panel">
+    <h3>💰 Coûts &amp; efficience <span style="font-weight:600;color:var(--tm);font-size:12px">— FinOps IA (simulation)</span></h3>
+    <div class="cap">Ce que l'IA coûte, et où l'argent est bien (ou mal) dépensé.</div>
+    <div class="kpis" id="costKpis" style="margin:0 0 18px"></div>
+    <div class="cols">
+      <div>
+        <h3 style="font-size:14px">Coût par équipe</h3>
+        <div class="cap">Dépense IA sur la période, par tribu.</div>
+        <div class="bars" id="teamCost"></div>
+        <h3 style="font-size:14px;margin-top:18px">Reprise humaine par équipe</h3>
+        <div class="cap">Part des résultats retravaillés à la main (plus c'est bas, mieux c'est).</div>
+        <div class="bars sbar" id="teamRework"></div>
+      </div>
+      <div>
+        <h3 style="font-size:14px">Modèle optimal par tâche</h3>
+        <div class="cap">Le bon modèle pour la difficulté : trop gros = gaspillage, trop petit = reprises.</div>
+        <div id="modelSaving"></div>
+        <div class="mtable" id="modelTable"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Learning loop -->
   <div class="panel">
     <h3>🔁 Boucle d'apprentissage</h3>
@@ -177,19 +213,22 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
 
   // ── Données (agrégées depuis recettes + prompts) ──
+  // model = modèle actuel · optimal = recommandé pour la difficulté · team = équipe
   var ITEMS=[
-    {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30},
-    {ic:'✍️',name:'Message de commit',kind:'prompt',lvl:'off',uses:812,success:88,humanFix:12,saved:5},
-    {ic:'🧪',name:'Tests unitaires',kind:'prompt',lvl:'off',uses:640,success:88,humanFix:12,saved:25},
-    {ic:'🔒',name:'Analyse de vuln',kind:'recipe',lvl:'off',uses:210,success:91,humanFix:9,saved:40},
-    {ic:'👀',name:'Revue de code',kind:'prompt',lvl:'team',uses:298,success:82,humanFix:22,saved:20},
-    {ic:'🐞',name:'Stack trace',kind:'prompt',lvl:'team',uses:300,success:85,humanFix:18,saved:15},
-    {ic:'🧹',name:'Refacto legacy',kind:'prompt',lvl:'team',uses:130,success:70,humanFix:35,saved:45,studio:'refacto-legacy'},
-    {ic:'🚚',name:'Migration Java 21',kind:'recipe',lvl:'off',uses:56,success:74,humanFix:30,saved:120,studio:'migrate-java21'},
-    {ic:'🔤',name:'Regex / SQL',kind:'prompt',lvl:'exp',uses:45,success:60,humanFix:40,saved:10,studio:'regex-sql'},
-    {ic:'⚛️',name:'Tests React',kind:'prompt',lvl:'off',uses:190,success:86,humanFix:14,saved:20}
+    {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30,team:'Plateforme',model:'mid',optimal:'mid'},
+    {ic:'✍️',name:'Message de commit',kind:'prompt',lvl:'off',uses:812,success:88,humanFix:12,saved:5,team:'Paiements',model:'mid',optimal:'nano'},
+    {ic:'🧪',name:'Tests unitaires',kind:'prompt',lvl:'off',uses:640,success:88,humanFix:12,saved:25,team:'Plateforme',model:'large',optimal:'mid'},
+    {ic:'🔒',name:'Analyse de vuln',kind:'recipe',lvl:'off',uses:210,success:91,humanFix:9,saved:40,team:'Sécurité',model:'large',optimal:'large'},
+    {ic:'👀',name:'Revue de code',kind:'prompt',lvl:'team',uses:298,success:82,humanFix:22,saved:20,team:'Paiements',model:'large',optimal:'mid'},
+    {ic:'🐞',name:'Stack trace',kind:'prompt',lvl:'team',uses:300,success:85,humanFix:18,saved:15,team:'Data',model:'mid',optimal:'small'},
+    {ic:'🧹',name:'Refacto legacy',kind:'prompt',lvl:'team',uses:130,success:70,humanFix:35,saved:45,studio:'refacto-legacy',team:'Core',model:'large',optimal:'mid'},
+    {ic:'🚚',name:'Migration Java 21',kind:'recipe',lvl:'off',uses:56,success:74,humanFix:30,saved:120,studio:'migrate-java21',team:'Core',model:'large',optimal:'large'},
+    {ic:'🔤',name:'Regex / SQL',kind:'prompt',lvl:'exp',uses:45,success:60,humanFix:40,saved:10,studio:'regex-sql',team:'Data',model:'small',optimal:'nano'},
+    {ic:'⚛️',name:'Tests React',kind:'prompt',lvl:'off',uses:190,success:86,humanFix:14,saved:20,team:'Front',model:'mid',optimal:'small'}
   ];
   var LVL={off:['Officiel','#34d399'],team:['Équipe','#60a5fa'],exp:['Expérimental','#fbbf24']};
+  var MODELS={nano:{n:'Nano',c:0.002},small:{n:'Small',c:0.008},mid:{n:'Mid',c:0.03},large:{n:'Large',c:0.10}};
+  function eur(x){ var s=(x<1?x.toFixed(3):x<1000?x.toFixed(2):(''+Math.round(x))); return '€'+s.replace('.',','); }
   var SCALE={7:.25,30:1,90:2.8};
 
   function fmt(n){ return n>=1000?(n/1000).toFixed(1).replace('.0','')+'k':(''+Math.round(n)); }
@@ -251,6 +290,48 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         '<button class="lnk" data-studio="'+esc(i.studio||'')+'">Ouvrir dans le Studio →</button></div>';
     }).join(''):'<div style="color:var(--tm);font-size:13px;padding:10px">Rien à signaler sur cette période 🎉</div>';
     $('improve').querySelectorAll('[data-studio]').forEach(function(b){ b.addEventListener('click',function(){ var s=b.dataset.studio; location.href='../studio/studio.html'+(s?('#'+s):''); }); });
+
+    renderCosts(items);
+  }
+
+  function renderCosts(items){
+    var totalUses=0, totalCost=0, totalOptimal=0, totalSuccess=0, wasted=0, wastedCost=0, reworkNum=0;
+    items.forEach(function(i){
+      var c=MODELS[i.model].c, oc=MODELS[i.optimal].c;
+      i._cost=i.u*c; i._opt=i.u*oc;
+      totalUses+=i.u; totalCost+=i._cost; totalOptimal+=i._opt;
+      totalSuccess+=i.u*i.success/100;
+      reworkNum+=i.u*i.humanFix/100;
+      var w=i.u*(1-i.success/100); wasted+=w; wastedCost+=w*c;
+    });
+    var costPerExec=totalCost/totalUses, costPerSuccess=totalCost/totalSuccess;
+    var reworkPct=Math.round(reworkNum/totalUses*100);
+    var potential=totalCost-totalOptimal;
+    // KPIs coût
+    $('costKpis').innerHTML=[
+      ['💶','Coût total (période)',eur(totalCost),'','budget IA consommé'],
+      ['⚙️','Coût / exécution',eur(costPerExec),'','moyenne tous modèles'],
+      ['🎯','Coût / résultat réussi',eur(costPerSuccess),'up','on paie aussi les échecs'],
+      ['🖐','Reprise humaine',reworkPct+'%','down','résultats retravaillés'],
+      ['🗑','Appels inutiles',fmt(wasted),'down',eur(wastedCost)+' gaspillés (échecs)']
+    ].map(function(k){ return '<div class="kpi"><div class="k">'+k[0]+' '+k[1]+'</div><div class="val">'+k[2]+'</div><div class="tr '+k[3]+'">'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
+    // Coût par équipe
+    var teams={}; items.forEach(function(i){ if(!teams[i.team])teams[i.team]={cost:0,uses:0,rew:0}; teams[i.team].cost+=i._cost; teams[i.team].uses+=i.u; teams[i.team].rew+=i.u*i.humanFix/100; });
+    var tarr=Object.keys(teams).map(function(t){return {t:t,cost:teams[t].cost,rew:Math.round(teams[t].rew/teams[t].uses*100)};});
+    var tmax=Math.max.apply(null,tarr.map(function(x){return x.cost;}));
+    $('teamCost').innerHTML=tarr.sort(function(a,b){return b.cost-a.cost;}).map(function(x){ return '<div class="bar"><span class="lbl">'+esc(x.t)+'</span><div class="track"><div class="fill" style="width:'+(x.cost/tmax*100).toFixed(0)+'%"></div></div><span class="num">'+eur(x.cost)+'</span></div>'; }).join('');
+    $('teamRework').innerHTML=tarr.slice().sort(function(a,b){return b.rew-a.rew;}).map(function(x){ var cls=x.rew<=15?'ok':x.rew<=25?'warn':'err'; return '<div class="bar"><span class="lbl">'+esc(x.t)+'</span><div class="track"><div class="fill '+cls+'" style="width:'+x.rew+'%"></div></div><span class="num">'+x.rew+'%</span></div>'; }).join('');
+    // Modèle optimal par tâche
+    if(potential>0.5) $('modelSaving').innerHTML='<div class="savecallout">💡 Aligner chaque tâche sur son modèle optimal : <b>−'+eur(potential)+'</b> sur la période (<b>−'+Math.round(potential/totalCost*100)+'%</b>) sans perte de qualité. Un clic ajuste le modèle dans le Studio.</div>';
+    else $('modelSaving').innerHTML='';
+    var rows=items.slice().sort(function(a,b){return (b._cost-b._opt)-(a._cost-a._opt);});
+    $('modelTable').innerHTML='<div class="mrow head"><span>Tâche</span><span>Actuel</span><span></span><span>Recommandé</span></div>'+
+      rows.map(function(i){ var save=i._cost-i._opt; var same=i.model===i.optimal;
+        return '<div class="mrow"><span class="tk">'+i.ic+' '+esc(i.name)+'</span>'+
+          '<span><span class="mtag m-'+i.model+'">'+MODELS[i.model].n+'</span></span>'+
+          '<span class="arr">'+(same?'=':'→')+'</span>'+
+          '<span><span class="mtag m-'+i.optimal+'">'+MODELS[i.optimal].n+'</span> <span class="save '+(save>0.5?'pos':'zero')+'">'+(save>0.5?'−'+eur(save):'ok')+'</span></span></div>';
+      }).join('');
   }
 
   var days=30;

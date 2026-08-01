@@ -218,6 +218,26 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   var LVL_LABEL={off:'Officiel',team:'Équipe',exp:'Expérimental',official:'Officiel',mine:'Perso'};
   var LVL_ICON={off:'🛡',team:'👥',exp:'🧪',official:'🟢',mine:'👤'};
 
+  // ── Modèle & coût (simulation) — pour que l'utilisateur sache ce qu'il consomme ──
+  var MODELS={nano:{n:'Nano',c:0.002},small:{n:'Small',c:0.008},mid:{n:'Mid',c:0.03},large:{n:'Large',c:0.10}};
+  // par entrée : [modèle utilisé, modèle recommandé pour la tâche]
+  var ITEM_MODEL={
+    'tests-junit':['large','mid'], 'migrate-java21':['large','large'], 'analyze-vuln':['large','large'],
+    'prep-delivery':['mid','mid'], 'react-tests':['mid','small'],
+    'commit':['mid','nano'], 'analyze-code':['mid','small'], 'explain':['mid','small'],
+    'review':['large','mid'], 'debug':['mid','small'], 'story':['mid','small'], 'sql':['mid','small'], 'learn':['small','small']
+  };
+  function eur(x){ var s=(x<1?x.toFixed(3):x<100?x.toFixed(2):(''+Math.round(x))); return '€'+s.replace('.',','); }
+  function modelInfo(r){ var mm=ITEM_MODEL[r.id]||['mid','mid']; var cur=MODELS[mm[0]], opt=MODELS[mm[1]]; return {curK:mm[0],optK:mm[1],cur:cur,opt:opt,save:cur.c-opt.c}; }
+  function costPill(r){ var mi=modelInfo(r); return '<span class="autopill" style="color:var(--ts);border-color:var(--line2);background:rgba(255,255,255,.03)">🧠 '+mi.cur.n+' · '+eur(mi.cur.c)+'</span>'; }
+  function modelField(r){
+    var mi=modelInfo(r);
+    var hint = mi.save>0.0005 ? '<div class="note" style="margin-top:8px;color:var(--ok)">💡 <b>'+mi.opt.n+'</b> suffirait pour cette tâche → '+eur(mi.opt.c)+'/exéc (−'+eur(mi.save)+' par appel). Réglable par un <b>ai-maintainer</b> dans le Studio.</div>'
+                             : '<div class="note" style="margin-top:8px">Modèle bien dimensionné pour la difficulté de la tâche.</div>';
+    return '<div class="field"><div class="fl">🧠 Modèle &amp; coût <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— ce que tu consommes</span></div>'+
+      '<div class="fv">Modèle utilisé : <b>'+mi.cur.n+'</b> · <b>'+eur(mi.cur.c)+'</b> / exécution <span style="color:var(--tm)">(simulation)</span></div>'+hint+'</div>';
+  }
+
   // ── Données unifiées (kind: recipe | prompt) ──
   var R=[
     // ——— RECETTES (s'exécutent) ———
@@ -309,7 +329,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var lvlb='<span class="lvl '+r.lvl+'">'+LVL_ICON[r.lvl]+' '+LVL_LABEL[r.lvl]+'</span>';
     var body;
     if(isRec){
-      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(r.agentic?'<span class="agentic">⚙️ agentique</span>':'')+'</div>'+
+      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(r.agentic?'<span class="agentic">⚙️ agentique</span>':'')+costPill(r)+'</div>'+
         '<div class="metrics">'+
           '<div class="m"><b>'+r.usage+'</b>usages</div>'+
           '<div class="m"><b style="color:'+succCol(r.success)+'">'+r.success+'%</b>réussite</div>'+
@@ -321,7 +341,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     } else {
       var vs=vars(r.body);
       var auto=vs.filter(function(v){return AUTOFILL[v];}).length;
-      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+(auto?'<span class="autopill">⚡ '+auto+' pré-rempli'+(auto>1?'s':'')+'</span>':'')+'</div>'+
+      body='<div class="tags">'+r.tags.map(function(t){return '<span>'+t+'</span>';}).join('')+(vs.length?'<span class="varpill">'+vs.length+' variable'+(vs.length>1?'s':'')+'</span>':'')+(auto?'<span class="autopill">⚡ '+auto+' pré-rempli'+(auto>1?'s':'')+'</span>':'')+costPill(r)+'</div>'+
         '<div class="snippet">'+hl(r.body.replace(/\n+/g,' ').slice(0,140))+'</div>'+
         '<div class="foot">'+LVL_ICON[r.lvl]+' '+esc(r.owner)+' · <b style="color:var(--ts)">'+r.uses+'</b>&nbsp;usages'+
           '<button class="act copy" data-act="'+r.id+'">▶ Lancer</button></div>';
@@ -369,6 +389,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       '<div class="field"><div class="fl">🔒 Sécurité</div><div class="fv">'+r.security.map(function(s){return '• '+esc(s);}).join('<br>')+'</div></div>'+
       '<div class="field"><div class="fl">✅ Résultat &amp; critères</div><div class="fv"><b>'+esc(r.expected)+'</b><br>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
       '<div class="field"><div class="fl">📊 Métriques</div><div class="fv"><b>'+r.usage+'</b> usages · réussite <b style="color:'+succCol(r.success)+'">'+r.success+'%</b> · <b>'+r.humanFix+'%</b> corrigés · gagné <b>'+r.timeSaved+'</b></div></div>'+
+      modelField(r)+
       '<div class="field" style="border-style:dashed"><div class="fl">📝 Prompt</div><div class="fv" style="color:var(--tm)">Masqué — on n\'expose pas le prompt d\'une recette. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>'+
       '<div class="mbtns"><button class="mbtn run" data-run="'+r.id+'">🚀 Lancer la recette</button><button class="mbtn ghost" data-close>Fermer</button>'+
         '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'
@@ -459,6 +480,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       varForm+
       convBlock+
       '<div class="field"><div class="fl">📄 Le prompt <span style="color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0">— variables + conventions, prêt à partir</span></div><div class="promptbox" id="pv">'+hl(r.body)+'</div></div>'+
+      modelField(r)+
       '<div id="promptOut"></div>'+
       '<div class="mbtns"><button class="mbtn go" id="cf">▶ Lancer le prompt</button><button class="mbtn ghost mini" id="cp">📋 Copier le prompt</button><button class="mbtn ghost mini" data-close>Fermer</button>'+
         '<div class="thumbs"><button class="thumb" data-fb="up">👍</button><button class="thumb" data-fb="down">👎</button></div></div>'+
