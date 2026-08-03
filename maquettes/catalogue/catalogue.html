@@ -86,6 +86,17 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .browsetoggle{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:9px;color:var(--ts);font-size:13px;font-weight:700;margin:22px 0 6px;padding:9px 0}
 .browsetoggle:hover{color:var(--tp)}
 .browsetoggle .adv{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--tm);border:1px solid var(--line2);border-radius:20px;padding:2px 8px}
+/* Sélecteur de mode (bien visible) */
+.modeseg{display:inline-flex;gap:5px;background:var(--bg-card);border:1px solid var(--line2);border-radius:13px;padding:5px;margin:16px 0 6px}
+.modeseg button{font-family:var(--fb);font-weight:800;font-size:13.5px;color:var(--ts);background:transparent;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:.15s}
+.modeseg button:hover{color:var(--tp)}
+.modeseg button.on{background:rgba(124,92,252,.22);color:var(--tp)}
+/* Suggestions IA de favoris */
+.suggest{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 16px;font-size:12.5px;color:var(--ts)}
+.suggest .sg-t{color:var(--tm);font-weight:700}
+.suggest .sg{display:inline-flex;align-items:center;gap:7px;background:var(--bg-card);border:1px dashed var(--line2);border-radius:20px;padding:6px 12px;cursor:pointer;transition:.15s}
+.suggest .sg:hover{border-color:var(--accent);color:var(--tp)}
+.suggest .sg b{color:var(--tp)}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
@@ -200,6 +211,12 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <a href="../metrics/metrics.html">📊 Admin</a>
   </div>
 
+  <div class="modeseg" id="modeSeg">
+    <button data-m="guided" class="on">✨ Guidé</button>
+    <button data-m="full">🧰 Catalogue complet</button>
+    <button data-m="favoris">⭐ Favoris</button>
+  </div>
+
   <!-- LANDING : golden path + moments (langage humain, guidé) -->
   <div id="landing">
     <div class="gpath">
@@ -227,15 +244,16 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       <div class="chips" id="chips"></div>
       <div id="intentResult"></div>
     </div>
-
-    <button class="browsetoggle" id="browseToggle">⌄ Parcourir tout le catalogue <span class="adv">avancé</span></button>
   </div>
 
-  <div class="favbanner" id="favBanner" style="display:none">
-    <div>
-      <div class="fbt">⭐ Tes favoris</div>
-      <div class="fbs">Les agents &amp; prompts que tu utilises tous les jours — un clic pour lancer. Ajoute-en avec l'étoile ☆ sur une carte du Catalogue.</div>
+  <div id="favWrap" style="display:none">
+    <div class="favbanner" id="favBanner">
+      <div>
+        <div class="fbt">⭐ Tes favoris</div>
+        <div class="fbs">Ce que <b>tu</b> as choisi — un clic pour lancer. Ajoute/retire avec l'étoile ☆ sur n'importe quelle carte. Tu décides, l'IA ne fait que <b>suggérer</b>.</div>
+      </div>
     </div>
+    <div class="suggest" id="suggest"></div>
   </div>
 
   <!-- BROWSE : le catalogue technique complet (masqué par défaut) -->
@@ -407,7 +425,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         '<button class="star'+(r.fav?' on':'')+'" data-fav="'+r.id+'" title="Favori — je l\'utilise tous les jours">'+(r.fav?'⭐':'☆')+'</button>'+
         badge+lvlb+'</div>'+body+'</div>';
   }
-  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
+  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); if(typeof view!=='undefined'&&view==='favoris') renderSuggest(); toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
 
   function renderGrid(){
     var list=R.filter(function(r){
@@ -817,25 +835,37 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
   $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
 
-  // ── Parcourir tout (avancé) : révèle le catalogue technique ──
-  function setBrowse(open){ $('browse').style.display=open?'':'none'; $('browseToggle').innerHTML=open?'⌃ Masquer le catalogue complet':'⌄ Parcourir tout le catalogue <span class="adv">avancé</span>'; if(open) renderGrid(); }
-  $('browseToggle').addEventListener('click',function(){ setBrowse($('browse').style.display==='none'); });
-
-  // ── vue Favoris : masque l'accueil, montre le bandeau, ne garde que les étoilés ──
-  function setFav(on){
-    favMode=on;
-    $('landing').style.display=on?'none':'';
-    $('favBanner').style.display=on?'':'none';
-    $('browse').style.display=on?'':'none';
-    var tb=document.querySelector('#browse .toolbar'); if(tb) tb.style.display=on?'none':'';
-    if(!on){ $('browseToggle').innerHTML='⌄ Parcourir tout le catalogue <span class="adv">avancé</span>'; }
+  // ── 3 vues : Guidé (golden path) · Catalogue complet (comme avant) · Favoris ──
+  var view='guided';
+  function renderSuggest(){
+    // l'IA suggère (l'utilisateur confirme) : entrées très utilisées, pas encore en favori
+    var sug=R.filter(function(r){ return !r.fav && (r.usage||r.uses||0)>=300; })
+            .sort(function(a,b){ return (b.usage||b.uses||0)-(a.usage||a.uses||0); }).slice(0,3);
+    if(!sug.length){ $('suggest').innerHTML=''; return; }
+    $('suggest').innerHTML='<span class="sg-t">💡 L\'IA suggère :</span>'+sug.map(function(r){ return '<span class="sg" data-add="'+r.id+'">'+r.ic+' <b>'+esc(r.title)+'</b> <span style="color:var(--tm)">· '+(r.usage||r.uses)+'× · ＋ ajouter</span></span>'; }).join('');
+    $('suggest').querySelectorAll('[data-add]').forEach(function(el){ el.addEventListener('click',function(){ toggleFav(el.dataset.add); }); });
+  }
+  function applyView(){
+    favMode=(view==='favoris');
+    $('modeSeg').querySelectorAll('[data-m]').forEach(function(b){ b.classList.toggle('on', b.dataset.m===view); });
+    $('landing').style.display=(view==='guided')?'':'none';
+    $('favWrap').style.display=(view==='favoris')?'':'none';
+    var full=(view==='full'||view==='favoris');
+    $('browse').style.display=full?'':'none';
+    var tb=document.querySelector('#browse .toolbar'); if(tb) tb.style.display=(view==='favoris')?'none':'';
+    if(view==='favoris') renderSuggest();
     renderGrid();
   }
-  window.addEventListener('message',function(e){ if(e.data && e.data.mode) setFav(e.data.mode==='favoris'); });
-  function favFromHash(){ setFav((location.hash||'')==='#favoris'); }
+  function setView(v){ view=v; applyView(); }
+  $('modeSeg').querySelectorAll('[data-m]').forEach(function(b){ b.addEventListener('click',function(){ setView(b.dataset.m); }); });
+
+  // pilotage externe (onglets du fichier démo) + deep-link
+  window.addEventListener('message',function(e){ if(e.data && e.data.mode) setView(e.data.mode==='favoris'?'favoris':'guided'); });
+  function favFromHash(){ if((location.hash||'')==='#favoris') setView('favoris'); }
   window.addEventListener('hashchange',favFromHash);
 
-  renderChips(); renderTags(); renderMoments(); favFromHash();
+  renderChips(); renderTags(); renderMoments();
+  applyView(); favFromHash();
 })();
 </script>
 </body>
