@@ -29,6 +29,29 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
 .nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
 
+/* POURQUOI — vente */
+.why{margin:18px 0 6px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,rgba(96,165,250,.09),rgba(124,92,252,.04));padding:24px 26px}
+.why-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--info);margin-bottom:8px}
+.why-h{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.why-p{font-size:13.5px;color:var(--ts);margin:9px 0 18px;max-width:820px;line-height:1.6}
+.why-p b{color:var(--tp)}
+.promises{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.promise{border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:15px 16px}
+.promise .pi{font-size:22px;line-height:1}
+.promise .ph{font-family:var(--fd);font-weight:800;font-size:14px;margin:8px 0 5px;line-height:1.25}
+.promise .pd{font-size:12px;color:var(--ts);line-height:1.5}
+.promise .pd b{color:var(--tp)}
+.promise .pmap{font-size:11px;color:var(--tm);margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
+.promise .pmap b{color:var(--ts)}
+.contrast{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+@media(max-width:680px){.contrast{grid-template-columns:1fr}}
+.cc{border-radius:13px;padding:13px 15px;font-size:12.5px;line-height:1.55}
+.cc b{color:var(--tp)}
+.cc.bad{border:1px solid rgba(248,113,113,.28);background:rgba(248,113,113,.05);color:var(--ts)}
+.cc.good{border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.05);color:var(--ts)}
+.cc .cch{font-weight:800;font-size:12.5px;margin-bottom:6px}
+.cc.bad .cch{color:var(--err)} .cc.good .cch{color:var(--ok)}
+.why-note{font-size:12px;color:var(--tm);margin-top:16px;text-align:center}
 /* Breadcrumb périmètre */
 .scopebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px;padding:13px 16px;border:1px solid var(--line2);border-radius:14px;background:var(--bg-card)}
 .scopebar .lbl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-right:4px}
@@ -130,7 +153,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class="logo">🏛️</div>
     <div>
       <h1>Gouvernance</h1>
-      <div class="sub">Périmètres, héritage, double validation, journal d'exécution &amp; A/B — à l'échelle du groupe</div>
+      <div class="sub">Déployer l'IA à l'échelle de LCL — sous contrôle, prouvé, auditable</div>
     </div>
     <div class="role-pill">🔒 Owner de périmètre</div>
   </header>
@@ -140,6 +163,24 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <a href="../studio/studio.html">🛠️ Studio</a>
     <a href="../metrics/metrics.html">📊 Admin</a>
     <a href="#" class="on">🏛️ Gouvernance</a>
+  </div>
+
+  <!-- POURQUOI (vente en langage humain) -->
+  <div class="why">
+    <div class="why-eyebrow">Pourquoi cette page existe</div>
+    <h2 class="why-h">Laisse l'IA agir dans toute la banque — sans lui lâcher les clés.</h2>
+    <p class="why-p">Des agents qui écrivent du code, ouvrent des merge requests, livrent en préproduction : très puissant… à condition de pouvoir le <b>prouver</b>, le <b>contrôler</b> et le <b>tracer</b>. Cette couche transforme « on teste l'IA dans un coin » en « on la déploie à l'échelle du groupe, sous contrôle ». C'est ce qui débloque le <b>oui</b> du risque, du RSSI et de l'audit.</p>
+    <div class="promises">
+      <div class="promise"><div class="pi">🛡️</div><div class="ph">L'IA écrit du code ? Toujours 2 humains.</div><div class="pd">Aucune recette capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class="pmap">↓ File de validation · pour le <b>RSSI / risque</b></div></div>
+      <div class="promise"><div class="pi">📜</div><div class="ph">Tout est prouvé, rien n'est opaque.</div><div class="pd">Qui, quand, quelle recette, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class="pmap">↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
+      <div class="promise"><div class="pi">🧬</div><div class="ph">Une norme groupe, déclinée partout.</div><div class="pd">La recette officielle descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class="pmap">↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
+      <div class="promise"><div class="pi">🆚</div><div class="ph">On ne déploie que ce qui marche.</div><div class="pd">Une nouvelle version n'est généralisée que si l'<b>A/B prouve</b> qu'elle est meilleure — pas de big-bang au feeling.</div><div class="pmap">↓ Comparaison A/B · pour les <b>leads / la qualité</b></div></div>
+    </div>
+    <div class="contrast">
+      <div class="cc bad"><div class="cch">✗ Sans gouvernance</div>Chacun bricole ses prompts · l'IA touche au code sans trace · impossible à auditer · les versions divergent d'une équipe à l'autre · <b>« shadow AI »</b> que le risque finit par interdire.</div>
+      <div class="cc good"><div class="cch">✓ Avec</div>Un catalogue officiel · chaque écriture validée &amp; tracée · amélioration prouvée avant diffusion · conformité démontrable · <b>l'IA passe à l'échelle</b>, avec l'accord du risque.</div>
+    </div>
+    <div class="why-note">👇 Ci-dessous, la mécanique qui tient ces promesses. Choisis un périmètre (groupe → tribu → équipe) pour tout filtrer.</div>
   </div>
 
   <!-- 1. PÉRIMÈTRE -->
