@@ -265,10 +265,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   // ── A/B ──
   var AB={
+    'migrate-java21':{title:'Migration Java 21', a:{v:'v2',n:56,success:74,rework:30,cost:0.10,lat:15.0}, b:{v:'v3',n:44,success:86,rework:14,cost:0.10,lat:12.5}},
     'prep-delivery':{title:'Livraison préprod', a:{v:'v4',n:210,success:89,rework:14,cost:0.03,lat:8.2}, b:{v:'v5',n:198,success:95,rework:5,cost:0.03,lat:7.9}},
     'tests-junit':{title:'Générer des tests', a:{v:'v2',n:160,success:83,rework:19,cost:0.10,lat:12.0}, b:{v:'v3',n:150,success:88,rework:12,cost:0.03,lat:9.4}}
   };
-  var abKey='prep-delivery';
+  var abKey='migrate-java21';
+  // permet au scénario guidé de préselectionner une recette dans l'A/B (#ab=<id>)
+  window.addEventListener('hashchange',function(){ var m=(location.hash||'').match(/ab=([\w-]+)/); if(m&&AB[m[1]]){ abKey=m[1]; renderAB(); document.querySelector('.abcols').scrollIntoView({behavior:'smooth',block:'center'}); } });
 
   // ════════ RENDER ════════
   function renderPerimeter(){

@@ -12,9 +12,26 @@
  .tabs button:hover{color:#f5f1ff}
  .tabs button.on{color:#fff;background:rgba(124,92,252,.22)}
  .tabs .sp{flex:1}
+ .tabs .demo{color:#0f0a1f;background:linear-gradient(135deg,#a78bfa,#2dd4bf);font-weight:800}
  .frames{position:fixed;top:50px;left:0;right:0;bottom:0}
  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#0f0a1f}
  iframe.on{display:block}
+ /* Coach — scénario guidé */
+ #coach{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;width:min(680px,calc(100% - 32px));background:#160f2b;border:1px solid rgba(167,139,250,.5);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:16px 18px;display:none}
+ #coach.on{display:block}
+ #coach .ch{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+ #coach .step{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#a78bfa}
+ #coach .ct{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;font-size:16px;color:#f5f1ff}
+ #coach .cx{margin-left:auto;cursor:pointer;color:#7a6fa3;font-size:18px;background:none;border:none}
+ #coach .cbody{font-size:13px;color:#b8aed8;line-height:1.55}
+ #coach .cbody b{color:#f5f1ff}
+ #coach .dots{display:flex;gap:6px;margin:12px 0 0}
+ #coach .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}
+ #coach .dot.on{background:#a78bfa}
+ #coach .cbtns{display:flex;gap:8px;margin-top:12px;align-items:center}
+ #coach .cbtn{font:inherit;font-weight:800;font-size:13px;border:none;border-radius:10px;padding:10px 16px;cursor:pointer}
+ #coach .cbtn.go{color:#0f0a1f;background:linear-gradient(135deg,#a78bfa,#2dd4bf)}
+ #coach .cbtn.ghost{color:#b8aed8;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.16)}
 </style></head><body>
  <div class="tabs"><span class="brand">🧂 Salsifi<small>démo · un seul fichier</small></span>
    <button data-t="catalogue" class="on">🧰 Catalogue</button>
@@ -22,7 +39,18 @@
    <button data-t="metrics">📊 Admin</button>
    <button data-t="gouvernance">🏛️ Gouvernance</button>
    <span class="sp"></span>
+   <button class="demo" id="startDemo">▶ Démo guidée</button>
    <button data-t="favoris">⭐ Favoris</button>
+ </div>
+
+ <div id="coach">
+   <div class="ch"><span class="step" id="cstep"></span><span class="ct" id="ctitle"></span><button class="cx" id="cclose">✕</button></div>
+   <div class="cbody" id="cbody"></div>
+   <div class="dots" id="cdots"></div>
+   <div class="cbtns">
+     <button class="cbtn ghost" id="cprev">← Précédent</button>
+     <button class="cbtn go" id="cnext">Suivant →</button>
+   </div>
  </div>
  <div class="frames">
    <iframe id="f-catalogue" class="on" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
@@ -1897,10 +1925,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   // ── A/B ──
   var AB={
+    'migrate-java21':{title:'Migration Java 21', a:{v:'v2',n:56,success:74,rework:30,cost:0.10,lat:15.0}, b:{v:'v3',n:44,success:86,rework:14,cost:0.10,lat:12.5}},
     'prep-delivery':{title:'Livraison préprod', a:{v:'v4',n:210,success:89,rework:14,cost:0.03,lat:8.2}, b:{v:'v5',n:198,success:95,rework:5,cost:0.03,lat:7.9}},
     'tests-junit':{title:'Générer des tests', a:{v:'v2',n:160,success:83,rework:19,cost:0.10,lat:12.0}, b:{v:'v3',n:150,success:88,rework:12,cost:0.03,lat:9.4}}
   };
-  var abKey='prep-delivery';
+  var abKey='migrate-java21';
+  // permet au scénario guidé de préselectionner une recette dans l'A/B (#ab=<id>)
+  window.addEventListener('hashchange',function(){ var m=(location.hash||'').match(/ab=([\w-]+)/); if(m&amp;&amp;AB[m[1]]){ abKey=m[1]; renderAB(); document.querySelector('.abcols').scrollIntoView({behavior:'smooth',block:'center'}); } });
 
   // ════════ RENDER ════════
   function renderPerimeter(){
@@ -2033,7 +2064,33 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           else if(name==='catalogue') cf.contentWindow.postMessage({mode:'all'},'*'); }catch(e){}
      if(hash){ var f=document.getElementById(fid); try{ f.contentWindow.location.hash=hash; }catch(e){} }
    }
-   document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
+   document.querySelectorAll('.tabs button[data-t]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
    window.addEventListener('message',function(e){ if(e.data&&e.data.go) go(e.data.go, e.data.hash?('#'+e.data.hash):''); });
+
+   // ── Scénario guidé : une recette défaillante traverse les 4 espaces ──
+   var SCENARIO=[
+     { tab:'metrics', title:'Détecter — Admin', body:'La recette <b>Migration Java 21</b> décroche : <b>74% de réussite</b>, <b>30% de reprises</b>. Elle remonte dans « ⚠ À améliorer ». Clique <b>« Ouvrir dans le Studio »</b> (ou Suivant).' },
+     { tab:'studio', hash:'migrate-java21', title:'Corriger — Studio', body:'La fiche s\'ouvre sur la spécification (le prompt, masqué aux utilisateurs). L\'<b>ai-maintainer</b> ajuste la spéc / les critères, teste au banc d\'essai, puis <b>« Publier une nouvelle version »</b> (v3).' },
+     { tab:'gouvernance', title:'Valider — Gouvernance', body:'La recette <b>écrit</b> (branche + patch) → <b>double validation</b> : ai-maintainer + Owner de périmètre + revue sécurité. Approuve-la dans la file, puis <b>Publier</b>.' },
+     { tab:'gouvernance', hash:'ab=migrate-java21', title:'Tester A/B — Gouvernance', body:'Avant de généraliser : <b>A/B v2 vs v3</b>. La v3 passe de <b>74% → 86%</b> de réussite et la reprise de 30% → 14%. Elle gagne → <b>« Généraliser au groupe »</b> (redescend par héritage).' },
+     { tab:'catalogue', title:'Retrouvée — Catalogue', body:'Bouclé : les devs retrouvent <b>Migration Java 21</b> au catalogue, désormais <b>officielle et améliorée</b>, prête à lancer. Détectée, corrigée, validée, testée, diffusée — sans quitter la plateforme.' }
+   ];
+   var si=0;
+   function renderCoach(){
+     var s=SCENARIO[si];
+     document.getElementById('cstep').textContent='Étape '+(si+1)+'/'+SCENARIO.length;
+     document.getElementById('ctitle').textContent=s.title;
+     document.getElementById('cbody').innerHTML=s.body;
+     document.getElementById('cdots').innerHTML=SCENARIO.map(function(_,i){return '<span class="dot'+(i===si?' on':'')+'"></span>';}).join('');
+     document.getElementById('cprev').style.visibility=si?'':'hidden';
+     document.getElementById('cnext').textContent=(si===SCENARIO.length-1)?'Terminer ✓':'Suivant →';
+     go(s.tab, s.hash?('#'+s.hash):'');
+   }
+   function openCoach(){ si=0; document.getElementById('coach').classList.add('on'); renderCoach(); }
+   function closeCoach(){ document.getElementById('coach').classList.remove('on'); }
+   document.getElementById('startDemo').addEventListener('click',openCoach);
+   document.getElementById('cclose').addEventListener('click',closeCoach);
+   document.getElementById('cprev').addEventListener('click',function(){ if(si){si--;renderCoach();} });
+   document.getElementById('cnext').addEventListener('click',function(){ if(si<SCENARIO.length-1){si++;renderCoach();} else closeCoach(); });
  </script>
 </body></html>
