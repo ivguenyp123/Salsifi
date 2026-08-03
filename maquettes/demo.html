@@ -37,7 +37,6 @@
    <button data-t="catalogue" class="on">🧰 Catalogue</button>
    <button data-t="studio">🛠️ Studio</button>
    <button data-t="metrics">📊 Admin</button>
-   <button data-t="gouvernance">🏛️ Gouvernance</button>
    <span class="sp"></span>
    <button class="demo" id="startDemo">▶ Démo guidée</button>
    <button data-t="favoris">⭐ Favoris</button>
@@ -267,7 +266,6 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <a href=&quot;#&quot; class=&quot;on&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
     <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
-    <a href=&quot;#&quot; data-go=&quot;gouvernance&quot;>🏛️ Gouvernance</a>
   </div>
 
   <div class=&quot;modeseg&quot; id=&quot;modeSeg&quot;>
@@ -1091,7 +1089,6 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; class=&quot;on&quot;>🛠️ Studio</a>
     <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
-    <a href=&quot;#&quot; data-go=&quot;gouvernance&quot;>🏛️ Gouvernance</a>
   </div>
 
   <p class=&quot;intro&quot;>Le prompt brut n'est <b>jamais</b> exposé aux utilisateurs — il vit ici. Le Studio est le seul endroit où l'on <b>écrit la spécification</b>, où l'on <b>déclare les outils autorisés</b> et les <b>critères de validation</b>, où l'on <b>teste</b> avant publication, et où chaque <b>version</b> est tracée. Réservé au rôle <b>ai-maintainer</b> (Staff AI Enablement).</p>
@@ -1486,6 +1483,24 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .genbtn{font-family:var(--fb);font-weight:800;font-size:13px;color:#0f0a1f;background:linear-gradient(135deg,#2dd4bf,#34d399);border:none;border-radius:11px;padding:11px 18px;cursor:pointer}
 .mini{font-size:11px;color:var(--tm);margin-top:9px;line-height:1.5}
 
+/* ═══ Journal d'audit ═══ */
+.jfilter{font-size:11.5px;color:var(--tm);margin:8px 0 10px}
+.jtable{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.jhead,.jrow{display:grid;grid-template-columns:120px 1fr 70px 90px 1.1fr;gap:10px;padding:10px 13px;align-items:center;font-size:12px}
+.jhead{background:rgba(255,255,255,.03);color:var(--tm);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.jrow{border-top:1px solid var(--line);cursor:pointer}
+.jrow:hover{background:rgba(255,255,255,.02)}
+.jrow .rc{color:var(--tp);font-weight:600}
+.jrow .jwho{color:var(--ts)}
+.jmodel{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(96,165,250,.12);color:var(--info)}
+.tool{font-size:10.5px;border-radius:6px;padding:2px 7px;margin:0 3px 3px 0;display:inline-block}
+.tool.read{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.tool.write{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)}
+.jdetail{grid-column:1/-1;border-top:1px dashed var(--line);margin-top:9px;padding-top:10px;font-size:12px;color:var(--ts);line-height:1.6;display:none}
+.jrow.open .jdetail{display:block}
+.jdetail .dl{color:var(--tm);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.03em;margin:8px 0 3px}
+.proof{color:var(--ok)}
+@media(max-width:820px){.jhead,.jrow{grid-template-columns:100px 1fr 60px}.jhead .h3,.jhead .h4,.jhead .h5,.jrow .c3,.jrow .c4,.jrow .c5{display:none}}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
 .toast.show{opacity:1}
 .spotlight{outline:3px solid var(--accent)!important;outline-offset:4px;border-radius:14px;animation:spotpulse 1.2s ease-in-out infinite;scroll-margin:90px}
@@ -1506,13 +1521,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
     <a href=&quot;#&quot; class=&quot;on&quot;>📊 Admin</a>
-    <a href=&quot;#&quot; data-go=&quot;gouvernance&quot;>🏛️ Gouvernance</a>
   </div>
 
   <div class=&quot;subtabs&quot; id=&quot;subtabs&quot;>
     <button data-v=&quot;dash&quot; class=&quot;on&quot;>📊 Tableau de bord</button>
     <button data-v=&quot;parc&quot;>🗂️ Le parc</button>
     <button data-v=&quot;valider&quot;>✅ À valider <span class=&quot;cnt&quot; id=&quot;validCnt&quot; hidden></span></button>
+    <button data-v=&quot;journal&quot;>📜 Journal</button>
   </div>
 
   <!-- ══════════ VUE 1 : TABLEAU DE BORD ══════════ -->
@@ -1571,6 +1586,16 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     </div>
     <div id=&quot;queue&quot;></div>
   </div>
+
+  <!-- ══════════ VUE 4 : JOURNAL D'AUDIT ══════════ -->
+  <div id=&quot;view-journal&quot; hidden>
+    <p class=&quot;vintro&quot;>La <b>preuve</b> pour le risque &amp;amp; le RSSI : qui a lancé quoi, quand, avec quel modèle, le contexte injecté, les outils appelés et le <b>résultat prouvé</b>. Immuable, exportable. <span style=&quot;color:var(--tm)&quot;>C'est ce qui débloque le « oui » de la conformité.</span></p>
+    <div class=&quot;jfilter&quot; id=&quot;jfilter&quot;></div>
+    <div class=&quot;jtable&quot;>
+      <div class=&quot;jhead&quot;><span>Quand</span><span>Agent · qui</span><span class=&quot;h3&quot;>Modèle</span><span class=&quot;h4&quot;>Version</span><span class=&quot;h5&quot;>Preuve</span></div>
+      <div id=&quot;jrows&quot;></div>
+    </div>
+  </div>
 </div>
 
 <div class=&quot;toast&quot; id=&quot;toast&quot;></div>
@@ -1584,7 +1609,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 <!-- Sous-onglets -->
 <script>
 (function(){
-  var V={dash:'view-dash',parc:'view-parc',valider:'view-valider'};
+  var V={dash:'view-dash',parc:'view-parc',valider:'view-valider',journal:'view-journal'};
   function show(v){
     Object.keys(V).forEach(function(k){ document.getElementById(V[k]).hidden = (k!==v); });
     document.querySelectorAll('#subtabs button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
@@ -1818,6 +1843,41 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 })();
 </script>
 
+<!-- Vue 4 : Journal d'audit -->
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
+  var LOG=[
+    {t:&quot;auj. 14:32&quot;,who:'marie.d',team:'EAC-Run',rc:'Livraison préprod',ver:'v5',model:'Mid',ctx:'branche feat/refunds · IMAGE_TAG 1.4.2 → 1.5.0 · overlays préprod',tools:[['bump IMAGE_TAG','write'],['scan vuln','read'],['créer MR','write']],res:'MR !313 créée',proof:'MR !313 · CI verte · 214 tests'},
+    {t:&quot;auj. 11:07&quot;,who:'k.otsu',team:'Crédit-Scoring',rc:'Générer des tests',ver:'v3',model:'Large',ctx:'ScoringService.java · 4 méthodes',tools:[['lire dépôt','read'],['écrire fichier test','write']],res:'ScoringServiceTest.java (8 tests)',proof:'branche fix/tests · verts'},
+    {t:&quot;hier 17:41&quot;,who:'a.leroy',team:'FBI-Fraude',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'CVE-2025-1234 · lib xml',tools:[['scanner','read']],res:'faux positif écarté',proof:'rapport #A-112'},
+    {t:&quot;hier 09:15&quot;,who:'marie.d',team:'EAC-Run',rc:'Message de commit',ver:'v2',model:'Nano',ctx:'diff en cours (12 fichiers)',tools:[['lire diff','read']],res:'commit conventionnel',proof:'commit 4f2a1b'},
+    {t:&quot;lun. 16:20&quot;,who:'RSSI',team:'CIA-Sécu',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'audit trimestriel',tools:[['scanner','read']],res:'3 findings',proof:'rapport #A-108'}
+  ];
+  function render(){
+    $('jfilter').innerHTML='<b style=&quot;color:var(--ts)&quot;>'+LOG.length+'</b> exécutions tracées · toutes tribus · <span style=&quot;color:var(--tm)&quot;>clique une ligne pour le détail</span>';
+    $('jrows').innerHTML=LOG.map(function(l,i){
+      var tools=l.tools.map(function(t){return '<span class=&quot;tool '+t[1]+'&quot;>'+(t[1]==='write'?'✏️':'👁')+' '+esc(t[0])+'</span>';}).join('');
+      return '<div class=&quot;jrow&quot; data-j=&quot;'+i+'&quot;>'+
+        '<span>'+esc(l.t)+'</span>'+
+        '<span><span class=&quot;rc&quot;>'+esc(l.rc)+'</span> · <span class=&quot;jwho&quot;>'+esc(l.who)+' ('+esc(l.team)+')</span></span>'+
+        '<span class=&quot;c3&quot;><span class=&quot;jmodel&quot;>'+esc(l.model)+'</span></span>'+
+        '<span class=&quot;c4&quot;>'+esc(l.ver)+'</span>'+
+        '<span class=&quot;c5 proof&quot;>✔ '+esc(l.proof)+'</span>'+
+        '<div class=&quot;jdetail&quot;>'+
+          '<div class=&quot;dl&quot;>Contexte injecté</div>'+esc(l.ctx)+
+          '<div class=&quot;dl&quot;>Outils appelés</div>'+tools+
+          '<div class=&quot;dl&quot;>Résultat &amp;amp; preuve</div>'+esc(l.res)+' — <span class=&quot;proof&quot;>'+esc(l.proof)+'</span>'+
+          '<div class=&quot;dl&quot;>Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · version <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
+        '</div></div>';
+    }).join('');
+    $('jrows').querySelectorAll('.jrow[data-j]').forEach(function(el){ el.addEventListener('click',function(){ el.classList.toggle('open'); }); });
+  }
+  render();
+})();
+</script>
+
 <script>
 window.addEventListener('message',function(e){
   if(e&amp;&amp;e.data&amp;&amp;e.data.spot){ try{
@@ -1831,426 +1891,9 @@ window.addEventListener('message',function(e){
 <script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go,hash:a.dataset.hash||''},'*');}});})();</script></body>
 </html>
 "></iframe>
-   <iframe id="f-gouvernance" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
-<html lang=&quot;fr&quot; data-theme=&quot;dark&quot;>
-<head>
-<meta charset=&quot;UTF-8&quot;>
-<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
-<title>Gouvernance — périmètres, héritage, validation, audit (maquette)</title>
-<link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>&quot;>
-<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
-<link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
-<style>
-:root{
-  --bg-deep:#0f0a1f; --bg-card:rgba(28,20,50,.55); --bg-card-h:rgba(40,28,70,.7);
-  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
-  --tp:#f5f1ff; --ts:#b8aed8; --tm:#7a6fa3;
-  --accent:#a78bfa; --deliver:#2dd4bf; --info:#60a5fa; --warn:#fbbf24; --err:#f87171; --ok:#34d399;
-  --fd:'Bricolage Grotesque',system-ui,sans-serif; --fb:'Manrope',system-ui,sans-serif; --fm:ui-monospace,'SF Mono',Menlo,monospace;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{-webkit-font-smoothing:antialiased}
-body{font-family:var(--fb);background:var(--bg-deep);color:var(--tp);min-height:100vh;overflow-x:hidden;padding:0 0 70px}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(60% 50% at 10% 0%,rgba(124,92,252,.16),transparent),radial-gradient(50% 40% at 92% 6%,rgba(45,212,191,.10),transparent)}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
-header{display:flex;align-items:center;gap:15px;padding:24px 0 6px;flex-wrap:wrap}
-.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--deliver));display:grid;place-items:center;font-size:24px}
-header h1{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em}
-header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
-.role-pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;padding:8px 13px;font-size:12px;color:var(--info);font-weight:700}
-.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px}
-.nav a{color:var(--ts);text-decoration:none;background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
-.nav a.on{color:var(--tp);border-color:var(--accent);background:rgba(124,92,252,.12)}
-
-/* POURQUOI — vente */
-.why{margin:18px 0 6px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,rgba(96,165,250,.09),rgba(124,92,252,.04));padding:24px 26px}
-.why-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--info);margin-bottom:8px}
-.why-h{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
-.why-p{font-size:13.5px;color:var(--ts);margin:9px 0 18px;max-width:820px;line-height:1.6}
-.why-p b{color:var(--tp)}
-.promises{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
-.promise{border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:15px 16px}
-.promise .pi{font-size:22px;line-height:1}
-.promise .ph{font-family:var(--fd);font-weight:800;font-size:14px;margin:8px 0 5px;line-height:1.25}
-.promise .pd{font-size:12px;color:var(--ts);line-height:1.5}
-.promise .pd b{color:var(--tp)}
-.promise .pmap{font-size:11px;color:var(--tm);margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
-.promise .pmap b{color:var(--ts)}
-.contrast{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-@media(max-width:680px){.contrast{grid-template-columns:1fr}}
-.cc{border-radius:13px;padding:13px 15px;font-size:12.5px;line-height:1.55}
-.cc b{color:var(--tp)}
-.cc.bad{border:1px solid rgba(248,113,113,.28);background:rgba(248,113,113,.05);color:var(--ts)}
-.cc.good{border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.05);color:var(--ts)}
-.cc .cch{font-weight:800;font-size:12.5px;margin-bottom:6px}
-.cc.bad .cch{color:var(--err)} .cc.good .cch{color:var(--ok)}
-.why-note{font-size:12px;color:var(--tm);margin-top:16px;text-align:center}
-/* Breadcrumb périmètre */
-.scopebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px;padding:13px 16px;border:1px solid var(--line2);border-radius:14px;background:var(--bg-card)}
-.scopebar .lbl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-right:4px}
-.scopebar select{font-family:var(--fb);font-size:13px;font-weight:700;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;outline:none;cursor:pointer}
-.scopebar .sep{color:var(--tm)}
-.scopebar .crumb{font-size:12px;color:var(--tm)}
-.scopebar .crumb b{color:var(--ts)}
-
-.panel{border:1px solid var(--line);border-radius:16px;background:var(--bg-card);padding:18px 20px;margin-top:16px}
-.panel h2{font-family:var(--fd);font-size:16px;font-weight:800;display:flex;align-items:center;gap:9px}
-.panel .cap{font-size:12px;color:var(--tm);margin:3px 0 14px;line-height:1.5}
-.badge{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:20px;white-space:nowrap}
-.b-write{color:var(--warn);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35)}
-.b-read{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line)}
-
-/* périmètre stats */
-.pstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.pstat{border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02);padding:14px 16px}
-.pstat .v{font-family:var(--fd);font-size:26px;font-weight:800}
-.pstat .k{font-size:11.5px;color:var(--ts);margin-top:2px}
-
-/* héritage */
-.inh{display:flex;flex-direction:column;gap:10px}
-.irow{border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02);padding:13px 15px}
-.irow .top{display:flex;align-items:center;gap:11px}
-.irow .ic{font-size:20px}
-.irow .ti{font-family:var(--fd);font-weight:700;font-size:14px;flex:1}
-.chain{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;font-size:12px}
-.node{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px}
-.node.root{color:var(--ok);background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3)}
-.node.spec{color:var(--accent);background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.3)}
-.node .who{color:var(--tm);font-size:11px}
-.arr{color:var(--tm)}
-.ihint{font-size:11px;color:var(--tm);margin-top:8px;line-height:1.5}
-.ihint b{color:var(--ts)}
-
-/* double validation */
-.qrow{border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02);padding:14px 16px;margin-bottom:10px}
-.qrow .top{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
-.qrow .ti{font-family:var(--fd);font-weight:700;font-size:14px}
-.qrow .sc{font-size:11.5px;color:var(--tm);margin-left:auto}
-.appr{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.ap{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ts);border-top:1px solid var(--line);padding-top:9px}
-.ap:first-child{border-top:none;padding-top:0}
-.ap .st{width:20px;text-align:center}
-.ap .rl{flex:1}.ap .rl b{color:var(--tp)}
-.ap .who{color:var(--tm);font-size:11.5px}
-.apbtn{font-family:var(--fb);font-weight:800;font-size:12px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:9px;padding:7px 12px;cursor:pointer}
-.apbtn.done{background:rgba(52,211,153,.15);color:var(--ok);cursor:default}
-.qstatus{font-size:12px;font-weight:700;margin-top:11px;padding:9px 12px;border-radius:10px}
-.qs-block{color:var(--warn);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3)}
-.qs-ready{color:var(--ok);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3)}
-.policy{border:1px dashed var(--line2);border-radius:12px;background:rgba(255,255,255,.02);padding:13px 15px;font-size:12.5px;color:var(--ts);line-height:1.6;margin-bottom:14px}
-.policy b{color:var(--tp)}
-
-/* journal */
-.jfilter{font-size:11.5px;color:var(--tm);margin-bottom:10px}
-.jtable{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.jhead,.jrow{display:grid;grid-template-columns:120px 1fr 70px 90px 1.1fr;gap:10px;padding:10px 13px;align-items:center;font-size:12px}
-.jhead{background:rgba(255,255,255,.03);color:var(--tm);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
-.jrow{border-top:1px solid var(--line);cursor:pointer}
-.jrow:hover{background:rgba(255,255,255,.02)}
-.jrow .rc{color:var(--tp);font-weight:600}
-.jrow .who{color:var(--ts)}
-.mtag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(96,165,250,.12);color:var(--info)}
-.tool{font-size:10.5px;border-radius:6px;padding:2px 7px;margin:0 3px 3px 0;display:inline-block}
-.tool.read{color:var(--ts);background:rgba(255,255,255,.05);border:1px solid var(--line)}
-.tool.write{color:var(--warn);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)}
-.jdetail{grid-column:1/-1;border-top:1px dashed var(--line);margin-top:9px;padding-top:10px;font-size:12px;color:var(--ts);line-height:1.6;display:none}
-.jrow.open .jdetail{display:block}
-.jdetail .dl{color:var(--tm);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.03em;margin:8px 0 3px}
-.proof{color:var(--ok)}
-
-/* A/B */
-.abpick{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.abpick select{font-family:var(--fb);font-size:13px;font-weight:700;color:var(--tp);background:rgba(10,7,22,.6);border:1px solid var(--line2);border-radius:9px;padding:9px 12px;outline:none}
-.abcols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:720px){.abcols{grid-template-columns:1fr}.jhead,.jrow{grid-template-columns:100px 1fr 60px}.jhead .h3,.jhead .h4,.jhead .h5,.jrow .c3,.jrow .c4,.jrow .c5{display:none}}
-.abcard{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);padding:16px 18px}
-.abcard.win{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.05)}
-.abcard .vh{display:flex;align-items:center;gap:9px;margin-bottom:12px}
-.abcard .vn{font-family:var(--fd);font-weight:800;font-size:17px}
-.abcard .wtag{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35);border-radius:20px;padding:2px 9px}
-.abm{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ts);padding:6px 0;border-top:1px solid var(--line)}
-.abm:first-of-type{border-top:none}
-.abm b{color:var(--tp)}
-.abm .up{color:var(--ok)} .abm .down{color:var(--err)}
-.abverdict{margin-top:14px;border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.06);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--ts);line-height:1.55}
-.abverdict b{color:var(--tp)}
-.genbtn{font-family:var(--fb);font-weight:800;font-size:13px;color:#0f0a1f;background:linear-gradient(135deg,#2dd4bf,#34d399);border:none;border-radius:11px;padding:11px 18px;cursor:pointer;margin-top:12px}
-.mini{font-size:11px;color:var(--tm);margin-top:9px;line-height:1.5}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(40,28,70,.97);color:var(--tp);font-weight:700;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.3s;pointer-events:none}
-.toast.show{opacity:1}
-</style>
-</head>
-<body>
-<div class=&quot;wrap&quot;>
-  <header>
-    <div class=&quot;logo&quot;>🏛️</div>
-    <div>
-      <h1>Gouvernance</h1>
-      <div class=&quot;sub&quot;>Déployer l'IA à l'échelle de LCL — sous contrôle, prouvé, auditable</div>
-    </div>
-    <div class=&quot;role-pill&quot;>🔒 Owner de périmètre</div>
-  </header>
-
-  <div class=&quot;nav&quot;>
-    <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
-    <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
-    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
-    <a href=&quot;#&quot; class=&quot;on&quot;>🏛️ Gouvernance</a>
-  </div>
-
-  <!-- POURQUOI (vente en langage humain) -->
-  <div class=&quot;why&quot;>
-    <div class=&quot;why-eyebrow&quot;>Pourquoi cette page existe</div>
-    <h2 class=&quot;why-h&quot;>Laisse l'IA agir dans toute la banque — sans lui lâcher les clés.</h2>
-    <p class=&quot;why-p&quot;>Des agents qui écrivent du code, ouvrent des merge requests, livrent en préproduction : très puissant… à condition de pouvoir le <b>prouver</b>, le <b>contrôler</b> et le <b>tracer</b>. Cette couche transforme « on teste l'IA dans un coin » en « on la déploie à l'échelle du groupe, sous contrôle ». C'est ce qui débloque le <b>oui</b> du risque, du RSSI et de l'audit.</p>
-    <div class=&quot;promises&quot;>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🛡️</div><div class=&quot;ph&quot;>L'IA écrit du code ? Toujours 2 humains.</div><div class=&quot;pd&quot;>Aucun agent capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class=&quot;pmap&quot;>↓ File de validation · pour le <b>RSSI / risque</b></div></div>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>📜</div><div class=&quot;ph&quot;>Tout est prouvé, rien n'est opaque.</div><div class=&quot;pd&quot;>Qui, quand, quel agent, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class=&quot;pmap&quot;>↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🌍</div><div class=&quot;ph&quot;>Un cadre, toute la banque.</div><div class=&quot;pd&quot;>Chaque tribu et chaque équipe hérite des <b>mêmes règles</b> — tu peux zoomer sur ton périmètre pour ne voir que ta part.</div><div class=&quot;pmap&quot;>↓ Périmètre · pour la <b>DSI / les Owners</b></div></div>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🆚</div><div class=&quot;ph&quot;>On ne déploie que ce qui marche.</div><div class=&quot;pd&quot;>Une nouvelle version n'est généralisée que si l'<b>A/B prouve</b> qu'elle est meilleure — pas de big-bang au feeling.</div><div class=&quot;pmap&quot;>↓ Comparaison A/B · pour les <b>leads / la qualité</b></div></div>
-    </div>
-    <div class=&quot;contrast&quot;>
-      <div class=&quot;cc bad&quot;><div class=&quot;cch&quot;>✗ Sans gouvernance</div>Chacun bricole ses prompts · l'IA touche au code sans trace · impossible à auditer · les versions divergent d'une équipe à l'autre · <b>« shadow AI »</b> que le risque finit par interdire.</div>
-      <div class=&quot;cc good&quot;><div class=&quot;cch&quot;>✓ Avec</div>Un catalogue officiel · chaque écriture validée &amp;amp; tracée · amélioration prouvée avant diffusion · conformité démontrable · <b>l'IA passe à l'échelle</b>, avec l'accord du risque.</div>
-    </div>
-    <div class=&quot;why-note&quot;>👇 Ci-dessous, la mécanique qui tient ces promesses. Choisis un périmètre (groupe → tribu → équipe) pour tout filtrer.</div>
-  </div>
-
-  <!-- 1. PÉRIMÈTRE -->
-  <div class=&quot;scopebar&quot;>
-    <span class=&quot;lbl&quot;>Périmètre</span>
-    🏦 <b style=&quot;color:var(--tp)&quot;>LCL</b>
-    <span class=&quot;sep&quot;>▸</span>
-    <select id=&quot;selTribe&quot;></select>
-    <span class=&quot;sep&quot;>▸</span>
-    <select id=&quot;selTeam&quot;></select>
-    <span class=&quot;crumb&quot; id=&quot;crumb&quot;></span>
-  </div>
-
-  <div class=&quot;panel&quot;>
-    <h2>🗺️ Périmètre actif</h2>
-    <div class=&quot;cap&quot;>LCL → tribu → équipe. Par défaut tu vois <b>toute la banque</b> ; zoome sur une tribu ou une équipe pour ne voir que sa part. Les validations et le journal ci-dessous suivent ce choix.</div>
-    <div class=&quot;pstats&quot; id=&quot;pstats&quot;></div>
-  </div>
-
-  <!-- 3. POLITIQUE DE PUBLICATION (la règle) -->
-  <div class=&quot;panel&quot;>
-    <h2>✅ Politique de publication <span class=&quot;badge b-read&quot; style=&quot;font-weight:700&quot;>la règle</span></h2>
-    <div class=&quot;cap&quot;>Ici, la <b>règle</b> : qui doit signer avant qu'un agent devienne officiel. Les validations en cours, elles, se traitent dans <b>Admin → À valider</b>.</div>
-    <div class=&quot;policy&quot;>
-      <b>Agent en lecture seule</b> (génère du texte) → 1 validation <b>ai-maintainer</b> (qualité).<br>
-      <b>Agent capable d'écrire</b> (branche, MR, fichier) → <b>double validation</b> : 1 <b>ai-maintainer</b> (qualité) + 1 <b>Owner de périmètre</b> (accepte le risque) + une <b>revue sécurité</b> (RSSI). Toute action irréversible reste derrière une confirmation humaine à l'exécution.
-    </div>
-    <a href=&quot;#&quot; data-go=&quot;metrics&quot; data-hash=&quot;valider&quot; style=&quot;display:inline-block;margin-top:12px;font-family:var(--fb);font-weight:800;font-size:12.5px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border-radius:10px;padding:9px 14px;text-decoration:none&quot;>Voir les validations en cours (Admin) →</a>
-  </div>
-
-  <!-- 4. JOURNAL D'EXÉCUTION -->
-  <div class=&quot;panel&quot;>
-    <h2>📜 Journal d'exécution <span class=&quot;badge b-read&quot; style=&quot;font-weight:700&quot;>auditable</span></h2>
-    <div class=&quot;cap&quot;>Chaque exécution tracée : qui, quand, quel agent + version, quel modèle, le contexte injecté, les outils appelés et la preuve du résultat. Immuable, exportable.</div>
-    <div class=&quot;jfilter&quot; id=&quot;jfilter&quot;></div>
-    <div class=&quot;jtable&quot;>
-      <div class=&quot;jhead&quot;><span>Quand</span><span>Agent · qui</span><span class=&quot;h3&quot;>Modèle</span><span class=&quot;h4&quot;>Version</span><span class=&quot;h5&quot;>Preuve</span></div>
-      <div id=&quot;jrows&quot;></div>
-    </div>
-  </div>
-
-  <!-- 5. A/B -->
-  <div class=&quot;panel&quot;>
-    <h2>🆚 Comparaison A/B avant généralisation</h2>
-    <div class=&quot;cap&quot;>On teste deux versions sur un sous-périmètre, on compare les preuves, et on ne généralise au groupe que si la nouvelle version gagne — pas au feeling.</div>
-    <div class=&quot;abpick&quot;>
-      <span style=&quot;font-size:12.5px;color:var(--ts)&quot;>Agent :</span>
-      <select id=&quot;abSel&quot;></select>
-    </div>
-    <div class=&quot;abcols&quot; id=&quot;abcols&quot;></div>
-    <div id=&quot;abverdict&quot;></div>
-  </div>
-</div>
-
-<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
-
-<script>
-(function(){
-  var $=function(id){return document.getElementById(id);};
-  function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
-  function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2400); }
-
-  // ── Organisation LCL : Groupe → Tribu → Équipe (pas d'entité) ──
-  var ORG={ 'Crédit':['Crédit-Scoring','Crédit-Conso'],
-            'EAC':['EAC-Data','EAC-Run'],
-            'FBI':['FBI-Fraude','FBI-Forensics'],
-            'CIA':['CIA-Sécu','CIA-Ops'] };
-  var scope={ tribe:'', team:'' };
-
-  function fillSelect(sel, items, ph){ sel.innerHTML='<option value=&quot;&quot;>'+ph+'</option>'+items.map(function(i){return '<option>'+esc(i)+'</option>';}).join(''); }
-  function refreshSelectors(){
-    fillSelect($('selTribe'), Object.keys(ORG), 'Toutes tribus'); $('selTribe').value=scope.tribe;
-    var teams=scope.tribe?ORG[scope.tribe]:[];
-    fillSelect($('selTeam'), teams, 'Toutes équipes'); $('selTeam').value=scope.team; $('selTeam').disabled=!scope.tribe;
-  }
-  function scopeName(){ return scope.team||scope.tribe||'LCL'; }
-  function scopePath(){ return ['LCL',scope.tribe,scope.team].filter(Boolean); }
-
-  // ── Agents gouvernés (héritage) ──
-  var GOV=[
-    {id:'prep-delivery',ic:'🚀',title:'Livraison préprod',writes:true,
-      spec:[{scope:'Crédit',by:'Archi Crédit',change:'overlays Kustomize maison'},{scope:'FBI',by:'Lead FBI',change:'+ critère : scan anti-fraude'}]},
-    {id:'tests-junit',ic:'🧪',title:'Générer des tests',writes:true,
-      spec:[{scope:'EAC',by:'Lead EAC',change:'AssertJ imposé + given/when/then'}]},
-    {id:'commit',ic:'✍️',title:'Message de commit',writes:false,
-      spec:[{scope:'CIA',by:'Lead CIA',change:'footer « Refs: LCL-xxx » obligatoire'}]},
-    {id:'analyze-vuln',ic:'🔒',title:'Analyser une vulnérabilité',writes:false,
-      spec:[{scope:'FBI',by:'RSSI',change:'référentiel interne fraude ajouté'}]}
-  ];
-  function specForScope(g){ return g.spec.filter(function(s){ return scopePath().indexOf(s.scope)!==-1; }); }
-
-  // ── File de double validation ──
-  var QUEUE=[
-    {id:'migrate',ic:'🚚',title:'Migration Java 21',writes:true,scope:'Crédit',security:'en attente',
-      approvals:[{role:'ai-maintainer',who:'M. Dubois',done:true},{role:'Owner de périmètre',who:'',done:false}]},
-    {id:'diet',ic:'🧹',title:'Nettoyer un dépôt (archivage)',writes:true,scope:'EAC',security:'ok',
-      approvals:[{role:'ai-maintainer',who:'',done:false},{role:'Owner de périmètre',who:'',done:false}]},
-    {id:'notes',ic:'📝',title:'Générer des release notes',writes:false,scope:'FBI',security:'ok',
-      approvals:[{role:'ai-maintainer',who:'',done:false}]}
-  ];
-
-  // ── Journal ──
-  var LOG=[
-    {t:&quot;auj. 14:32&quot;,who:'marie.d',team:'EAC-Run',rc:'Livraison préprod',ver:'v5',model:'Mid',ctx:'branche feat/refunds · IMAGE_TAG 1.4.2 → 1.5.0 · overlays préprod',tools:[['bump IMAGE_TAG','write'],['scan vuln','read'],['créer MR','write']],res:'MR !313 créée',proof:'MR !313 · CI verte · 214 tests'},
-    {t:&quot;auj. 11:07&quot;,who:'k.otsu',team:'Crédit-Scoring',rc:'Générer des tests',ver:'v3',model:'Large',ctx:'ScoringService.java · 4 méthodes',tools:[['lire dépôt','read'],['écrire fichier test','write']],res:'ScoringServiceTest.java (8 tests)',proof:'branche fix/tests · verts'},
-    {t:&quot;hier 17:41&quot;,who:'a.leroy',team:'FBI-Fraude',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'CVE-2025-1234 · lib xml',tools:[['scanner','read']],res:'faux positif écarté',proof:'rapport #A-112'},
-    {t:&quot;hier 09:15&quot;,who:'marie.d',team:'EAC-Run',rc:'Message de commit',ver:'v2',model:'Nano',ctx:'diff en cours (12 fichiers)',tools:[['lire diff','read']],res:'commit conventionnel',proof:'commit 4f2a1b'},
-    {t:&quot;lun. 16:20&quot;,who:'RSSI',team:'CIA-Sécu',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'audit trimestriel',tools:[['scanner','read']],res:'3 findings',proof:'rapport #A-108'}
-  ];
-  function logInScope(l){ var p=scopePath(); if(p.length<=1) return true; // groupe : tout
-    for(var tr in ORG){ if(ORG[tr].indexOf(l.team)!==-1){
-      if(scope.team) return l.team===scope.team;
-      if(scope.tribe) return tr===scope.tribe;
-    }} return true;
-  }
-
-  // ── A/B ──
-  var AB={
-    'migrate-java21':{title:'Migration Java 21', a:{v:'v2',n:56,success:74,rework:30,cost:0.10,lat:15.0}, b:{v:'v3',n:44,success:86,rework:14,cost:0.10,lat:12.5}},
-    'prep-delivery':{title:'Livraison préprod', a:{v:'v4',n:210,success:89,rework:14,cost:0.03,lat:8.2}, b:{v:'v5',n:198,success:95,rework:5,cost:0.03,lat:7.9}},
-    'tests-junit':{title:'Générer des tests', a:{v:'v2',n:160,success:83,rework:19,cost:0.10,lat:12.0}, b:{v:'v3',n:150,success:88,rework:12,cost:0.03,lat:9.4}}
-  };
-  var abKey='migrate-java21';
-  // permet au scénario guidé de préselectionner un agent dans l'A/B (#ab=<id>)
-  window.addEventListener('hashchange',function(){ var m=(location.hash||'').match(/ab=([\w-]+)/); if(m&amp;&amp;AB[m[1]]){ abKey=m[1]; renderAB(); document.querySelector('.abcols').scrollIntoView({behavior:'smooth',block:'center'}); } });
-
-  // ════════ RENDER ════════
-  function renderPerimeter(){
-    $('crumb').innerHTML='· actif : <b>'+esc(scopeName())+'</b>';
-    var writeCount=GOV.filter(function(g){return g.writes;}).length;
-    var pending=QUEUE.filter(function(x){ return !scope.tribe || x.scope===scope.tribe; }).length;
-    var execs=LOG.filter(logInScope).length;
-    var teams=scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0));
-    $('pstats').innerHTML=[
-      ['✍️', writeCount, 'agents capables d\'écrire (double validation)'],
-      ['⏳', pending, 'en attente de validation'],
-      ['📜', execs, 'exécutions tracées ici'],
-      ['👥', teams, 'équipes dans le périmètre']
-    ].map(function(s){ return '<div class=&quot;pstat&quot;><div class=&quot;v&quot;>'+s[1]+'</div><div class=&quot;k&quot;>'+s[0]+' '+s[2]+'</div></div>'; }).join('');
-  }
-
-  function renderQueue(){
-    var q=QUEUE.filter(function(x){ return !scope.tribe || x.scope===scope.tribe; });
-    if(!q.length){ $('queue').innerHTML='<div class=&quot;mini&quot;>Rien en attente sur ce périmètre.</div>'; return; }
-    $('queue').innerHTML=q.map(function(x,qi){
-      var idx=QUEUE.indexOf(x);
-      var need = x.writes ? x.approvals.length : 1;
-      var got = x.approvals.filter(function(a){return a.done;}).length;
-      var ready = (got>=need) &amp;&amp; (!x.writes || x.security==='ok');
-      var aps=x.approvals.map(function(a,ai){
-        return '<div class=&quot;ap&quot;><span class=&quot;st&quot;>'+(a.done?'✅':'⬜')+'</span>'+
-          '<span class=&quot;rl&quot;><b>'+esc(a.role)+'</b>'+(a.done?' — <span class=&quot;who&quot;>'+esc(a.who||'validé')+'</span>':'')+'</span>'+
-          (a.done?'<span class=&quot;apbtn done&quot;>signé</span>':'<button class=&quot;apbtn&quot; data-ap=&quot;'+idx+'-'+ai+'&quot;>Approuver</button>')+'</div>';
-      }).join('');
-      var sec = x.writes ? '<div class=&quot;ap&quot;><span class=&quot;st&quot;>'+(x.security==='ok'?'✅':'⬜')+'</span><span class=&quot;rl&quot;><b>Revue sécurité</b> (agent capable d\'écrire)</span>'+(x.security==='ok'?'<span class=&quot;apbtn done&quot;>ok</span>':'<button class=&quot;apbtn&quot; data-sec=&quot;'+idx+'&quot;>Marquer OK</button>')+'</div>' : '';
-      var status = ready ? '<div class=&quot;qstatus qs-ready&quot;>✅ Prête à publier — '+got+'/'+need+' validations'+(x.writes?' + sécurité OK':'')+'</div>'
-                         : '<div class=&quot;qstatus qs-block&quot;>⏳ En attente — '+got+'/'+need+' validations'+(x.writes&amp;&amp;x.security!=='ok'?' · sécurité à passer':'')+'</div>';
-      return '<div class=&quot;qrow&quot;><div class=&quot;top&quot;><span style=&quot;font-size:19px&quot;>'+x.ic+'</span><span class=&quot;ti&quot;>'+esc(x.title)+'</span>'+
-        '<span class=&quot;badge '+(x.writes?'b-write&quot;>✍️ écrit':'b-read&quot;>👁 lecture')+'</span><span class=&quot;sc&quot;>'+esc(x.scope)+'</span></div>'+
-        '<div class=&quot;appr&quot;>'+aps+sec+'</div>'+status+
-        (ready?'<button class=&quot;genbtn&quot; data-pub=&quot;'+idx+'&quot; style=&quot;margin-top:11px&quot;>🟢 Publier officiellement</button>':'')+'</div>';
-    }).join('');
-    $('queue').querySelectorAll('[data-ap]').forEach(function(b){ b.addEventListener('click',function(){ var p=b.dataset.ap.split('-'); QUEUE[+p[0]].approvals[+p[1]].done=true; QUEUE[+p[0]].approvals[+p[1]].who='toi (Owner)'; renderQueue(); toast('✅ Validation enregistrée'); }); });
-    $('queue').querySelectorAll('[data-sec]').forEach(function(b){ b.addEventListener('click',function(){ QUEUE[+b.dataset.sec].security='ok'; renderQueue(); toast('🔒 Revue sécurité marquée OK'); }); });
-    $('queue').querySelectorAll('[data-pub]').forEach(function(b){ b.addEventListener('click',function(){ var x=QUEUE.splice(+b.dataset.pub,1)[0]; renderQueue(); toast('🟢 « '+x.title+' » publiée — double validation tracée'); }); });
-  }
-
-  function renderJournal(){
-    var rows=LOG.filter(logInScope);
-    $('jfilter').innerHTML='Périmètre : <b style=&quot;color:var(--ts)&quot;>'+esc(scopeName())+'</b> · '+rows.length+' exécution'+(rows.length>1?'s':'')+' · <span style=&quot;color:var(--tm)&quot;>clique une ligne pour le détail</span>';
-    $('jrows').innerHTML=rows.map(function(l,i){
-      var tools=l.tools.map(function(t){return '<span class=&quot;tool '+t[1]+'&quot;>'+(t[1]==='write'?'✏️':'👁')+' '+esc(t[0])+'</span>';}).join('');
-      return '<div class=&quot;jrow&quot; data-j=&quot;'+i+'&quot;>'+
-        '<span>'+esc(l.t)+'</span>'+
-        '<span><span class=&quot;rc&quot;>'+esc(l.rc)+'</span> · <span class=&quot;who&quot;>'+esc(l.who)+' ('+esc(l.team)+')</span></span>'+
-        '<span class=&quot;c3&quot;><span class=&quot;mtag&quot;>'+esc(l.model)+'</span></span>'+
-        '<span class=&quot;c4&quot;>'+esc(l.ver)+'</span>'+
-        '<span class=&quot;c5 proof&quot;>✔ '+esc(l.proof)+'</span>'+
-        '<div class=&quot;jdetail&quot;>'+
-          '<div class=&quot;dl&quot;>Contexte injecté</div>'+esc(l.ctx)+
-          '<div class=&quot;dl&quot;>Outils appelés</div>'+tools+
-          '<div class=&quot;dl&quot;>Résultat &amp;amp; preuve</div>'+esc(l.res)+' — <span class=&quot;proof&quot;>'+esc(l.proof)+'</span>'+
-          '<div class=&quot;dl&quot;>Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · agent <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
-        '</div></div>';
-    }).join('') || '<div class=&quot;jrow&quot;><span style=&quot;grid-column:1/-1;color:var(--tm)&quot;>Aucune exécution sur ce périmètre.</span></div>';
-    $('jrows').querySelectorAll('.jrow[data-j]').forEach(function(el){ el.addEventListener('click',function(){ el.classList.toggle('open'); }); });
-  }
-
-  function renderAB(){
-    $('abSel').innerHTML=Object.keys(AB).map(function(k){return '<option value=&quot;'+k+'&quot;'+(k===abKey?' selected':'')+'>'+esc(AB[k].title)+'</option>';}).join('');
-    var d=AB[abKey], a=d.a, b=d.b;
-    function metric(lbl, av, bv, unit, better){ // better: 'up' plus haut mieux, 'down' plus bas mieux
-      return {lbl:lbl, a:av, b:bv, unit:unit, better:better};
-    }
-    var ms=[
-      metric('Échantillon', a.n, b.n, '', null),
-      metric('Réussite', a.success, b.success, '%', 'up'),
-      metric('Reprise humaine', a.rework, b.rework, '%', 'down'),
-      metric('Coût / exécution', a.cost, b.cost, '€', 'down'),
-      metric('Latence', a.lat, b.lat, 's', 'down')
-    ];
-    function cell(m, side){
-      var v=side==='a'?m.a:m.b, other=side==='a'?m.b:m.a, cls='';
-      if(m.better){ var better=(m.better==='up')?(v>other):(v<other); if(v!==other) cls=better?'up':'down'; }
-      var val=(m.unit==='€')?('€'+(''+v).replace('.',',')):(v+(m.unit||''));
-      return '<div class=&quot;abm&quot;><span>'+m.lbl+'</span><b class=&quot;'+cls+'&quot;>'+val+'</b></div>';
-    }
-    // gagnant = meilleure réussite (départage : reprise plus basse)
-    var bWins = (b.success>a.success) || (b.success===a.success &amp;&amp; b.rework<a.rework);
-    $('abcols').innerHTML=
-      '<div class=&quot;abcard'+(!bWins?' win':'')+'&quot;><div class=&quot;vh&quot;><span class=&quot;vn&quot;>'+a.v+'</span><span style=&quot;font-size:11.5px;color:var(--tm)&quot;>en place</span>'+(!bWins?'<span class=&quot;wtag&quot;>✓ gagne</span>':'')+'</div>'+ms.map(function(m){return cell(m,'a');}).join('')+'</div>'+
-      '<div class=&quot;abcard'+(bWins?' win':'')+'&quot;><div class=&quot;vh&quot;><span class=&quot;vn&quot;>'+b.v+'</span><span style=&quot;font-size:11.5px;color:var(--tm)&quot;>candidate</span>'+(bWins?'<span class=&quot;wtag&quot;>✓ gagne</span>':'')+'</div>'+ms.map(function(m){return cell(m,'b');}).join('')+'</div>';
-    var gain=Math.round((b.success-a.success));
-    $('abverdict').innerHTML='<div class=&quot;abverdict&quot;>'+
-      (bWins?('<b>'+b.v+' gagne</b> : +'+gain+' pts de réussite, reprise humaine '+a.rework+'% → '+b.rework+'%'+(b.cost<a.cost?', et coût réduit':'')+'. Échantillon '+ (a.n+b.n) +' exécutions — écart significatif.')
-            :('<b>'+a.v+' reste devant</b> : la candidate n\'apporte pas de gain net. On ne généralise pas.'))+
-      '<br><button class=&quot;genbtn&quot; id=&quot;genBtn&quot;>🌍 Généraliser '+ (bWins?b.v:a.v) +' au groupe</button>'+
-      '<div class=&quot;mini&quot;>La généralisation republie la version gagnante comme officielle du groupe — elle redescend par héritage à toutes les entités, tribus et équipes (sauf spécialisation locale explicite).</div></div>';
-    $('genBtn').addEventListener('click',function(){ toast('🌍 '+(bWins?b.v:a.v)+' généralisée au groupe — héritage propagé'); });
-  }
-
-  function renderAll(){ renderPerimeter(); renderJournal(); }
-
-  // ── wiring périmètre ──
-  $('selTribe').addEventListener('change',function(){ scope.tribe=this.value; scope.team=''; refreshSelectors(); renderAll(); });
-  $('selTeam').addEventListener('change',function(){ scope.team=this.value; renderAll(); });
-  $('abSel').addEventListener('change',function(){ abKey=this.value; renderAB(); });
-
-  refreshSelectors(); renderAll(); renderAB();
-})();
-</script>
-<script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go,hash:a.dataset.hash||''},'*');}});})();</script></body>
-</html>
-"></iframe>
  </div>
  <script>
-   var FRAME={catalogue:'catalogue',favoris:'catalogue',studio:'studio',metrics:'metrics',gouvernance:'gouvernance'};
+   var FRAME={catalogue:'catalogue',favoris:'catalogue',studio:'studio',metrics:'metrics'};
    function go(name,hash){
      document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===name);});
      var fid='f-'+FRAME[name];
@@ -2263,13 +1906,12 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
    document.querySelectorAll('.tabs button[data-t]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
    window.addEventListener('message',function(e){ if(e.data&&e.data.go) go(e.data.go, e.data.hash?('#'+e.data.hash):''); });
 
-   // ── Scénario guidé : un agent défaillant traverse les 4 espaces ──
+   // ── Scénario guidé : un agent défaillant traverse la plateforme ──
    var SCENARIO=[
-     { tab:'metrics', title:'Détecter — Admin', body:'Dans <b>Admin → Tableau de bord</b>, <b>Migration Java 21</b> remonte dans « ⚠ À améliorer » : <b>74%</b> de réussite. Clique <b>« Ouvrir dans le Studio »</b> (ou Suivant). <span style="color:#7a6fa3">(Le parc et À valider sont dans les sous-onglets.)</span>' },
-     { tab:'studio', hash:'migrate-java21', title:'Corriger — Studio', body:'La fiche s\'ouvre sur la spécification (le prompt, masqué aux utilisateurs). L\'<b>ai-maintainer</b> ajuste la spéc / les critères, teste au banc d\'essai, puis <b>« Publier une nouvelle version »</b> (v3).' },
-     { tab:'gouvernance', title:'Valider — Gouvernance', body:'Cet agent <b>écrit</b> (branche + patch) → <b>double validation</b> : ai-maintainer + Owner de périmètre + revue sécurité. Approuve-le dans la file, puis <b>Publier</b>.' },
-     { tab:'gouvernance', hash:'ab=migrate-java21', title:'Tester A/B — Gouvernance', body:'Avant de généraliser : <b>A/B v2 vs v3</b>. La v3 passe de <b>74% → 86%</b> de réussite et la reprise de 30% → 14%. Il gagne → <b>« Généraliser au groupe »</b> (redescend par héritage).' },
-     { tab:'catalogue', title:'Retrouvé — Catalogue', body:'Bouclé : les devs retrouvent <b>Migration Java 21</b> au catalogue, désormais <b>officiel et amélioré</b>, prêt à lancer. Détectée, corrigée, validée, testée, diffusée — sans quitter la plateforme.' }
+     { tab:'metrics', hash:'dash', title:'Détecter — Admin', body:'Dans <b>Admin → Tableau de bord</b>, <b>Migration Java 21</b> remonte dans « ⚠ À améliorer » : <b>74%</b> de réussite. Clique <b>« Ouvrir dans le Studio »</b> (ou Suivant).' },
+     { tab:'studio', hash:'migrate-java21', title:'Corriger — Studio', body:'La fiche s\'ouvre sur la spécification (le prompt, masqué aux utilisateurs). L\'<b>ai-maintainer</b> ajuste, teste au banc d\'essai, puis <b>« Publier une nouvelle version »</b> (v3).' },
+     { tab:'metrics', hash:'valider', title:'Valider — Admin', body:'Cet agent <b>écrit</b> → <b>double validation</b> (Admin → <b>À valider</b>) : ai-maintainer + Owner de périmètre + revue sécurité. Approuve, puis <b>Publier officiellement</b>.' },
+     { tab:'catalogue', title:'Retrouvé — Catalogue', body:'Bouclé : les devs retrouvent <b>Migration Java 21</b> au catalogue, désormais <b>officiel et amélioré</b>, prêt à lancer. Et chaque exécution est tracée dans <b>Admin → Journal</b>. Détecté, corrigé, validé, prouvé — sans quitter la plateforme.' }
    ];
    var si=0;
    function renderCoach(){
