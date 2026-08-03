@@ -86,6 +86,32 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .favbanner{display:flex;align-items:center;gap:12px;margin:6px 0 16px;padding:15px 18px;border:1px solid rgba(251,191,36,.3);border-radius:16px;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(251,191,36,.02))}
 .favbanner .fbt{font-family:var(--fd);font-weight:800;font-size:17px}
 .favbanner .fbs{font-size:12.5px;color:var(--ts);margin-top:2px;max-width:760px;line-height:1.5}
+/* Golden path */
+.gpath{border:1px solid var(--line2);border-radius:22px;background:linear-gradient(180deg,rgba(45,212,191,.10),rgba(124,92,252,.05));padding:26px 28px;margin:18px 0 22px}
+.gp-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--deliver);margin-bottom:8px}
+.gpath h2{font-family:var(--fd);font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.gpath p{font-size:13.5px;color:var(--ts);margin:8px 0 18px;max-width:720px;line-height:1.55}
+.gsteps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.gstep{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ts);background:var(--bg-card);border:1px solid var(--line);border-radius:20px;padding:8px 14px}
+.gstep b{color:var(--tp)}
+.gstep .n{width:19px;height:19px;border-radius:50%;background:rgba(124,92,252,.28);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.garrow{color:var(--tm);font-size:15px}
+.gcta{font-family:var(--fb);font-weight:800;font-size:15.5px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:14px;padding:15px 26px;cursor:pointer;transition:.15s}
+.gcta:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.gp-note{font-size:11.5px;color:var(--tm);margin-top:12px}
+/* Moments */
+.moments h3{font-family:var(--fd);font-size:16px;font-weight:800}
+.moments .mcap{font-size:12.5px;color:var(--tm);margin:2px 0 13px}
+.mtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+.mtile{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:14px;background:var(--bg-card);padding:14px 16px;cursor:pointer;transition:.15s}
+.mtile:hover{border-color:var(--accent);background:var(--bg-card-h);transform:translateY(-2px)}
+.mtile .mi{font-size:25px;line-height:1}
+.mtile .mt{font-family:var(--fd);font-weight:700;font-size:14px;line-height:1.2}
+.mtile .md{font-size:11.5px;color:var(--tm);margin-top:3px}
+.moments .ask{margin-top:16px}
+.browsetoggle{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:9px;color:var(--ts);font-size:13px;font-weight:700;margin:22px 0 6px;padding:9px 0}
+.browsetoggle:hover{color:var(--tp)}
+.browsetoggle .adv{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--tm);border:1px solid var(--line2);border-radius:20px;padding:2px 8px}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
@@ -200,30 +226,35 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
   </div>
 
-  <!-- HERO -->
-  <div class=&quot;hero&quot;>
-    <h2>Que veux-tu faire ?</h2>
-    <p>Décris ton besoin, tu <b>Lances</b>. Une <span class=&quot;rk&quot;>🍳 recette</span> lance un <b>workflow</b> (outils, écritures, garde-fous) qui agit sur ton dépôt ; un <span class=&quot;pk&quot;>📚 prompt</span> lance une <b>génération</b> déjà <b>pré-remplie depuis ton contexte</b> (fichier ouvert, pipeline cassé, MR) et à <b>tes conventions maison</b> — donc plus rapide et plus juste qu'un chat nu, pas plus lent.</p>
-    <div class=&quot;ask&quot;>
-      <input id=&quot;ask&quot; placeholder=&quot;ex : générer des tests · préparer la livraison · expliquer ce code…&quot; autocomplete=&quot;off&quot;>
-      <button id=&quot;askGo&quot;>Trouver →</button>
+  <!-- LANDING : golden path + moments (langage humain, guidé) -->
+  <div id=&quot;landing&quot;>
+    <div class=&quot;gpath&quot;>
+      <div class=&quot;gp-eyebrow&quot;>🌟 Parcours conseillé</div>
+      <h2>Du code au commit sûr — en 4 étapes guidées.</h2>
+      <p>Tu pars de ton code. On l'<b>analyse</b>, on <b>corrige</b> ce qui cloche, on <b>génère les tests</b>, tu <b>livres</b> — chaque étape enchaîne la suivante. Pas un prompt à écrire, pas un catalogue à connaître.</p>
+      <div class=&quot;gsteps&quot;>
+        <span class=&quot;gstep&quot;><span class=&quot;n&quot;>1</span> 🔍 <b>Analyser</b></span><span class=&quot;garrow&quot;>→</span>
+        <span class=&quot;gstep&quot;><span class=&quot;n&quot;>2</span> 🔧 <b>Corriger</b></span><span class=&quot;garrow&quot;>→</span>
+        <span class=&quot;gstep&quot;><span class=&quot;n&quot;>3</span> 🧪 <b>Tester</b></span><span class=&quot;garrow&quot;>→</span>
+        <span class=&quot;gstep&quot;><span class=&quot;n&quot;>4</span> 🚀 <b>Livrer</b></span>
+      </div>
+      <button class=&quot;gcta&quot; id=&quot;gstart&quot;>▶ Commencer — analyser mon code</button>
+      <div class=&quot;gp-note&quot;>On repart de ton fichier ouvert. Tu gardes la main à chaque étape (rien n'est écrit sans confirmation).</div>
     </div>
-    <div class=&quot;chips&quot; id=&quot;chips&quot;></div>
-    <div id=&quot;intentResult&quot;></div>
-  </div>
 
-  <!-- TOOLBAR -->
-  <div class=&quot;toolbar&quot;>
-    <div class=&quot;kindseg&quot; id=&quot;kindSeg&quot;>
-      <button data-k=&quot;&quot; class=&quot;on&quot;>Tout</button>
-      <button data-k=&quot;recipe&quot;>🍳 Recettes · agir</button>
-      <button data-k=&quot;prompt&quot;>📚 Prompts · générer</button>
+    <div class=&quot;moments&quot;>
+      <h3>Ou pars de ton besoin</h3>
+      <div class=&quot;mcap&quot;>Dis-le en clair — on t'emmène directement au bon endroit.</div>
+      <div class=&quot;mtiles&quot; id=&quot;mtiles&quot;></div>
+      <div class=&quot;ask&quot;>
+        <input id=&quot;ask&quot; placeholder=&quot;décris ton besoin en une phrase…&quot; autocomplete=&quot;off&quot;>
+        <button id=&quot;askGo&quot;>Trouver →</button>
+      </div>
+      <div class=&quot;chips&quot; id=&quot;chips&quot;></div>
+      <div id=&quot;intentResult&quot;></div>
     </div>
-    <div class=&quot;tagbar&quot; id=&quot;tagbar&quot;></div>
-    <div class=&quot;filts&quot;>
-      <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;ctxOnly&quot; checked> Compatibles avec mon dépôt</label>
-      <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;favOnly&quot;> ⭐ Favoris</label>
-    </div>
+
+    <button class=&quot;browsetoggle&quot; id=&quot;browseToggle&quot;>⌄ Parcourir tout le catalogue <span class=&quot;adv&quot;>avancé</span></button>
   </div>
 
   <div class=&quot;favbanner&quot; id=&quot;favBanner&quot; style=&quot;display:none&quot;>
@@ -233,7 +264,22 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     </div>
   </div>
 
-  <div class=&quot;grid&quot; id=&quot;grid&quot;></div>
+  <!-- BROWSE : le catalogue technique complet (masqué par défaut) -->
+  <div id=&quot;browse&quot; style=&quot;display:none&quot;>
+    <div class=&quot;toolbar&quot;>
+      <div class=&quot;kindseg&quot; id=&quot;kindSeg&quot;>
+        <button data-k=&quot;&quot; class=&quot;on&quot;>Tout</button>
+        <button data-k=&quot;recipe&quot;>🍳 Recettes · agir</button>
+        <button data-k=&quot;prompt&quot;>📚 Prompts · générer</button>
+      </div>
+      <div class=&quot;tagbar&quot; id=&quot;tagbar&quot;></div>
+      <div class=&quot;filts&quot;>
+        <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;ctxOnly&quot; checked> Compatibles avec mon dépôt</label>
+        <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;favOnly&quot;> ⭐ Favoris</label>
+      </div>
+    </div>
+    <div class=&quot;grid&quot; id=&quot;grid&quot;></div>
+  </div>
 </div>
 
 <div class=&quot;ov&quot; id=&quot;ov&quot;><div class=&quot;modal&quot; id=&quot;modal&quot;></div></div>
@@ -775,27 +821,47 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function closeM(){ $('ov').classList.remove('show'); }
   $('ov').addEventListener('click',function(e){ if(e.target===$('ov')) closeM(); });
 
+  // ── Moments : golden path secondaire (langage humain -> bon endroit) ──
+  var MOMENTS=[
+    {ic:'🧩',t:'Je viens d\'écrire du code',d:'L\'analyser &amp; le sécuriser',id:'analyze-code'},
+    {ic:'🧪',t:'Il me faut des tests',d:'Les générer à ma norme',id:'tests-junit'},
+    {ic:'🐞',t:'Quelque chose plante',d:'Comprendre l\'erreur',id:'debug'},
+    {ic:'🚀',t:'Je veux livrer',d:'Préparer la préprod',id:'prep-delivery'},
+    {ic:'✍️',t:'Rédiger un commit',d:'Message + description de MR',id:'commit'},
+    {ic:'🎓',t:'Comprendre / apprendre',d:'Expliquer un bout de code',id:'explain'}
+  ];
+  function renderMoments(){
+    $('mtiles').innerHTML=MOMENTS.map(function(m){ return '<div class=&quot;mtile&quot; data-open=&quot;'+m.id+'&quot;><span class=&quot;mi&quot;>'+m.ic+'</span><div><div class=&quot;mt&quot;>'+esc(m.t)+'</div><div class=&quot;md&quot;>'+esc(m.d)+'</div></div></div>'; }).join('');
+    $('mtiles').querySelectorAll('[data-open]').forEach(function(el){ el.addEventListener('click',function(){ openDetail(el.dataset.open); }); });
+  }
+
   // ── wiring ──
   $('askGo').addEventListener('click',doAsk);
   $('ask').addEventListener('keydown',function(e){ if(e.key==='Enter') doAsk(); });
+  $('gstart').addEventListener('click',function(){ openDetail('analyze-code'); });
   $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
   $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
   $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
 
-  // ── vue Favoris : masque hero + toolbar, montre le bandeau, ne garde que les étoilés ──
+  // ── Parcourir tout (avancé) : révèle le catalogue technique ──
+  function setBrowse(open){ $('browse').style.display=open?'':'none'; $('browseToggle').innerHTML=open?'⌃ Masquer le catalogue complet':'⌄ Parcourir tout le catalogue <span class=&quot;adv&quot;>avancé</span>'; if(open) renderGrid(); }
+  $('browseToggle').addEventListener('click',function(){ setBrowse($('browse').style.display==='none'); });
+
+  // ── vue Favoris : masque l'accueil, montre le bandeau, ne garde que les étoilés ──
   function setFav(on){
     favMode=on;
-    var hero=document.querySelector('.hero'), tb=document.querySelector('.toolbar');
-    if(hero) hero.style.display=on?'none':'';
-    if(tb) tb.style.display=on?'none':'';
+    $('landing').style.display=on?'none':'';
     $('favBanner').style.display=on?'':'none';
+    $('browse').style.display=on?'':'none';
+    var tb=document.querySelector('#browse .toolbar'); if(tb) tb.style.display=on?'none':'';
+    if(!on){ $('browseToggle').innerHTML='⌄ Parcourir tout le catalogue <span class=&quot;adv&quot;>avancé</span>'; }
     renderGrid();
   }
   window.addEventListener('message',function(e){ if(e.data &amp;&amp; e.data.mode) setFav(e.data.mode==='favoris'); });
   function favFromHash(){ setFav((location.hash||'')==='#favoris'); }
   window.addEventListener('hashchange',favFromHash);
 
-  renderChips(); renderTags(); favFromHash();
+  renderChips(); renderTags(); renderMoments(); favFromHash();
 })();
 </script>
 <script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go},'*');}});})();</script></body>
