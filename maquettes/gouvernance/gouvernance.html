@@ -202,8 +202,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   <!-- 2. HÉRITAGE -->
   <div class="panel">
-    <h2>🧬 Héritage &amp; spécialisations locales</h2>
-    <div class="cap">Les agents <b style="color:var(--ok)">officielles du groupe</b> descendent partout. Chaque niveau peut <b style="color:var(--accent)">spécialiser</b> (prompt, critères, modèle) — <b>jamais affaiblir la sécurité</b> : une spécialisation ne peut pas ajouter un droit d'écriture que le parent n'autorise pas.</div>
+    <h2>🧬 D'où vient chaque agent (groupe → adaptations locales)</h2>
+    <div class="cap">Un agent <b style="color:var(--ok)">officiel</b> est écrit <b>une seule fois pour tout LCL</b> et arrive automatiquement dans chaque équipe. Une équipe peut l'<b style="color:var(--accent)">adapter</b> à ses besoins (prompt, critères, modèle) — mais <b>jamais lui donner plus de droits</b> que le groupe n'autorise. Et une amélioration faite au niveau du groupe <b>redescend partout</b>.</div>
     <div class="inh" id="inh"></div>
   </div>
 
@@ -332,8 +332,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       var specs=specForScope(g);
       var chain='<span class="node root">🟢 Groupe (officiel)</span>';
       specs.forEach(function(s){ chain+='<span class="arr">→</span><span class="node spec">🎯 '+esc(s.scope)+'<span class="who"> · '+esc(s.by)+'</span></span>'; });
-      var over = specs.length? '<div class="ihint">Spécialisation appliquée ici : '+specs.map(function(s){return '<b>'+esc(s.change)+'</b>';}).join(' · ')+'. Le reste reste hérité du groupe (une mise à jour officielle redescend automatiquement).</div>'
-                             : '<div class="ihint">Aucune spécialisation sur ce périmètre — 100% hérité du groupe.</div>';
+      var over = specs.length? '<div class="ihint">Adapté ici : '+specs.map(function(s){return '<b>'+esc(s.change)+'</b>';}).join(' · ')+'. Tout le reste vient du groupe (une mise à jour officielle redescend automatiquement).</div>'
+                             : '<div class="ihint">Utilisé tel quel — version officielle du groupe (aucune adaptation locale).</div>';
       return '<div class="irow"><div class="top"><span class="ic">'+g.ic+'</span><span class="ti">'+esc(g.title)+'</span>'+
         '<span class="badge '+(g.writes?'b-write">✍️ écrit':'b-read">👁 lecture')+'</span></div>'+
         '<div class="chain">'+chain+'</div>'+over+'</div>';
