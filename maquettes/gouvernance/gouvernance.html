@@ -145,9 +145,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- 1. PÉRIMÈTRE -->
   <div class="scopebar">
     <span class="lbl">Périmètre</span>
-    🏢 <b style="color:var(--tp)">ACME Group</b>
-    <span class="sep">▸</span>
-    <select id="selEntity"></select>
+    🏦 <b style="color:var(--tp)">LCL</b>
     <span class="sep">▸</span>
     <select id="selTribe"></select>
     <span class="sep">▸</span>
@@ -211,36 +209,32 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2400); }
 
-  // ── Organisation ──
-  var ORG={ 'Banque de détail':{ 'Paiements':['Paiements-Core','Paiements-API'], 'Crédit':['Crédit-Scoring'] },
-            'Assurance':{ 'Sinistres':['Sinistres-Auto'] } };
-  var scope={ entity:'', tribe:'', team:'' };
+  // ── Organisation LCL : Groupe → Tribu → Équipe (pas d'entité) ──
+  var ORG={ 'Crédit':['Crédit-Scoring','Crédit-Conso'],
+            'EAC':['EAC-Data','EAC-Run'],
+            'FBI':['FBI-Fraude','FBI-Forensics'],
+            'CIA':['CIA-Sécu','CIA-Ops'] };
+  var scope={ tribe:'', team:'' };
 
   function fillSelect(sel, items, ph){ sel.innerHTML='<option value="">'+ph+'</option>'+items.map(function(i){return '<option>'+esc(i)+'</option>';}).join(''); }
   function refreshSelectors(){
-    fillSelect($('selEntity'), Object.keys(ORG), 'Toutes entités');
-    $('selEntity').value=scope.entity;
-    var tribes=scope.entity?Object.keys(ORG[scope.entity]):[];
-    fillSelect($('selTribe'), tribes, 'Toutes tribus'); $('selTribe').value=scope.tribe; $('selTribe').disabled=!scope.entity;
-    var teams=(scope.entity&&scope.tribe)?ORG[scope.entity][scope.tribe]:[];
+    fillSelect($('selTribe'), Object.keys(ORG), 'Toutes tribus'); $('selTribe').value=scope.tribe;
+    var teams=scope.tribe?ORG[scope.tribe]:[];
     fillSelect($('selTeam'), teams, 'Toutes équipes'); $('selTeam').value=scope.team; $('selTeam').disabled=!scope.tribe;
   }
-  function scopeName(){ return scope.team||scope.tribe||scope.entity||'ACME Group'; }
-  function scopePath(){ return ['ACME Group',scope.entity,scope.tribe,scope.team].filter(Boolean); }
-  function inScope(s){ // un élément rattaché à s est-il visible au périmètre courant ?
-    var p=scopePath(); return p.indexOf(s)!==-1 || s==='ACME Group' || (!scope.entity);
-  }
+  function scopeName(){ return scope.team||scope.tribe||'LCL'; }
+  function scopePath(){ return ['LCL',scope.tribe,scope.team].filter(Boolean); }
 
   // ── Recettes gouvernées (héritage) ──
   var GOV=[
     {id:'prep-delivery',ic:'🚀',title:'Livraison préprod',writes:true,
-      spec:[{scope:'Banque de détail',by:'Archi BdD',change:'overlays Kustomize maison'},{scope:'Paiements',by:'Lead Paiements',change:'+ critère : scan PCI-DSS'}]},
+      spec:[{scope:'Crédit',by:'Archi Crédit',change:'overlays Kustomize maison'},{scope:'FBI',by:'Lead FBI',change:'+ critère : scan anti-fraude'}]},
     {id:'tests-junit',ic:'🧪',title:'Générer des tests',writes:true,
-      spec:[{scope:'Paiements',by:'Lead Paiements',change:'AssertJ imposé + given/when/then'}]},
+      spec:[{scope:'EAC',by:'Lead EAC',change:'AssertJ imposé + given/when/then'}]},
     {id:'commit',ic:'✍️',title:'Message de commit',writes:false,
-      spec:[{scope:'Paiements',by:'Lead Paiements',change:'footer « Refs: PAY-xxx » obligatoire'}]},
+      spec:[{scope:'CIA',by:'Lead CIA',change:'footer « Refs: LCL-xxx » obligatoire'}]},
     {id:'analyze-vuln',ic:'🔒',title:'Analyser une vulnérabilité',writes:false,
-      spec:[{scope:'Assurance',by:'RSSI Assurance',change:'référentiel interne ajouté'}]}
+      spec:[{scope:'FBI',by:'RSSI',change:'référentiel interne fraude ajouté'}]}
   ];
   function specForScope(g){ return g.spec.filter(function(s){ return scopePath().indexOf(s.scope)!==-1; }); }
 
@@ -248,27 +242,25 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   var QUEUE=[
     {id:'migrate',ic:'🚚',title:'Migration Java 21',writes:true,scope:'Crédit',security:'en attente',
       approvals:[{role:'ai-maintainer',who:'M. Dubois',done:true},{role:'Owner de périmètre',who:'',done:false}]},
-    {id:'diet',ic:'🧹',title:'Nettoyer un dépôt (archivage)',writes:true,scope:'Paiements',security:'ok',
+    {id:'diet',ic:'🧹',title:'Nettoyer un dépôt (archivage)',writes:true,scope:'EAC',security:'ok',
       approvals:[{role:'ai-maintainer',who:'',done:false},{role:'Owner de périmètre',who:'',done:false}]},
-    {id:'notes',ic:'📝',title:'Générer des release notes',writes:false,scope:'Paiements',security:'ok',
+    {id:'notes',ic:'📝',title:'Générer des release notes',writes:false,scope:'FBI',security:'ok',
       approvals:[{role:'ai-maintainer',who:'',done:false}]}
   ];
 
   // ── Journal ──
   var LOG=[
-    {t:"auj. 14:32",who:'marie.d',team:'Paiements-API',rc:'Livraison préprod',ver:'v5',model:'Mid',ctx:'branche feat/refunds · IMAGE_TAG 1.4.2 → 1.5.0 · overlays préprod',tools:[['bump IMAGE_TAG','write'],['scan vuln','read'],['créer MR','write']],res:'MR !313 créée',proof:'MR !313 · CI verte · 214 tests'},
-    {t:"auj. 11:07",who:'k.otsu',team:'Paiements-Core',rc:'Générer des tests',ver:'v3',model:'Large',ctx:'PaymentService.java · 4 méthodes',tools:[['lire dépôt','read'],['écrire fichier test','write']],res:'PaymentServiceTest.java (8 tests)',proof:'branche fix/tests · verts'},
-    {t:"hier 17:41",who:'a.leroy',team:'Crédit-Scoring',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'CVE-2025-1234 · lib xml',tools:[['scanner','read']],res:'faux positif écarté',proof:'rapport #A-112'},
-    {t:"hier 09:15",who:'marie.d',team:'Paiements-API',rc:'Message de commit',ver:'v2',model:'Nano',ctx:'diff en cours (12 fichiers)',tools:[['lire diff','read']],res:'commit conventionnel',proof:'commit 4f2a1b'},
-    {t:"lun. 16:20",who:'RSSI',team:'Sinistres-Auto',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'audit trimestriel',tools:[['scanner','read']],res:'3 findings',proof:'rapport #A-108'}
+    {t:"auj. 14:32",who:'marie.d',team:'EAC-Run',rc:'Livraison préprod',ver:'v5',model:'Mid',ctx:'branche feat/refunds · IMAGE_TAG 1.4.2 → 1.5.0 · overlays préprod',tools:[['bump IMAGE_TAG','write'],['scan vuln','read'],['créer MR','write']],res:'MR !313 créée',proof:'MR !313 · CI verte · 214 tests'},
+    {t:"auj. 11:07",who:'k.otsu',team:'Crédit-Scoring',rc:'Générer des tests',ver:'v3',model:'Large',ctx:'ScoringService.java · 4 méthodes',tools:[['lire dépôt','read'],['écrire fichier test','write']],res:'ScoringServiceTest.java (8 tests)',proof:'branche fix/tests · verts'},
+    {t:"hier 17:41",who:'a.leroy',team:'FBI-Fraude',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'CVE-2025-1234 · lib xml',tools:[['scanner','read']],res:'faux positif écarté',proof:'rapport #A-112'},
+    {t:"hier 09:15",who:'marie.d',team:'EAC-Run',rc:'Message de commit',ver:'v2',model:'Nano',ctx:'diff en cours (12 fichiers)',tools:[['lire diff','read']],res:'commit conventionnel',proof:'commit 4f2a1b'},
+    {t:"lun. 16:20",who:'RSSI',team:'CIA-Sécu',rc:'Analyser une vulnérabilité',ver:'v4',model:'Large',ctx:'audit trimestriel',tools:[['scanner','read']],res:'3 findings',proof:'rapport #A-108'}
   ];
   function logInScope(l){ var p=scopePath(); if(p.length<=1) return true; // groupe : tout
-    // team appartient-elle au périmètre courant ?
-    for(var ent in ORG){ for(var tr in ORG[ent]){ if(ORG[ent][tr].indexOf(l.team)!==-1){
+    for(var tr in ORG){ if(ORG[tr].indexOf(l.team)!==-1){
       if(scope.team) return l.team===scope.team;
       if(scope.tribe) return tr===scope.tribe;
-      if(scope.entity) return ent===scope.entity;
-    }}} return true;
+    }} return true;
   }
 
   // ── A/B ──
@@ -287,7 +279,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       ['🧬', GOV.length, 'recettes héritées ici'],
       ['🎯', specialised, 'spécialisées sur ce périmètre'],
       ['✍️', writeCount, 'capables d\'écrire (double validation)'],
-      ['👥', scope.team?1:(scope.tribe?ORG[scope.entity][scope.tribe].length:'—'), 'équipes dans le périmètre']
+      ['👥', scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0)), 'équipes dans le périmètre']
     ].map(function(s){ return '<div class="pstat"><div class="v">'+s[1]+'</div><div class="k">'+s[0]+' '+s[2]+'</div></div>'; }).join('');
   }
 
@@ -305,7 +297,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   }
 
   function renderQueue(){
-    var q=QUEUE.filter(function(x){ return !scope.tribe || x.scope===scope.tribe || x.scope===scope.entity; });
+    var q=QUEUE.filter(function(x){ return !scope.tribe || x.scope===scope.tribe; });
     if(!q.length){ $('queue').innerHTML='<div class="mini">Rien en attente sur ce périmètre.</div>'; return; }
     $('queue').innerHTML=q.map(function(x,qi){
       var idx=QUEUE.indexOf(x);
@@ -387,7 +379,6 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function renderAll(){ renderPerimeter(); renderInheritance(); renderQueue(); renderJournal(); }
 
   // ── wiring périmètre ──
-  $('selEntity').addEventListener('change',function(){ scope.entity=this.value; scope.tribe=''; scope.team=''; refreshSelectors(); renderAll(); });
   $('selTribe').addEventListener('change',function(){ scope.tribe=this.value; scope.team=''; refreshSelectors(); renderAll(); });
   $('selTeam').addEventListener('change',function(){ scope.team=this.value; renderAll(); });
   $('abSel').addEventListener('change',function(){ abKey=this.value; renderAB(); });
