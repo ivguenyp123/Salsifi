@@ -73,6 +73,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .gcta{font-family:var(--fb);font-weight:800;font-size:15.5px;color:#0f0a1f;background:linear-gradient(135deg,var(--accent),var(--deliver));border:none;border-radius:14px;padding:15px 26px;cursor:pointer;transition:.15s}
 .gcta:hover{transform:translateY(-1px);filter:brightness(1.05)}
 .gp-note{font-size:11.5px;color:var(--tm);margin-top:12px}
+.gwhy{all:unset;cursor:pointer;font-size:12px;color:var(--ts);text-decoration:underline;text-underline-offset:3px;margin-left:10px}
+.gwhy:hover{color:var(--tp)}
+.gchain-cta{font-family:var(--fb);font-weight:700;font-size:12.5px;color:var(--accent);background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.3);border-radius:10px;padding:9px 14px;cursor:pointer;margin-left:8px}
 /* Moments */
 .moments h3{font-family:var(--fd);font-size:16px;font-weight:800}
 .moments .mcap{font-size:12.5px;color:var(--tm);margin:2px 0 13px}
@@ -219,19 +222,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   <!-- LANDING : golden path + moments (langage humain, guidé) -->
   <div id="landing">
-    <div class="gpath">
-      <div class="gp-eyebrow">🌟 Parcours conseillé</div>
-      <h2>Du code au commit sûr — en 4 étapes guidées.</h2>
-      <p>Tu pars de ton code. On l'<b>analyse</b>, on <b>corrige</b> ce qui cloche, on <b>génère les tests</b>, tu <b>livres</b> — chaque étape enchaîne la suivante. Pas un prompt à écrire, pas un catalogue à connaître.</p>
-      <div class="gsteps">
-        <span class="gstep"><span class="n">1</span> 🔍 <b>Analyser</b></span><span class="garrow">→</span>
-        <span class="gstep"><span class="n">2</span> 🔧 <b>Corriger</b></span><span class="garrow">→</span>
-        <span class="gstep"><span class="n">3</span> 🧪 <b>Tester</b></span><span class="garrow">→</span>
-        <span class="gstep"><span class="n">4</span> 🚀 <b>Livrer</b></span>
-      </div>
-      <button class="gcta" id="gstart">▶ Commencer — analyser mon code</button>
-      <div class="gp-note">On repart de ton fichier ouvert. Tu gardes la main à chaque étape (rien n'est écrit sans confirmation).</div>
-    </div>
+    <div class="gpath" id="gpath"></div>
 
     <div class="moments">
       <h3>Ou pars de ton besoin</h3>
@@ -425,7 +416,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         '<button class="star'+(r.fav?' on':'')+'" data-fav="'+r.id+'" title="Favori — je l\'utilise tous les jours">'+(r.fav?'⭐':'☆')+'</button>'+
         badge+lvlb+'</div>'+body+'</div>';
   }
-  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); if(typeof view!=='undefined'&&view==='favoris') renderSuggest(); toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
+  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); if(typeof view!=='undefined'&&view==='favoris') renderSuggest(); if($('gpath')){ renderForYou(); renderMoments(); } toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
 
   function renderGrid(){
     var list=R.filter(function(r){
@@ -823,14 +814,53 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     {ic:'🎓',t:'Comprendre / apprendre',d:'Expliquer un bout de code',id:'explain'}
   ];
   function renderMoments(){
-    $('mtiles').innerHTML=MOMENTS.map(function(m){ return '<div class="mtile" data-open="'+m.id+'"><span class="mi">'+m.ic+'</span><div><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></div></div>'; }).join('');
+    // déterministe : les moments les plus probables (selon score) d'abord
+    var ord=MOMENTS.slice().sort(function(a,b){ return scoreOf(b.id)-scoreOf(a.id); });
+    $('mtiles').innerHTML=ord.map(function(m){ return '<div class="mtile" data-open="'+m.id+'"><span class="mi">'+m.ic+'</span><div><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></div></div>'; }).join('');
     $('mtiles').querySelectorAll('[data-open]').forEach(function(el){ el.addEventListener('click',function(){ openDetail(el.dataset.open); }); });
+  }
+
+  // ── Recommandation DÉTERMINISTE : calcule ce que tu utilises le plus + ton contexte ──
+  var SIGNALS={ openFile:'PaymentService.java', failedPipeline:'#4821' };  // signaux du poste (maquette)
+  var STEP={ 'debug':['🐞','Comprendre'], 'analyze-code':['🔍','Analyser'], 'tests-junit':['🧪','Tester'], 'commit':['✍️','Commit'], 'prep-delivery':['🚀','Livrer'], 'review':['👀','Revue'] };
+  function usesOf(r){ return (r.usage||r.uses||0); }
+  function scoreDetail(r){
+    var f=[], s=usesOf(r)/900;
+    if(usesOf(r)>=200) f.push(usesOf(r)+' usages');
+    if(r.fav){ s+=0.4; f.push('dans tes favoris'); }
+    if(SIGNALS.failedPipeline && (r.id==='debug'||r.id==='analyze-code')){ s+=0.7; f.push('pipeline '+SIGNALS.failedPipeline+' en échec'); }
+    if(SIGNALS.openFile && ['analyze-code','tests-junit','commit','explain','review'].indexOf(r.id)>=0){ s+=0.3; f.push('fichier '+SIGNALS.openFile+' ouvert'); }
+    if(compatible(r)) s+=0.05;
+    return { s:s, f:f };
+  }
+  function scoreOf(id){ var r=R.find(function(x){return x.id===id;}); return r?scoreDetail(r).s:0; }
+  function topPick(){ var best=null,bs=-1; R.forEach(function(r){ var sc=scoreDetail(r).s; if(sc>bs){bs=sc;best=r;} }); return best; }
+  var NEXT={ 'debug':['analyze-code','tests-junit','prep-delivery'], 'analyze-code':['tests-junit','commit','prep-delivery'], 'tests-junit':['commit','prep-delivery'], 'commit':['prep-delivery'], 'review':['tests-junit','commit'], 'prep-delivery':[] };
+  function chainFrom(id){ var c=[id].concat(NEXT[id]||[]); return c.slice(0,4); }
+  function renderForYou(){
+    var top=topPick(), sd=scoreDetail(top), chain=chainFrom(top.id);
+    var ctxClause = (SIGNALS.failedPipeline && (top.id==='debug'||top.id==='analyze-code'))
+      ? 'Ton pipeline <b>'+SIGNALS.failedPipeline+'</b> a cassé'
+      : 'Tu bosses sur <b>'+esc(SIGNALS.openFile)+'</b>';
+    var reason = ctxClause+' — le plus utile pour toi maintenant : <b>'+esc(top.title)+'</b>.';
+    var steps=chain.map(function(id,i){ var s=STEP[id]||['•',id]; return (i?'<span class="garrow">→</span>':'')+'<span class="gstep"><span class="n">'+(i+1)+'</span> '+s[0]+' <b>'+s[1]+'</b></span>'; }).join('');
+    $('gpath').innerHTML=
+      '<div class="gp-eyebrow">✨ Pour toi · recommandation déterministe</div>'+
+      '<h2>'+reason+'</h2>'+
+      '<p>Calculé à partir de <b>tes usages</b>, <b>tes favoris</b> et <b>ton contexte</b> (fichier ouvert, pipeline) — pas d\'IA qui devine : une reco transparente, que tu peux ignorer.</p>'+
+      '<div class="gsteps">'+steps+'</div>'+
+      '<button class="gcta" id="gstart">▶ '+(top.kind==='recipe'?'Lancer':'Lancer')+' : '+esc(top.title)+'</button>'+
+      '<button class="gchain-cta" id="gchain">Suivre tout le chemin →</button>'+
+      '<button class="gwhy" id="gwhy">pourquoi ?</button>'+
+      '<div class="gp-note" id="gwhyd" style="display:none">Retenu parce que : '+sd.f.join(' · ')+'. C\'est le score le plus élevé du moment (popularité + contexte + favoris). Tout se recalcule quand tes usages changent.</div>';
+    $('gstart').addEventListener('click',function(){ openDetail(top.id); });
+    $('gchain').addEventListener('click',function(){ openDetail(chain[0]); toast('Chemin : '+chain.map(function(id){return (STEP[id]||['',id])[1];}).join(' → ')); });
+    $('gwhy').addEventListener('click',function(){ var d=$('gwhyd'); d.style.display=d.style.display==='none'?'':'none'; });
   }
 
   // ── wiring ──
   $('askGo').addEventListener('click',doAsk);
   $('ask').addEventListener('keydown',function(e){ if(e.key==='Enter') doAsk(); });
-  $('gstart').addEventListener('click',function(){ openDetail('analyze-code'); });
   $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
   $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
   $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
@@ -864,7 +894,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function favFromHash(){ if((location.hash||'')==='#favoris') setView('favoris'); }
   window.addEventListener('hashchange',favFromHash);
 
-  renderChips(); renderTags(); renderMoments();
+  renderChips(); renderTags(); renderForYou(); renderMoments();
   applyView(); favFromHash();
 })();
 </script>
