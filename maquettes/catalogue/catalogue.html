@@ -57,6 +57,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .filts{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .ck{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ts);cursor:pointer}
 .ck input{width:16px;height:16px;accent-color:var(--accent)}
+.favbanner{display:flex;align-items:center;gap:12px;margin:6px 0 16px;padding:15px 18px;border:1px solid rgba(251,191,36,.3);border-radius:16px;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(251,191,36,.02))}
+.favbanner .fbt{font-family:var(--fd);font-weight:800;font-size:17px}
+.favbanner .fbs{font-size:12.5px;color:var(--ts);margin-top:2px;max-width:760px;line-height:1.5}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
@@ -168,7 +171,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="nav">
     <a href="#" class="on">🧰 Catalogue</a>
     <a href="../studio/studio.html">🛠️ Studio</a>
-    <a href="../metrics/metrics.html">📊 Métriques</a>
+    <a href="../metrics/metrics.html">📊 Admin</a>
   </div>
 
   <!-- HERO -->
@@ -194,6 +197,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class="filts">
       <label class="ck"><input type="checkbox" id="ctxOnly" checked> Compatibles avec mon dépôt</label>
       <label class="ck"><input type="checkbox" id="favOnly"> ⭐ Favoris</label>
+    </div>
+  </div>
+
+  <div class="favbanner" id="favBanner" style="display:none">
+    <div>
+      <div class="fbt">⭐ Tes favoris</div>
+      <div class="fbs">Les agents &amp; prompts que tu utilises tous les jours — un clic pour lancer. Ajoute-en avec l'étoile ☆ sur une carte du Catalogue.</div>
     </div>
   </div>
 
@@ -253,7 +263,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       usage:210, success:91, humanFix:9, timeSaved:'~40 min', ctx:'Finding OSV/CVE · composant identifié', version:'v4', verified:'02 mai 2026',
       tools:[['Secrets Scanner (lecture)','read'],['Repo Analyzer (lecture)','read']], security:['⚠ La valeur d\'un secret n\'est JAMAIS envoyée au modèle — seulement type et emplacement.'],
       expected:'Impact (exploitable ici ?), blast radius, remédiation.', criteria:['Composant et version confirmés','Remédiation applicable','Faux positif écarté'], agentic:false},
-    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'],
+    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'], fav:true,
       usage:480, success:95, humanFix:5, timeSaved:'~30 min', ctx:'App conteneurisée · overlays Kustomize · GitLab CI', version:'v5', verified:'20 mai 2026',
       tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
       security:['Le LLM oriente ; le module Livraison déterministe exécute.','Dry-run obligatoire : rien sans ta confirmation.'],
@@ -265,7 +275,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     // ——— PROMPTS (se copient) ———
     {kind:'prompt', id:'commit', ic:'✍️', title:'Message de commit conventionnel', lvl:'official', owner:'Plateforme', tags:['git'], stack:[], uses:812, timeSaved:'~5 min', fav:false, verified:'20 mai 2026',
       body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
-    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:false, verified:'30 mai 2026', engine:'analyze',
+    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:true, verified:'30 mai 2026', engine:'analyze',
       body:'Analyse ce code selon les règles de la plateforme (NPE, null retournés, nombres magiques, debug oublié, imbrication, couverture) et remonte les problèmes avec leur ligne.\n\nCode :\n{{code}}'},
     {kind:'prompt', id:'explain', ic:'📖', title:'Explique-moi ce code', lvl:'mine', owner:'marie.d', tags:['debug','apprentissage'], stack:[], uses:57, timeSaved:'~15 min', fav:true, verified:'28 mai 2026',
       body:'Explique ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Pièges / effets de bord non évidents.\n\nCode :\n{{code}}'},
@@ -317,7 +327,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     learn:'Intuition : un index, c\'est la table des matières d\'un livre — tu vas direct à la page au lieu de tout feuilleter.\nMinimum utile : structure B-tree, tri, sélectivité.\nExemple : CREATE INDEX … puis EXPLAIN pour voir le scan disparaître.\nErreur classique : indexer une colonne à faible sélectivité (ex. booléen) — inutile.\nExercice : sur quelle colonne indexerais-tu une table users(email, is_active) pour un login ?'
   };
 
-  var fKind='', fTag='', ctxOnly=true, favOnly=false;
+  var fKind='', fTag='', ctxOnly=true, favOnly=false, favMode=false;
 
   function compatible(r){ if(r.kind==='prompt') return true; return r.stack.some(function(s){return CTX.stack.indexOf(s)!==-1;}); }
   function succCol(v){ return v>=85?'var(--ok)':v>=70?'var(--warn)':'var(--err)'; }
@@ -347,20 +357,28 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<button class="act copy" data-act="'+r.id+'">▶ Lancer</button></div>';
     }
     return '<div class="card '+r.kind+'" data-id="'+r.id+'">'+
-      '<div class="top"><span class="ic">'+r.ic+'</span><div class="ti">'+esc(r.title)+'</div>'+badge+lvlb+'</div>'+body+'</div>';
+      '<div class="top"><span class="ic">'+r.ic+'</span><div class="ti">'+esc(r.title)+'</div>'+
+        '<button class="star'+(r.fav?' on':'')+'" data-fav="'+r.id+'" title="Favori — je l\'utilise tous les jours">'+(r.fav?'⭐':'☆')+'</button>'+
+        badge+lvlb+'</div>'+body+'</div>';
   }
+  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
 
   function renderGrid(){
     var list=R.filter(function(r){
+      if(favMode) return r.fav;              // vue Favoris : uniquement les étoilés
       if(fKind && r.kind!==fKind) return false;
       if(fTag && r.tags.indexOf(fTag)===-1) return false;
       if(ctxOnly && !compatible(r)) return false;
       if(favOnly && !r.fav) return false;
       return true;
     });
-    $('grid').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Aucune entrée pour ces filtres.</div>';
-    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')) return; openDetail(el.dataset.id); }); });
+    var emptyMsg = favMode
+      ? '<div class="empty">Aucun favori pour l\'instant.<br>Clique l\'étoile ☆ sur une carte du Catalogue pour l\'ajouter ici.</div>'
+      : '<div class="empty">Aucune entrée pour ces filtres.</div>';
+    $('grid').innerHTML = list.length ? list.map(card).join('') : emptyMsg;
+    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')||e.target.closest('[data-fav]')) return; openDetail(el.dataset.id); }); });
     $('grid').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ primary(b.dataset.act); }); });
+    $('grid').querySelectorAll('[data-fav]').forEach(function(b){ b.addEventListener('click',function(){ toggleFav(b.dataset.fav); }); });
   }
   function renderTags(){
     $('tagbar').innerHTML=TAGS.map(function(t){return '<span class="tag'+(fTag===t?' on':'')+'" data-tag="'+t+'">'+t+'</span>';}).join('');
@@ -737,7 +755,21 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
   $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
   $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
-  renderChips(); renderTags(); renderGrid();
+
+  // ── vue Favoris : masque hero + toolbar, montre le bandeau, ne garde que les étoilés ──
+  function setFav(on){
+    favMode=on;
+    var hero=document.querySelector('.hero'), tb=document.querySelector('.toolbar');
+    if(hero) hero.style.display=on?'none':'';
+    if(tb) tb.style.display=on?'none':'';
+    $('favBanner').style.display=on?'':'none';
+    renderGrid();
+  }
+  window.addEventListener('message',function(e){ if(e.data && e.data.mode) setFav(e.data.mode==='favoris'); });
+  function favFromHash(){ setFav((location.hash||'')==='#favoris'); }
+  window.addEventListener('hashchange',favFromHash);
+
+  renderChips(); renderTags(); favFromHash();
 })();
 </script>
 </body>

@@ -11,6 +11,7 @@
  .tabs button{font:inherit;font-weight:700;font-size:13px;color:#b8aed8;background:transparent;border:1px solid transparent;border-radius:9px;padding:8px 14px;cursor:pointer;transition:.15s}
  .tabs button:hover{color:#f5f1ff}
  .tabs button.on{color:#fff;background:rgba(124,92,252,.22)}
+ .tabs .sp{flex:1}
  .frames{position:fixed;top:50px;left:0;right:0;bottom:0}
  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#0f0a1f}
  iframe.on{display:block}
@@ -18,7 +19,9 @@
  <div class="tabs"><span class="brand">🧂 Salsifi<small>démo · un seul fichier</small></span>
    <button data-t="catalogue" class="on">🧰 Catalogue</button>
    <button data-t="studio">🛠️ Studio</button>
-   <button data-t="metrics">📊 Métriques</button>
+   <button data-t="metrics">📊 Admin</button>
+   <span class="sp"></span>
+   <button data-t="favoris">⭐ Favoris</button>
  </div>
  <div class="frames">
    <iframe id="f-catalogue" class="on" allow="clipboard-read; clipboard-write" srcdoc="<!DOCTYPE html>
@@ -80,6 +83,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .filts{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .ck{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ts);cursor:pointer}
 .ck input{width:16px;height:16px;accent-color:var(--accent)}
+.favbanner{display:flex;align-items:center;gap:12px;margin:6px 0 16px;padding:15px 18px;border:1px solid rgba(251,191,36,.3);border-radius:16px;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(251,191,36,.02))}
+.favbanner .fbt{font-family:var(--fd);font-weight:800;font-size:17px}
+.favbanner .fbs{font-size:12.5px;color:var(--ts);margin-top:2px;max-width:760px;line-height:1.5}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
@@ -191,7 +197,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;nav&quot;>
     <a href=&quot;#&quot; class=&quot;on&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
-    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Métriques</a>
+    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
   </div>
 
   <!-- HERO -->
@@ -217,6 +223,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class=&quot;filts&quot;>
       <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;ctxOnly&quot; checked> Compatibles avec mon dépôt</label>
       <label class=&quot;ck&quot;><input type=&quot;checkbox&quot; id=&quot;favOnly&quot;> ⭐ Favoris</label>
+    </div>
+  </div>
+
+  <div class=&quot;favbanner&quot; id=&quot;favBanner&quot; style=&quot;display:none&quot;>
+    <div>
+      <div class=&quot;fbt&quot;>⭐ Tes favoris</div>
+      <div class=&quot;fbs&quot;>Les agents &amp;amp; prompts que tu utilises tous les jours — un clic pour lancer. Ajoute-en avec l'étoile ☆ sur une carte du Catalogue.</div>
     </div>
   </div>
 
@@ -276,7 +289,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       usage:210, success:91, humanFix:9, timeSaved:'~40 min', ctx:'Finding OSV/CVE · composant identifié', version:'v4', verified:'02 mai 2026',
       tools:[['Secrets Scanner (lecture)','read'],['Repo Analyzer (lecture)','read']], security:['⚠ La valeur d\'un secret n\'est JAMAIS envoyée au modèle — seulement type et emplacement.'],
       expected:'Impact (exploitable ici ?), blast radius, remédiation.', criteria:['Composant et version confirmés','Remédiation applicable','Faux positif écarté'], agentic:false},
-    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'],
+    {kind:'recipe', id:'prep-delivery', ic:'🚀', title:'Préparer la livraison en préprod', lvl:'off', owner:'Plateforme', tags:['kubernetes','ci','livraison'], stack:['kubernetes','gitlab'], fav:true,
       usage:480, success:95, humanFix:5, timeSaved:'~30 min', ctx:'App conteneurisée · overlays Kustomize · GitLab CI', version:'v5', verified:'20 mai 2026',
       tools:[['Vérifier la branche','read'],['Bump IMAGE_TAG + overlays','write'],['Scanner vulnérabilités','read'],['Vérifier les tests','read'],['Créer la MR','write']],
       security:['Le LLM oriente ; le module Livraison déterministe exécute.','Dry-run obligatoire : rien sans ta confirmation.'],
@@ -288,7 +301,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     // ——— PROMPTS (se copient) ———
     {kind:'prompt', id:'commit', ic:'✍️', title:'Message de commit conventionnel', lvl:'official', owner:'Plateforme', tags:['git'], stack:[], uses:812, timeSaved:'~5 min', fav:false, verified:'20 mai 2026',
       body:'Rédige un message de commit conventionnel (type(scope): résumé) puis une description de MR structurée pour ce diff.\n\n- résumé à l\'impératif, < 72 caractères\n- corps : QUOI et POURQUOI\n- signale tout breaking change\n\nDiff :\n{{diff}}'},
-    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:false, verified:'30 mai 2026', engine:'analyze',
+    {kind:'prompt', id:'analyze-code', ic:'🔍', title:'Analyser ce code', lvl:'official', owner:'Plateforme', tags:['revue','debug'], stack:[], uses:263, timeSaved:'~15 min', fav:true, verified:'30 mai 2026', engine:'analyze',
       body:'Analyse ce code selon les règles de la plateforme (NPE, null retournés, nombres magiques, debug oublié, imbrication, couverture) et remonte les problèmes avec leur ligne.\n\nCode :\n{{code}}'},
     {kind:'prompt', id:'explain', ic:'📖', title:'Explique-moi ce code', lvl:'mine', owner:'marie.d', tags:['debug','apprentissage'], stack:[], uses:57, timeSaved:'~15 min', fav:true, verified:'28 mai 2026',
       body:'Explique ce code à un développeur de niveau {{niveau}}.\n\n1. Résumé en une phrase.\n2. Déroulé étape par étape.\n3. Pièges / effets de bord non évidents.\n\nCode :\n{{code}}'},
@@ -340,7 +353,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     learn:'Intuition : un index, c\'est la table des matières d\'un livre — tu vas direct à la page au lieu de tout feuilleter.\nMinimum utile : structure B-tree, tri, sélectivité.\nExemple : CREATE INDEX … puis EXPLAIN pour voir le scan disparaître.\nErreur classique : indexer une colonne à faible sélectivité (ex. booléen) — inutile.\nExercice : sur quelle colonne indexerais-tu une table users(email, is_active) pour un login ?'
   };
 
-  var fKind='', fTag='', ctxOnly=true, favOnly=false;
+  var fKind='', fTag='', ctxOnly=true, favOnly=false, favMode=false;
 
   function compatible(r){ if(r.kind==='prompt') return true; return r.stack.some(function(s){return CTX.stack.indexOf(s)!==-1;}); }
   function succCol(v){ return v>=85?'var(--ok)':v>=70?'var(--warn)':'var(--err)'; }
@@ -370,20 +383,28 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<button class=&quot;act copy&quot; data-act=&quot;'+r.id+'&quot;>▶ Lancer</button></div>';
     }
     return '<div class=&quot;card '+r.kind+'&quot; data-id=&quot;'+r.id+'&quot;>'+
-      '<div class=&quot;top&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div class=&quot;ti&quot;>'+esc(r.title)+'</div>'+badge+lvlb+'</div>'+body+'</div>';
+      '<div class=&quot;top&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div class=&quot;ti&quot;>'+esc(r.title)+'</div>'+
+        '<button class=&quot;star'+(r.fav?' on':'')+'&quot; data-fav=&quot;'+r.id+'&quot; title=&quot;Favori — je l\'utilise tous les jours&quot;>'+(r.fav?'⭐':'☆')+'</button>'+
+        badge+lvlb+'</div>'+body+'</div>';
   }
+  function toggleFav(id){ var r=R.find(function(x){return x.id===id;}); if(!r)return; r.fav=!r.fav; renderGrid(); toast(r.fav?'⭐ Ajouté à tes favoris':'Retiré des favoris'); }
 
   function renderGrid(){
     var list=R.filter(function(r){
+      if(favMode) return r.fav;              // vue Favoris : uniquement les étoilés
       if(fKind &amp;&amp; r.kind!==fKind) return false;
       if(fTag &amp;&amp; r.tags.indexOf(fTag)===-1) return false;
       if(ctxOnly &amp;&amp; !compatible(r)) return false;
       if(favOnly &amp;&amp; !r.fav) return false;
       return true;
     });
-    $('grid').innerHTML = list.length ? list.map(card).join('') : '<div class=&quot;empty&quot;>Aucune entrée pour ces filtres.</div>';
-    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')) return; openDetail(el.dataset.id); }); });
+    var emptyMsg = favMode
+      ? '<div class=&quot;empty&quot;>Aucun favori pour l\'instant.<br>Clique l\'étoile ☆ sur une carte du Catalogue pour l\'ajouter ici.</div>'
+      : '<div class=&quot;empty&quot;>Aucune entrée pour ces filtres.</div>';
+    $('grid').innerHTML = list.length ? list.map(card).join('') : emptyMsg;
+    $('grid').querySelectorAll('.card').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target.closest('[data-act]')||e.target.closest('[data-fav]')) return; openDetail(el.dataset.id); }); });
     $('grid').querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click',function(){ primary(b.dataset.act); }); });
+    $('grid').querySelectorAll('[data-fav]').forEach(function(b){ b.addEventListener('click',function(){ toggleFav(b.dataset.fav); }); });
   }
   function renderTags(){
     $('tagbar').innerHTML=TAGS.map(function(t){return '<span class=&quot;tag'+(fTag===t?' on':'')+'&quot; data-tag=&quot;'+t+'&quot;>'+t+'</span>';}).join('');
@@ -760,7 +781,21 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   $('kindSeg').querySelectorAll('[data-k]').forEach(function(b){ b.addEventListener('click',function(){ fKind=b.dataset.k; $('kindSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); renderGrid(); }); });
   $('ctxOnly').addEventListener('change',function(){ ctxOnly=this.checked; renderGrid(); });
   $('favOnly').addEventListener('change',function(){ favOnly=this.checked; renderGrid(); });
-  renderChips(); renderTags(); renderGrid();
+
+  // ── vue Favoris : masque hero + toolbar, montre le bandeau, ne garde que les étoilés ──
+  function setFav(on){
+    favMode=on;
+    var hero=document.querySelector('.hero'), tb=document.querySelector('.toolbar');
+    if(hero) hero.style.display=on?'none':'';
+    if(tb) tb.style.display=on?'none':'';
+    $('favBanner').style.display=on?'':'none';
+    renderGrid();
+  }
+  window.addEventListener('message',function(e){ if(e.data &amp;&amp; e.data.mode) setFav(e.data.mode==='favoris'); });
+  function favFromHash(){ setFav((location.hash||'')==='#favoris'); }
+  window.addEventListener('hashchange',favFromHash);
+
+  renderChips(); renderTags(); favFromHash();
 })();
 </script>
 <script>(function(){document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();parent.postMessage({go:a.dataset.go},'*');}});})();</script></body>
@@ -899,7 +934,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
   <div class=&quot;nav&quot;>
     <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; class=&quot;on&quot;>🛠️ Studio</a>
-    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Métriques</a>
+    <a href=&quot;#&quot; data-go=&quot;metrics&quot;>📊 Admin</a>
   </div>
 
   <p class=&quot;intro&quot;>Le prompt brut n'est <b>jamais</b> exposé aux utilisateurs — il vit ici. Le Studio est le seul endroit où l'on <b>écrit la spécification</b>, où l'on <b>déclare les outils autorisés</b> et les <b>critères de validation</b>, où l'on <b>teste</b> avant publication, et où chaque <b>version</b> est tracée. Réservé au rôle <b>ai-maintainer</b> (Staff AI Enablement).</p>
@@ -1126,7 +1161,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
 <head>
 <meta charset=&quot;UTF-8&quot;>
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
-<title>Adoption IA — tableau de bord (maquette)</title>
+<title>Admin — tableau de bord (maquette)</title>
 <link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>&quot;>
 <link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
 <link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
@@ -1234,7 +1269,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <header>
     <div class=&quot;logo&quot;>📊</div>
     <div>
-      <h1>Adoption IA</h1>
+      <h1>Admin</h1>
       <div class=&quot;sub&quot;>Ce qui marche, ce qui aide, ce qu'il faut améliorer — recettes &amp;amp; prompts</div>
     </div>
     <div class=&quot;period&quot; id=&quot;period&quot;>
@@ -1247,7 +1282,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;nav&quot;>
     <a href=&quot;#&quot; data-go=&quot;catalogue&quot;>🧰 Catalogue</a>
     <a href=&quot;#&quot; data-go=&quot;studio&quot;>🛠️ Studio</a>
-    <a href=&quot;#&quot; class=&quot;on&quot;>📊 Métriques</a>
+    <a href=&quot;#&quot; class=&quot;on&quot;>📊 Admin</a>
   </div>
 
   <!-- KPIs -->
@@ -1467,10 +1502,15 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 "></iframe>
  </div>
  <script>
+   var FRAME={catalogue:'catalogue',favoris:'catalogue',studio:'studio',metrics:'metrics'};
    function go(name,hash){
      document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===name);});
-     document.querySelectorAll('.frames iframe').forEach(function(f){f.classList.toggle('on',f.id==='f-'+name);});
-     if(hash){ var f=document.getElementById('f-'+name); try{ f.contentWindow.location.hash=hash; }catch(e){} }
+     var fid='f-'+FRAME[name];
+     document.querySelectorAll('.frames iframe').forEach(function(f){f.classList.toggle('on',f.id===fid);});
+     var cf=document.getElementById('f-catalogue');
+     try{ if(name==='favoris') cf.contentWindow.postMessage({mode:'favoris'},'*');
+          else if(name==='catalogue') cf.contentWindow.postMessage({mode:'all'},'*'); }catch(e){}
+     if(hash){ var f=document.getElementById(fid); try{ f.contentWindow.location.hash=hash; }catch(e){} }
    }
    document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
    window.addEventListener('message',function(e){ if(e.data&&e.data.go) go(e.data.go, e.data.hash?('#'+e.data.hash):''); });
