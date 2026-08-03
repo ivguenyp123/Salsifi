@@ -173,7 +173,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class="promises">
       <div class="promise"><div class="pi">🛡️</div><div class="ph">L'IA écrit du code ? Toujours 2 humains.</div><div class="pd">Aucun agent capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class="pmap">↓ File de validation · pour le <b>RSSI / risque</b></div></div>
       <div class="promise"><div class="pi">📜</div><div class="ph">Tout est prouvé, rien n'est opaque.</div><div class="pd">Qui, quand, quel agent, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class="pmap">↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
-      <div class="promise"><div class="pi">🧬</div><div class="ph">Une norme groupe, déclinée partout.</div><div class="pd">L'agent officiel descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class="pmap">↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
+      <div class="promise"><div class="pi">🌍</div><div class="ph">Un cadre, toute la banque.</div><div class="pd">Chaque tribu et chaque équipe hérite des <b>mêmes règles</b> — tu peux zoomer sur ton périmètre pour ne voir que ta part.</div><div class="pmap">↓ Périmètre · pour la <b>DSI / les Owners</b></div></div>
       <div class="promise"><div class="pi">🆚</div><div class="ph">On ne déploie que ce qui marche.</div><div class="pd">Une nouvelle version n'est généralisée que si l'<b>A/B prouve</b> qu'elle est meilleure — pas de big-bang au feeling.</div><div class="pmap">↓ Comparaison A/B · pour les <b>leads / la qualité</b></div></div>
     </div>
     <div class="contrast">
@@ -196,15 +196,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   <div class="panel">
     <h2>🗺️ Périmètre actif</h2>
-    <div class="cap">Groupe → entité → tribu → équipe. Tout ce qui suit (héritage, validations, journal) est filtré sur ce périmètre.</div>
+    <div class="cap">LCL → tribu → équipe. Par défaut tu vois <b>toute la banque</b> ; zoome sur une tribu ou une équipe pour ne voir que sa part. Les validations et le journal ci-dessous suivent ce choix.</div>
     <div class="pstats" id="pstats"></div>
-  </div>
-
-  <!-- 2. HÉRITAGE -->
-  <div class="panel">
-    <h2>🧬 D'où vient chaque agent (groupe → adaptations locales)</h2>
-    <div class="cap">Un agent <b style="color:var(--ok)">officiel</b> est écrit <b>une seule fois pour tout LCL</b> et arrive automatiquement dans chaque équipe. Une équipe peut l'<b style="color:var(--accent)">adapter</b> à ses besoins (prompt, critères, modèle) — mais <b>jamais lui donner plus de droits</b> que le groupe n'autorise. Et une amélioration faite au niveau du groupe <b>redescend partout</b>.</div>
-    <div class="inh" id="inh"></div>
   </div>
 
   <!-- 3. POLITIQUE DE PUBLICATION + DOUBLE VALIDATION -->
@@ -317,27 +310,16 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   // ════════ RENDER ════════
   function renderPerimeter(){
     $('crumb').innerHTML='· actif : <b>'+esc(scopeName())+'</b>';
-    var specialised=GOV.filter(function(g){return specForScope(g).length;}).length;
     var writeCount=GOV.filter(function(g){return g.writes;}).length;
+    var pending=QUEUE.filter(function(x){ return !scope.tribe || x.scope===scope.tribe; }).length;
+    var execs=LOG.filter(logInScope).length;
+    var teams=scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0));
     $('pstats').innerHTML=[
-      ['🧬', GOV.length, 'agents hérités ici'],
-      ['🎯', specialised, 'spécialisées sur ce périmètre'],
-      ['✍️', writeCount, 'capables d\'écrire (double validation)'],
-      ['👥', scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0)), 'équipes dans le périmètre']
+      ['✍️', writeCount, 'agents capables d\'écrire (double validation)'],
+      ['⏳', pending, 'en attente de validation'],
+      ['📜', execs, 'exécutions tracées ici'],
+      ['👥', teams, 'équipes dans le périmètre']
     ].map(function(s){ return '<div class="pstat"><div class="v">'+s[1]+'</div><div class="k">'+s[0]+' '+s[2]+'</div></div>'; }).join('');
-  }
-
-  function renderInheritance(){
-    $('inh').innerHTML=GOV.map(function(g){
-      var specs=specForScope(g);
-      var chain='<span class="node root">🟢 Groupe (officiel)</span>';
-      specs.forEach(function(s){ chain+='<span class="arr">→</span><span class="node spec">🎯 '+esc(s.scope)+'<span class="who"> · '+esc(s.by)+'</span></span>'; });
-      var over = specs.length? '<div class="ihint">Adapté ici : '+specs.map(function(s){return '<b>'+esc(s.change)+'</b>';}).join(' · ')+'. Tout le reste vient du groupe (une mise à jour officielle redescend automatiquement).</div>'
-                             : '<div class="ihint">Utilisé tel quel — version officielle du groupe (aucune adaptation locale).</div>';
-      return '<div class="irow"><div class="top"><span class="ic">'+g.ic+'</span><span class="ti">'+esc(g.title)+'</span>'+
-        '<span class="badge '+(g.writes?'b-write">✍️ écrit':'b-read">👁 lecture')+'</span></div>'+
-        '<div class="chain">'+chain+'</div>'+over+'</div>';
-    }).join('');
   }
 
   function renderQueue(){
@@ -420,7 +402,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     $('genBtn').addEventListener('click',function(){ toast('🌍 '+(bWins?b.v:a.v)+' généralisée au groupe — héritage propagé'); });
   }
 
-  function renderAll(){ renderPerimeter(); renderInheritance(); renderQueue(); renderJournal(); }
+  function renderAll(){ renderPerimeter(); renderQueue(); renderJournal(); }
 
   // ── wiring périmètre ──
   $('selTribe').addEventListener('change',function(){ scope.tribe=this.value; scope.team=''; refreshSelectors(); renderAll(); });
