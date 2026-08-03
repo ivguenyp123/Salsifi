@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Studio ai-maintainer — écrire &amp; gouverner les recettes (maquette)</title>
+<title>Studio ai-maintainer — écrire &amp; gouverner les agents (maquette)</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -123,7 +123,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     <div class="logo">🛠️</div>
     <div>
       <h1>Studio <span style="color:var(--accent)">ai-maintainer</span></h1>
-      <div class="sub">Écrire, tester, gouverner et versionner les recettes &amp; prompts officiels</div>
+      <div class="sub">Écrire, tester, gouverner et versionner les agents &amp; prompts officiels</div>
     </div>
     <div class="role-pill">🔒 ai-maintainer · accès restreint</div>
   </header>
@@ -146,7 +146,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         <button data-st="review">🟡 En revue</button>
         <button data-st="draft">Brouillons</button>
       </div>
-      <button class="newbtn" id="newBtn">＋ Nouvelle recette / prompt</button>
+      <button class="newbtn" id="newBtn">＋ Nouvel agent / prompt</button>
     </div>
     <div class="list" id="list"></div>
   </div>
@@ -168,7 +168,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
   var STATUS_LABEL={published:'Publié',review:'En revue',draft:'Brouillon',deprecated:'Déprécié'};
   var PERM={read:'👁 Lecture',write:'✏️ Écriture',danger:'⛔ Sensible'};
 
-  // ── Données (recettes + prompts gouvernés) ──
+  // ── Données (agents + prompts gouvernés) ──
   var A=[
     {id:'prep-delivery', kind:'recipe', ic:'🚀', title:'Préparer la livraison en préprod', status:'published', version:5, owner:'Plateforme', updated:'20 mai 2026',
       spec:'Tu orientes une livraison en préproduction. Tu N\'EXÉCUTES PAS les écritures : le module Livraison déterministe le fait après confirmation humaine.\n\nÀ partir du dépôt {{repo}} (stack {{stack}}) :\n1. vérifie que la branche est à jour et mergeable\n2. propose le bump IMAGE_TAG et la synchro des overlays Kustomize\n3. déclenche le scan de vulnérabilités et la vérif des tests\n4. rédige l\'explication des changements pour la MR\n\nRends un plan clair ; rien n\'est écrit sans « ✔ Confirmer ».',
@@ -226,7 +226,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         '<span class="ic">'+a.ic+'</span>'+
         '<div class="main"><div class="ti">'+esc(a.title)+'</div>'+
           '<div class="meta">'+esc(a.owner)+' · v'+a.version+' · maj '+a.updated+' · '+vars(a.spec).length+' variables'+(a.kind==='recipe'?' · '+a.tools.length+' outils':'')+'</div></div>'+
-        '<span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span>'+
+        '<span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ agent':'💬 prompt')+'</span>'+
         '<span class="status '+a.status+'">'+STATUS_LABEL[a.status]+'</span>'+
         '<div class="health">'+(a.metrics.uses?('<b>'+a.metrics.success+'%</b> réussite'+(flag?'<br><span class="flag">⚠ à améliorer</span>':'')):'<span style="color:var(--tm)">jamais utilisé</span>')+'</div>'+
       '</div>';
@@ -254,7 +254,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     $('editView').innerHTML =
       '<button class="back" id="backBtn">← Retour à la liste</button>'+
       '<div class="ehead"><span class="ic">'+a.ic+'</span><div style="flex:1"><h2>'+esc(a.title)+'</h2>'+
-        '<div class="sub"><span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span><span class="status '+a.status+'">'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
+        '<div class="sub"><span class="kind '+a.kind+'">'+(a.kind==='recipe'?'⚙️ agent':'💬 prompt')+'</span><span class="status '+a.status+'">'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
       '<div class="grid2"><div>'+
         '<div class="panel"><div class="pl">🎯 Intention <span class="hint">— ce que voit l\'utilisateur</span></div><input class="tin" id="e_title" value="'+esc(a.title)+'"></div>'+
         '<div class="panel"><div class="pl">📄 Prompt / spécification <span class="hint">— masqué aux utilisateurs, éditable ici</span></div>'+
@@ -264,7 +264,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         '<div class="panel"><div class="pl">🛠 Outils autorisés (allowlist) <span class="hint">— appliquée à l\'exécution</span></div><div id="e_tools">'+
           a.tools.map(function(t,i){ return '<div class="toolrow"><span class="tn">'+esc(t[0])+'</span>'+
             '<select class="tin" data-tool="'+i+'">'+Object.keys(PERM).map(function(k){return '<option value="'+k+'"'+(t[1]===k?' selected':'')+'>'+PERM[k]+'</option>';}).join('')+'</select></div>'; }).join('')+
-          '</div><div class="mini">Une recette ne peut jamais faire plus que son allowlist. Toute action <span class="perm-write">✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
+          '</div><div class="mini">Un agent ne peut jamais faire plus que son allowlist. Toute action <span class="perm-write">✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
         '<div class="panel"><div class="pl">🔒 Règles de sécurité</div><div id="e_sec">'+
           a.security.map(function(s,i){return '<div class="crit"><span>🔒</span><span>'+esc(s)+'</span><button class="del" data-delsec="'+i+'">✕</button></div>';}).join('')+'</div>'+
           '<div class="addline"><input class="tin" id="e_secnew" placeholder="ajouter une règle…"><button id="e_secadd">Ajouter</button></div></div>'+
@@ -277,7 +277,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
           '<div class="testout" id="e_testout"></div></div>'+
       '</div><div>'+
         '<div class="panel gov"><div class="pl">🚦 Gouvernance</div>'+govSteps+'<div class="govbtns">'+govBtns+'</div>'+
-          '<div class="mini">Seul un <b>ai-maintainer</b> peut publier. La publication rend la recette visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
+          '<div class="mini">Seul un <b>ai-maintainer</b> peut publier. La publication rend l\'agent visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
         '<div class="panel"><div class="pl">📊 Métriques (lecture seule)</div>'+
           '<div class="metric"><span>Usages</span><b>'+a.metrics.uses+'</b></div>'+
           '<div class="metric"><span>Réussite</span><b style="color:'+(a.metrics.success>=85?'var(--ok)':a.metrics.success>=70?'var(--warn)':'var(--err)')+'">'+a.metrics.success+'%</b></div>'+
@@ -311,7 +311,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         (s?'Le prompt a été appliqué à ton exemple avec le contexte injecté.':'<span style="color:var(--warn)">Astuce : colle un exemple pour un test plus réaliste.</span>')+
         '<div style="margin-top:9px;border-top:1px solid var(--line);padding-top:8px">Vérification automatique des critères :</div>'+
         a.criteria.map(function(c){return '<div style="margin-top:4px"><span class="ck">✓</span> '+esc(c)+'</div>';}).join('')+
-        '<div class="mini">En vrai : la recette tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
+        '<div class="mini">En vrai : l\'agent tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
       toast('🧪 Test simulé — critères passés');
     });
     // rollback
@@ -324,7 +324,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     if(act==='review'){ a.status='review'; toast('🟡 Soumis à revue'); }
     else if(act==='draft'){ a.status='draft'; toast('Renvoyé en brouillon'); }
     else if(act==='publish'){ a.status='published'; a.updated='aujourd\'hui'; toast('🟢 Publié en Officiel — visible dans le catalogue'); }
-    else if(act==='deprecate'){ a.status='deprecated'; toast('Recette dépréciée'); }
+    else if(act==='deprecate'){ a.status='deprecated'; toast('Agent déprécié'); }
     else if(act==='version'){ a.version++; a.versions.unshift([a.version,'aujourd\'hui','nouvelle version']); toast('＋ Version v'+a.version+' publiée'); }
     openEditor(a.id);
   }

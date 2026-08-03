@@ -171,9 +171,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <h2 class="why-h">Laisse l'IA agir dans toute la banque — sans lui lâcher les clés.</h2>
     <p class="why-p">Des agents qui écrivent du code, ouvrent des merge requests, livrent en préproduction : très puissant… à condition de pouvoir le <b>prouver</b>, le <b>contrôler</b> et le <b>tracer</b>. Cette couche transforme « on teste l'IA dans un coin » en « on la déploie à l'échelle du groupe, sous contrôle ». C'est ce qui débloque le <b>oui</b> du risque, du RSSI et de l'audit.</p>
     <div class="promises">
-      <div class="promise"><div class="pi">🛡️</div><div class="ph">L'IA écrit du code ? Toujours 2 humains.</div><div class="pd">Aucune recette capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class="pmap">↓ File de validation · pour le <b>RSSI / risque</b></div></div>
-      <div class="promise"><div class="pi">📜</div><div class="ph">Tout est prouvé, rien n'est opaque.</div><div class="pd">Qui, quand, quelle recette, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class="pmap">↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
-      <div class="promise"><div class="pi">🧬</div><div class="ph">Une norme groupe, déclinée partout.</div><div class="pd">La recette officielle descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class="pmap">↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
+      <div class="promise"><div class="pi">🛡️</div><div class="ph">L'IA écrit du code ? Toujours 2 humains.</div><div class="pd">Aucun agent capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class="pmap">↓ File de validation · pour le <b>RSSI / risque</b></div></div>
+      <div class="promise"><div class="pi">📜</div><div class="ph">Tout est prouvé, rien n'est opaque.</div><div class="pd">Qui, quand, quel agent, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class="pmap">↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
+      <div class="promise"><div class="pi">🧬</div><div class="ph">Une norme groupe, déclinée partout.</div><div class="pd">L'agent officiel descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class="pmap">↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
       <div class="promise"><div class="pi">🆚</div><div class="ph">On ne déploie que ce qui marche.</div><div class="pd">Une nouvelle version n'est généralisée que si l'<b>A/B prouve</b> qu'elle est meilleure — pas de big-bang au feeling.</div><div class="pmap">↓ Comparaison A/B · pour les <b>leads / la qualité</b></div></div>
     </div>
     <div class="contrast">
@@ -203,7 +203,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- 2. HÉRITAGE -->
   <div class="panel">
     <h2>🧬 Héritage &amp; spécialisations locales</h2>
-    <div class="cap">Les recettes <b style="color:var(--ok)">officielles du groupe</b> descendent partout. Chaque niveau peut <b style="color:var(--accent)">spécialiser</b> (prompt, critères, modèle) — <b>jamais affaiblir la sécurité</b> : une spécialisation ne peut pas ajouter un droit d'écriture que le parent n'autorise pas.</div>
+    <div class="cap">Les agents <b style="color:var(--ok)">officielles du groupe</b> descendent partout. Chaque niveau peut <b style="color:var(--accent)">spécialiser</b> (prompt, critères, modèle) — <b>jamais affaiblir la sécurité</b> : une spécialisation ne peut pas ajouter un droit d'écriture que le parent n'autorise pas.</div>
     <div class="inh" id="inh"></div>
   </div>
 
@@ -211,8 +211,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="panel">
     <h2>✅ Politique de publication</h2>
     <div class="policy">
-      <b>Recette en lecture seule</b> → 1 validation <b>ai-maintainer</b>.<br>
-      <b>Recette capable d'écrire</b> (branche, MR, fichier) → <b>double validation</b> : 1 <b>ai-maintainer</b> + 1 <b>Owner de périmètre</b>, et une <b>revue sécurité</b> passée. Toute action irréversible reste derrière une confirmation humaine à l'exécution.
+      <b>Agent en lecture seule</b> → 1 validation <b>ai-maintainer</b>.<br>
+      <b>Agent capable d'écrire</b> (branche, MR, fichier) → <b>double validation</b> : 1 <b>ai-maintainer</b> + 1 <b>Owner de périmètre</b>, et une <b>revue sécurité</b> passée. Toute action irréversible reste derrière une confirmation humaine à l'exécution.
     </div>
     <div class="cap">File d'attente de publication sur ce périmètre :</div>
     <div id="queue"></div>
@@ -221,10 +221,10 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- 4. JOURNAL D'EXÉCUTION -->
   <div class="panel">
     <h2>📜 Journal d'exécution <span class="badge b-read" style="font-weight:700">auditable</span></h2>
-    <div class="cap">Chaque exécution tracée : qui, quand, quelle recette + version, quel modèle, le contexte injecté, les outils appelés et la preuve du résultat. Immuable, exportable.</div>
+    <div class="cap">Chaque exécution tracée : qui, quand, quel agent + version, quel modèle, le contexte injecté, les outils appelés et la preuve du résultat. Immuable, exportable.</div>
     <div class="jfilter" id="jfilter"></div>
     <div class="jtable">
-      <div class="jhead"><span>Quand</span><span>Recette · qui</span><span class="h3">Modèle</span><span class="h4">Version</span><span class="h5">Preuve</span></div>
+      <div class="jhead"><span>Quand</span><span>Agent · qui</span><span class="h3">Modèle</span><span class="h4">Version</span><span class="h5">Preuve</span></div>
       <div id="jrows"></div>
     </div>
   </div>
@@ -234,7 +234,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <h2>🆚 Comparaison A/B avant généralisation</h2>
     <div class="cap">On teste deux versions sur un sous-périmètre, on compare les preuves, et on ne généralise au groupe que si la nouvelle version gagne — pas au feeling.</div>
     <div class="abpick">
-      <span style="font-size:12.5px;color:var(--ts)">Recette :</span>
+      <span style="font-size:12.5px;color:var(--ts)">Agent :</span>
       <select id="abSel"></select>
     </div>
     <div class="abcols" id="abcols"></div>
@@ -266,7 +266,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function scopeName(){ return scope.team||scope.tribe||'LCL'; }
   function scopePath(){ return ['LCL',scope.tribe,scope.team].filter(Boolean); }
 
-  // ── Recettes gouvernées (héritage) ──
+  // ── Agents gouvernés (héritage) ──
   var GOV=[
     {id:'prep-delivery',ic:'🚀',title:'Livraison préprod',writes:true,
       spec:[{scope:'Crédit',by:'Archi Crédit',change:'overlays Kustomize maison'},{scope:'FBI',by:'Lead FBI',change:'+ critère : scan anti-fraude'}]},
@@ -311,7 +311,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     'tests-junit':{title:'Générer des tests', a:{v:'v2',n:160,success:83,rework:19,cost:0.10,lat:12.0}, b:{v:'v3',n:150,success:88,rework:12,cost:0.03,lat:9.4}}
   };
   var abKey='migrate-java21';
-  // permet au scénario guidé de préselectionner une recette dans l'A/B (#ab=<id>)
+  // permet au scénario guidé de préselectionner un agent dans l'A/B (#ab=<id>)
   window.addEventListener('hashchange',function(){ var m=(location.hash||'').match(/ab=([\w-]+)/); if(m&&AB[m[1]]){ abKey=m[1]; renderAB(); document.querySelector('.abcols').scrollIntoView({behavior:'smooth',block:'center'}); } });
 
   // ════════ RENDER ════════
@@ -320,7 +320,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var specialised=GOV.filter(function(g){return specForScope(g).length;}).length;
     var writeCount=GOV.filter(function(g){return g.writes;}).length;
     $('pstats').innerHTML=[
-      ['🧬', GOV.length, 'recettes héritées ici'],
+      ['🧬', GOV.length, 'agents hérités ici'],
       ['🎯', specialised, 'spécialisées sur ce périmètre'],
       ['✍️', writeCount, 'capables d\'écrire (double validation)'],
       ['👥', scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0)), 'équipes dans le périmètre']
@@ -353,7 +353,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<span class="rl"><b>'+esc(a.role)+'</b>'+(a.done?' — <span class="who">'+esc(a.who||'validé')+'</span>':'')+'</span>'+
           (a.done?'<span class="apbtn done">signé</span>':'<button class="apbtn" data-ap="'+idx+'-'+ai+'">Approuver</button>')+'</div>';
       }).join('');
-      var sec = x.writes ? '<div class="ap"><span class="st">'+(x.security==='ok'?'✅':'⬜')+'</span><span class="rl"><b>Revue sécurité</b> (recette capable d\'écrire)</span>'+(x.security==='ok'?'<span class="apbtn done">ok</span>':'<button class="apbtn" data-sec="'+idx+'">Marquer OK</button>')+'</div>' : '';
+      var sec = x.writes ? '<div class="ap"><span class="st">'+(x.security==='ok'?'✅':'⬜')+'</span><span class="rl"><b>Revue sécurité</b> (agent capable d\'écrire)</span>'+(x.security==='ok'?'<span class="apbtn done">ok</span>':'<button class="apbtn" data-sec="'+idx+'">Marquer OK</button>')+'</div>' : '';
       var status = ready ? '<div class="qstatus qs-ready">✅ Prête à publier — '+got+'/'+need+' validations'+(x.writes?' + sécurité OK':'')+'</div>'
                          : '<div class="qstatus qs-block">⏳ En attente — '+got+'/'+need+' validations'+(x.writes&&x.security!=='ok'?' · sécurité à passer':'')+'</div>';
       return '<div class="qrow"><div class="top"><span style="font-size:19px">'+x.ic+'</span><span class="ti">'+esc(x.title)+'</span>'+
@@ -381,7 +381,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<div class="dl">Contexte injecté</div>'+esc(l.ctx)+
           '<div class="dl">Outils appelés</div>'+tools+
           '<div class="dl">Résultat &amp; preuve</div>'+esc(l.res)+' — <span class="proof">'+esc(l.proof)+'</span>'+
-          '<div class="dl">Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · recette <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
+          '<div class="dl">Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · agent <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
         '</div></div>';
     }).join('') || '<div class="jrow"><span style="grid-column:1/-1;color:var(--tm)">Aucune exécution sur ce périmètre.</span></div>';
     $('jrows').querySelectorAll('.jrow[data-j]').forEach(function(el){ el.addEventListener('click',function(){ el.classList.toggle('open'); }); });

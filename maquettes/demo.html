@@ -58,7 +58,7 @@
 <head>
 <meta charset=&quot;UTF-8&quot;>
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
-<title>Catalogue IA — recettes &amp;amp; prompts (maquette)</title>
+<title>Catalogue IA — agents &amp;amp; prompts (maquette)</title>
 <link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>&quot;>
 <link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
 <link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
@@ -205,7 +205,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 .cmp[open] summary::before{content:'▾ '}
 .rawbox{font-family:var(--fm);font-size:12px;color:var(--tm);background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.22);border-radius:10px;padding:11px 13px;line-height:1.6;white-space:pre-wrap;margin-top:9px}
 .delta{font-size:11.5px;color:var(--warn);margin-top:8px;line-height:1.5}
-/* diff + preuve (continuité prompt→recette) */
+/* diff + preuve (continuité prompt→agent) */
 .hunk{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:9px;background:rgba(10,7,22,.5)}
 .hwhy{font-size:11.5px;color:var(--ts);padding:7px 11px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
 .dl{font-family:var(--fm);font-size:11.5px;padding:2px 11px;white-space:pre-wrap;word-break:break-word;line-height:1.55}
@@ -258,7 +258,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class=&quot;logo&quot;>🧰</div>
     <div>
       <h1>Catalogue IA</h1>
-      <div class=&quot;sub&quot;>Recettes &amp;amp; prompts au même endroit · le LLM oriente, les outils déterministes exécutent</div>
+      <div class=&quot;sub&quot;>Agents &amp;amp; prompts au même endroit · le LLM oriente, les outils déterministes exécutent</div>
     </div>
     <div class=&quot;ctx-pill&quot;>📦 <b>platformengineering</b> · Java 21 · Spring · Kubernetes · GitLab CI</div>
   </header>
@@ -308,7 +308,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class=&quot;toolbar&quot;>
       <div class=&quot;kindseg&quot; id=&quot;kindSeg&quot;>
         <button data-k=&quot;&quot; class=&quot;on&quot;>Tout</button>
-        <button data-k=&quot;recipe&quot;>🍳 Recettes · agir</button>
+        <button data-k=&quot;recipe&quot;>🤖 Agents · agir</button>
         <button data-k=&quot;prompt&quot;>📚 Prompts · générer</button>
       </div>
       <div class=&quot;tagbar&quot; id=&quot;tagbar&quot;></div>
@@ -361,7 +361,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 
   // ── Données unifiées (kind: recipe | prompt) ──
   var R=[
-    // ——— RECETTES (s'exécutent) ———
+    // ——— AGENTS (s'exécutent) ———
     {kind:'recipe', id:'tests-junit', ic:'🧪', title:'Générer des tests unitaires', lvl:'off', owner:'Plateforme', tags:['java','tests'], stack:['java'], engine:'gentests',
       usage:340, success:88, humanFix:12, timeSaved:'~25 min', ctx:'Java · JUnit 5 · code non testé', version:'v3', verified:'12 mai 2026',
       tools:[['Lire le dépôt','read'],['Générer le fichier de test (dry-run)','write'],['Exécuter la suite de tests','read']], security:['Écriture du seul fichier de test, sur ta branche. Dry-run avant création.'],
@@ -446,7 +446,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function card(r){
     var isRec=r.kind==='recipe';
     var incompat=!compatible(r);
-    var badge='<span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span>';
+    var badge='<span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Agent':'💬 Prompt')+'</span>';
     var lvlb='<span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_ICON[r.lvl]+' '+LVL_LABEL[r.lvl]+'</span>';
     var body;
     if(isRec){
@@ -496,7 +496,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     $('tagbar').querySelectorAll('[data-tag]').forEach(function(el){ el.addEventListener('click',function(){ fTag=fTag===el.dataset.tag?'':el.dataset.tag; renderTags(); renderGrid(); }); });
   }
 
-  // action primaire : tout se lance. Recette -> workflow ; prompt -> génération.
+  // action primaire : tout se lance. Agent -> workflow ; prompt -> génération.
   function primary(id){ var r=R.find(function(x){return x.id===id;}); if(!r) return; if(r.kind==='recipe') runRecipe(r); else quickLaunch(r); }
   function quickLaunch(r){ var vs=vars(r.body); if(vs.length){ openDetail(r.id); toast('Remplis les variables puis lance ⤵'); return; } promptDetail(r, true); }
 
@@ -511,7 +511,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var tools=r.tools.map(function(t){var cls=t[1]==='write'?'write':'read';var ic=t[1]==='write'?'✏️':'👁';return '<span class=&quot;tool '+cls+'&quot;>'+ic+' '+esc(t[0])+'</span>';}).join('');
     modal(
       '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div style=&quot;flex:1&quot;><h3>'+esc(r.title)+'</h3>'+
-        '<div style=&quot;font-size:12px;color:var(--tm);margin-top:2px&quot;><span class=&quot;kindbadge recipe&quot;>⚙️ Recette</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span> · '+r.version+' · '+esc(r.owner)+' · vérifiée '+r.verified+'</div></div>'+
+        '<div style=&quot;font-size:12px;color:var(--tm);margin-top:2px&quot;><span class=&quot;kindbadge recipe&quot;>⚙️ Agent</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span> · '+r.version+' · '+esc(r.owner)+' · vérifiée '+r.verified+'</div></div>'+
         '<button class=&quot;x&quot; data-close>✕</button></div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🧩 Contexte attendu</div><div class=&quot;fv&quot;>'+esc(r.ctx)+'</div></div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>🛠 Outils autorisés</div><div class=&quot;fv&quot;>'+tools+'<div class=&quot;note&quot;>Lecture 👁 · écriture ✏️ (confirmation humaine). L\'allowlist est appliquée à l\'exécution.</div></div></div>'+
@@ -519,8 +519,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>✅ Résultat &amp;amp; critères</div><div class=&quot;fv&quot;><b>'+esc(r.expected)+'</b><br>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>📊 Métriques</div><div class=&quot;fv&quot;><b>'+r.usage+'</b> usages · réussite <b style=&quot;color:'+succCol(r.success)+'&quot;>'+r.success+'%</b> · <b>'+r.humanFix+'%</b> corrigés · gagné <b>'+r.timeSaved+'</b></div></div>'+
       modelField(r)+
-      '<div class=&quot;field&quot; style=&quot;border-style:dashed&quot;><div class=&quot;fl&quot;>📝 Prompt</div><div class=&quot;fv&quot; style=&quot;color:var(--tm)&quot;>Masqué — on n\'expose pas le prompt d\'une recette. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>'+
-      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; data-run=&quot;'+r.id+'&quot;>🚀 Lancer la recette</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button>'+
+      '<div class=&quot;field&quot; style=&quot;border-style:dashed&quot;><div class=&quot;fl&quot;>📝 Prompt</div><div class=&quot;fv&quot; style=&quot;color:var(--tm)&quot;>Masqué — on n\'expose pas le prompt d\'un agent. Éditable par un <b>ai-maintainer</b> dans le Studio.</div></div>'+
+      '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; data-run=&quot;'+r.id+'&quot;>🚀 Lancer l\'agent</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button>'+
         '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'
     );
     $('modal').querySelectorAll('[data-run]').forEach(function(b){b.addEventListener('click',function(){runRecipe(r);});});
@@ -534,7 +534,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     modal(
       '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><h3>'+esc(r.title)+'</h3><button class=&quot;x&quot; data-close>✕</button></div>'+
       '<div style=&quot;font-size:12.5px;color:var(--ts);margin-bottom:8px&quot;>Contexte du dépôt injecté : <b style=&quot;color:var(--tp)&quot;>'+CTX.repo+'</b> · Java 21 · Spring.</div>'+
-      (writes?'<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Dry-run — rien n\'est écrit</div><div class=&quot;fv&quot;>Cette recette peut écrire ; elle te montre d\'abord ce qu\'elle ferait, puis attend ta confirmation.</div></div>':'')+
+      (writes?'<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Dry-run — rien n\'est écrit</div><div class=&quot;fv&quot;>Cet agent peut écrire ; il te montre d\'abord ce qu\'il ferait, puis attend ta confirmation.</div></div>':'')+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Résultat</div><div class=&quot;fv&quot;><b>'+esc(r.expected)+'</b><br><span style=&quot;color:var(--tm)&quot;>(sortie IA simulée — maquette)</span></div></div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Vérification automatique</div><div class=&quot;fv&quot;>'+r.criteria.map(function(c){return '☑ '+esc(c);}).join('<br>')+'</div></div>'+
       '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; data-close>'+(writes?'✔ Confirmer':'Terminer')+'</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button>'+
@@ -546,12 +546,12 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function runGenTests(r){
     modal(
       '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>'+r.ic+'</span><div style=&quot;flex:1&quot;><h3>Générer des tests unitaires</h3>'+
-        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ recette · produit un fichier de test à partir de ton code</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
+        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ agent · produit un fichier de test à partir de ton code</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
       '<div class=&quot;ctxbn&quot;>⚡ <b>Code injecté depuis ton poste</b> — tu peux l\'ajuster.<div class=&quot;srcs&quot;><span class=&quot;src&quot;>'+esc(AUTOFILL.code.src)+'</span></div></div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Code source</div><textarea class=&quot;promptbox&quot; id=&quot;gtCode&quot; style=&quot;width:100%;min-height:120px;border:1px solid var(--line2)&quot;>'+esc(AUTOFILL.code.val)+'</textarea></div>'+
       '<div id=&quot;gtOut&quot;></div>'+
       '<div class=&quot;mbtns&quot;><button class=&quot;mbtn run&quot; id=&quot;gtRun&quot;>▶ Générer les tests (dry-run)</button><button class=&quot;mbtn ghost&quot; data-close>Fermer</button></div>'+
-      '<div class=&quot;note&quot;>Différence avec un prompt : la recette ne se contente pas de répondre — elle <b>produit un fichier</b> et propose de le <b>créer sur ta branche</b> (après ta confirmation). Rien n\'est écrit sans « ✔ Créer ».</div>'
+      '<div class=&quot;note&quot;>Différence avec un prompt : l\'agent ne se contente pas de répondre — il <b>produit un fichier</b> et propose de le <b>créer sur ta branche</b> (après ta confirmation). Rien n\'est écrit sans « ✔ Créer ».</div>'
     );
     $('gtRun').addEventListener('click',function(){
       var code=$('gtCode').value; var g=genTests(code); var out=$('gtOut');
@@ -560,7 +560,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<div class=&quot;fv&quot;><b style=&quot;font-family:var(--fm)&quot;>'+esc(g.name)+'</b> · '+g.count+' méthode'+(g.count>1?'s':'')+' détectée'+(g.count>1?'s':'')+' → 2 tests chacune (nominal + cas limite)</div>'+
           '<div class=&quot;promptbox&quot; style=&quot;color:var(--tp);margin-top:9px;max-height:260px;overflow:auto&quot;>'+esc(g.text)+'</div>'+
           '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;><button class=&quot;mbtn run mini&quot; id=&quot;gtConfirm&quot;>✔ Créer '+esc(g.name)+' sur ma branche</button><button class=&quot;mbtn ghost mini&quot; id=&quot;gtCopy&quot;>📋 Copier</button></div></div>';
-      $('gtConfirm').addEventListener('click',function(){ toast('✅ '+g.name+' créé sur ta branche (simulation) — la recette a écrit, pas juste répondu'); });
+      $('gtConfirm').addEventListener('click',function(){ toast('✅ '+g.name+' créé sur ta branche (simulation) — l\'agent a écrit, pas juste répondu'); });
       $('gtCopy').addEventListener('click',function(){ copy(g.text); toast('📋 Fichier de test copié'); });
       $('gtOut').scrollIntoView({behavior:'smooth',block:'nearest'});
       toast('🧪 Tests générés à partir de ton code');
@@ -613,7 +613,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       '<div id=&quot;promptOut&quot;></div>'+
       '<div class=&quot;mbtns&quot;><button class=&quot;mbtn go&quot; id=&quot;cf&quot;>▶ Lancer le prompt</button><button class=&quot;mbtn ghost mini&quot; id=&quot;cp&quot;>📋 Copier le prompt</button><button class=&quot;mbtn ghost mini&quot; data-close>Fermer</button>'+
         '<div class=&quot;thumbs&quot;><button class=&quot;thumb&quot; data-fb=&quot;up&quot;>👍</button><button class=&quot;thumb&quot; data-fb=&quot;down&quot;>👎</button></div></div>'+
-      '<div class=&quot;note&quot;>« Lancer » envoie le prompt (contexte + conventions) à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton outil — mais tu perds le contexte injecté. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>recette</b>.</div>'
+      '<div class=&quot;note&quot;>« Lancer » envoie le prompt (contexte + conventions) à l\'IA de la plateforme et affiche la réponse ici. « Copier » ne sert que si tu préfères le jouer dans ton outil — mais tu perds le contexte injecté. Pour une action qui <b>touche le dépôt</b> (écriture, MR…), c\'est une <b>agent</b>.</div>'
     );
     function convSuffix(){ return CONV[r.id]?('\n\n— Conventions maison appliquées : '+CONV[r.id].join(' · ').replace(/&amp;lt;/g,'<').replace(/&amp;gt;/g,'>')):''; }
     function refresh(){ var vals={}; $('modal').querySelectorAll('[data-v]').forEach(function(i){vals[i.dataset.v]=i.value;}); $('pv').innerHTML=hl(fill(r.body,vals))+(CONV[r.id]?'<span style=&quot;color:var(--deliver);opacity:.8&quot;>'+esc(convSuffix())+'</span>':''); return vals; }
@@ -643,7 +643,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         '<div class=&quot;rawbox&quot;>'+esc(raw)+'</div>'+
         '<div class=&quot;delta&quot;>⚠ Sans le contexte de ton dépôt ni tes conventions : réponse générique, à retravailler. Le catalogue part du bon code et de tes standards → utilisable tel quel.</div></details>':'';
       var fixable=live &amp;&amp; a &amp;&amp; (a.r+a.y)>0;
-      var fixBtn=fixable?'<button class=&quot;mbtn run mini&quot; id=&quot;toFix&quot;>🔧 Corriger avec une recette →</button>':'';
+      var fixBtn=fixable?'<button class=&quot;mbtn run mini&quot; id=&quot;toFix&quot;>🔧 Corriger avec un agent →</button>':'';
       out.innerHTML='<div class=&quot;field&quot; style=&quot;border-color:var(--accent)&quot;><div class=&quot;fl&quot;>✅ '+(live?'Analyse du code':'Réponse de l\'IA')+' <span style=&quot;color:var(--tm);font-weight:600;text-transform:none;letter-spacing:0&quot;>— '+(live?'calculée en direct sur ton code':'contexte + conventions appliqués (simulée)')+'</span></div>'+
         bodyHtml+cmp+
         '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;>'+fixBtn+'<button class=&quot;mbtn go mini&quot; id=&quot;copyRes&quot;>📋 Copier le résultat</button><button class=&quot;mbtn ghost mini&quot; id=&quot;relaunch&quot;>↻ Relancer</button>'+
@@ -792,15 +792,15 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
         aft.map(function(x){return '<div class=&quot;dl add&quot;>+ '+esc(x)+'</div>';}).join('')+'</div>';
     }).join('');
   }
-  // La recette de correction — appelée depuis le résultat d'une analyse (continuité).
+  // L\'agent de correction — appelé depuis le résultat d'une analyse (continuité).
   function startFix(code){
     var fx=proposeFix(code);
     if(!fx.changes.length){ toast('Rien d\'automatiquement corrigeable ici'); return; }
     var before=analyzeCode(code);
     modal(
-      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>🔧</span><div style=&quot;flex:1&quot;><h3>Corriger avec une recette</h3>'+
-        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ recette · déclenchée depuis l\'analyse · le LLM oriente, la recette écrit</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
-      '<div class=&quot;ctxbn&quot;>↩ <b>Enchaînement depuis « Analyser ce code »</b> — score actuel <b style=&quot;color:var(--warn)&quot;>'+before.score+'/100</b>, '+before.total+' problème'+(before.total>1?'s':'')+' détecté'+(before.total>1?'s':'')+'. La recette propose un patch pour les corriger.</div>'+
+      '<div class=&quot;mh&quot;><span class=&quot;ic&quot;>🔧</span><div style=&quot;flex:1&quot;><h3>Corriger avec un agent</h3>'+
+        '<div style=&quot;font-size:12px;color:var(--deliver);margin-top:2px&quot;>⚙️ agent · déclenché depuis l\'analyse · le LLM oriente, l\'agent écrit</div></div><button class=&quot;x&quot; data-close>✕</button></div>'+
+      '<div class=&quot;ctxbn&quot;>↩ <b>Enchaînement depuis « Analyser ce code »</b> — score actuel <b style=&quot;color:var(--warn)&quot;>'+before.score+'/100</b>, '+before.total+' problème'+(before.total>1?'s':'')+' détecté'+(before.total>1?'s':'')+'. L\'agent propose un patch pour les corriger.</div>'+
       '<div class=&quot;field&quot;><div class=&quot;fl&quot;>Ce que je corrige ('+fx.changes.length+')</div><div class=&quot;fv&quot;>'+fx.changes.map(function(c){return '• '+esc(c.why);}).join('<br>')+'</div></div>'+
       '<div class=&quot;field&quot; style=&quot;border-color:rgba(251,191,36,.35)&quot;><div class=&quot;fl&quot; style=&quot;color:var(--warn)&quot;>Patch — dry-run, rien n\'est écrit</div><div id=&quot;diffBox&quot;>'+renderDiff(fx.changes)+'</div></div>'+
       '<div id=&quot;fixOut&quot;></div>'+
@@ -818,7 +818,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<div class=&quot;pl2&quot;>🧪 Tests</div><div><span style=&quot;color:var(--ok)&quot;>✔ '+tests+' verts</span> (CI relancée sur la MR)</div>'+
           '<div class=&quot;pl2&quot;>📈 Ré-analyse</div><div>score <b style=&quot;color:var(--warn)&quot;>'+before.score+'</b> → <b style=&quot;color:var(--ok)&quot;>'+after.score+'/100</b> <span style=&quot;color:var(--ok)&quot;>(+'+delta+')</span> · problèmes '+before.total+' → '+after.total+'</div></div>'+
         '<div class=&quot;mbtns&quot; style=&quot;margin-top:12px&quot;><button class=&quot;mbtn go mini&quot; id=&quot;seeMr&quot;>Voir la MR !313 →</button><button class=&quot;mbtn ghost mini&quot; id=&quot;seeDiff&quot;>📋 Copier le patch</button></div>'+
-        '<div class=&quot;note&quot;>C\'est ça la continuité : un <b>prompt</b> a trouvé le problème, une <b>recette</b> l\'a corrigé sur une branche, et la <b>ré-analyse + les tests</b> le prouvent — sans quitter le catalogue.</div></div>';
+        '<div class=&quot;note&quot;>C\'est ça la continuité : un <b>prompt</b> a trouvé le problème, une <b>agent</b> l\'a corrigé sur une branche, et la <b>ré-analyse + les tests</b> le prouvent — sans quitter le catalogue.</div></div>';
       $('fixGo').disabled=true; $('fixGo').style.opacity=.5;
       $('seeMr').addEventListener('click',function(){ toast('Ouverture de la MR !313 (maquette)'); });
       $('seeDiff').addEventListener('click',function(){ copy(fx.patched); toast('📋 Code corrigé copié'); });
@@ -828,7 +828,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     wireFb();
   }
 
-  // ── Que veux-tu faire (intent → recette OU prompt) ──
+  // ── Que veux-tu faire (intent → agent OU prompt) ──
   var EXAMPLES=['analyser du code','générer des tests','préparer la livraison','expliquer ce code','message de commit','optimiser une requête SQL'];
   function renderChips(){ $('chips').innerHTML=EXAMPLES.map(function(e){return '<span class=&quot;chip&quot; data-ex=&quot;'+e+'&quot;>'+e+'</span>';}).join(''); $('chips').querySelectorAll('[data-ex]').forEach(function(el){el.addEventListener('click',function(){$('ask').value=el.dataset.ex; doAsk();});}); }
   function match(q){
@@ -843,11 +843,11 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     if(!r){ $('intentResult').innerHTML='<div class=&quot;field&quot; style=&quot;border-style:dashed&quot;><div class=&quot;fv&quot;>Aucune entrée <b>validée</b> pour « '+esc(q)+' ».<br><span style=&quot;color:var(--tm)&quot;>Tu peux en brouillonner une dans le Studio.</span></div></div>'; return; }
     var isRec=r.kind==='recipe';
     $('intentResult').innerHTML=
-      '<div class=&quot;field&quot; style=&quot;border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;><div class=&quot;fl&quot; style=&quot;color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;>'+(isRec?'🍳 Recette trouvée — lance un workflow':'📚 Prompt trouvé — lance une génération')+'</div>'+
+      '<div class=&quot;field&quot; style=&quot;border-color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;><div class=&quot;fl&quot; style=&quot;color:'+(isRec?'var(--deliver)':'var(--accent)')+'&quot;>'+(isRec?'🤖 Agent trouvé — lance un workflow':'📚 Prompt trouvé — lance une génération')+'</div>'+
       '<div style=&quot;display:flex;align-items:center;gap:12px;flex-wrap:wrap&quot;>'+
         '<span style=&quot;font-size:22px&quot;>'+r.ic+'</span>'+
         '<div style=&quot;flex:1;min-width:180px&quot;><div style=&quot;font-family:var(--fd);font-weight:800;font-size:15px&quot;>'+esc(r.title)+'</div>'+
-          '<div style=&quot;font-size:12px;color:var(--ts);margin-top:2px&quot;><span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Recette':'💬 Prompt')+'</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span></div></div>'+
+          '<div style=&quot;font-size:12px;color:var(--ts);margin-top:2px&quot;><span class=&quot;kindbadge '+r.kind+'&quot;>'+(isRec?'⚙️ Agent':'💬 Prompt')+'</span> <span class=&quot;lvl '+r.lvl+'&quot;>'+LVL_LABEL[r.lvl]+'</span></div></div>'+
         '<button class=&quot;act '+(isRec?'run':'copy')+'&quot; data-act=&quot;'+r.id+'&quot; style=&quot;padding:9px 15px&quot;>'+(isRec?'Lancer →':'▶ Lancer')+'</button>'+
         '<button class=&quot;mbtn ghost mini&quot; data-open=&quot;'+r.id+'&quot;>Voir la fiche</button>'+
       '</div></div>';
@@ -962,7 +962,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
 <head>
 <meta charset=&quot;UTF-8&quot;>
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
-<title>Studio ai-maintainer — écrire &amp;amp; gouverner les recettes (maquette)</title>
+<title>Studio ai-maintainer — écrire &amp;amp; gouverner les agents (maquette)</title>
 <link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>&quot;>
 <link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
 <link href=&quot;https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
@@ -1082,7 +1082,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     <div class=&quot;logo&quot;>🛠️</div>
     <div>
       <h1>Studio <span style=&quot;color:var(--accent)&quot;>ai-maintainer</span></h1>
-      <div class=&quot;sub&quot;>Écrire, tester, gouverner et versionner les recettes &amp;amp; prompts officiels</div>
+      <div class=&quot;sub&quot;>Écrire, tester, gouverner et versionner les agents &amp;amp; prompts officiels</div>
     </div>
     <div class=&quot;role-pill&quot;>🔒 ai-maintainer · accès restreint</div>
   </header>
@@ -1105,7 +1105,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         <button data-st=&quot;review&quot;>🟡 En revue</button>
         <button data-st=&quot;draft&quot;>Brouillons</button>
       </div>
-      <button class=&quot;newbtn&quot; id=&quot;newBtn&quot;>＋ Nouvelle recette / prompt</button>
+      <button class=&quot;newbtn&quot; id=&quot;newBtn&quot;>＋ Nouvel agent / prompt</button>
     </div>
     <div class=&quot;list&quot; id=&quot;list&quot;></div>
   </div>
@@ -1127,7 +1127,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
   var STATUS_LABEL={published:'Publié',review:'En revue',draft:'Brouillon',deprecated:'Déprécié'};
   var PERM={read:'👁 Lecture',write:'✏️ Écriture',danger:'⛔ Sensible'};
 
-  // ── Données (recettes + prompts gouvernés) ──
+  // ── Données (agents + prompts gouvernés) ──
   var A=[
     {id:'prep-delivery', kind:'recipe', ic:'🚀', title:'Préparer la livraison en préprod', status:'published', version:5, owner:'Plateforme', updated:'20 mai 2026',
       spec:'Tu orientes une livraison en préproduction. Tu N\'EXÉCUTES PAS les écritures : le module Livraison déterministe le fait après confirmation humaine.\n\nÀ partir du dépôt {{repo}} (stack {{stack}}) :\n1. vérifie que la branche est à jour et mergeable\n2. propose le bump IMAGE_TAG et la synchro des overlays Kustomize\n3. déclenche le scan de vulnérabilités et la vérif des tests\n4. rédige l\'explication des changements pour la MR\n\nRends un plan clair ; rien n\'est écrit sans « ✔ Confirmer ».',
@@ -1185,7 +1185,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         '<span class=&quot;ic&quot;>'+a.ic+'</span>'+
         '<div class=&quot;main&quot;><div class=&quot;ti&quot;>'+esc(a.title)+'</div>'+
           '<div class=&quot;meta&quot;>'+esc(a.owner)+' · v'+a.version+' · maj '+a.updated+' · '+vars(a.spec).length+' variables'+(a.kind==='recipe'?' · '+a.tools.length+' outils':'')+'</div></div>'+
-        '<span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span>'+
+        '<span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ agent':'💬 prompt')+'</span>'+
         '<span class=&quot;status '+a.status+'&quot;>'+STATUS_LABEL[a.status]+'</span>'+
         '<div class=&quot;health&quot;>'+(a.metrics.uses?('<b>'+a.metrics.success+'%</b> réussite'+(flag?'<br><span class=&quot;flag&quot;>⚠ à améliorer</span>':'')):'<span style=&quot;color:var(--tm)&quot;>jamais utilisé</span>')+'</div>'+
       '</div>';
@@ -1213,7 +1213,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     $('editView').innerHTML =
       '<button class=&quot;back&quot; id=&quot;backBtn&quot;>← Retour à la liste</button>'+
       '<div class=&quot;ehead&quot;><span class=&quot;ic&quot;>'+a.ic+'</span><div style=&quot;flex:1&quot;><h2>'+esc(a.title)+'</h2>'+
-        '<div class=&quot;sub&quot;><span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ recette':'💬 prompt')+'</span><span class=&quot;status '+a.status+'&quot;>'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
+        '<div class=&quot;sub&quot;><span class=&quot;kind '+a.kind+'&quot;>'+(a.kind==='recipe'?'⚙️ agent':'💬 prompt')+'</span><span class=&quot;status '+a.status+'&quot;>'+STATUS_LABEL[a.status]+'</span> · v'+a.version+' · '+esc(a.owner)+'</div></div></div>'+
       '<div class=&quot;grid2&quot;><div>'+
         '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🎯 Intention <span class=&quot;hint&quot;>— ce que voit l\'utilisateur</span></div><input class=&quot;tin&quot; id=&quot;e_title&quot; value=&quot;'+esc(a.title)+'&quot;></div>'+
         '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>📄 Prompt / spécification <span class=&quot;hint&quot;>— masqué aux utilisateurs, éditable ici</span></div>'+
@@ -1223,7 +1223,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🛠 Outils autorisés (allowlist) <span class=&quot;hint&quot;>— appliquée à l\'exécution</span></div><div id=&quot;e_tools&quot;>'+
           a.tools.map(function(t,i){ return '<div class=&quot;toolrow&quot;><span class=&quot;tn&quot;>'+esc(t[0])+'</span>'+
             '<select class=&quot;tin&quot; data-tool=&quot;'+i+'&quot;>'+Object.keys(PERM).map(function(k){return '<option value=&quot;'+k+'&quot;'+(t[1]===k?' selected':'')+'>'+PERM[k]+'</option>';}).join('')+'</select></div>'; }).join('')+
-          '</div><div class=&quot;mini&quot;>Une recette ne peut jamais faire plus que son allowlist. Toute action <span class=&quot;perm-write&quot;>✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
+          '</div><div class=&quot;mini&quot;>Un agent ne peut jamais faire plus que son allowlist. Toute action <span class=&quot;perm-write&quot;>✏️ écriture</span> exige une confirmation humaine (dry-run).</div></div>' : '')+
         '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>🔒 Règles de sécurité</div><div id=&quot;e_sec&quot;>'+
           a.security.map(function(s,i){return '<div class=&quot;crit&quot;><span>🔒</span><span>'+esc(s)+'</span><button class=&quot;del&quot; data-delsec=&quot;'+i+'&quot;>✕</button></div>';}).join('')+'</div>'+
           '<div class=&quot;addline&quot;><input class=&quot;tin&quot; id=&quot;e_secnew&quot; placeholder=&quot;ajouter une règle…&quot;><button id=&quot;e_secadd&quot;>Ajouter</button></div></div>'+
@@ -1236,7 +1236,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
           '<div class=&quot;testout&quot; id=&quot;e_testout&quot;></div></div>'+
       '</div><div>'+
         '<div class=&quot;panel gov&quot;><div class=&quot;pl&quot;>🚦 Gouvernance</div>'+govSteps+'<div class=&quot;govbtns&quot;>'+govBtns+'</div>'+
-          '<div class=&quot;mini&quot;>Seul un <b>ai-maintainer</b> peut publier. La publication rend la recette visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
+          '<div class=&quot;mini&quot;>Seul un <b>ai-maintainer</b> peut publier. La publication rend l\'agent visible dans le catalogue en niveau <b>Officiel</b>.</div></div>'+
         '<div class=&quot;panel&quot;><div class=&quot;pl&quot;>📊 Métriques (lecture seule)</div>'+
           '<div class=&quot;metric&quot;><span>Usages</span><b>'+a.metrics.uses+'</b></div>'+
           '<div class=&quot;metric&quot;><span>Réussite</span><b style=&quot;color:'+(a.metrics.success>=85?'var(--ok)':a.metrics.success>=70?'var(--warn)':'var(--err)')+'&quot;>'+a.metrics.success+'%</b></div>'+
@@ -1270,7 +1270,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
         (s?'Le prompt a été appliqué à ton exemple avec le contexte injecté.':'<span style=&quot;color:var(--warn)&quot;>Astuce : colle un exemple pour un test plus réaliste.</span>')+
         '<div style=&quot;margin-top:9px;border-top:1px solid var(--line);padding-top:8px&quot;>Vérification automatique des critères :</div>'+
         a.criteria.map(function(c){return '<div style=&quot;margin-top:4px&quot;><span class=&quot;ck&quot;>✓</span> '+esc(c)+'</div>';}).join('')+
-        '<div class=&quot;mini&quot;>En vrai : la recette tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
+        '<div class=&quot;mini&quot;>En vrai : l\'agent tournerait en dry-run contre l\'exemple, puis les critères seraient évalués avant tout OK.</div>';
       toast('🧪 Test simulé — critères passés');
     });
     // rollback
@@ -1283,7 +1283,7 @@ input.tin:focus,textarea.tin:focus,select.tin:focus{border-color:var(--accent)}
     if(act==='review'){ a.status='review'; toast('🟡 Soumis à revue'); }
     else if(act==='draft'){ a.status='draft'; toast('Renvoyé en brouillon'); }
     else if(act==='publish'){ a.status='published'; a.updated='aujourd\'hui'; toast('🟢 Publié en Officiel — visible dans le catalogue'); }
-    else if(act==='deprecate'){ a.status='deprecated'; toast('Recette dépréciée'); }
+    else if(act==='deprecate'){ a.status='deprecated'; toast('Agent déprécié'); }
     else if(act==='version'){ a.version++; a.versions.unshift([a.version,'aujourd\'hui','nouvelle version']); toast('＋ Version v'+a.version+' publiée'); }
     openEditor(a.id);
   }
@@ -1427,7 +1427,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class=&quot;logo&quot;>📊</div>
     <div>
       <h1>Admin</h1>
-      <div class=&quot;sub&quot;>Ce qui marche, ce qui aide, ce qu'il faut améliorer — recettes &amp;amp; prompts</div>
+      <div class=&quot;sub&quot;>Ce qui marche, ce qui aide, ce qu'il faut améliorer — agents &amp;amp; prompts</div>
     </div>
     <div class=&quot;period&quot; id=&quot;period&quot;>
       <button data-p=&quot;7&quot;>7 j</button>
@@ -1450,7 +1450,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;cols&quot;>
     <div class=&quot;panel&quot;>
       <h3>Adoption dans le temps</h3>
-      <div class=&quot;cap&quot;>Exécutions de recettes + copies de prompts, par semaine.</div>
+      <div class=&quot;cap&quot;>Exécutions de agents + copies de prompts, par semaine.</div>
       <svg class=&quot;trend&quot; id=&quot;trend&quot; viewBox=&quot;0 0 520 150&quot; preserveAspectRatio=&quot;none&quot;>
         <defs><linearGradient id=&quot;g&quot; x1=&quot;0&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;1&quot;><stop offset=&quot;0&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;.5&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#2dd4bf&quot; stop-opacity=&quot;0&quot;/></linearGradient></defs>
       </svg>
@@ -1458,7 +1458,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     </div>
     <div class=&quot;panel&quot;>
       <h3>Répartition par niveau</h3>
-      <div class=&quot;cap&quot;>Part des usages selon la gouvernance de la recette/prompt.</div>
+      <div class=&quot;cap&quot;>Part des usages selon la gouvernance de l'agent/prompt.</div>
       <div class=&quot;donutwrap&quot;>
         <svg width=&quot;140&quot; height=&quot;140&quot; viewBox=&quot;0 0 42 42&quot; id=&quot;donut&quot;></svg>
         <div class=&quot;leg&quot; id=&quot;donutLeg&quot;></div>
@@ -1470,7 +1470,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;cols&quot;>
     <div class=&quot;panel&quot;>
       <h3>Les plus utilisées</h3>
-      <div class=&quot;cap&quot;>Top recettes &amp;amp; prompts par nombre d'usages.</div>
+      <div class=&quot;cap&quot;>Top agents &amp;amp; prompts par nombre d'usages.</div>
       <div class=&quot;bars&quot; id=&quot;topUse&quot;></div>
     </div>
     <div class=&quot;panel&quot;>
@@ -1483,7 +1483,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- À améliorer -->
   <div class=&quot;panel&quot;>
     <h3>⚠ À améliorer <span style=&quot;font-weight:600;color:var(--tm);font-size:12px&quot;>— faible réussite ou corrections fréquentes</span></h3>
-    <div class=&quot;cap&quot;>La boucle d'apprentissage remonte ici les recettes candidates à une nouvelle version. Un clic ouvre le Studio.</div>
+    <div class=&quot;cap&quot;>La boucle d'apprentissage remonte ici les agents candidats à une nouvelle version. Un clic ouvre le Studio.</div>
     <div class=&quot;imp&quot; id=&quot;improve&quot;></div>
   </div>
 
@@ -1514,7 +1514,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;panel&quot;>
     <h3>🔁 Boucle d'apprentissage</h3>
     <div class=&quot;loop&quot;>
-      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les recettes à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
+      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les agents à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
       <div class=&quot;flow&quot;><span>Usage</span><span class=&quot;ar&quot;>→</span><span>Signal 👍/👎</span><span class=&quot;ar&quot;>→</span><span>Score</span><span class=&quot;ar&quot;>→</span><span>À améliorer</span><span class=&quot;ar&quot;>→</span><span>Studio : nouvelle version</span><span class=&quot;ar&quot;>↺</span></div>
     </div>
   </div>
@@ -1528,7 +1528,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function esc(s){return String(s==null?'':s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;');}
   function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
 
-  // ── Données (agrégées depuis recettes + prompts) ──
+  // ── Données (agrégées depuis agents + prompts) ──
   // model = modèle actuel · optimal = recommandé pour la difficulté · team = équipe
   var ITEMS=[
     {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30,team:'Plateforme',model:'mid',optimal:'mid'},
@@ -1564,7 +1564,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       ['⏱','Temps gagné (est.)','~'+fmt(timeSaved)+' h','up','soit ~'+Math.round(timeSaved/7)+' j·homme'],
       ['✅','Réussite moyenne',wAvg+'%',wAvg>=85?'up':'down',(wAvg>=85?'au-dessus':'sous')+' la cible 85%'],
       ['🖐','Corrigés à la main',wFix+'%','down','part relue/ajustée'],
-      ['🧩','Recettes actives',''+active,'','sur '+ITEMS.length+' publiées'],
+      ['🧩','Agents actifs',''+active,'','sur '+ITEMS.length+' publiées'],
       ['👥','Contributeurs','23','up','+3 ce mois']
     ].map(function(k){ return '<div class=&quot;kpi&quot;><div class=&quot;k&quot;>'+k[0]+' '+k[1]+'</div><div class=&quot;val&quot;>'+k[2]+'</div><div class=&quot;tr '+k[3]+'&quot;>'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
 
@@ -1831,9 +1831,9 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <h2 class=&quot;why-h&quot;>Laisse l'IA agir dans toute la banque — sans lui lâcher les clés.</h2>
     <p class=&quot;why-p&quot;>Des agents qui écrivent du code, ouvrent des merge requests, livrent en préproduction : très puissant… à condition de pouvoir le <b>prouver</b>, le <b>contrôler</b> et le <b>tracer</b>. Cette couche transforme « on teste l'IA dans un coin » en « on la déploie à l'échelle du groupe, sous contrôle ». C'est ce qui débloque le <b>oui</b> du risque, du RSSI et de l'audit.</p>
     <div class=&quot;promises&quot;>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🛡️</div><div class=&quot;ph&quot;>L'IA écrit du code ? Toujours 2 humains.</div><div class=&quot;pd&quot;>Aucune recette capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class=&quot;pmap&quot;>↓ File de validation · pour le <b>RSSI / risque</b></div></div>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>📜</div><div class=&quot;ph&quot;>Tout est prouvé, rien n'est opaque.</div><div class=&quot;pd&quot;>Qui, quand, quelle recette, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class=&quot;pmap&quot;>↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
-      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🧬</div><div class=&quot;ph&quot;>Une norme groupe, déclinée partout.</div><div class=&quot;pd&quot;>La recette officielle descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class=&quot;pmap&quot;>↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
+      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🛡️</div><div class=&quot;ph&quot;>L'IA écrit du code ? Toujours 2 humains.</div><div class=&quot;pd&quot;>Aucun agent capable de modifier un dépôt n'est diffusée sans <b>double validation</b> + revue sécurité. Rien d'irréversible sans confirmation.</div><div class=&quot;pmap&quot;>↓ File de validation · pour le <b>RSSI / risque</b></div></div>
+      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>📜</div><div class=&quot;ph&quot;>Tout est prouvé, rien n'est opaque.</div><div class=&quot;pd&quot;>Qui, quand, quel agent, quel modèle, quel contexte, quels outils, quelle preuve — <b>chaque exécution est tracée</b> et exportable.</div><div class=&quot;pmap&quot;>↓ Journal d'exécution · pour la <b>conformité / l'audit</b></div></div>
+      <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🧬</div><div class=&quot;ph&quot;>Une norme groupe, déclinée partout.</div><div class=&quot;pd&quot;>L'agent officiel descend dans chaque tribu ; chacune l'adapte <b>sans diverger</b>, et une mise à jour se propage automatiquement.</div><div class=&quot;pmap&quot;>↓ Héritage · pour la <b>DSI / les Owners</b></div></div>
       <div class=&quot;promise&quot;><div class=&quot;pi&quot;>🆚</div><div class=&quot;ph&quot;>On ne déploie que ce qui marche.</div><div class=&quot;pd&quot;>Une nouvelle version n'est généralisée que si l'<b>A/B prouve</b> qu'elle est meilleure — pas de big-bang au feeling.</div><div class=&quot;pmap&quot;>↓ Comparaison A/B · pour les <b>leads / la qualité</b></div></div>
     </div>
     <div class=&quot;contrast&quot;>
@@ -1863,7 +1863,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- 2. HÉRITAGE -->
   <div class=&quot;panel&quot;>
     <h2>🧬 Héritage &amp;amp; spécialisations locales</h2>
-    <div class=&quot;cap&quot;>Les recettes <b style=&quot;color:var(--ok)&quot;>officielles du groupe</b> descendent partout. Chaque niveau peut <b style=&quot;color:var(--accent)&quot;>spécialiser</b> (prompt, critères, modèle) — <b>jamais affaiblir la sécurité</b> : une spécialisation ne peut pas ajouter un droit d'écriture que le parent n'autorise pas.</div>
+    <div class=&quot;cap&quot;>Les agents <b style=&quot;color:var(--ok)&quot;>officielles du groupe</b> descendent partout. Chaque niveau peut <b style=&quot;color:var(--accent)&quot;>spécialiser</b> (prompt, critères, modèle) — <b>jamais affaiblir la sécurité</b> : une spécialisation ne peut pas ajouter un droit d'écriture que le parent n'autorise pas.</div>
     <div class=&quot;inh&quot; id=&quot;inh&quot;></div>
   </div>
 
@@ -1871,8 +1871,8 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class=&quot;panel&quot;>
     <h2>✅ Politique de publication</h2>
     <div class=&quot;policy&quot;>
-      <b>Recette en lecture seule</b> → 1 validation <b>ai-maintainer</b>.<br>
-      <b>Recette capable d'écrire</b> (branche, MR, fichier) → <b>double validation</b> : 1 <b>ai-maintainer</b> + 1 <b>Owner de périmètre</b>, et une <b>revue sécurité</b> passée. Toute action irréversible reste derrière une confirmation humaine à l'exécution.
+      <b>Agent en lecture seule</b> → 1 validation <b>ai-maintainer</b>.<br>
+      <b>Agent capable d'écrire</b> (branche, MR, fichier) → <b>double validation</b> : 1 <b>ai-maintainer</b> + 1 <b>Owner de périmètre</b>, et une <b>revue sécurité</b> passée. Toute action irréversible reste derrière une confirmation humaine à l'exécution.
     </div>
     <div class=&quot;cap&quot;>File d'attente de publication sur ce périmètre :</div>
     <div id=&quot;queue&quot;></div>
@@ -1881,10 +1881,10 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- 4. JOURNAL D'EXÉCUTION -->
   <div class=&quot;panel&quot;>
     <h2>📜 Journal d'exécution <span class=&quot;badge b-read&quot; style=&quot;font-weight:700&quot;>auditable</span></h2>
-    <div class=&quot;cap&quot;>Chaque exécution tracée : qui, quand, quelle recette + version, quel modèle, le contexte injecté, les outils appelés et la preuve du résultat. Immuable, exportable.</div>
+    <div class=&quot;cap&quot;>Chaque exécution tracée : qui, quand, quel agent + version, quel modèle, le contexte injecté, les outils appelés et la preuve du résultat. Immuable, exportable.</div>
     <div class=&quot;jfilter&quot; id=&quot;jfilter&quot;></div>
     <div class=&quot;jtable&quot;>
-      <div class=&quot;jhead&quot;><span>Quand</span><span>Recette · qui</span><span class=&quot;h3&quot;>Modèle</span><span class=&quot;h4&quot;>Version</span><span class=&quot;h5&quot;>Preuve</span></div>
+      <div class=&quot;jhead&quot;><span>Quand</span><span>Agent · qui</span><span class=&quot;h3&quot;>Modèle</span><span class=&quot;h4&quot;>Version</span><span class=&quot;h5&quot;>Preuve</span></div>
       <div id=&quot;jrows&quot;></div>
     </div>
   </div>
@@ -1894,7 +1894,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <h2>🆚 Comparaison A/B avant généralisation</h2>
     <div class=&quot;cap&quot;>On teste deux versions sur un sous-périmètre, on compare les preuves, et on ne généralise au groupe que si la nouvelle version gagne — pas au feeling.</div>
     <div class=&quot;abpick&quot;>
-      <span style=&quot;font-size:12.5px;color:var(--ts)&quot;>Recette :</span>
+      <span style=&quot;font-size:12.5px;color:var(--ts)&quot;>Agent :</span>
       <select id=&quot;abSel&quot;></select>
     </div>
     <div class=&quot;abcols&quot; id=&quot;abcols&quot;></div>
@@ -1926,7 +1926,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function scopeName(){ return scope.team||scope.tribe||'LCL'; }
   function scopePath(){ return ['LCL',scope.tribe,scope.team].filter(Boolean); }
 
-  // ── Recettes gouvernées (héritage) ──
+  // ── Agents gouvernés (héritage) ──
   var GOV=[
     {id:'prep-delivery',ic:'🚀',title:'Livraison préprod',writes:true,
       spec:[{scope:'Crédit',by:'Archi Crédit',change:'overlays Kustomize maison'},{scope:'FBI',by:'Lead FBI',change:'+ critère : scan anti-fraude'}]},
@@ -1971,7 +1971,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     'tests-junit':{title:'Générer des tests', a:{v:'v2',n:160,success:83,rework:19,cost:0.10,lat:12.0}, b:{v:'v3',n:150,success:88,rework:12,cost:0.03,lat:9.4}}
   };
   var abKey='migrate-java21';
-  // permet au scénario guidé de préselectionner une recette dans l'A/B (#ab=<id>)
+  // permet au scénario guidé de préselectionner un agent dans l'A/B (#ab=<id>)
   window.addEventListener('hashchange',function(){ var m=(location.hash||'').match(/ab=([\w-]+)/); if(m&amp;&amp;AB[m[1]]){ abKey=m[1]; renderAB(); document.querySelector('.abcols').scrollIntoView({behavior:'smooth',block:'center'}); } });
 
   // ════════ RENDER ════════
@@ -1980,7 +1980,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     var specialised=GOV.filter(function(g){return specForScope(g).length;}).length;
     var writeCount=GOV.filter(function(g){return g.writes;}).length;
     $('pstats').innerHTML=[
-      ['🧬', GOV.length, 'recettes héritées ici'],
+      ['🧬', GOV.length, 'agents hérités ici'],
       ['🎯', specialised, 'spécialisées sur ce périmètre'],
       ['✍️', writeCount, 'capables d\'écrire (double validation)'],
       ['👥', scope.team?1:(scope.tribe?ORG[scope.tribe].length:Object.keys(ORG).reduce(function(a,t){return a+ORG[t].length;},0)), 'équipes dans le périmètre']
@@ -2013,7 +2013,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<span class=&quot;rl&quot;><b>'+esc(a.role)+'</b>'+(a.done?' — <span class=&quot;who&quot;>'+esc(a.who||'validé')+'</span>':'')+'</span>'+
           (a.done?'<span class=&quot;apbtn done&quot;>signé</span>':'<button class=&quot;apbtn&quot; data-ap=&quot;'+idx+'-'+ai+'&quot;>Approuver</button>')+'</div>';
       }).join('');
-      var sec = x.writes ? '<div class=&quot;ap&quot;><span class=&quot;st&quot;>'+(x.security==='ok'?'✅':'⬜')+'</span><span class=&quot;rl&quot;><b>Revue sécurité</b> (recette capable d\'écrire)</span>'+(x.security==='ok'?'<span class=&quot;apbtn done&quot;>ok</span>':'<button class=&quot;apbtn&quot; data-sec=&quot;'+idx+'&quot;>Marquer OK</button>')+'</div>' : '';
+      var sec = x.writes ? '<div class=&quot;ap&quot;><span class=&quot;st&quot;>'+(x.security==='ok'?'✅':'⬜')+'</span><span class=&quot;rl&quot;><b>Revue sécurité</b> (agent capable d\'écrire)</span>'+(x.security==='ok'?'<span class=&quot;apbtn done&quot;>ok</span>':'<button class=&quot;apbtn&quot; data-sec=&quot;'+idx+'&quot;>Marquer OK</button>')+'</div>' : '';
       var status = ready ? '<div class=&quot;qstatus qs-ready&quot;>✅ Prête à publier — '+got+'/'+need+' validations'+(x.writes?' + sécurité OK':'')+'</div>'
                          : '<div class=&quot;qstatus qs-block&quot;>⏳ En attente — '+got+'/'+need+' validations'+(x.writes&amp;&amp;x.security!=='ok'?' · sécurité à passer':'')+'</div>';
       return '<div class=&quot;qrow&quot;><div class=&quot;top&quot;><span style=&quot;font-size:19px&quot;>'+x.ic+'</span><span class=&quot;ti&quot;>'+esc(x.title)+'</span>'+
@@ -2041,7 +2041,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
           '<div class=&quot;dl&quot;>Contexte injecté</div>'+esc(l.ctx)+
           '<div class=&quot;dl&quot;>Outils appelés</div>'+tools+
           '<div class=&quot;dl&quot;>Résultat &amp;amp; preuve</div>'+esc(l.res)+' — <span class=&quot;proof&quot;>'+esc(l.proof)+'</span>'+
-          '<div class=&quot;dl&quot;>Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · recette <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
+          '<div class=&quot;dl&quot;>Traçabilité</div>modèle <b>'+esc(l.model)+'</b> · agent <b>'+esc(l.ver)+'</b> · '+esc(l.who)+' · '+esc(l.team)+
         '</div></div>';
     }).join('') || '<div class=&quot;jrow&quot;><span style=&quot;grid-column:1/-1;color:var(--tm)&quot;>Aucune exécution sur ce périmètre.</span></div>';
     $('jrows').querySelectorAll('.jrow[data-j]').forEach(function(el){ el.addEventListener('click',function(){ el.classList.toggle('open'); }); });
@@ -2108,13 +2108,13 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
    document.querySelectorAll('.tabs button[data-t]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.t);});});
    window.addEventListener('message',function(e){ if(e.data&&e.data.go) go(e.data.go, e.data.hash?('#'+e.data.hash):''); });
 
-   // ── Scénario guidé : une recette défaillante traverse les 4 espaces ──
+   // ── Scénario guidé : un agent défaillant traverse les 4 espaces ──
    var SCENARIO=[
-     { tab:'metrics', title:'Détecter — Admin', body:'La recette <b>Migration Java 21</b> décroche : <b>74% de réussite</b>, <b>30% de reprises</b>. Elle remonte dans « ⚠ À améliorer ». Clique <b>« Ouvrir dans le Studio »</b> (ou Suivant).' },
+     { tab:'metrics', title:'Détecter — Admin', body:'L\'agent <b>Migration Java 21</b> décroche : <b>74% de réussite</b>, <b>30% de reprises</b>. Il remonte dans « ⚠ À améliorer ». Clique <b>« Ouvrir dans le Studio »</b> (ou Suivant).' },
      { tab:'studio', hash:'migrate-java21', title:'Corriger — Studio', body:'La fiche s\'ouvre sur la spécification (le prompt, masqué aux utilisateurs). L\'<b>ai-maintainer</b> ajuste la spéc / les critères, teste au banc d\'essai, puis <b>« Publier une nouvelle version »</b> (v3).' },
-     { tab:'gouvernance', title:'Valider — Gouvernance', body:'La recette <b>écrit</b> (branche + patch) → <b>double validation</b> : ai-maintainer + Owner de périmètre + revue sécurité. Approuve-la dans la file, puis <b>Publier</b>.' },
-     { tab:'gouvernance', hash:'ab=migrate-java21', title:'Tester A/B — Gouvernance', body:'Avant de généraliser : <b>A/B v2 vs v3</b>. La v3 passe de <b>74% → 86%</b> de réussite et la reprise de 30% → 14%. Elle gagne → <b>« Généraliser au groupe »</b> (redescend par héritage).' },
-     { tab:'catalogue', title:'Retrouvée — Catalogue', body:'Bouclé : les devs retrouvent <b>Migration Java 21</b> au catalogue, désormais <b>officielle et améliorée</b>, prête à lancer. Détectée, corrigée, validée, testée, diffusée — sans quitter la plateforme.' }
+     { tab:'gouvernance', title:'Valider — Gouvernance', body:'Cet agent <b>écrit</b> (branche + patch) → <b>double validation</b> : ai-maintainer + Owner de périmètre + revue sécurité. Approuve-le dans la file, puis <b>Publier</b>.' },
+     { tab:'gouvernance', hash:'ab=migrate-java21', title:'Tester A/B — Gouvernance', body:'Avant de généraliser : <b>A/B v2 vs v3</b>. La v3 passe de <b>74% → 86%</b> de réussite et la reprise de 30% → 14%. Il gagne → <b>« Généraliser au groupe »</b> (redescend par héritage).' },
+     { tab:'catalogue', title:'Retrouvé — Catalogue', body:'Bouclé : les devs retrouvent <b>Migration Java 21</b> au catalogue, désormais <b>officiel et amélioré</b>, prêt à lancer. Détectée, corrigée, validée, testée, diffusée — sans quitter la plateforme.' }
    ];
    var si=0;
    function renderCoach(){

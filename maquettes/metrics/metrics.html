@@ -112,7 +112,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     <div class="logo">📊</div>
     <div>
       <h1>Admin</h1>
-      <div class="sub">Ce qui marche, ce qui aide, ce qu'il faut améliorer — recettes &amp; prompts</div>
+      <div class="sub">Ce qui marche, ce qui aide, ce qu'il faut améliorer — agents &amp; prompts</div>
     </div>
     <div class="period" id="period">
       <button data-p="7">7 j</button>
@@ -135,7 +135,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="cols">
     <div class="panel">
       <h3>Adoption dans le temps</h3>
-      <div class="cap">Exécutions de recettes + copies de prompts, par semaine.</div>
+      <div class="cap">Exécutions de agents + copies de prompts, par semaine.</div>
       <svg class="trend" id="trend" viewBox="0 0 520 150" preserveAspectRatio="none">
         <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".5"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>
       </svg>
@@ -143,7 +143,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
     </div>
     <div class="panel">
       <h3>Répartition par niveau</h3>
-      <div class="cap">Part des usages selon la gouvernance de la recette/prompt.</div>
+      <div class="cap">Part des usages selon la gouvernance de l'agent/prompt.</div>
       <div class="donutwrap">
         <svg width="140" height="140" viewBox="0 0 42 42" id="donut"></svg>
         <div class="leg" id="donutLeg"></div>
@@ -155,7 +155,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="cols">
     <div class="panel">
       <h3>Les plus utilisées</h3>
-      <div class="cap">Top recettes &amp; prompts par nombre d'usages.</div>
+      <div class="cap">Top agents &amp; prompts par nombre d'usages.</div>
       <div class="bars" id="topUse"></div>
     </div>
     <div class="panel">
@@ -168,7 +168,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <!-- À améliorer -->
   <div class="panel">
     <h3>⚠ À améliorer <span style="font-weight:600;color:var(--tm);font-size:12px">— faible réussite ou corrections fréquentes</span></h3>
-    <div class="cap">La boucle d'apprentissage remonte ici les recettes candidates à une nouvelle version. Un clic ouvre le Studio.</div>
+    <div class="cap">La boucle d'apprentissage remonte ici les agents candidats à une nouvelle version. Un clic ouvre le Studio.</div>
     <div class="imp" id="improve"></div>
   </div>
 
@@ -199,7 +199,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   <div class="panel">
     <h3>🔁 Boucle d'apprentissage</h3>
     <div class="loop">
-      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les recettes à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
+      Chaque exécution laisse une trace : <b>réussite</b>, <b>correction humaine</b>, <b>👍/👎</b>. Ces signaux nourrissent les scores, font remonter les agents à améliorer, et guident l'<b>ai-maintainer</b> dans le Studio — les bons prompts deviennent réutilisables ailleurs.
       <div class="flow"><span>Usage</span><span class="ar">→</span><span>Signal 👍/👎</span><span class="ar">→</span><span>Score</span><span class="ar">→</span><span>À améliorer</span><span class="ar">→</span><span>Studio : nouvelle version</span><span class="ar">↺</span></div>
     </div>
   </div>
@@ -213,7 +213,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('show');},2300); }
 
-  // ── Données (agrégées depuis recettes + prompts) ──
+  // ── Données (agrégées depuis agents + prompts) ──
   // model = modèle actuel · optimal = recommandé pour la difficulté · team = équipe
   var ITEMS=[
     {ic:'🚀',name:'Livraison préprod',kind:'recipe',lvl:'off',uses:480,success:95,humanFix:5,saved:30,team:'Plateforme',model:'mid',optimal:'mid'},
@@ -249,7 +249,7 @@ header .sub{font-size:12.5px;color:var(--ts);margin-top:1px}
       ['⏱','Temps gagné (est.)','~'+fmt(timeSaved)+' h','up','soit ~'+Math.round(timeSaved/7)+' j·homme'],
       ['✅','Réussite moyenne',wAvg+'%',wAvg>=85?'up':'down',(wAvg>=85?'au-dessus':'sous')+' la cible 85%'],
       ['🖐','Corrigés à la main',wFix+'%','down','part relue/ajustée'],
-      ['🧩','Recettes actives',''+active,'','sur '+ITEMS.length+' publiées'],
+      ['🧩','Agents actifs',''+active,'','sur '+ITEMS.length+' publiées'],
       ['👥','Contributeurs','23','up','+3 ce mois']
     ].map(function(k){ return '<div class="kpi"><div class="k">'+k[0]+' '+k[1]+'</div><div class="val">'+k[2]+'</div><div class="tr '+k[3]+'">'+(k[3]==='up'?'▲ ':k[3]==='down'?'▼ ':'')+k[4]+'</div></div>'; }).join('');
 
