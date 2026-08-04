@@ -488,10 +488,13 @@
             var grid = document.getElementById('persoGrid');
             var overlay = document.getElementById('persoOverlay');
             var btn = document.getElementById('persoBtn');
-            if (!window.Salsifi || !Salsifi.CHARACTERS) { if (btn) btn.style.display = 'none'; return; }
+            // Le registre est-il prêt ? (characters.js chargé.) On NE cache jamais
+            // le bouton : il reste visible, et open() reconstruit à la demande.
+            function ready() { return !!(window.Salsifi && Salsifi.CHARACTERS && Salsifi.characterSVG); }
 
             function meta(id) { return Salsifi.CHARACTERS.filter(function (c) { return c.id === id; })[0]; }
             function syncBtn() {
+                if (!ready()) return;
                 var c = meta(Salsifi.getCharacter()); if (c && btn) btn.textContent = c.emoji + ' Perso';
             }
             function mark() {
@@ -517,7 +520,11 @@
                     grid.appendChild(card);
                 });
             }
-            window.salsifiOpenPerso = function () { if (!grid.children.length) build(); mark(); overlay.classList.add('open'); };
+            window.salsifiOpenPerso = function () {
+                if (!ready()) { console.warn('[perso] characters.js pas chargé — sélecteur indisponible'); return; }
+                if (!grid.children.length) build();
+                mark(); overlay.classList.add('open');
+            };
             window.salsifiClosePerso = function () { overlay.classList.remove('open'); };
             document.addEventListener('keydown', function (e) { if (e.key === 'Escape') salsifiClosePerso(); });
             syncBtn();
