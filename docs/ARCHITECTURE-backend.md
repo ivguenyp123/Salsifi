@@ -131,7 +131,63 @@ version entre dépôts. Un seul point de vérité, un seul comportement à compr
 
 ---
 
-## 05 · Conventions
+## 05 · CI sur le monorepo
+
+Le seul vrai défi : **ne construire, tester et déployer que ce qui a changé** —
+jamais tout le repo à chaque commit. Deux niveaux :
+
+- **Filtres de chemin** (`rules: changes:`) — « ce service a changé, OU un
+  `packages/*` a changé → je le build ». Simple, suffisant pour démarrer.
+- **Graphe de dépendances** (Nx / Turborepo / Bazel) — calcule les services
+  *réellement* impactés par un diff (propagation des packages comprise) et
+  **cache** ce qui n'a pas bougé. Plus précis quand le nombre de services croît.
+
+> **Règle d'or :** un `packages/*` change → on redéploie ses consommateurs. Le
+> graphe le fait tout seul ; en filtres de chemin, c'est le
+> `changes: [packages/**]` présent sur chaque service.
+
+---
+
+## 06 · Mesurer DORA sur un monorepo
+
+**Clé = le service déployable, jamais le repo.** Si DORA compte « les
+déploiements *du repo* », un monorepo donne une fréquence ridicule et un lead
+time faussé. Chaque métrique se mesure **par service** :
+
+- **Deployment frequency** — par service (`facturation:sha` en prod = 1
+  déploiement de `facturation`).
+- **Lead time** — commit → prod *de ce service*.
+- **Change failure rate / MTTR** — attribués au **service qui a échoué**, pas au repo.
+
+### Livrer en feature flag
+
+Le flag **découple *déployer* de *release*** : tu déploies flag **off** (dark),
+tu allumes plus tard. Effet sur DORA :
+
+| Métrique | Effet du feature flag |
+|---|---|
+| **Deployment frequency** | **↑** — petits incréments continus ; même une feature incomplète part en prod derrière son flag. |
+| **Lead time (to deploy)** | **↑** — merge → prod reste court, tu n'attends pas que la feature soit finie. |
+| **Change failure rate** | ⚠️ le piège (ci-dessous). |
+| **MTTR** | **↑** — un incident = couper le flag (secondes), pas un rollback + redeploy. |
+
+**Le piège du CFR.** Un flip de flag **n'est pas un déploiement**. Si un flag mal
+allumé casse la prod et que tu ne comptes les échecs que sur les *déploiements*,
+l'incident disparaît de ton change failure rate : DORA devient magnifique… et
+faux. C'est la façon classique de truquer DORA sans être plus fiable.
+
+> **Pour garder DORA honnête :** traite un changement de flag comme un
+> **événement de changement**. Logue chaque flip (qui, quand, quel %) ; si un
+> incident vient d'un flag, il **compte** dans le CFR, comme un déploiement raté.
+
+Le vrai gain vient du **rollout progressif** (1 % → 25 % → 100 %) avec
+**kill-switch** et rollback auto sur seuil d'erreurs : c'est ça qui réduit
+réellement le blast radius, donc CFR et MTTR. Et **nettoie les flags morts** —
+un flag qui traîne devient de la dette et un risque.
+
+---
+
+## 07 · Conventions
 
 | Sujet | Règle |
 |---|---|
@@ -144,7 +200,7 @@ version entre dépôts. Un seul point de vérité, un seul comportement à compr
 
 ---
 
-## 06 · Quand passer à plusieurs repos
+## 08 · Quand passer à plusieurs repos
 
 Le monorepo est le bon choix tant que vous êtes une équipe. Scinde un service
 dans son propre dépôt **seulement** si l'un de ces points devient vrai :
