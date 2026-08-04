@@ -638,6 +638,8 @@
         }
 
         function mascotSVG(mood) {
+            // Perso choisi (registre partagé) ; repli sur le Salsifi local si absent.
+            if (window.Salsifi && Salsifi.characterSVG) return Salsifi.characterSVG(Salsifi.getCharacter(), mood);
             const ink = '#241844';
             const eyeHappy = `<path d="M31 55 q5 -7 10 0" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/><path d="M59 55 q5 -7 10 0" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/>`;
             const eyeDot = `<circle cx="37" cy="55" r="3.4" fill="${ink}"/><circle cx="64" cy="55" r="3.4" fill="${ink}"/>`;

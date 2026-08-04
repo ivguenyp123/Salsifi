@@ -50,6 +50,7 @@
             </div>
             <div class="header-actions">
                 <button class="header-btn theme-toggle" id="themeToggle" onclick="salsifiToggleTheme()" title="Basculer le thème" aria-label="Basculer clair / sombre">🌙 Thème</button>
+                <button class="header-btn" id="persoBtn" onclick="salsifiOpenPerso()" title="Choisir ton perso IA" aria-label="Choisir ton perso IA">🎭 Perso</button>
                 <div style="position: relative;" id="wsPillWrap">
                     <div class="ws-pill" id="wsPill" onclick="wsToggleDropdown(event)">
                         <div class="ws-pill-icon">🗂️</div>
@@ -394,6 +395,7 @@
     <script src="js/gaming-history.js"></script>
     <script src="js/gaming-recipes.js"></script>
     <script src="js/dora-history.js"></script>
+    <script src="js/salsi/characters.js"></script>
     <script src="js/salsi/atelier.js"></script>
     <script src="js/salsi/brief.js"></script>
     <script src="js/salsi/formation.js"></script>
@@ -415,6 +417,110 @@
             window.salsifiToggleTheme = function () { window.SalsifiTheme.toggle(); sync(); };
             window.addEventListener('salsifi:themechange', sync);
             sync();
+        })();
+    </script>
+
+    <!-- ══ Sélecteur de perso IA ══ -->
+    <style>
+        .sp-ov {
+            position: fixed; inset: 0; z-index: 1000; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+            background: rgba(20, 14, 42, 0.55); backdrop-filter: blur(4px);
+        }
+        .sp-ov.open { display: flex; }
+        .sp-panel {
+            width: min(680px, 100%); max-height: 88vh; overflow: auto;
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 18px; padding: 22px 22px 24px;
+            box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.55);
+        }
+        .sp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+        .sp-title { margin: 0; font-size: 1.25rem; color: var(--text-primary); font-family: var(--font-body); }
+        .sp-sub { margin: 2px 0 18px; color: var(--text-muted); font-size: .9rem; }
+        .sp-close {
+            background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-secondary);
+            width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 1rem; flex: none;
+        }
+        .sp-close:hover { color: var(--text-primary); border-color: var(--border-strong); }
+        .sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+        .sp-card {
+            position: relative; background: var(--bg-mid, var(--bg-card)); border: 1px solid var(--border-subtle);
+            border-radius: 14px; padding: 12px 8px 10px; cursor: pointer; text-align: center;
+            font-family: var(--font-body); color: var(--text-primary);
+            transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+        }
+        .sp-card:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+        .sp-card[aria-current="true"] { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25); }
+        .sp-card:focus-visible { outline: 3px solid #7c5cff; outline-offset: 2px; }
+        .sp-pod {
+            width: 84px; height: 84px; margin: 0 auto 6px; border-radius: 12px; display: grid; place-items: center;
+            background: radial-gradient(75% 75% at 50% 22%, var(--halo, rgba(124, 92, 255, 0.16)), transparent 72%);
+        }
+        .sp-pod .mascot-svg { width: 70px; height: 70px; }
+        .sp-name { font-size: .9rem; font-weight: 600; }
+        .sp-req {
+            position: absolute; top: 7px; right: 7px; font-size: .56rem; font-weight: 700; letter-spacing: .05em;
+            color: #7c5cff; background: rgba(124, 92, 255, 0.14); padding: 2px 6px; border-radius: 999px;
+        }
+        @media (prefers-reduced-motion: reduce) { .sp-card { transition: none; } }
+    </style>
+    <div class="sp-ov" id="persoOverlay" onclick="if(event.target===this)salsifiClosePerso()" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+        <div class="sp-panel">
+            <div class="sp-head">
+                <div>
+                    <h2 class="sp-title" id="spTitle">🎭 Choisis ton perso IA</h2>
+                    <p class="sp-sub">Ton compagnon partout : coach DORA, achievements, scaffolder, Q&amp;A.</p>
+                </div>
+                <button class="sp-close" onclick="salsifiClosePerso()" aria-label="Fermer">✕</button>
+            </div>
+            <div class="sp-grid" id="persoGrid"></div>
+        </div>
+    </div>
+    <script>
+        // Sélecteur de perso IA — s'appuie sur js/salsi/characters.js.
+        (function () {
+            var HALOS = {
+                salsifi: 'rgba(149,117,255,.22)', girafe: 'rgba(226,160,51,.24)',
+                elephant: 'rgba(148,165,192,.26)', loutre: 'rgba(138,96,56,.24)',
+                panda_roux: 'rgba(220,139,79,.26)', panda_ours: 'rgba(120,120,130,.24)',
+                chien: 'rgba(233,190,123,.26)', chat: 'rgba(180,176,198,.28)'
+            };
+            var grid = document.getElementById('persoGrid');
+            var overlay = document.getElementById('persoOverlay');
+            var btn = document.getElementById('persoBtn');
+            if (!window.Salsifi || !Salsifi.CHARACTERS) { if (btn) btn.style.display = 'none'; return; }
+
+            function meta(id) { return Salsifi.CHARACTERS.filter(function (c) { return c.id === id; })[0]; }
+            function syncBtn() {
+                var c = meta(Salsifi.getCharacter()); if (c && btn) btn.textContent = c.emoji + ' Perso';
+            }
+            function mark() {
+                var cur = Salsifi.getCharacter();
+                grid.querySelectorAll('.sp-card').forEach(function (el) {
+                    el.setAttribute('aria-current', el.dataset.id === cur ? 'true' : 'false');
+                });
+            }
+            function build() {
+                grid.innerHTML = '';
+                Salsifi.CHARACTERS.forEach(function (c) {
+                    var card = document.createElement('button');
+                    card.type = 'button'; card.className = 'sp-card'; card.dataset.id = c.id;
+                    card.style.setProperty('--halo', HALOS[c.id] || 'rgba(124,92,255,.16)');
+                    card.innerHTML =
+                        (c.id === 'girafe' ? '<span class="sp-req">obligatoire</span>' : '') +
+                        '<div class="sp-pod">' + Salsifi.characterSVG(c.id, 'happy') + '</div>' +
+                        '<div class="sp-name">' + c.name + '</div>';
+                    card.addEventListener('click', function () {
+                        Salsifi.setCharacter(c.id); mark(); syncBtn();
+                        setTimeout(salsifiClosePerso, 220);
+                    });
+                    grid.appendChild(card);
+                });
+            }
+            window.salsifiOpenPerso = function () { if (!grid.children.length) build(); mark(); overlay.classList.add('open'); };
+            window.salsifiClosePerso = function () { overlay.classList.remove('open'); };
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') salsifiClosePerso(); });
+            syncBtn();
         })();
     </script>
 </body>

@@ -17,32 +17,18 @@
     var Salsifi = global.Salsifi || (global.Salsifi = {});
     function esc(s) { return Salsifi.escapeHtml ? Salsifi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
 
-    // ── Mascotte (identique au module gaming) ──────────────────────────────
-    Salsifi.mascotSVG = function (mood) {
-        var ink = '#241844';
-        var eyeHappy = '<path d="M31 55 q5 -7 10 0" fill="none" stroke="' + ink + '" stroke-width="3.4" stroke-linecap="round"/><path d="M59 55 q5 -7 10 0" fill="none" stroke="' + ink + '" stroke-width="3.4" stroke-linecap="round"/>';
-        var eyeDot = '<circle cx="37" cy="55" r="3.4" fill="' + ink + '"/><circle cx="64" cy="55" r="3.4" fill="' + ink + '"/>';
-        var eyeWorried = '<circle cx="37" cy="56" r="3.4" fill="' + ink + '"/><circle cx="64" cy="56" r="3.4" fill="' + ink + '"/><path d="M31 49 l9 3" stroke="' + ink + '" stroke-width="2.6" stroke-linecap="round"/><path d="M70 49 l-9 3" stroke="' + ink + '" stroke-width="2.6" stroke-linecap="round"/>';
-        var mouthSmile = '<path d="M39 68 q11 13 22 0" fill="none" stroke="' + ink + '" stroke-width="3.4" stroke-linecap="round"/>';
-        var mouthTiny = '<path d="M43 70 q7 5 14 0" fill="none" stroke="' + ink + '" stroke-width="3" stroke-linecap="round"/>';
-        var mouthFlat = '<line x1="42" y1="71" x2="58" y2="71" stroke="' + ink + '" stroke-width="3" stroke-linecap="round"/>';
-        var mouthFrown = '<path d="M42 73 q8 -7 16 0" fill="none" stroke="' + ink + '" stroke-width="3.2" stroke-linecap="round"/>';
-        var eyes = eyeDot, mouth = mouthTiny, extra = '';
-        if (mood === 'proud') { eyes = eyeHappy; mouth = mouthSmile; extra = '<text x="76" y="34" font-size="15">✨</text>'; }
-        else if (mood === 'happy') { eyes = eyeHappy; mouth = mouthSmile; }
-        else if (mood === 'meh') { eyes = eyeDot; mouth = mouthFlat; }
-        else if (mood === 'worried') { eyes = eyeWorried; mouth = mouthFrown; }
-        return '<svg viewBox="0 0 100 100" class="mascot-svg" aria-hidden="true">' +
-            '<path d="M50 30 C50 18 50 12 50 8" stroke="#57b877" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-            '<path d="M50 18 C39 12 31 15 29 23 C40 25 47 22 50 18Z" fill="#57b877"/>' +
-            '<path d="M50 13 C61 6 70 9 72 18 C61 20 53 17 50 13Z" fill="#6ed08a"/>' +
-            '<rect x="22" y="30" width="56" height="58" rx="26" fill="url(#mgrad)"/>' +
-            '<ellipse cx="50" cy="66" rx="19" ry="15" fill="rgba(255,255,255,0.12)"/>' +
-            '<circle cx="33" cy="63" r="4.5" fill="rgba(244,114,182,0.55)"/>' +
-            '<circle cx="67" cy="63" r="4.5" fill="rgba(244,114,182,0.55)"/>' +
-            eyes + mouth + extra +
-            '<defs><linearGradient id="mgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9575ff"/><stop offset="1" stop-color="#6f4ce0"/></linearGradient></defs></svg>';
-    };
+    // ── Mascotte ────────────────────────────────────────────────────────────
+    // Salsifi.mascotSVG(mood) est désormais fourni par js/salsi/characters.js
+    // (registre des persos + perso choisi). Chargé AVANT ce fichier sur les
+    // pages qui ouvrent l'atelier. Repli minimal si characters.js est absent.
+    if (!Salsifi.mascotSVG) {
+        Salsifi.mascotSVG = function () {
+            return '<svg viewBox="0 0 100 100" class="mascot-svg" aria-hidden="true">' +
+                '<rect x="22" y="30" width="56" height="58" rx="26" fill="#7c5cff"/>' +
+                '<circle cx="37" cy="55" r="3.4" fill="#241844"/><circle cx="64" cy="55" r="3.4" fill="#241844"/>' +
+                '<path d="M39 68 q11 13 22 0" fill="none" stroke="#241844" stroke-width="3.4" stroke-linecap="round"/></svg>';
+        };
+    }
 
     // ── Popup générique ────────────────────────────────────────────────────
     // cfg = {
