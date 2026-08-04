@@ -219,7 +219,9 @@
 
     Salsifi.characterSVG = function (id, mood) {
         var b = BUILDERS[id] || BUILDERS.salsifi;
-        return b(mood, ++_uid);
+        // On marque le SVG avec son humeur : permet le rafraîchissement en direct
+        // (remplacement en place) quand l'utilisateur change de perso.
+        return b(mood, ++_uid).replace('class="mascot-svg"', 'class="mascot-svg" data-mood="' + (mood || '') + '"');
     };
 
     Salsifi.getCharacter = function () {
@@ -237,5 +239,24 @@
     Salsifi.mascotSVG = function (mood) {
         return Salsifi.characterSVG(Salsifi.getCharacter(), mood);
     };
+
+    // ── Rafraîchissement en direct ──────────────────────────────────────────
+    // Au changement de perso, on remplace en place tous les mascots déjà
+    // affichés (peu importe le module qui les a rendus), en conservant leur
+    // humeur via data-mood. Zéro modification chez les appelants.
+    Salsifi.refreshMascots = function () {
+        var cur = Salsifi.getCharacter();
+        var nodes = document.querySelectorAll('svg.mascot-svg[data-mood]');
+        for (var i = 0; i < nodes.length; i++) {
+            // On saute les aperçus statiques (ex. les vignettes du sélecteur,
+            // qui doivent chacune garder LEUR perso, pas celui choisi).
+            if (nodes[i].closest && nodes[i].closest('[data-mascot-static]')) continue;
+            var m = nodes[i].getAttribute('data-mood') || undefined;
+            nodes[i].outerHTML = Salsifi.characterSVG(cur, m);
+        }
+    };
+    if (global.addEventListener) {
+        global.addEventListener('salsifi:characterchange', Salsifi.refreshMascots);
+    }
 
 })(typeof window !== 'undefined' ? window : this);
