@@ -61,7 +61,12 @@
         .filter-chip.active{background:rgba(124,92,252,0.35);border-color:rgba(124,92,252,0.6);color:white;font-weight:600;}
 
         /* ── FLAGS TABLE ── */
-        .flags-table{width:100%;border-collapse:separate;border-spacing:0;}
+        /* La carte parente est en overflow:hidden (coins arrondis). Sans ce
+           conteneur, une fenêtre étroite tronquait la dernière colonne : le
+           segment ON du toggle et le bouton Action devenaient invisibles ET
+           inatteignables. Ici on scrolle horizontalement au lieu de couper. */
+        .flags-table-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+        .flags-table{width:100%;min-width:1010px;border-collapse:separate;border-spacing:0;}
         .flags-table th{font-size:11px;font-weight:700;color:var(--ov-45);text-transform:uppercase;letter-spacing:0.5px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--ov-12);cursor:pointer;transition:color 0.2s;white-space:nowrap;}
         .flags-table th:hover{color:var(--ov-9);}
         .sort-icon{font-size:10px;margin-left:4px;color:var(--ov-25);}
