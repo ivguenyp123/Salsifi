@@ -31,7 +31,7 @@
       } catch { /* current_workspace illisible → workspaceRepos reste vide */ }
     }
 
-    document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+    document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
     const pill = document.getElementById('userPill');
     if (pill) pill.textContent = username ? `👤 ${username}` : '🔓 connecté';
 

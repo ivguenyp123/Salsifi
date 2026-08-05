@@ -52,7 +52,7 @@
             projectId = repoId;
 
             // Lien retour vers le hub
-            document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+            document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
 
             attachEventDelegation();
             loadMilestones();

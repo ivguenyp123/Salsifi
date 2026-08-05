@@ -17,7 +17,7 @@
             projectId = repoId;
 
             // Lien retour (init léger, sans fetch réseau : le nom réel est résolu dans analyze)
-            document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+            document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
             document.getElementById('projectName').textContent = `Repo #${repoId}`;
 
             attachEventDelegation();

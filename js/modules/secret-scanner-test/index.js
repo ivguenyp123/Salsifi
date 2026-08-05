@@ -10,7 +10,7 @@
     GITLAB_URL = g.gitlabUrl; token = g.token; username = g.username || '';
     if (!token || !GITLAB_URL) { window.location.href = 'login.html'; return; }
 
-    document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+    document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
     const pill = document.getElementById('userPill');
     if (pill) pill.textContent = username ? `👤 ${username}` : '🔓 connecté';
 

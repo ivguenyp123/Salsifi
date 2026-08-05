@@ -40,7 +40,7 @@ function personLink(repoLike, username, inner) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+    document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
     init();
     document.getElementById('refreshBtn').addEventListener('click', loadAccessData);
     document.getElementById('exportBtn').addEventListener('click', exportCsv);

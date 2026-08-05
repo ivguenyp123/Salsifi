@@ -8,7 +8,7 @@
     TOKEN = auth.token; GITLAB_URL = auth.gitlabUrl; USERNAME = auth.username || '';
     PROJECT_ID = new URLSearchParams(location.search).get('repo') || localStorage.getItem('hub_selected_repo_id');
     if (!PROJECT_ID) { location.href = HUB_URL; return; }
-    document.querySelectorAll('[data-hub]').forEach(a => { a.href = HUB_URL; });
+    document.querySelectorAll('[data-hub]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
     try {
       const r = await glFetch(`/projects/${PROJECT_ID}`);
       if (r.ok) { const p = await r.json(); PROJECT_PATH = p.path_with_namespace || ''; DEFAULT_BRANCH = p.default_branch || 'main'; const el = $('svcName'); if (el) el.textContent = p.name || PROJECT_PATH; }

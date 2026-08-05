@@ -4,7 +4,7 @@ const HUB_URL = 'hub.html';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Flèche retour → hub V2 (pattern data-hub-link comme les autres modules).
-    document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+    document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
     init();
     // Écouteurs période / refresh
     document.getElementById('periodSelect').addEventListener('change', onPeriodChange);

@@ -68,7 +68,7 @@
             PROJECT_NAME = `Repo #${repoId}`;
 
             // Lien retour vers le hub
-            document.querySelectorAll('[data-hub-link]').forEach(a => { a.href = HUB_URL; });
+            document.querySelectorAll('[data-hub-link]').forEach(a => { var _f = new URLSearchParams(location.search).get('from'); a.href = _f ? HUB_URL + '?chemin=' + encodeURIComponent(_f) : HUB_URL; });
             document.getElementById('projectName').textContent = PROJECT_NAME;
 
             // Charger l'URL API depuis localStorage si disponible

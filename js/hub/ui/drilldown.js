@@ -68,9 +68,12 @@
             }
             let url = MODULE_URLS[name];
             if (url) {
-                if (MODULE_REPO_AWARE.has(name) && currentRepo) {
-                    url += '?repo=' + encodeURIComponent(currentRepo.id);
-                }
+                const qs = [];
+                if (MODULE_REPO_AWARE.has(name) && currentRepo) qs.push('repo=' + encodeURIComponent(currentRepo.id));
+                // Mémorise le chemin d'origine pour que la flèche retour du module
+                // rouvre CE drilldown (et pas le hub racine).
+                if (currentDrilldown) qs.push('from=' + encodeURIComponent(currentDrilldown));
+                if (qs.length) url += '?' + qs.join('&');
                 window.location.href = url;
             } else {
                 showHubToast(`📦 Module <strong>${escapeHtml(name)}</strong> à venir`, 'info');
@@ -126,6 +129,16 @@
             document.body.style.overflow = '';
             // Restaure l'humeur globale de l'accueil
             restoreHomeMood();
+            // Nettoie ?chemin=… de l'URL : fermer = revenir à l'accueil propre
+            // (et un refresh ne rouvre plus le drilldown).
+            if (location.search) history.replaceState(null, '', location.pathname);
+        }
+
+        // Au chargement du hub : si on revient d'un module via sa flèche retour
+        // (hub.html?chemin=<clé>), rouvre directement ce chemin.
+        function reopenCheminFromUrl() {
+            const key = new URLSearchParams(location.search).get('chemin');
+            if (key && DIRECTIONS[key]) openDrilldown(key);
         }
 
         // ESC pour fermer

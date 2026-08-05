@@ -184,7 +184,14 @@
             renderRepoButton();
             // À ce point on aurait : onRepoChange() pour rafraîchir stats/synthesis
             onRepoChange();
+            // Une fois le repo prêt, rouvre le chemin d'origine si on revient
+            // d'un module (hub.html?chemin=…). Une seule fois par chargement.
+            if (!_cheminReopened) {
+                _cheminReopened = true;
+                if (typeof reopenCheminFromUrl === 'function') reopenCheminFromUrl();
+            }
         }
+        let _cheminReopened = false;
 
         function selectRepo(repoId) {
             const repo = allRepos.find(r => r.id === repoId);
