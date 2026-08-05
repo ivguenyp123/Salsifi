@@ -1,0 +1,32 @@
+/* MR */
+.mr-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:16px;}
+.mr-stat-card{background:var(--bg-mid);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;text-align:center;}
+.mr-stat-val{font-family:var(--font-display);font-size:26px;font-weight:800;}
+.mr-list{display:flex;flex-direction:column;gap:8px;}
+.mr-item{background:var(--bg-mid);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;}
+.mr-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.mr-info,.mr-meta{font-size:12px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;}
+
+/* CI/CD */
+.cicd-stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;}
+.cicd-stat-card{background:var(--bg-mid);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;text-align:center;}
+.cicd-stat-val{font-family:var(--font-display);font-size:24px;font-weight:800;}
+.cicd-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;margin-top:4px;}
+.job-fail-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.job-fail-name{font-family:var(--font-mono);font-size:12px;width:140px;flex-shrink:0;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.job-fail-bar-wrap{flex:1;height:8px;background:var(--bg-mid);border-radius:4px;overflow:hidden;}
+.job-fail-bar{height:100%;background:linear-gradient(90deg,var(--err),var(--inspect));border-radius:4px;}
+.job-fail-count,.job-fail-pct{font-size:12px;color:var(--text-muted);width:50px;text-align:right;flex-shrink:0;}
+
+/* HEATMAP */
+.heatmap-card{margin-bottom:18px;}
+.heatmap-wrapper{overflow-x:auto;}
+.heatmap-grid{display:grid;gap:3px;}
+.heatmap-cell{width:13px;height:13px;border-radius:3px;background:var(--bg-mid);}
+.heatmap-stats{display:flex;gap:18px;margin-top:14px;font-size:13px;color:var(--text-secondary);flex-wrap:wrap;}
+.heatmap-legend{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:11px;color:var(--text-muted);}
+.legend-cell{width:12px;height:12px;border-radius:3px;}
+.synth-bar-row{margin-bottom:14px;}
+.synth-bar-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.synth-bar-bg{height:8px;background:var(--bg-mid);border-radius:4px;overflow:hidden;}
+.synth-bar-fill{height:100%;border-radius:4px;background:var(--brand-gradient);transition:width 0.8s ease;}

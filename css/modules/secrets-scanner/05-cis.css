@@ -1,0 +1,15 @@
+/* MODE CIS — cartes scorées */
+.repo-card.ok { border-color:rgba(52,211,153,0.45); }
+.repo-card.warning { border-color:rgba(251,191,36,0.45); }
+.check-pill.check-ok { background:rgba(52,211,153,0.2); color:#6ee7b7; }
+.val-ok { color:#6ee7b7; font-weight:700; font-size:12px; font-family:var(--font-mono); }
+.cis-score { width:48px; height:48px; flex-shrink:0; border-radius:12px; border:2px solid; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:18px; background:rgba(0,0,0,0.2); }
+.fix-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; background:rgba(52,211,153,0.2); color:#6ee7b7; margin-left:6px; vertical-align:middle; }
+
+/* Lien MR direct sur la carte CIS */
+.card-mr-link { flex-shrink:0; margin-right:10px; padding:5px 12px; border-radius:8px; background:rgba(124,92,255,0.2); border:1px solid rgba(124,92,255,0.4); color:#c7d2fe; font-family:var(--font-mono); font-size:12px; font-weight:700; text-decoration:none; transition:all 0.15s; }
+.card-mr-link:hover { background:rgba(124,92,255,0.35); transform:translateY(-1px); }
+
+/* CIS — verdict binaire conforme / non conforme */
+.repo-card.conform { border-color:rgba(52,211,153,0.45); }
+.repo-card.nonconform { border-color:rgba(248,113,113,0.5); }

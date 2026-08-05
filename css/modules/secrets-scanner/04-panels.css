@@ -1,0 +1,27 @@
+/* INSTRUMENTATION PANEL */
+.instr-panel { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; padding:16px 18px; background:rgba(0,0,0,0.25); border:1px solid var(--border-subtle); border-radius:14px; margin-bottom:18px; }
+.instr-cell { text-align:center; }
+.instr-k { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+.instr-v { font-size:15px; font-weight:700; font-family:var(--font-mono); color:var(--text-primary); }
+
+/* COMMIT TAG (mode historique) */
+.commit-tag { font-family:var(--font-mono); font-size:10px; padding:1px 6px; border-radius:5px; background:rgba(45,212,191,0.2); color:#5eead4; font-weight:700; margin-left:6px; }
+
+/* MR PANEL (création auto des MR de rapport en fin de scan) */
+.mr-panel { display:none; background:var(--bg-card); backdrop-filter:blur(24px); border:1px solid rgba(45,212,191,0.35); border-radius:16px; padding:18px 22px; margin-bottom:18px; }
+.mr-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+.mr-title { font-family:var(--font-display); font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.mr-prog { font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); }
+.mr-stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.mr-pill { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; background:var(--ov-06); color:var(--text-secondary); }
+.mr-pill.ok { background:rgba(52,211,153,0.18); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); }
+.mr-pill.ko { background:rgba(248,113,113,0.18); color:#fca5a5; border:1px solid rgba(248,113,113,0.3); }
+.mr-sub { font-size:12px; color:var(--text-muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:10px; }
+.mr-list { display:flex; flex-direction:column; gap:4px; max-height:260px; overflow-y:auto; }
+.mr-row { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13px; border-bottom:1px solid var(--ov-04); }
+.mr-row:last-child { border-bottom:none; }
+.mr-ic { flex-shrink:0; width:18px; text-align:center; }
+.mr-repo { flex:1; min-width:0; font-family:var(--font-mono); font-size:12px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mr-stat { font-size:12px; color:var(--text-muted); flex-shrink:0; }
+.mr-link { color:var(--inspect); text-decoration:none; font-size:12px; font-weight:600; flex-shrink:0; }
+.mr-link:hover { text-decoration:underline; }

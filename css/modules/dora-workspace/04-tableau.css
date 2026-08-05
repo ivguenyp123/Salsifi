@@ -1,0 +1,36 @@
+/* Tableau détaillé */
+.table-container { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { padding:12px 15px; border-bottom:1px solid var(--border-subtle); text-align:left; }
+th { color:var(--text-muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
+td { color:var(--text-secondary); }
+.squad-row { background:rgba(124,92,255,0.08); }
+.squad-row td { border-top:1px solid var(--border-strong); color:var(--text-primary); }
+.repo-row td { font-size:13px; }
+
+@media (max-width:1000px) { .hm-row { grid-template-columns:140px repeat(4,1fr); } }
+
+/* 4 petits graphes de tendance (grille 2x2) */
+#trendsGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.mini-trend { background:var(--ov-03); border:1px solid var(--border-subtle); border-radius:12px; padding:14px; }
+.mini-trend-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.mini-trend-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+@media (max-width:700px) { #trendsGrid { grid-template-columns:1fr; } }
+
+/* Formulaire de création de squad */
+.squad-create { background:rgba(124,92,255,0.06); border:1px solid rgba(124,92,255,0.2); border-radius:14px; padding:16px; margin-bottom:18px; }
+.squad-create .squad-name-input { width:100%; margin-bottom:12px; }
+.create-repos-label, .existing-squads-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; }
+.create-repos-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:6px; max-height:240px; overflow-y:auto; margin-bottom:14px; padding-right:6px; }
+.create-repo { display:flex; align-items:center; gap:8px; background:var(--ov-04); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; cursor:pointer; font-size:13px; }
+.create-repo:hover { background:var(--ov-07); }
+.create-repo-cb { width:16px; height:16px; cursor:pointer; accent-color:var(--accent); }
+.create-repo-name { color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.create-repo-taken { margin-left:auto; font-size:11px; color:var(--text-muted); font-style:italic; }
+.organize-divider { height:1px; background:var(--border-subtle); margin:18px 0; }
+
+/* Checkboxes d'affectation dans les squads existantes */
+.assign-boxes { display:flex; flex-wrap:wrap; gap:6px; }
+.assign-box { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); background:var(--ov-04); border:1px solid var(--border-subtle); border-radius:8px; padding:4px 8px; cursor:pointer; }
+.assign-box input { accent-color:var(--accent); cursor:pointer; }
+.assign-hint { font-size:12px; color:var(--text-muted); font-style:italic; }

@@ -1,0 +1,47 @@
+/* ═══════════════════════════════════════════════════════════════
+   SECRETS SCANNER — langage visuel plateforme (DevOps Hub V2.1)
+   Route « Inspecter & Sécuriser » → accent --inspect (orange-ambre).
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+--bg-card-hover:var(--raise-75);
+--border-strong:var(--ov-18);
+--inspect-glow:rgba(251,146,60,0.4);  --ok:#34d399;--accent:var(--inspect); --accent-glow:var(--inspect-glow);
+  --brand-gradient:linear-gradient(135deg,var(--inspect),var(--collab));
+  --font-display:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-body:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono','Fira Code','Consolas',monospace;
+}
+
+body { font-family:var(--font-body); background:var(--bg-deep); color:var(--text-primary); min-height:100vh; padding:24px; position:relative; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse 600px 400px at 15% 10%,rgba(251,146,60,0.14),transparent 60%),radial-gradient(ellipse 500px 350px at 85% 20%,rgba(124,92,255,0.10),transparent 60%),radial-gradient(ellipse 600px 500px at 80% 90%,rgba(244,114,182,0.08),transparent 60%); }
+.container { max-width:1300px; margin:0 auto; position:relative; z-index:1; }
+
+/* HEADER */
+.header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; background:var(--glass-6); backdrop-filter:blur(20px); border-radius:16px; border:1px solid var(--border-subtle); margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.header-left { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.back-btn { width:40px; height:40px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; color:var(--text-secondary); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:all 0.2s; }
+.back-btn:hover { background:var(--bg-card-hover); color:var(--text-primary); transform:translateX(-2px); }
+.header h1 { font-family:var(--font-display); font-size:20px; font-weight:700; display:flex; align-items:center; gap:10px; }
+.tag-cis { font-size:11px; padding:4px 10px; background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.4); border-radius:6px; color:#6ee7b7; font-weight:700; }
+.user-pill { padding:8px 16px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; font-size:13px; color:var(--text-secondary); }
+.info-btn { width:28px; height:28px; border-radius:50%; background:var(--ov-15); border:1px solid var(--ov-3); color:white; font-size:14px; font-weight:700; cursor:pointer; }
+.ghost-btn { padding:11px 20px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; color:var(--text-secondary); font-family:var(--font-body); font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s; }
+.ghost-btn:hover { background:var(--bg-card-hover); color:var(--text-primary); transform:translateY(-2px); }
+.stop-btn { padding:11px 20px; background:linear-gradient(135deg,#ef4444,#b91c1c); border:none; border-radius:10px; color:white; font-family:var(--font-body); font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
+
+/* LOADING / ENUM */
+.loading-section { text-align:center; padding:70px 20px; }
+.loading-spinner { width:54px; height:54px; border:4px solid var(--border-subtle); border-top-color:var(--inspect); border-radius:50%; animation:spin 0.9s linear infinite; margin:0 auto 20px; }
+
+.loading-text { font-family:var(--font-display); font-size:17px; font-weight:700; margin-bottom:8px; }
+.loading-sub { font-size:14px; color:var(--text-secondary); font-family:var(--font-mono); }
+
+/* PROGRESS */
+.scan-progress { background:var(--bg-card); backdrop-filter:blur(24px); border:1px solid var(--border-subtle); border-radius:18px; padding:22px 26px; margin-bottom:18px; }
+.progress-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.progress-text { font-family:var(--font-display); font-size:16px; font-weight:700; }
+.live-stat { font-size:13px; color:var(--text-secondary); font-family:var(--font-mono); }
+.progress-track { height:10px; border-radius:99px; background:var(--bg-mid); overflow:hidden; margin-bottom:10px; }
+.progress-fill { height:100%; border-radius:99px; transition:width 0.3s ease; background:var(--brand-gradient); width:0%; }
+.progress-sub { font-size:12px; color:var(--text-muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

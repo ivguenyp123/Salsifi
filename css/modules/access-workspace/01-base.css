@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@300;400;500;600;700&display=swap');
+
+:root {
+--bg-card-hover:var(--raise-75);
+--border-strong:var(--ov-18);
+    --accent:#7c5cff; --accent-glow:rgba(124,92,255,0.4);
+--font-display:'Bricolage Grotesque',-apple-system,sans-serif;
+    --font-body:'Manrope',-apple-system,sans-serif;
+}
+
+body {
+    font-family:var(--font-body); background:var(--bg-deep);
+    background-image:radial-gradient(circle at 15% 10%,rgba(124,92,255,0.12),transparent 45%),radial-gradient(circle at 85% 90%,rgba(124,92,255,0.08),transparent 50%);
+    background-attachment:fixed; min-height:100vh; color:var(--text-primary); padding:20px;
+}
+.container { max-width:1400px; margin:0 auto; }
+
+/* Header */
+.header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:18px 28px; background:var(--bg-card); backdrop-filter:blur(20px);
+    border-radius:20px; border:1px solid var(--border-subtle); margin-bottom:25px;
+    flex-wrap:wrap; gap:15px;
+}
+.back-btn {
+    width:45px; height:45px; background:var(--ov-06); border:1px solid var(--border-strong);
+    border-radius:12px; color:var(--text-primary); font-size:20px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; text-decoration:none; transition:.2s;
+}
+.back-btn:hover { background:var(--bg-card-hover); border-color:var(--accent); }
+.header h1 { font-family:var(--font-display); font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+#workspaceName { font-size:13px; color:var(--text-secondary); font-weight:500; }
+
+.btn-ghost {
+    padding:9px 14px; background:var(--ov-06); border:1px solid var(--border-strong);
+    border-radius:12px; color:var(--text-primary); font-family:var(--font-body); font-size:13px;
+    font-weight:500; cursor:pointer; transition:.15s;
+}
+.btn-ghost:hover { background:var(--bg-card-hover); border-color:var(--accent); }
+.btn-refresh {
+    padding:9px 16px; background:var(--accent); border:none; border-radius:12px; color:#fff;
+    font-family:var(--font-body); font-weight:600; font-size:14px; cursor:pointer;
+    box-shadow:0 4px 16px var(--accent-glow); transition:.15s;
+}
+.btn-refresh:hover { transform:translateY(-1px); }
