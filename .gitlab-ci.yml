@@ -1,0 +1,32 @@
+# Porte d'entrée du registre de capacités IA — moment 2, couche 1.
+#
+# Le lint est un job de CI et la soumission d'un artefact est une merge request : on
+# récupère ainsi l'historique, la revue, le rollback, les approbations et la traçabilité
+# d'audit sans construire de moteur de validation maison.
+#
+# Aucun LLM dans ce pipeline. Le verdict est déterministe, reproductible et explicable —
+# un auteur peut corriger, resoumettre et comprendre, et un refus est défendable en audit.
+
+stages: [lint]
+
+registry:lint:
+  stage: lint
+  image: node:22-alpine
+  rules:
+    # Sur MR : uniquement quand le registre bouge.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      changes:
+        - registry/**/*
+    # Sur la branche par défaut : à chaque fois, pour détecter une dérive des registres.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  cache:
+    key:
+      files: [registry/package.json]
+    paths: [registry/node_modules]
+  script:
+    - cd registry
+    - npm install --no-audit --no-fund
+    - npm test                     # les 17 règles et leurs fixtures
+    - npm run lint                 # tous les artefacts du registre
+  # Bloquant : c'est ce code de sortie qui fait de la porte une porte.
+  allow_failure: false
