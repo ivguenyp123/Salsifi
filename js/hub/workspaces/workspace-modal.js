@@ -5,7 +5,6 @@
         let _wsModalEditingId = null;   // id du ws en cours d'édition (si edit)
 
         async function wsOpenModal(mode, wsId) {
-            console.log('[ws] openModal mode=', mode, 'wsId=', wsId);
             if (!auth || !auth.gitlabUrl || !auth.token) {
                 _wsToast('Auth GitLab manquante — recharge la page', 'error');
                 return;
@@ -54,7 +53,6 @@
                     { throwOnError: true }
                 );
                 _wsModalProjects = allProjects;
-                console.log('[ws] projets reçus:', _wsModalProjects.length);
                 wsRenderModalRepos();
             } catch (e) {
                 console.error('[ws] fetch GitLab a échoué:', e);

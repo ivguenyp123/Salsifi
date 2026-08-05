@@ -12,7 +12,6 @@
         }
 
         function wsRenameWorkspace(id) {
-            console.log('[ws] rename id=', id);
             const data = _wsReadStorage();
             if (!data) { _wsToast('Storage indisponible', 'error'); return; }
             const ws = data.workspaces.find(w => w.id === id);
@@ -36,7 +35,6 @@
         }
 
         function wsDeleteWorkspace(id) {
-            console.log('[ws] delete id=', id);
             const data = _wsReadStorage();
             if (!data) { _wsToast('Storage indisponible', 'error'); return; }
             const ws = data.workspaces.find(w => w.id === id);
@@ -53,7 +51,6 @@
         }
 
         function wsExportWorkspace(id) {
-            console.log('[ws] export id=', id);
             const data = _wsReadStorage();
             if (!data) { _wsToast('Storage indisponible', 'error'); return; }
             const ws = data.workspaces.find(w => w.id === id);
