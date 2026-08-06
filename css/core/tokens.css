@@ -1,14 +1,21 @@
 /*
  * Salsifi — design tokens communs
  * ------------------------------------------------------------------
- * Palette partagée par toutes les pages. À charger APRÈS js/theme.js
- * et AVANT le CSS de page :
- *     <script src="js/theme.js"></script>
- *     <link rel="stylesheet" href="css/theme.css">
- *     <link rel="stylesheet" href="css/<page>.css">
+ * Palette partagée par toutes les pages. Ordre de chargement dans la page :
+ *   1. le script  js/theme.js
+ *   2. la feuille css/theme.css
+ *   3. la feuille css/<page>.css
+ *
+ * L'ordre est décrit en toutes lettres, sans balises littérales, et ce n'est
+ * pas une coquetterie : un WAF qui inspecte les réponses voit une balise de
+ * script dans un corps servi en text/css et bloque le fichier. Comme cette
+ * feuille est chargée par TOUTES les pages, une règle de ce genre les casse
+ * toutes d'un coup — en 500, et seulement là où l'inspection existe, donc
+ * jamais en local. Un commentaire ne vaut pas ce risque.
  *
  * ── THÈME CLAIR / SOMBRE ──────────────────────────────────────────
- * Piloté par data-theme sur <html> ("dark" par défaut, "light").
+ * Piloté par l'attribut data-theme sur la racine du document ("dark" par
+ * défaut, "light").
  * Choisi sur le hub, mémorisé dans localStorage ('salsifi-theme'),
  * appliqué avant le rendu par js/theme.js.
  *
