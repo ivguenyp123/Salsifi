@@ -594,33 +594,52 @@
         // V2: MÉTRIQUES DORA
         // ══════════════════════════════════════════════════════════════════
 
+        /*
+         * DORA de la rétro.
+         *
+         * La PRÉSENTATION reste celle de l'écran — lead time en jours, fréquence par jour.
+         * Mais le NIVEAU est noté sur le barème commun (js/common/dora-standard.js), après
+         * conversion vers les unités de référence : heures et déploiements par semaine.
+         *
+         * Avant, cet écran avait ses propres seuils, bien plus permissifs — Elite à moins
+         * d'un jour de lead time et 15 % d'échec, là où la référence DORA place Elite à
+         * une heure et 5 %. Le même dépôt ressortait donc Elite ici et High ailleurs.
+         *
+         * La fréquence s'appuie sur les VRAIS déploiements d'environnement, pas sur un
+         * proxy de pipelines : c'est la meilleure source disponible, on la garde.
+         */
         function computeDORA() {
+            const D = window.Salsifi.dora;
             const mergedMRs = retroData.mergeRequests || [];
             const pipelines = retroData.pipelines || [];
-            
-            // Lead Time
-            let totalLeadTime = 0, ltCount = 0;
-            mergedMRs.forEach(mr => {
-                if (mr.merged_at && mr.created_at) {
-                    const days = (new Date(mr.merged_at) - new Date(mr.created_at)) / (1000*60*60*24);
-                    if (days > 0 && days < 30) { totalLeadTime += days; ltCount++; }
-                }
-            });
-            const leadTime = ltCount ? (totalLeadTime / ltCount).toFixed(1) : 'N/A';
-            
-            // Deploy Frequency
-            const deployFreq = selectedDays > 0 ? (retroData.deployments.prod.length / selectedDays).toFixed(2) : '0';
-            
-            // Change Failure Rate
-            const failedPipelines = pipelines.filter(p => p.status === 'failed').length;
-            const changeFailureRate = pipelines.length ? Math.round((failedPipelines / pipelines.length) * 100) : 0;
-            
-            // Level
-            let level = 'low';
-            if (leadTime !== 'N/A' && parseFloat(leadTime) < 1 && parseFloat(deployFreq) >= 1 && changeFailureRate < 15) level = 'elite';
-            else if (leadTime !== 'N/A' && parseFloat(leadTime) < 7 && parseFloat(deployFreq) >= 0.14 && changeFailureRate < 30) level = 'high';
-            else if (leadTime !== 'N/A' && parseFloat(leadTime) < 30 && changeFailureRate < 45) level = 'medium';
-            
+
+            // ── Lead time : MÉDIANE, comme DORA. Une moyenne se fait emporter par une
+            //    seule MR restée ouverte trois semaines.
+            const leadDays = mergedMRs
+                .filter(mr => mr.merged_at && (mr.first_commit_at || mr.created_at))
+                .map(mr => (new Date(mr.merged_at) - new Date(mr.first_commit_at || mr.created_at)) / 86400000)
+                .filter(d => d > 0 && d < 365);
+            const ltDays = D.median(leadDays);
+            const leadTime = ltDays === null ? 'N/A' : ltDays.toFixed(1);
+
+            // ── Fréquence de déploiement : vrais déploiements en production.
+            const deployFreq = selectedDays > 0
+                ? (retroData.deployments.prod.length / selectedDays).toFixed(2)
+                : '0';
+
+            // ── Taux d'échec. En-deçà de MIN_SAMPLE, un taux n'est que du bruit.
+            const enough = pipelines.length >= D.MIN_SAMPLE;
+            const failed = pipelines.filter(p => p.status === 'failed').length;
+            const changeFailureRate = enough ? Math.round((failed / pipelines.length) * 100) : null;
+
+            // ── Niveau : barème commun, dans les unités de référence.
+            const levels = [
+                D.level('df', parseFloat(deployFreq) * 7),          // par jour → par semaine
+                D.level('lt', ltDays === null ? null : ltDays * 24), // jours → heures
+                D.level('cfr', changeFailureRate)
+            ];
+            const level = (D.worstLevel(levels) || 'Low').toLowerCase();
+
             doraMetrics = { leadTime, deployFreq, changeFailureRate, level };
         }
 

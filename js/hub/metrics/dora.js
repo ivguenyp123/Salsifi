@@ -1,35 +1,10 @@
 // [hub] Extrait de hub.js — metrics/dora.js (portée globale, script classique)
         // ───── Calcul DORA (carte 1) ───────────────────────────────────────
-        // Seuils 2024 DORA Accelerate (simplifiés)
-        function doraLevel(metricKey, value) {
-            if (value == null || !isFinite(value)) return null;
-            const T = {
-                df:  { elite: 7,    high: 1,      med: 0.25 },   // deploys/SEMAINE : >=7, >=1, >=0.25 (aligné insights.js)
-                lt:  { elite: 1,    high: 24,     med: 168 },    // heures : <=1h, <=1j, <=1sem (aligné insights.js)
-                cfr: { elite: 5,    high: 10,     med: 15 },     // % : <=5, <=10, <=15
-                mttr:{ elite: 1,    high: 24,     med: 168 }     // heures : <1h, <1j, <1sem
-            };
-            const t = T[metricKey];
-            if (!t) return null;
-            if (metricKey === 'df') {
-                if (value >= t.elite) return 'Elite';
-                if (value >= t.high) return 'High';
-                if (value >= t.med)  return 'Medium';
-                return 'Low';
-            }
-            // pour lt, cfr, mttr : plus c'est petit, mieux c'est
-            if (value <= t.elite) return 'Elite';
-            if (value <= t.high)  return 'High';
-            if (value <= t.med)   return 'Medium';
-            return 'Low';
-        }
-        const LEVEL_RANK = { 'Elite': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
-        const WORST_LEVEL = (levels) => {
-            const valid = levels.filter(l => l);
-            if (valid.length === 0) return null;
-            return valid.reduce((worst, l) =>
-                LEVEL_RANK[l] < LEVEL_RANK[worst] ? l : worst, valid[0]);
-        };
+        // Seuils et niveaux : js/common/dora-standard.js, source unique.
+        // Ils vivaient ici, dans insights, dans autoretro et trois autres fichiers, avec
+        // deux barèmes incompatibles — un même dépôt ressortait Elite ici et High ailleurs.
+        const doraLevel  = (key, value) => Salsifi.dora.level(key, value);
+        const WORST_LEVEL = (levels)    => Salsifi.dora.worstLevel(levels);
 
         // Aligné sur insights.js (computeDORA "maison") : même dédup SHA, mêmes médianes,
         // même CFR multi-fenêtres pondérées, même MTTR scan-forward. Source unique de vérité
@@ -39,7 +14,7 @@
             const d30 = new Date(now);
             d30.setDate(d30.getDate() - 30);
 
-            // Branches "production" pour CFR et MTTR : main/master + default_branch
+            // Branches "production" pour df, cfr et mttr : main/master + default_branch
             const defaultBranch = repo.default_branch || null;
             const prodBranches = new Set(['main', 'master']);
             if (defaultBranch) prodBranches.add(defaultBranch);
@@ -47,17 +22,23 @@
             const pipelines30 = (pipelines || []).filter(p => new Date(p.created_at) >= d30);
 
             // ── Deployment Frequency (déploiements/SEMAINE) ──
-            // Tous les success toutes branches, dédupés par SHA (1 commit = 1 déploiement).
+            // Restreint aux branches de PRODUCTION, comme cfr et mttr plus bas. Un CI vert
+            // sur une branche de feature n'est pas un déploiement : dix commits de travail
+            // donnaient dix « déploiements », ce qui poussait des dépôts vers Elite à tort.
+            // Dédup par SHA : un commit qui déclenche trois pipelines compte une fois.
             const successByCommit = {};
             pipelines30.forEach(p => {
                 if (p.status !== 'success' || !p.sha) return;
+                if (!prodBranches.has(p.ref)) return;
                 const existing = successByCommit[p.sha];
                 if (!existing || new Date(p.created_at) > new Date(existing.created_at)) {
                     successByCommit[p.sha] = p;
                 }
             });
             const successPipelines = Object.values(successByCommit);
-            pipelines30.forEach(p => { if (p.status === 'success' && !p.sha) successPipelines.push(p); });
+            pipelines30.forEach(p => {
+                if (p.status === 'success' && !p.sha && prodBranches.has(p.ref)) successPipelines.push(p);
+            });
             const df = parseFloat(((successPipelines.length / 30) * 7).toFixed(2));
 
             // ── Lead Time for Changes (first_commit_at → merged_at, médiane, heures) ──

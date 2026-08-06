@@ -11,39 +11,33 @@ function showError(msg) {
 //  CALCUL DORA MAISON
 // ════════════════════════════════════════════════════════════
 
+/*
+ * Niveau + présentation (barre et écart à l'Elite).
+ *
+ * Les SEUILS viennent de js/common/dora-standard.js — source unique. Ce fichier en
+ * redéfinissait sa propre copie, et elle avait dérivé : le lead time y était noté
+ * Elite jusqu'à 24 h alors que la référence DORA Accelerate place Elite à 1 h. Un cran
+ * entier d'écart avec le hub, sur le même dépôt, malgré un commentaire affirmant
+ * l'alignement. C'est précisément ce qu'une source unique empêche.
+ */
 function doraLevel(metric, value) {
     if (value === null || value === undefined) return { level: 'N/A', cls: '', pct: 0, gap: null };
 
-    if (metric === 'df') {
-        // déploiements/semaine
-        if (value >= 7)   return { level: 'Elite',  cls: 'elite',  pct: 100, gap: null };
-        if (value >= 1)   return { level: 'High',   cls: 'high',   pct: 70,  gap: `+${(7 - value).toFixed(1)} deploy/sem pour Elite` };
-        if (value >= 0.25)return { level: 'Medium', cls: 'medium', pct: 40,  gap: `+${(7 - value).toFixed(1)} deploy/sem pour Elite` };
-        return              { level: 'Low',    cls: 'low',    pct: 15,  gap: `+${(7 - value).toFixed(1)} deploy/sem pour Elite` };
+    const D = window.Salsifi.dora;
+    const level = D.level(metric, value);
+    if (!level) return { level: 'N/A', cls: '', pct: 0, gap: null };
+
+    const PCT = { Elite: 100, High: 70, Medium: 40, Low: 15 };
+    const target = D.THRESHOLDS[metric].elite;
+
+    let gap = null;
+    if (level !== 'Elite') {
+        if (metric === 'df')       gap = `+${(target - value).toFixed(1)} deploy/sem pour Elite`;
+        else if (metric === 'cfr') gap = `${(value - target).toFixed(0)}% à réduire pour Elite`;
+        else                       gap = `${(value - target).toFixed(0)}h à réduire pour Elite`;
     }
-    if (metric === 'lt') {
-        // heures — seuils DORA Accelerate 2024 alignés sur hub.html
-        // Elite < 1 jour, High < 1 semaine, Medium < 1 mois
-        if (value <= 24)  return { level: 'Elite',  cls: 'elite',  pct: 100, gap: null };
-        if (value <= 168) return { level: 'High',   cls: 'high',   pct: 70,  gap: `Encore ${(value - 24).toFixed(0)}h à gagner pour Elite` };
-        if (value <= 720) return { level: 'Medium', cls: 'medium', pct: 40,  gap: `${(value - 24).toFixed(0)}h à réduire pour Elite` };
-        return              { level: 'Low',    cls: 'low',    pct: 15,  gap: `${(value - 24).toFixed(0)}h à réduire pour Elite` };
-    }
-    if (metric === 'cfr') {
-        // %
-        if (value <= 5)   return { level: 'Elite',  cls: 'elite',  pct: 100, gap: null };
-        if (value <= 10)  return { level: 'High',   cls: 'high',   pct: 65,  gap: `Encore ${(value - 5).toFixed(0)}% à réduire pour Elite` };
-        if (value <= 15)  return { level: 'Medium', cls: 'medium', pct: 35,  gap: `${(value - 5).toFixed(0)}% à réduire pour Elite` };
-        return              { level: 'Low',    cls: 'low',    pct: 15,  gap: `${(value - 5).toFixed(0)}% à réduire pour Elite` };
-    }
-    if (metric === 'mttr') {
-        // heures
-        if (value <= 1)   return { level: 'Elite',  cls: 'elite',  pct: 100, gap: null };
-        if (value <= 24)  return { level: 'High',   cls: 'high',   pct: 70,  gap: `Encore ${(value - 1).toFixed(0)}h à gagner pour Elite` };
-        if (value <= 168) return { level: 'Medium', cls: 'medium', pct: 40,  gap: `${(value - 1).toFixed(0)}h à réduire pour Elite` };
-        return              { level: 'Low',    cls: 'low',    pct: 15,  gap: `${(value - 1).toFixed(0)}h à réduire pour Elite` };
-    }
-    return { level: 'N/A', cls: '', pct: 0, gap: null };
+
+    return { level, cls: level.toLowerCase(), pct: PCT[level], gap };
 }
 
 // ════════════════════════════════════════════════════════════

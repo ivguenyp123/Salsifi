@@ -62,27 +62,11 @@ function median(arr) {
 }
 
 
+/* Seuils : js/common/dora-standard.js — source unique. Ceux-ci étaient déjà conformes
+   à DORA Accelerate, mais c'était une copie de plus à tenir alignée à la main. */
 function doraLevel(metric, val) {
-    if (val === null || val === undefined) return { level:'N/A', cls:'na' };
-    if (metric === 'df') {
-        if (val >= 7)    return { level:'Elite',  cls:'elite' };
-        if (val >= 1)    return { level:'High',   cls:'high' };
-        if (val >= 0.25) return { level:'Medium', cls:'medium' };
-        return { level:'Low', cls:'low' };
-    }
-    if (metric === 'lt' || metric === 'mttr') {
-        if (val <= 1)    return { level:'Elite',  cls:'elite' };
-        if (val <= 24)   return { level:'High',   cls:'high' };
-        if (val <= 168)  return { level:'Medium', cls:'medium' };
-        return { level:'Low', cls:'low' };
-    }
-    if (metric === 'cfr') {
-        if (val <= 5)    return { level:'Elite',  cls:'elite' };
-        if (val <= 10)   return { level:'High',   cls:'high' };
-        if (val <= 15)   return { level:'Medium', cls:'medium' };
-        return { level:'Low', cls:'low' };
-    }
-    return { level:'N/A', cls:'na' };
+    const level = window.Salsifi.dora.level(metric, val);
+    return level ? { level, cls: level.toLowerCase() } : { level: 'N/A', cls: 'na' };
 }
 
 

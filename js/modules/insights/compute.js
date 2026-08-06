@@ -11,19 +11,24 @@ function computeDORA(pipelines30, mergeRequests, allPipelines, nowRef, defaultBr
     const d30 = new Date(now);
     d30.setDate(d30.getDate() - 30);
 
-    // Branches considérées "production" pour CFR et MTTR :
+    // Branches considérées "production" pour df, CFR et MTTR :
     // - main / master (universel)
     // - + default_branch du projet si différent (ex : `production`, `release`)
     const prodBranches = new Set(['main', 'master']);
     if (defaultBranch) prodBranches.add(defaultBranch);
 
     // ── Deployment Frequency ──
-    // Contrainte courante GitLab : pas toujours de tag d'environnement fiable sur les pipelines.
-    // On prend TOUS les pipelines success comme proxy de la fréquence de déploiement,
-    // déduplé par SHA (un commit qui déclenche 3 pipelines compte 1 fois).
+    // Contrainte courante GitLab : pas toujours de tag d'environnement fiable sur les
+    // pipelines. On prend donc les pipelines réussis comme proxy — mais UNIQUEMENT sur les
+    // branches de production, comme CFR et MTTR plus bas. L'absence de tag d'environnement
+    // justifie de se rabattre sur la branche par défaut, pas de compter toutes les branches :
+    // un CI vert sur une feature n'est jamais un déploiement, et dix commits de travail
+    // donnaient dix « déploiements ».
+    // Déduplé par SHA (un commit qui déclenche 3 pipelines compte 1 fois).
     const successByCommit = {};
     pipelines30.forEach(p => {
         if (p.status !== 'success' || !p.sha) return;
+        if (!prodBranches.has(p.ref)) return;
         const existing = successByCommit[p.sha];
         if (!existing || new Date(p.created_at) > new Date(existing.created_at)) {
             successByCommit[p.sha] = p;
@@ -32,7 +37,7 @@ function computeDORA(pipelines30, mergeRequests, allPipelines, nowRef, defaultBr
     const successPipelines = Object.values(successByCommit);
     // + pipelines success sans SHA (cas rare, on les garde pour ne pas perdre de signal)
     pipelines30.forEach(p => {
-        if (p.status === 'success' && !p.sha) successPipelines.push(p);
+        if (p.status === 'success' && !p.sha && prodBranches.has(p.ref)) successPipelines.push(p);
     });
 
     const df = parseFloat(((successPipelines.length / 30) * 7).toFixed(2));

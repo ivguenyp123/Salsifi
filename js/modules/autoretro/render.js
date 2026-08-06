@@ -201,7 +201,7 @@
                     <div style="font-size: 10px; opacity: 0.7; margin-top: 5px;">DEPLOY FREQ</div>
                 </div>
                 <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px;">
-                    <div style="font-family: 'Press Start 2P', cursive; font-size: 1.2em; color: ${doraMetrics.changeFailureRate < 15 ? '#10b981' : doraMetrics.changeFailureRate < 30 ? '#f59e0b' : '#ef4444'};">${doraMetrics.changeFailureRate}%</div>
+                    <div style="font-family: 'Press Start 2P', cursive; font-size: 1.2em; color: ${doraMetrics.changeFailureRate === null ? '#94a3b8' : doraMetrics.changeFailureRate <= 5 ? '#10b981' : doraMetrics.changeFailureRate <= 10 ? '#f59e0b' : '#ef4444'};">${doraMetrics.changeFailureRate === null ? 'n/a' : doraMetrics.changeFailureRate + '%'}</div>
                     <div style="font-size: 10px; opacity: 0.7; margin-top: 5px;">FAILURE RATE</div>
                 </div>
                 <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px;">
@@ -353,7 +353,7 @@
 ## 📈 DORA (${doraMetrics.level.toUpperCase()})
 - Lead Time: ${doraMetrics.leadTime}j
 - Deploy Freq: ${doraMetrics.deployFreq}/j
-- Failure Rate: ${doraMetrics.changeFailureRate}%
+- Failure Rate: ${doraMetrics.changeFailureRate === null ? 'échantillon insuffisant' : doraMetrics.changeFailureRate + '%'}
 
 ## 🚨 Alertes (${alerts.length})
 ${alerts.map(a => `- ${a.icon} **${a.title}**: ${a.description}`).join('\n')}
